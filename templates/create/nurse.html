@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}ADOS - Pridať sestru{% endblock %}
+
+{% block content %}
+<h1>Pridať novú sestru</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o sestre</span></div>
+    <form id="nurseForm" method="POST" action="{{ url_for('nurse.create_nurse') }}">
+        <div class="form-group">
+            <label for="meno">Meno</label>
+            <input type="text" name="meno" id="meno" required>
+        </div>
+        <div class="form-group">
+            <label for="kod">Kód</label>
+            <input type="text" name="kod" id="kod">
+        </div>
+        <div class="form-group">
+            <label for="uvazok">Úväzok</label>
+            <input type="number" name="uvazok" id="uvazok" step="0.1" min="0" max="1">
+        </div>
+        <div class="form-group">
+            <label for="vozidlo">Vozidlo</label>
+            <select name="vozidlo" id="vozidlo">
+                <option value="">– Vyber vozidlo –</option>
+                {% for car in cars %}
+                <option value="{{ car.id }}">{{ car.evc }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="ados">Spoločnosť (ADOS)</label>
+            <select name="ados" id="ados">
+                <option value="">– Vyber spoločnosť –</option>
+                {% for company in comapnies %}
+                <option value="{{ company.id }}">{{ company.nazov }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn">Pridať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/create/nurse.js') }}"></script>
+{% endblock %}

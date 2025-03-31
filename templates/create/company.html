@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Pridať spoločnosť{% endblock %}
+
+{% block content %}
+<h1>Pridať novú spoločnosť</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o spoločnosti</span></div>
+    <form id="companyForm" method="POST" action="{{ url_for('company.create_company') }}">
+        <div class="form-group">
+            <label for="nazov">Názov</label>
+            <input type="text" name="nazov" id="nazov" placeholder="Zadajte názov" required>
+        </div>
+        <div class="form-group">
+            <label for="ico">IČO</label>
+            <input type="text" name="ico" id="ico" placeholder="Zadajte IČO">
+        </div>
+        <div class="form-group">
+            <label for="ulica">Adresa</label>
+            <input type="text" name="ulica" id="ulica" placeholder="Zadajte adresu">
+        </div>
+        <div class="form-group">
+            <label for="mesto">Mesto</label>
+            <input type="text" name="mesto" id="mesto" placeholder="Zadajte mesto">
+        </div>
+        <div class="form-group">
+            <label for="identifikator">Identifikátor</label>
+            <input type="text" name="identifikator" id="identifikator" placeholder="Zadajte identifikátor">
+        </div>
+        <div class="form-group">
+            <label for="kod">Kód</label>
+            <input type="text" name="kod" id="kod" placeholder="Zadajte kód">
+        </div>
+        <button type="submit" class="btn">Pridať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/create/company.js') }}"></script>
+{% endblock %}

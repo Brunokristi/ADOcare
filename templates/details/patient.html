@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}ADOS - Úprava pacienta{% endblock %}
+
+{% block content %}
+<h1>Upraviť pacienta</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o pacientovi</span></div>
+    <form id="patientForm" method="POST" action="{{ url_for('patient.update_patient', id=patient.id) }}">
+        <div class="form-group">
+            <label for="meno">Meno</label>
+            <input type="text" name="meno" value="{{ patient.meno }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="rodne_cislo">Rodné číslo</label>
+            <input type="text" name="rodne_cislo" value="{{ patient.rodne_cislo }}">
+        </div>
+
+        <div class="form-group">
+            <label for="adresa">Adresa</label>
+            <input type="text" name="adresa" value="{{ patient.adresa }}">
+        </div>
+
+        <div class="form-group">
+            <label for="poistovna">Poisťovňa</label>
+            <select name="pohlavie">
+                <option value="">—</option>
+                <option value="25 – VŠEOBECNÁ zdravotná poisťovňa, a. s." {% if patient.poistovna=="25 – VŠEOBECNÁ zdravotná poisťovňa, a. s." %}selected{% endif %}>25 – VŠEOBECNÁ zdravotná poisťovňa, a. s.</option>
+                <option value="27 – UNION zdravotná poisťovňa, a. s." {% if patient.poistovna=="27 – UNION zdravotná poisťovňa, a. s." %}selected{% endif %}>27 – UNION zdravotná poisťovňa, a. s.</option>
+                <option value="24 – DÔVERA zdravotná poisťovňa, a. s." {% if patient.poistovna=="24 – DÔVERA zdravotná poisťovňa, a. s."%}selected{% endif %}>24 – DÔVERA zdravotná poisťovňa, a. s.</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="ados">ADOS</label>
+            <select name="ados">
+                <option value="">—</option>
+                {% for company in companies %}
+                <option value="{{ company.nazov }}" {% if company.nazov==patient.ados %}selected{% endif %}>{{ company.nazov }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="sestra">Sestra</label>
+            <select name="sestra">
+                <option value="">—</option>
+                {% for nurse in nurses %}
+                <option value="{{ nurse.id }}" {% if nurse.id==patient.sestra %}selected{% endif %}>
+                    {{ nurse.meno }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="odosielatel">Odosielateľ (doktor)</label>
+            <select name="odosielatel">
+                <option value="">—</option>
+                {% for doctor in doctors %}
+                <option value="{{ doctor.id }}" {% if doctor.id==patient.odosielatel %}selected{% endif %}>
+                    {{ doctor.meno }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="pohlavie">Pohlavie</label>
+            <select name="pohlavie">
+                <option value="">—</option>
+                <option value="M" {% if patient.pohlavie=="M" %}selected{% endif %}>Muž</option>
+                <option value="F" {% if patient.pohlavie=="F" %}selected{% endif %}>Žena</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="cislo_dekurzu">Číslo dekurzu</label>
+            <input type="number" name="cislo_dekurzu" value="{{ patient.cislo_dekurzu }}">
+        </div>
+
+        <button type="submit" class="btn">Uložiť</button>
+        <a href="{{ url_for('patient.delete_patient', id=patient.id) }}" class="btn warning">Vymazať</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/details/patient.js') }}"></script>
+{% endblock %}

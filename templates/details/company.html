@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Upraviť spoločnosť{% endblock %}
+
+{% block content %}
+<h1>Úprava spoločnosti</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o spoločnosti</span></div>
+    <form id="companyForm" method="POST" action="{{ url_for('company.update_company', id=company.id) }}">
+        <div class="form-group">
+            <label for="nazov">Názov</label>
+            <input type="text" name="nazov" id="nazov" value="{{ company.nazov }}" required>
+        </div>
+        <div class="form-group">
+            <label for="ico">IČO</label>
+            <input type="text" name="ico" id="ico" value="{{ company.ico }}">
+        </div>
+        <div class="form-group">
+            <label for="ulica">Adresa</label>
+            <input type="text" name="ulica" id="ulica" value="{{ company.ulica }}">
+        </div>
+        <div class="form-group">
+            <label for="mesto">Mesto</label>
+            <input type="text" name="mesto" id="mesto" value="{{ company.mesto }}">
+        </div>
+        <div class="form-group">
+            <label for="identifikator">Identifikátor</label>
+            <input type="text" name="identifikator" id="identifikator" value="{{ company.identifikator }}">
+        </div>
+        <div class="form-group">
+            <label for="kod">Kód</label>
+            <input type="text" name="kod" id="kod" value="{{ company.kod }}">
+        </div>
+        <button type="submit" class="btn">Uložiť</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('company.delete_company', id=company.id) }}" style="margin-top: 1rem;">
+        <button type="submit" class="btn warning">Vymazať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/details/company.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}ADOS - Pridať pacienta{% endblock %}
+
+{% block content %}
+<h1>Pridať pacienta</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o pacientovi</span></div>
+    <form id="patientForm" method="POST" action="{{ url_for('patient.create_patient') }}">
+        <div class="form-group">
+            <label for="meno">Meno</label>
+            <input type="text" name="meno" required>
+        </div>
+
+        <div class="form-group">
+            <label for="rodne_cislo">Rodné číslo</label>
+            <input type="text" name="rodne_cislo">
+        </div>
+
+        <div class="form-group">
+            <label for="adresa">Adresa</label>
+            <input type="text" name="adresa">
+        </div>
+
+        <div class="form-group">
+            <label for="poistovna">Poisťovňa</label>
+            <select name="poistovna">
+                <option value="">—</option>
+                <option value="25 – VŠEOBECNÁ zdravotná poisťovňa, a. s.">25 – VŠEOBECNÁ zdravotná poisťovňa, a. s.
+                </option>
+                <option value="27 – UNION zdravotná poisťovňa, a. s.">27 – UNION zdravotná poisťovňa, a. s.</option>
+                <option value="24 – DÔVERA zdravotná poisťovňa, a. s.">24 – DÔVERA zdravotná poisťovňa, a. s.</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="ados">ADOS</label>
+            <select name="ados">
+                <option value="">—</option>
+                {% for company in companies %}
+                <option value="{{ company.nazov }}">{{ company.nazov }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="sestra">Sestra</label>
+            <select name="sestra">
+                <option value="">—</option>
+                {% for nurse in nurses %}
+                <option value="{{ nurse.id }}">{{ nurse.meno }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="odosielatel">Odosielateľ (doktor)</label>
+            <select name="odosielatel">
+                <option value="">—</option>
+                {% for doctor in doctors %}
+                <option value="{{ doctor.id }}">{{ doctor.meno }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="pohlavie">Pohlavie</label>
+            <select name="pohlavie">
+                <option value="">—</option>
+                <option value="M">Muž</option>
+                <option value="F">Žena</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="cislo_dekurzu">Číslo dekurzu</label>
+            <input type="number" name="cislo_dekurzu">
+        </div>
+
+        <button type="submit" class="btn">Pridať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/create/patient.js') }}"></script>
+{% endblock %}

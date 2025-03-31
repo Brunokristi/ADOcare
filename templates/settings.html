@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - nastavenia{% endblock %}
+
+{% block content %}
+<h1>nastavenia</h1>
+<div class="section">
+    <div class="lined-heading"><span>Pracovníci</span></div>
+    {% for nurse in nurses %}
+    <a href="{{ url_for('nurse.update_nurse', id=nurse.id) }}" class="small-token" data-id="{{ nurse.id }}" data-meno="{{ nurse.meno }}" data-kod="{{ nurse.kod }}"
+        data-uvazok="{{ nurse.uvazok }}" data-vozidlo="{{ nurse.vozidlo }}" data-ados="{{ nurse.ados }}">
+        {{ nurse.meno }}
+    </a>
+    {% endfor %}
+
+    <a class="text-button" href="{{ url_for('nurse.create_nurse') }}">
+        pridať pracovníka <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+<div class="section">
+    <div class="lined-heading"><span>Makrá</span></div>
+    {% for macro in macros %}
+    <a href="{{ url_for('macro.update_macro', id=macro.id) }}" class="small-token" data-id="{{ macro.id }}"
+        data-nazov="{{ macro.nazov }}" data-skratka="{{ macro.skratka }}" data-farba="{{ macro.farba }}"
+        data-text="{{ macro.text }}">
+        {{ macro.nazov }}
+    </a>
+    {% endfor %}
+    <a class="text-button" href="{{ url_for('macro.create_macro') }}">
+        pridať makro <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+<div class="section">
+    <div class="lined-heading"><span>Autá</span></div>
+    {% for car in cars %}
+    <a href="{{ url_for('car.update_car', id=car.id) }}" class="small-token" data-id="{{ car.id }}" data-evc="{{ car.evc }}">
+        {{ car.evc }}
+    </a>
+    {% endfor %}
+    <a class="text-button" href="{{ url_for('car.create_car') }}">
+        pridať auto <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+<div class="section">
+    <div class="lined-heading"><span>Adosky</span></div>
+    {% for company in companies %}
+    <a href="{{ url_for('company.update_company', id=company.id) }}" class="small-token" data-id="{{ company.id }}" data-nazov="{{ company.nazov }}" data-ico="{{ company.ico }}"
+        data-ulica="{{ company.ulica }}" data-mesto="{{ company.mesto }}" data-identifikator="{{ company.identifikator }}"
+        data-kod="{{ company.kod }}">
+        {{ company.nazov }}
+    </a>
+    {% endfor %}
+    <a class="text-button" href="{{ url_for('company.create_company') }}">
+        pridať adosku <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+<div class="section">
+    <div class="lined-heading"><span>Doktori</span></div>
+    {% for doctor in doctors %}
+    <a href="{{ url_for('doctor.update_doctor', id=doctor.id) }}" class="small-token" data-id="{{ doctor.id }}"
+        data-meno="{{ doctor.meno }}" data-pzs="{{ doctor.pzs }}" data-zpr="{{ doctor.zpr }}">
+        {{ doctor.meno }}
+    </a>
+    {% endfor %}
+    <a class="text-button" href="{{ url_for('doctor.create_doctor') }}">
+        pridať doktora <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+
+<div class="section">
+    <div class="lined-heading"><span>Diagnózy</span></div>
+    <a class="text-button" href="{{ url_for('diagnosis.list_diagnoses') }}">
+        prehľadávať <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+
+
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+

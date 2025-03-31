@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Diagnózy{% endblock %}
+
+{% block content %}
+<h1>Zoznam diagnóz</h1>
+
+<div class="section">
+    <div class="form-group">
+        <input type="text" id="searchInput" placeholder="Vyhľadaj diagnózu podľa názvu alebo kódu..." />
+    </div>
+
+    <div id="results">
+        {% for diagnosis in diagnoses %}
+        <div class="small-token">
+            {{ diagnosis.kod }} — {{ diagnosis.nazov }}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/details/lists.css') }}">
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/details/diagnoses.js') }}"></script>
+{% endblock %}

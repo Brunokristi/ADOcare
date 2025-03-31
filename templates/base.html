@@ -1,0 +1,64 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+    {% block styles %}{% endblock %}
+
+
+
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;400;500;700&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRnAl8oUEx8je9s7J0zB7vPxIxAgyc_8c&libraries&libraries=places&callback=initMap"
+        async defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+</head>
+
+<body>
+    <header>
+        <div class="navbar">
+            <div class="navbar-section">
+                <button id="backBtn" class="text-button" onclick="history.back();">
+                    <i style="color: #fff;" class="bi bi-arrow-left"></i>
+                </button>
+                <a href="{{ url_for('main.index') }}" class="logo">
+                    <h1 class="logo">ADOS</h1>
+                </a>
+            </div>
+
+            <div class="navbar-section">
+                <p id="message"></p>
+            </div>
+            
+            <div class="navbar-section">
+                {% if session.get('nurse') %}
+                    <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
+                        <h2 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h2>
+                    </a>
+                    <a class="navbar-button" href="{{ url_for('main.index') }}">Odhlásiť sa</a>
+                {% endif %}
+                <a class="navbar-button" href="#" onclick="shutDown(); return false;">Vypnúť aplikáciu</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

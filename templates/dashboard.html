@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}ADOS - Dashboard{% endblock %}
+
+{% block content %}
+<h1>Prehľad</h1>
+
+{% if session.get('nurse') %}
+<div class="section">
+    <div class="lined-heading"><span>Dekurzy</span></div>
+</div>
+
+<div class="section">
+    <div class="lined-heading"><span>Doprava</span></div>
+</div>
+
+<div class="section">
+    <div class="lined-heading"><span>Pacienti</span></div>
+
+    <a class="text-button" href="{{ url_for('patient.create_patient') }}">
+        pridať pacienta<i class="bi bi-arrow-right"></i>
+    </a>
+
+    <a class="text-button" href="{{ url_for('patient.list_patients') }}">
+        prehľadávať <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+{% else %}
+<p>Nie je prihlásený žiadny používateľ.</p>
+{% endif %}
+{% endblock %}

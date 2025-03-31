@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - prihlásenie{% endblock %}
+
+{% block content %}
+<h1>Prihlásenie</h1>
+<div class="section">
+    <div class="lined-heading"><span>Výber používateľa</span></div>
+    {% for nurse in nurses %}
+    <button type="button" class="small-token select-nurse" data-id="{{ nurse.id }}" data-meno="{{ nurse.meno }}"
+        data-kod="{{ nurse.kod }}" data-uvazok="{{ nurse.uvazok }}" data-vozidlo="{{ nurse.vozidlo }}"
+        data-ados="{{ nurse.ados }}">
+        {{ nurse.meno }}
+    </button>
+    {% endfor %}
+</div>
+
+
+<button class="text-button" onclick="window.location.href='{{ url_for('main.settings') }}';">
+    nastavenia <i class="bi bi-arrow-right"></i>
+</button>
+
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}

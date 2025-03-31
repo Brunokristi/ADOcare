@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Pridať auto{% endblock %}
+
+{% block content %}
+<h1>Pridať nové auto</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o aute</span></div>
+    <form id="carForm" method="POST" action="{{ url_for('car.create_car') }}">
+        <div class="form-group">
+            <label for="evc">Evidenčné číslo vozidla (EČV)</label>
+            <input type="text" name="evc" id="evc" placeholder="Zadajte EČV" required>
+        </div>
+        <button type="submit" class="btn">Pridať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/create/car.js') }}"></script>
+{% endblock %}

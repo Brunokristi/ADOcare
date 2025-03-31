@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>UI Kit Demo</title>
+    <link rel="stylesheet" href="global.css">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;400;500;700&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRnAl8oUEx8je9s7J0zB7vPxIxAgyc_8c&libraries&libraries=places&callback=initMap"
+        async defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+</head>
+
+<body>
+
+    <!-- Headings -->
+    <h1>Main Title</h1>
+    <h2>Subheading</h2>
+    <h3>Section Heading</h3>
+
+    <!-- Lined Heading -->
+    <div class="lined-heading"><span>Lined Heading</span></div>
+
+
+
+
+    <!-- Section -->
+    <div class="section">
+        <h3>Form Section</h3>
+
+        <!-- Form Groups -->
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" placeholder="Enter your name">
+        </div>
+
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" rows="4" placeholder="Write something..."></textarea>
+        </div>
+
+        <div class="half-form-group">
+            <div class="form-group">
+                <label for="start">Start Date</label>
+                <input type="date" id="start">
+            </div>
+            <div class="form-group">
+                <label for="end">End Date</label>
+                <input type="date" id="end">
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <button class="btn">Submit</button>
+        <button class="btn warning">Cancel</button>
+        <button class="text-button">Text Action <i class="bi-arrow-right"></i></button>
+    </div>
+
+    <!-- Tokens -->
+    <div class="scroll">
+        <div class="token">Token</div>
+        <div class="small-token">small token</div>
+        <div class="small-token active-patient">small token active</div>
+    </div>
+
+    <!-- Checkbox -->
+    <div class="checkbox-container">
+        <input type="checkbox" id="agree">
+        <label for="agree">I agree to terms</label>
+    </div>
+
+    <!-- Route Table -->
+    <table class="route-table">
+        <tr>
+            <td>Location</td>
+            <td>Status</td>
+        </tr>
+        <tr>
+            <td>New York City</td>
+            <td>Scheduled</td>
+        </tr>
+        <tr>
+            <td>Los Angeles</td>
+            <td>Completed</td>
+        </tr>
+    </table>
+
+    <!-- Suggestions Dropdown -->
+    <div class="form-group" style="position: relative;">
+        <label for="search">Search</label>
+        <input type="text" id="search" autocomplete="off">
+        <div class="suggestions">
+            <div>Apple</div>
+            <div>Banana</div>
+            <div>Cherry</div>
+        </div>
+    </div>
+
+    <!-- Popup Modal -->
+    <div class="overlay"></div>
+    <div class="popup">
+        <div class="popup-content">
+            <p>This is a popup message!</p>
+            <button>OK</button>
+        </div>
+    </div>
+
+
+    <!-- Bottom bars -->
+    <div class="bottom">Bottom Bar</div>
+    <div class="bottom-right">Bottom Right Bar</div>
+
+</body>
+
+</html>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Upraviť auto{% endblock %}
+
+{% block content %}
+<h1>Úprava auta</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Údaje o aute</span></div>
+    <form id="carForm" method="POST" action="{{ url_for('car.update_car', id=car.id) }}">
+        <div class="form-group">
+            <label for="evc">Evidenčné číslo vozidla (EČV)</label>
+            <input type="text" name="evc" id="evc" placeholder="Zadajte EČV" required value="{{ car.evc }}">
+        </div>
+        <button type="submit" class="btn">Uložiť</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('car.delete_car', id=car.id) }}" style="margin-top: 1rem;">
+        <button type="submit" class="btn warning">Vymazať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/details/car.js') }}"></script>
+{% endblock %}

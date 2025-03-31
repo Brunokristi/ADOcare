@@ -1,0 +1,9 @@
+.small-token {
+    width: 100%;
+    margin-bottom: 10px;
+    justify-content: start;
+}
+
+#results {
+    width: 100%;
+}
