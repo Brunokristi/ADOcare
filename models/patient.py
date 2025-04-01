@@ -11,3 +11,4 @@ class Patient:
         self.pohlavie = row['pohlavie']
         self.cislo_dekurzu = row['cislo_dekurzu']
         self.last_month = row['last_month']
+        self.diagnoza = row['diagnoza']

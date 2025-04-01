@@ -12,9 +12,9 @@
 
     <div id="results">
         {% for patient in patients %}
-        <div class="small-token">
+        <a href="{{ url_for('patient.update_patient', id=patient.id) }}" class="small-token">
             {{ patient.meno }} — {{ patient.rodne_cislo }}
-        </div>
+        </a>
         {% endfor %}
     </div>
 

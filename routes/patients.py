@@ -1,9 +1,10 @@
 from flask import Blueprint, request, redirect, url_for, render_template, jsonify, session
 from models.patient import Patient
 from utils.database import get_db_connection
-from routes.nurses import get_nurses
+from routes.diagnoses import get_diagnosis
 from routes.doctors import get_doctors
 from routes.companies import get_companies
+from routes.insurances import get_insurances
 
 patient_bp = Blueprint("patient", __name__)
 
@@ -15,22 +16,22 @@ def create_patient():
         conn.execute("""
             INSERT INTO pacienti (
                 meno, rodne_cislo, adresa, poistovna, ados,
-                sestra, odosielatel, pohlavie, cislo_dekurzu, last_month
+                sestra, odosielatel, pohlavie, cislo_dekurzu, diagnoza
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 data['meno'], data['rodne_cislo'], data['adresa'], data['poistovna'],
                 data['ados'], data['sestra'], data['odosielatel'],
-                data['pohlavie'], data['cislo_dekurzu'], data['last_month']
+                data['pohlavie'], data['cislo_dekurzu'], data['diagnoza']
             ))
         conn.commit()
         conn.close()
         return redirect(url_for('main.settings'))
 
-    nurses = get_nurses()
     doctors = get_doctors()
+    insurances = get_insurances()
     companies = get_companies()
-    return render_template("create/patient.html", nurses=nurses, doctors=doctors, companies=companies)
+    return render_template("create/patient.html",doctors=doctors, insurances=insurances, companies=companies)
 
 @patient_bp.route('/patient/update/<int:id>', methods=['GET', 'POST'])
 def update_patient(id):
@@ -40,25 +41,26 @@ def update_patient(id):
         conn.execute("""
             UPDATE pacienti SET
                 meno = ?, rodne_cislo = ?, adresa = ?, poistovna = ?, ados = ?,
-                sestra = ?, odosielatel = ?, pohlavie = ?, cislo_dekurzu = ?, last_month = ?
+                sestra = ?, odosielatel = ?, pohlavie = ?, cislo_dekurzu = ?, diagnoza = ?
             WHERE id = ?""",
             (
                 data['meno'], data['rodne_cislo'], data['adresa'], data['poistovna'],
                 data['ados'], data['sestra'], data['odosielatel'],
-                data['pohlavie'], data['cislo_dekurzu'], data['last_month'], id
+                data['pohlavie'], data['cislo_dekurzu'], data['diagnoza'], id
             ))
         conn.commit()
         conn.close()
-        return redirect(url_for('main.settings'))
+        return redirect(url_for('patient.list_patients'))
 
     patient = get_patient(id)
     if not patient:
         return "Pacient nenájdený", 404
 
-    nurses = get_nurses()
     doctors = get_doctors()
+    insurances = get_insurances()
     companies = get_companies()
-    return render_template("details/patient.html", patient=patient, nurses=nurses, doctors=doctors, companies=companies)
+    diagnosis = get_diagnosis(patient.diagnoza)
+    return render_template("details/patient.html", patient=patient, insurances=insurances, doctors=doctors, companies=companies, diagnosis=diagnosis)
 
 @patient_bp.route('/patient/delete/<int:id>', methods=['POST'])
 def delete_patient(id):
@@ -66,7 +68,7 @@ def delete_patient(id):
     conn.execute("DELETE FROM pacienti WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    return redirect(url_for('main.settings'))
+    return redirect(url_for('patient.list_patients'))
 
 @patient_bp.route('/patient/search')
 def search_patients():

@@ -18,41 +18,32 @@
         </div>
 
         <div class="form-group">
-            <label for="adresa">Adresa</label>
-            <input type="text" name="adresa">
+            <label for="pohlavie">Pohlavie</label>
+            <select name="pohlavie">
+                <option value="">—</option>
+                <option value="M">Muž</option>
+                <option value="F">Žena</option>
+            </select>
         </div>
 
         <div class="form-group">
             <label for="poistovna">Poisťovňa</label>
             <select name="poistovna">
                 <option value="">—</option>
-                <option value="25 – VŠEOBECNÁ zdravotná poisťovňa, a. s.">25 – VŠEOBECNÁ zdravotná poisťovňa, a. s.
-                </option>
-                <option value="27 – UNION zdravotná poisťovňa, a. s.">27 – UNION zdravotná poisťovňa, a. s.</option>
-                <option value="24 – DÔVERA zdravotná poisťovňa, a. s.">24 – DÔVERA zdravotná poisťovňa, a. s.</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="ados">ADOS</label>
-            <select name="ados">
-                <option value="">—</option>
-                {% for company in companies %}
-                <option value="{{ company.nazov }}">{{ company.nazov }}</option>
+                {% for insurance in insurances %}
+                <option value="{{ insurance.id }}">{{ insurance.nazov }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <div class="form-group">
-            <label for="sestra">Sestra</label>
-            <select name="sestra">
-                <option value="">—</option>
-                {% for nurse in nurses %}
-                <option value="{{ nurse.id }}">{{ nurse.meno }}</option>
-                {% endfor %}
-            </select>
+        <div class="form-group" style="position: relative;">
+            <label for="adresa">Adresa</label>
+            <input type="text" id="adresa" name="adresa" autocomplete="off">
+            <div id="address-suggestions" class="suggestions"></div>
         </div>
 
+        <input type="hidden" name="sestra" value="{{ session['nurse']['id'] }}">
+       
         <div class="form-group">
             <label for="odosielatel">Odosielateľ (doktor)</label>
             <select name="odosielatel">
@@ -63,18 +54,27 @@
             </select>
         </div>
 
+        <div class="form-group" style="position: relative;">
+            <label for="diagnoza">Diagnóza</label>
+            <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off">
+            <input type="hidden" id="diagnoza_id" name="diagnoza">
+            <div id="diagnoza-suggestions" class="suggestions"></div>
+        </div>
+
+
         <div class="form-group">
-            <label for="pohlavie">Pohlavie</label>
-            <select name="pohlavie">
+            <label for="ados">ADOS</label>
+            <select name="ados">
                 <option value="">—</option>
-                <option value="M">Muž</option>
-                <option value="F">Žena</option>
+                {% for company in companies %}
+                <option value="{{ company.id }}">{{ company.nazov }}</option>
+                {% endfor %}
             </select>
         </div>
 
         <div class="form-group">
             <label for="cislo_dekurzu">Číslo dekurzu</label>
-            <input type="number" name="cislo_dekurzu">
+            <input type="number" name="cislo_dekurzu" value="1">
         </div>
 
         <button type="submit" class="btn">Pridať</button>
@@ -83,5 +83,9 @@
 {% endblock %}
 
 {% block scripts %}
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRnAl8oUEx8je9s7J0zB7vPxIxAgyc_8c&libraries&libraries=places&callback=initMap"
+    async defer>
+</script>
 <script src="{{ url_for('static', filename='js/create/patient.js') }}"></script>
 {% endblock %}

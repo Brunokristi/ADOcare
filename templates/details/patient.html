@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}ADOS - Úprava pacienta{% endblock %}
+{% block title %}ADOS - Upraviť pacienta{% endblock %}
 
 {% block content %}
 <h1>Upraviť pacienta</h1>
@@ -18,55 +18,6 @@
         </div>
 
         <div class="form-group">
-            <label for="adresa">Adresa</label>
-            <input type="text" name="adresa" value="{{ patient.adresa }}">
-        </div>
-
-        <div class="form-group">
-            <label for="poistovna">Poisťovňa</label>
-            <select name="pohlavie">
-                <option value="">—</option>
-                <option value="25 – VŠEOBECNÁ zdravotná poisťovňa, a. s." {% if patient.poistovna=="25 – VŠEOBECNÁ zdravotná poisťovňa, a. s." %}selected{% endif %}>25 – VŠEOBECNÁ zdravotná poisťovňa, a. s.</option>
-                <option value="27 – UNION zdravotná poisťovňa, a. s." {% if patient.poistovna=="27 – UNION zdravotná poisťovňa, a. s." %}selected{% endif %}>27 – UNION zdravotná poisťovňa, a. s.</option>
-                <option value="24 – DÔVERA zdravotná poisťovňa, a. s." {% if patient.poistovna=="24 – DÔVERA zdravotná poisťovňa, a. s."%}selected{% endif %}>24 – DÔVERA zdravotná poisťovňa, a. s.</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="ados">ADOS</label>
-            <select name="ados">
-                <option value="">—</option>
-                {% for company in companies %}
-                <option value="{{ company.nazov }}" {% if company.nazov==patient.ados %}selected{% endif %}>{{ company.nazov }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="sestra">Sestra</label>
-            <select name="sestra">
-                <option value="">—</option>
-                {% for nurse in nurses %}
-                <option value="{{ nurse.id }}" {% if nurse.id==patient.sestra %}selected{% endif %}>
-                    {{ nurse.meno }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="odosielatel">Odosielateľ (doktor)</label>
-            <select name="odosielatel">
-                <option value="">—</option>
-                {% for doctor in doctors %}
-                <option value="{{ doctor.id }}" {% if doctor.id==patient.odosielatel %}selected{% endif %}>
-                    {{ doctor.meno }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
             <label for="pohlavie">Pohlavie</label>
             <select name="pohlavie">
                 <option value="">—</option>
@@ -76,16 +27,71 @@
         </div>
 
         <div class="form-group">
+            <label for="poistovna">Poisťovňa</label>
+            <select name="poistovna">
+                <option value="">—</option>
+                {% for insurance in insurances %}
+                <option value="{{ insurance.id }}" {% if insurance.id==patient.poistovna %}selected{% endif %}>{{
+                    insurance.nazov }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="position: relative;">
+            <label for="adresa">Adresa</label>
+            <input type="text" id="adresa" name="adresa" autocomplete="off" value="{{ patient.adresa }}">
+            <div id="address-suggestions" class="suggestions"></div>
+        </div>
+
+        <input type="hidden" name="sestra" value="{{ session['nurse']['id'] }}">
+
+        <div class="form-group">
+            <label for="odosielatel">Odosielateľ (doktor)</label>
+            <select name="odosielatel">
+                <option value="">—</option>
+                {% for doctor in doctors %}
+                <option value="{{ doctor.id }}" {% if doctor.id==patient.odosielatel %}selected{% endif %}>{{
+                    doctor.meno }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="position: relative;">
+            <label for="diagnoza">Diagnóza</label>
+            <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off"
+                value="{{ diagnosis.kod }} - {{ diagnosis.nazov }}">
+            <input type="hidden" id="diagnoza_id" name="diagnoza" value="{{ patient.diagnoza }}">
+            <div id="diagnoza-suggestions" class="suggestions"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="ados">ADOS</label>
+            <select name="ados">
+                <option value="">—</option>
+                {% for company in companies %}
+                <option value="{{ company.id }}" {% if company.id==patient.ados %}selected{% endif %}>{{ company.nazov
+                    }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
             <label for="cislo_dekurzu">Číslo dekurzu</label>
             <input type="number" name="cislo_dekurzu" value="{{ patient.cislo_dekurzu }}">
         </div>
 
         <button type="submit" class="btn">Uložiť</button>
-        <a href="{{ url_for('patient.delete_patient', id=patient.id) }}" class="btn warning">Vymazať</a>
+    </form>
+
+    <form method="POST" action="{{ url_for('patient.delete_patient', id=patient.id) }}" style="display:inline;">
+        <button type="submit" class="btn warning">Vymazať</button>
     </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/details/patient.js') }}"></script>
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRnAl8oUEx8je9s7J0zB7vPxIxAgyc_8c&libraries=places&callback=initMap"
+    async defer></script>
+<script src="{{ url_for('static', filename='js/details/patient.js') }}"></script>
 {% endblock %}

@@ -262,24 +262,69 @@ def create_mesiac_pacient(cursor, existing_tables):
 
 def create_pacienti(cursor, existing_tables):
     if "pacienti" not in existing_tables:
+
         cursor.execute("""
-        CREATE TABLE pacienti (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            meno TEXT NOT NULL,
-            rodne_cislo INTEGER,
-            adresa TEXT,
-            poistovna TEXT,
-            ados TEXT,
-            sestra INTEGER,
-            odosielatel INTEGER,
-            pohlavie CHAR,
-            cislo_dekurzu INTEGER,
-            last_month INTEGER,
-            FOREIGN KEY (sestra) REFERENCES sestry(id) ON DELETE SET NULL,
-            FOREIGN KEY (last_month) REFERENCES mesiace(id) ON DELETE SET NULL,
-            FOREIGN KEY (odosielatel) REFERENCES doktori(id) ON DELETE SET NULL
-        );
-    """)
+            CREATE TABLE pacienti (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                meno TEXT NOT NULL,
+                rodne_cislo INTEGER,
+                adresa TEXT,
+                poistovna INTEGER,
+                ados INTEGER,
+                sestra INTEGER,
+                odosielatel INTEGER,
+                pohlavie CHAR,
+                cislo_dekurzu INTEGER,
+                last_month INTEGER,
+                diagnoza INTEGER,
+                FOREIGN KEY (poistovna) REFERENCES poistovne(id) ON DELETE SET NULL,
+                FOREIGN KEY (ados) REFERENCES adosky(id) ON DELETE SET NULL,
+                FOREIGN KEY (sestra) REFERENCES sestry(id) ON DELETE SET NULL,
+                FOREIGN KEY (odosielatel) REFERENCES doktori(id) ON DELETE SET NULL,
+                FOREIGN KEY (last_month) REFERENCES mesiac(id) ON DELETE SET NULL,
+                FOREIGN KEY (diagnoza) REFERENCES diagnozy(id) ON DELETE SET NULL
+            );
+        """)
+
+def create_poistovne(cursor, existing_tables):
+    if "poistovne" not in existing_tables:
+        cursor.execute("""
+            CREATE TABLE poistovne (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nazov TEXT NOT NULL,
+                kod TEXT NOT NULL
+            );
+        """)
+
+        print("Table 'poistovne' created successfully. Inserting default data...")
+
+        data = [
+            ("VŠEOBECNÁ zdravotná poisťovňa, a. s.", "25"),
+            ("UNION zdravotná poisťovňa, a. s.", "27"),
+            ("DÔVERA zdravotná poisťovňa, a. s.", "24"),
+        ]
+
+        cursor.executemany("""
+            INSERT INTO poistovne (nazov, kod)
+            VALUES (?, ?);
+        """, data)
+
+def create_poistovna_mesiac(cursor, existing_tables):
+    if "poistovna_mesiac" not in existing_tables:
+
+        cursor.execute("""
+            CREATE TABLE poistovna_mesiac (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                poistovna_id INTEGER NOT NULL,
+                mesiac_id INTEGER NOT NULL,
+                kilometre INTEGER NOT NULL,
+                cena DECIMAL(10, 2) NOT NULL,
+                FOREIGN KEY (poistovna_id) REFERENCES poistovne(id) ON DELETE CASCADE,
+                FOREIGN KEY (mesiac_id) REFERENCES mesiace(id) ON DELETE CASCADE
+            );
+        """)
+
+
 
 def reconstruct_sestry(cursor):
     cursor.execute("PRAGMA table_info(sestry)")
@@ -320,8 +365,6 @@ def reconstruct_sestry(cursor):
             SELECT id, meno FROM sestry_old;
         """)
 
-    cursor.execute("DROP TABLE sestry_old;")
-
 def migrate_to_mesiac_pacient(cursor):
     columns = get_column_names(cursor, "pacienti")
 
@@ -350,58 +393,87 @@ def migrate_to_mesiac_pacient(cursor):
                 row["dekurz_text_6"], row["dekurz_text_7"]
             ))
 
-        print("Migrated dekurz_text_* data to mesiac_pacient.")
-
 def reconstruct_pacienti(cursor):
-    desired_columns = [
-        "id", "meno", "rodne_cislo", "adresa", "poistovna", "ados",
-        "sestra", "odosielatel", "pohlavie", "cislo_dekurzu", "last_month"
-    ]
+    cursor.execute("PRAGMA table_info(pacienti)")
+    columns = cursor.fetchall()
+    poistovna_col = next((col for col in columns if col[1] == "poistovna"), None)
 
-    current_columns = get_column_names(cursor, "pacienti")
+    if poistovna_col[2].upper() == "INTEGER":
+        return
+    
+    cursor.execute("ALTER TABLE pacienti RENAME TO pacienti_old")
 
-    if set(current_columns) != set(desired_columns):
-        print("Reconstructing pacienti table to match updated schema...")
+    cursor.execute("""
+        CREATE TABLE pacienti (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meno TEXT NOT NULL,
+            rodne_cislo INTEGER,
+            adresa TEXT,
+            poistovna INTEGER,
+            ados INTEGER,
+            sestra INTEGER,
+            odosielatel INTEGER,
+            pohlavie CHAR,
+            cislo_dekurzu INTEGER,
+            last_month INTEGER,
+            diagnoza INTEGER,
+            FOREIGN KEY (poistovna) REFERENCES poistovne(id) ON DELETE SET NULL,
+            FOREIGN KEY (ados) REFERENCES adosky(id) ON DELETE SET NULL,
+            FOREIGN KEY (sestra) REFERENCES sestry(id) ON DELETE SET NULL,
+            FOREIGN KEY (odosielatel) REFERENCES doktori(id) ON DELETE SET NULL,
+            FOREIGN KEY (last_month) REFERENCES mesiac(id) ON DELETE SET NULL,
+            FOREIGN KEY (diagnoza) REFERENCES diagnozy(id) ON DELETE SET NULL
+        );
+    """)
 
-        # Rename old table
-        cursor.execute("ALTER TABLE pacienti RENAME TO pacienti_old")
+    # Fetch mapping values
+    cursor.execute("SELECT id, kod, nazov FROM poistovne")
+    poistovna_map = {f"{row['kod']} – {row['nazov']}": row["id"] for row in cursor.fetchall()}
 
-        # Create new table with correct structure and foreign keys
+    cursor.execute("SELECT id, nazov FROM adosky")
+    ados_map = {}
+
+    for row in cursor.fetchall():
+        name = row["nazov"].lower()
+
+        if "andramed" in name:
+            ados_map["Andramed"] = row["id"]
+        elif "adaned" in name:
+            ados_map["ADANED"] = row["id"]
+
+
+    cursor.execute("SELECT * FROM pacienti_old")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        print(row["sestra"])
+        poistovna_key = str(row["poistovna"])
+        ados_key = str(row["ados"])
+
+        poistovna_id = poistovna_map.get(poistovna_key)
+        ados_id = ados_map.get(ados_key)
+
         cursor.execute("""
-            CREATE TABLE pacienti (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                meno TEXT NOT NULL,
-                rodne_cislo INTEGER,
-                adresa TEXT,
-                poistovna TEXT,
-                ados TEXT,
-                sestra INTEGER,
-                odosielatel INTEGER,
-                pohlavie CHAR,
-                cislo_dekurzu INTEGER,
-                last_month INTEGER,
-                FOREIGN KEY (sestra) REFERENCES sestry(id) ON DELETE SET NULL,
-                FOREIGN KEY (last_month) REFERENCES mesiace(id) ON DELETE SET NULL,
-                FOREIGN KEY (odosielatel) REFERENCES doktori(id) ON DELETE SET NULL
-            );
-        """)
+            INSERT INTO pacienti (
+                id, meno, rodne_cislo, adresa,
+                poistovna, ados, sestra,
+                cislo_dekurzu, last_month
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            row["id"],
+            row["meno"],
+            row["rodne_cislo"],
+            row["adresa"],
+            poistovna_id,
+            ados_id,
+            row["sestra"],
+            row["cislo_dekurzu"],
+            2
+        ))
 
-        # Copy over data that matches new structure
-        copy_columns = [col for col in desired_columns if col in current_columns]
-        column_list = ", ".join(copy_columns)
+    cursor.execute("DROP TABLE pacienti_old")
 
-        cursor.execute(f"""
-            INSERT INTO pacienti ({column_list})
-            SELECT {column_list}
-            FROM pacienti_old;
-        """)
-
-        # Drop old table
-        cursor.execute("DROP TABLE pacienti_old")
-
-        print("Pacienti table successfully reconstructed with full foreign keys.")
-    else:
-        print("Pacienti table already matches desired schema.")
 
 def update_db():
     with sqlite3.connect(DATABASE_FILE) as conn:
@@ -416,9 +488,13 @@ def update_db():
         create_diagnozy(cursor, existing_tables)
         create_mesiac_pacient(cursor, existing_tables)
         create_pacienti(cursor, existing_tables)
+        create_poistovne(cursor, existing_tables)
+        create_poistovna_mesiac(cursor, existing_tables)
         reconstruct_sestry(cursor)
         migrate_to_mesiac_pacient(cursor)
         reconstruct_pacienti(cursor)
+
+
 
         conn.commit()
 
