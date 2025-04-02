@@ -39,6 +39,45 @@ def create_month():
 
     return render_template("create/month.html")
 
+@month_bp.route("/month/update/<int:id>", methods=["GET", "POST"])
+def update_month(id):
+    conn = get_db_connection()
+
+    if request.method == "POST":
+        data = request.form
+
+        conn.execute("""
+            UPDATE mesiac SET
+               vysetrenie_start = ?, vysetrenie_koniec = ?,
+                vypis_start = ?, vypis_koniec = ?
+            WHERE id = ?
+        """, (
+            data["vysetrenie_start"],
+            data["vysetrenie_koniec"],
+            data["vypis_start"],
+            data["vypis_koniec"],
+            id
+        ))
+        conn.commit()
+        conn.close()
+        return redirect(url_for("main.settings"))
+
+    month = conn.execute("SELECT * FROM mesiac WHERE id = ?", (id,)).fetchone()
+    conn.close()
+    if not month:
+        return "Mesiac nenájdený", 404
+
+    return render_template("details/month.html", month=month)
+
+@month_bp.route("/month/delete/<int:id>", methods=["POST"])
+def delete_month(id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM mesiac WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("month.list_months"))
+
+
 def get_months_by_nurse():
     nurse_id = session.get("nurse", {}).get("id")
     conn = get_db_connection()
@@ -50,11 +89,10 @@ def get_months_by_nurse():
     conn.close()
     return rows
 
+@month_bp.route('/month/select', methods=['POST'])
+def select_month():
+    month_data = request.json
+    session['month'] = month_data  # store entire dict in session
+    return {'success': True}
 
-@month_bp.route("/month/delete/<int:id>", methods=["POST"])
-def delete_month(id):
-    conn = get_db_connection()
-    conn.execute("DELETE FROM mesiac WHERE id = ?", (id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for("month.list_months"))
+ 

@@ -147,6 +147,7 @@ textarea {
     margin-top: 20px;
     min-width: 100px;
     width: 100%;
+    text-decoration: "none";
 }
 
 .btn:hover {
@@ -170,6 +171,8 @@ textarea {
     border: none;
     align-self: center;
     padding: 20px;
+    text-transform: lowercase;
+    text-decoration: none;
 }
 
 .text-button i {
@@ -422,4 +425,32 @@ textarea {
     cursor: pointer;
     border-radius: 30px;
     color: #5C9EAD;
+}
+
+.bottom-section {
+    position: fixed;
+    width: 80%;
+    bottom: 20px;
+    background-color: #fff;
+    border-radius: 30px;
+    z-index: 1000;
+}
+
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #ccc;
+    color: #5C9EAD;
+}
+
+accent {
+    text-transform: uppercase;
+    font-weight: 100px;
+    font-size: 1rem;
+    color: #333;
 }

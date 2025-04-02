@@ -89,6 +89,16 @@ def search_patients():
     results = [Patient(row).__dict__ for row in rows]
     return jsonify(results)
 
+@patient_bp.route('/patients/list/')
+def list_patients():
+    patients = get_patients()
+    return render_template("details/patients.html", patients=patients)
+
+@patient_bp.route('/patients/menu/')
+def menu():
+    patients = get_patients()
+    return render_template("dekurzy/menu.html", patients=patients)
+
 def get_patients():
     nurse_id = session.get('nurse', {}).get('id')
 
@@ -103,7 +113,36 @@ def get_patient(id):
     conn.close()
     return Patient(row) if row else None
 
-@patient_bp.route('/patients/list/')
-def list_patients():
-    patients = get_patients()
-    return render_template("details/patients.html", patients=patients)
+def get_patients_in_day(date_str):
+    nurse_id = session.get("nurse", {}).get("id")
+    month_id = session.get("month", {}).get("id")
+    if not nurse_id or not month_id or not date_str:
+        return []
+
+    conn = get_db_connection()
+    rows = conn.execute("""
+        SELECT p.*, dp.vysetrenie, dp.vypis
+        FROM den-pacient dp
+        JOIN dni d ON dp.den_id = d.id
+        JOIN pacienti p ON dp.patient_id = p.id
+        WHERE d.mesiac = ? AND d.datum = ?
+    """, (month_id, date_str)).fetchall()
+    conn.close()
+    return rows
+
+def get_patients_in_month():
+    nurse_id = session.get("nurse", {}).get("id")
+    month_id = session.get("month", {}).get("id")
+    if not nurse_id or not month_id:
+        return []
+
+    conn = get_db_connection()
+    rows = conn.execute("""
+        SELECT DISTINCT p.*
+        FROM den-pacient dp
+        JOIN dni d ON dp.den_id = d.id
+        JOIN pacienti p ON dp.patient_id = p.id
+        WHERE d.mesiac = ?
+    """, (month_id,)).fetchall()
+    conn.close()
+    return rows

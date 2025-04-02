@@ -9,7 +9,7 @@ from routes.doctors import get_doctor, get_doctors
 from routes.months import get_months_by_nurse
 
 main = Blueprint("main", __name__)
-
+    
 @main.route("/")
 def index():
     session.pop('nurse', None)

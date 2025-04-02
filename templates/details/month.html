@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS{% endblock %}
+
+{% block content %}
+
+<h1>{{ month.mesiac }}/{{ month.rok }}</h1>
+
+<div class="section">
+    <form id="monthForm" method="POST" action="{{ url_for('month.update_month', id=month.id) }}">
+        <div class="half-form-group">
+            <div class="form-group">
+                <label for="zs_start_time">Čas poskytnutia ZS</label>
+                <input type="time" id="zs_start_time" name="vysetrenie_start" value="{{ month.vysetrenie_start }}"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label for="zs_end_time">Koniec poskytnutia ZS</label>
+                <input type="time" id="zs_end_time" name="vysetrenie_koniec" value="{{ month.vysetrenie_koniec }}"
+                    required>
+            </div>
+        </div>
+
+        <div class="half-form-group">
+            <div class="form-group">
+                <label for="write_start_time">Čas zápisu</label>
+                <input type="time" id="write_start_time" name="vypis_start" value="{{ month.vypis_start }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="write_end_time">Koniec zápisu</label>
+                <input type="time" id="write_end_time" name="vypis_koniec" value="{{ month.vypis_koniec }}" required>
+            </div>
+        </div>
+
+        <button class="btn" type="submit">Uložiť</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/details/month.js') }}"></script>
+{% endblock %}
