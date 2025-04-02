@@ -41,7 +41,7 @@
             <div class="navbar-section">
                 {% if session.get('nurse') %}
                     <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
-                        <h2 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h2>
+                        <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
                     </a>
                     <a class="navbar-button" href="{{ url_for('main.index') }}">Odhlásiť sa</a>
                 {% endif %}

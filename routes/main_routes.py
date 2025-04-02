@@ -6,7 +6,7 @@ from routes.cars import get_car, get_cars
 from routes.companies import get_company, get_companies
 from routes.nurses import get_nurse, get_nurses
 from routes.doctors import get_doctor, get_doctors
-from utils.database import get_db_connection
+from routes.months import get_months_by_nurse
 
 main = Blueprint("main", __name__)
 
@@ -27,9 +27,10 @@ def settings():
 
 @main.route("/dashboard")
 def dashboard():
+    months_dekurz = get_months_by_nurse()
     if 'nurse' not in session:
         return redirect(url_for("main.index"))
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", months_dekurz=months_dekurz)
 
 @main.route('/shutdown', methods=['POST'])
 def shutdown():

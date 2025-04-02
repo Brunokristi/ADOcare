@@ -9,6 +9,8 @@ from routes.doctors import doctor_bp
 from routes.diagnoses import diagnosis_bp
 from routes.patients import patient_bp
 from routes.insurances import insurance_bp
+from routes.months import month_bp
+
 from utils.database import DATABASE_FILE, check_db
 import threading
 import webbrowser
@@ -28,6 +30,8 @@ app.register_blueprint(doctor_bp)
 app.register_blueprint(diagnosis_bp)
 app.register_blueprint(patient_bp)
 app.register_blueprint(insurance_bp)
+app.register_blueprint(month_bp)
+
 
 def open_browser():
     webbrowser.open_new("http://127.0.0.1:5000/")
