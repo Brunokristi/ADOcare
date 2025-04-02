@@ -7,6 +7,13 @@
 {% if session.get('nurse') %}
 <div class="section">
     <div class="lined-heading"><span>Dekurzy</span></div>
+    <div class="scroll">
+
+    </div>
+
+    <a class="text-button" href="{{ url_for('patient.list_patients') }}">
+        vypísať nový mesiac <i class="bi bi-arrow-right"></i>
+    </a>
 </div>
 
 <div class="section">

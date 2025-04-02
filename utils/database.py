@@ -1,5 +1,7 @@
 import sqlite3
 import os
+from calendar import monthrange
+from datetime import date
 
 DATABASE_FILE = "ados_database.db"
 
@@ -324,6 +326,25 @@ def create_poistovna_mesiac(cursor, existing_tables):
             );
         """)
 
+def create_mesiac(cursor, existing_tables):
+    if "mesiac" not in existing_tables:
+
+        cursor.execute("""
+            CREATE TABLE mesiac (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mesiac INTEGER NOT NULL,
+                rok INTEGER NOT NULL,
+                vysetrenie_start TIME,
+                vysetrenie_koniec TIME,
+                vypis_start TIME,
+                vypis_koniec TIME,
+                sestra_id INTEGER,
+                prvy_den DATE,
+                posledny_den DATE,
+                FOREIGN KEY (sestra_id) REFERENCES sestry(id) ON DELETE SET NULL
+            );
+        """)
+
 
 
 def reconstruct_sestry(cursor):
@@ -474,6 +495,63 @@ def reconstruct_pacienti(cursor):
 
     cursor.execute("DROP TABLE pacienti_old")
 
+def reconstruct_mesiac(cursor):
+    desired_columns = [
+        "id", "mesiac", "rok", "vysetrenie_start", "vysetrenie_koniec",
+        "vypis_start", "vypis_koniec", "sestra_id", "prvy_den", "posledny_den"
+    ]
+
+    current_columns = get_column_names(cursor, "mesiac")
+
+    if set(current_columns) != set(desired_columns):
+        print("Reconstructing 'mesiac' table to match updated schema...")
+
+        # Rename old
+        cursor.execute("ALTER TABLE mesiac RENAME TO mesiac_old")
+
+        # Create new table with proper structure
+        cursor.execute("""
+            CREATE TABLE mesiac (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mesiac INTEGER NOT NULL,
+                rok INTEGER NOT NULL,
+                vysetrenie_start TIME,
+                vysetrenie_koniec TIME,
+                vypis_start TIME,
+                vypis_koniec TIME,
+                sestra_id INTEGER,
+                prvy_den DATE,
+                posledny_den DATE,
+                FOREIGN KEY (sestra_id) REFERENCES sestry(id) ON DELETE SET NULL
+            );
+        """)
+
+        # Fetch all rows from old table
+        cursor.execute("SELECT * FROM mesiac_old")
+        rows = cursor.fetchall()
+
+        for row in rows:
+            m = row["mesiac"]
+            y = row["rok"]
+            first_day = date(y, m, 1)
+            last_day = date(y, m, monthrange(y, m)[1])
+
+            cursor.execute("""
+                INSERT INTO mesiac (
+                    id, mesiac, rok, vysetrenie_start, vysetrenie_koniec,
+                    vypis_start, vypis_koniec, sestra_id, prvy_den, posledny_den
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                row["id"], row["mesiac"], row["rok"],
+                row["vysetrenie_start"], row["vysetrenie_koniec"],
+                row["vypis_start"], row["vypis_koniec"],
+                row["sestra_id"], first_day, last_day
+            ))
+
+        cursor.execute("DROP TABLE mesiac_old")
+
+
 
 def update_db():
     with sqlite3.connect(DATABASE_FILE) as conn:
@@ -490,9 +568,13 @@ def update_db():
         create_pacienti(cursor, existing_tables)
         create_poistovne(cursor, existing_tables)
         create_poistovna_mesiac(cursor, existing_tables)
+        create_mesiac(cursor, existing_tables)
+
+
         reconstruct_sestry(cursor)
         migrate_to_mesiac_pacient(cursor)
         reconstruct_pacienti(cursor)
+        reconstruct_mesiac(cursor)
 
 
 

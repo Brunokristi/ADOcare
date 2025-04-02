@@ -1,4 +1,6 @@
 let autocompleteService;
+let debounceTimer;
+
 
 document.addEventListener("DOMContentLoaded", function () {
     const messageEl = document.getElementById("message");
@@ -66,44 +68,43 @@ document.addEventListener("DOMContentLoaded", function () {
     function fetchSuggestions() {
         const query = addressInput.value.trim();
 
-        if (!autocompleteService) {
-            autocompleteService = new google.maps.places.AutocompleteService();
-        }
+        clearTimeout(debounceTimer);
 
-        if (query.length < 3) {
+        if (query.length < 4) {
             suggestionsContainer.style.display = "none";
             return;
         }
 
-        autocompleteService.getPlacePredictions(
-            {
-                input: query,
-                types: ["geocode"],
-                componentRestrictions: { country: "SK" }
-            },
-            function (predictions, status) {
-                if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
-                    suggestionsContainer.style.display = "none";
-                    return;
-                }
+        debounceTimer = setTimeout(() => {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&countrycodes=sk&limit=5`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionsContainer.innerHTML = "";
 
-                suggestionsContainer.innerHTML = "";
-
-                predictions.forEach(prediction => {
-                    const suggestionItem = document.createElement("div");
-                    suggestionItem.textContent = prediction.description;
-
-                    suggestionItem.addEventListener("click", function () {
-                        addressInput.value = prediction.description;
+                    if (data.length === 0) {
                         suggestionsContainer.style.display = "none";
+                        return;
+                    }
+
+                    data.forEach(result => {
+                        const suggestionItem = document.createElement("div");
+                        suggestionItem.classList.add("suggestion-item");
+                        suggestionItem.textContent = result.display_name;
+
+                        suggestionItem.addEventListener("click", function () {
+                            addressInput.value = result.display_name;
+                            suggestionsContainer.style.display = "none";
+                        });
+
+                        suggestionsContainer.appendChild(suggestionItem);
                     });
 
-                    suggestionsContainer.appendChild(suggestionItem);
+                    suggestionsContainer.style.display = "block";
+                })
+                .catch(() => {
+                    suggestionsContainer.style.display = "none";
                 });
-
-                suggestionsContainer.style.display = "block";
-            }
-        );
+        }, 300); // debounce time: 300ms
     }
 
     function fetchDiagnoses() {

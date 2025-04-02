@@ -83,9 +83,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRnAl8oUEx8je9s7J0zB7vPxIxAgyc_8c&libraries&libraries=places&callback=initMap"
-    async defer>
-</script>
 <script src="{{ url_for('static', filename='js/create/patient.js') }}"></script>
 {% endblock %}
