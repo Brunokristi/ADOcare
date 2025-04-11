@@ -1,8 +1,9 @@
 from flask import Blueprint, request, redirect, url_for, render_template, jsonify, session
 import json
 from datetime import datetime, timedelta
-from routes.patients import get_patient
+from routes.patients import get_patients_by_day
 from utils.database import get_db_connection
+from utils.tsp import calculate_optimal_day_route
 
 schedule_bp = Blueprint("schedule", __name__)
 
@@ -43,10 +44,23 @@ def insert_schedule():
 
         serialized_dates = json.dumps([d.isoformat() for d in schedule_dates])
         cursor.execute("""
-            UPDATE mesiac_pacient
-            SET dates_all = ?
-            WHERE mesiac_id = ? and pacient_id = ?
-        """, (serialized_dates, month_id, patient_id))
+            SELECT 1 FROM mesiac_pacient WHERE mesiac_id = ? AND pacient_id = ?
+        """, (month_id, patient_id))
+
+        exists = cursor.fetchone()
+
+        if exists:
+            cursor.execute("""
+                UPDATE mesiac_pacient
+                SET dates_all = ?
+                WHERE mesiac_id = ? AND pacient_id = ?
+            """, (serialized_dates, month_id, patient_id))
+        else:
+            cursor.execute("""
+                INSERT INTO mesiac_pacient (mesiac_id, pacient_id, dates_all)
+                VALUES (?, ?, ?)
+            """, (month_id, patient_id, serialized_dates))
+
 
 
         inserted_days = []
@@ -70,6 +84,14 @@ def insert_schedule():
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
+
+@schedule_bp.route("/schedule/month", methods=["POST"])
+def schedule_month():
+    data = request.get_json()
+    start_address = data.get("start")
+    patients = get_patients_by_day()
+    result = calculate_optimal_day_route(patients, start_address)
+    return jsonify(result)
 
 def generate_schedule(start_date, end_date, frequency, exceptions):
     start = datetime.strptime(start_date, "%Y-%m-%d").date()

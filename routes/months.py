@@ -2,6 +2,7 @@ from flask import Blueprint, request, redirect, url_for, render_template, sessio
 from datetime import datetime, date
 import calendar
 from utils.database import get_db_connection
+from datetime import timedelta
 
 month_bp = Blueprint("month", __name__)
 
@@ -16,7 +17,10 @@ def create_month():
         last_day = date(rok, mesiac, calendar.monthrange(rok, mesiac)[1])
 
         conn = get_db_connection()
-        conn.execute("""
+        cur = conn.cursor()
+
+        # Insert new month
+        cur.execute("""
             INSERT INTO mesiac (
                 mesiac, rok, vysetrenie_start, vysetrenie_koniec,
                 vypis_start, vypis_koniec, sestra_id, prvy_den, posledny_den
@@ -32,6 +36,16 @@ def create_month():
             first_day,
             last_day,
         ))
+
+        # Get inserted month ID (optional, in case you need it later)
+        mesiac_id = cur.lastrowid
+
+        # Insert days manually
+        current_day = first_day
+        while current_day <= last_day:
+            cur.execute("INSERT INTO dni (datum, mesiac) VALUES (?, ?)", (current_day, mesiac_id))
+            current_day += timedelta(days=1)
+
         conn.commit()
         conn.close()
 

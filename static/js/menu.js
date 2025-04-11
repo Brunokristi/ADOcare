@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const messageEl = document.getElementById("message");
+    const generateBtn = document.getElementById("generate_schedule");
 
     const input = document.getElementById("patientSearch");
     const suggestionsContainer = document.getElementById("patient-suggestions");
@@ -80,6 +81,39 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(() => showMessage("Chyba pri komunikácii so serverom."));
     });
+
+    // generovanie planu
+    generateBtn?.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const startAddress = document.getElementById("start").value;
+
+        fetch("/schedule/month", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ start: startAddress })
+        })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("Server error or invalid response");
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "/vypis";
+                } else {
+                    showMessage("Nepodarilo sa dokončiť generovanie trás.");
+                }
+            })
+            .catch(err => {
+                console.error("Chyba pri generovaní plánu:", err);
+                showMessage("Nepodarilo sa vygenerovať plán.");
+            });
+    });
+
 
     initFlatpickr();
     initDayScroller();

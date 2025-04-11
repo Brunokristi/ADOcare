@@ -7,9 +7,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 id: link.dataset.id,
                 mesiac: link.dataset.mesiac,
                 rok: link.dataset.rok,
+                start_vysetrenie: link.dataset.vysetrenie,
+                start_vypis: link.dataset.vypisanie,
                 prvy_den: link.dataset.prvyDen,
                 posledny_den: link.dataset.poslednyDen
             };
+
 
             fetch("/month/select", {
                 method: "POST",

@@ -88,6 +88,14 @@
     <div class="section" style="margin-bottom: 120px;">
         <div class="lined-heading"><span>Pacienti</span></div>
 
+        <div class="form-group">
+            <label for="start">Začiatok cesty</label>
+            <select id="start" name="start" required onchange="updateRoute()">
+                <option>SNP 8, Fiľakovo, BC, Slovensko</option>
+                <option>Jánošíkova 2, Rimavská Sobota, BC, Slovensko</option>
+            </select>
+        </div>
+
         <div class="one-line">
             <button class="scroll-arrow left" id="prevDay"><i class="bi bi-chevron-left"></i></button>
             <h2 class="selected-date" id="selectedDate"></h2>
@@ -107,12 +115,8 @@
 
     </div>
 
-    <!-- <div class="section">
-        <div class="lined-heading"><span>Prehľad</span></div>
-    </div> -->
-
     <div class="bottom-section">
-        <button class="btn" type="submit" style="width: 600px; margin-bottom: 20px;">Uložiť</button>
+        <button id="generate_schedule" class="btn" type="submit" style="width: 600px; margin-bottom: 20px;">Uložiť</button>
     </div>
 
     {% else %}

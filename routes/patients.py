@@ -6,6 +6,7 @@ from routes.diagnoses import get_diagnosis
 from routes.doctors import get_doctors
 from routes.companies import get_companies
 from routes.insurances import get_insurances
+from utils.geocode import geocode_address
 
 patient_bp = Blueprint("patient", __name__)
 
@@ -13,17 +14,22 @@ patient_bp = Blueprint("patient", __name__)
 def create_patient():
     if request.method == 'POST':
         data = request.form
+
+        address = data['adresa']
+        longitude, latitude = geocode_address(address)
+
         conn = get_db_connection()
         conn.execute("""
             INSERT INTO pacienti (
                 meno, rodne_cislo, adresa, poistovna, ados,
-                sestra, odosielatel, pohlavie, cislo_dekurzu, diagnoza
+                sestra, odosielatel, pohlavie, cislo_dekurzu, diagnoza, longitude, latitude
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 data['meno'], data['rodne_cislo'], data['adresa'], data['poistovna'],
                 data['ados'], data['sestra'], data['odosielatel'],
-                data['pohlavie'], data['cislo_dekurzu'], data['diagnoza']
+                data['pohlavie'], data['cislo_dekurzu'], data['diagnoza'], longitude, latitude
+
             ))
         conn.commit()
         conn.close()
@@ -38,16 +44,20 @@ def create_patient():
 def update_patient(id):
     if request.method == 'POST':
         data = request.form
+
+        address = data['adresa']
+        longitude, latitude = geocode_address(address)
+
         conn = get_db_connection()
         conn.execute("""
             UPDATE pacienti SET
                 meno = ?, rodne_cislo = ?, adresa = ?, poistovna = ?, ados = ?,
-                sestra = ?, odosielatel = ?, pohlavie = ?, cislo_dekurzu = ?, diagnoza = ?
+                sestra = ?, odosielatel = ?, pohlavie = ?, cislo_dekurzu = ?, diagnoza = ?, longitude = ?, latitude = ?
             WHERE id = ?""",
             (
                 data['meno'], data['rodne_cislo'], data['adresa'], data['poistovna'],
                 data['ados'], data['sestra'], data['odosielatel'],
-                data['pohlavie'], data['cislo_dekurzu'], data['diagnoza'], id
+                data['pohlavie'], data['cislo_dekurzu'], data['diagnoza'], longitude, latitude, id
             ))
         conn.commit()
         conn.close()
@@ -106,6 +116,42 @@ def patients_in_day(date_str):
     data = get_patients_in_day(date_str)
     return jsonify(data)
 
+@patient_bp.route('/patients/month/')
+def get_patients_by_day():
+    month_id = session.get("month", {}).get("id")
+
+    if not month_id:
+        return {}
+
+    conn = get_db_connection()
+
+    days = conn.execute("""
+        SELECT id, datum 
+        FROM dni 
+        WHERE mesiac = ?
+    """, (month_id,)).fetchall()
+
+    patients_by_day = {}
+
+    for day in days:
+        day_id = day["id"]
+        date_str = day["datum"]
+
+        patients = conn.execute("""
+            SELECT p.id, p.meno, p.longitude, p.latitude
+            FROM den_pacient dp
+            JOIN pacienti p ON p.id = dp.pacient_id
+            WHERE dp.den_id = ?
+        """, (day_id,)).fetchall()
+
+        patients_by_day[date_str] = {
+            "den_id": day_id,
+            "patients": [dict(row) for row in patients]
+        }
+
+    conn.close()
+    return patients_by_day
+
 def get_patients():
     nurse_id = session.get('nurse', {}).get('id')
 
@@ -119,7 +165,6 @@ def get_patient(id):
     row = conn.execute("SELECT * FROM pacienti WHERE id = ?", (id,)).fetchone()
     conn.close()
     return Patient(row) if row else None
-
 
 def get_patients_in_day(date_str):
     nurse_id = session.get("nurse", {}).get("id")
@@ -150,7 +195,6 @@ def get_patients_in_day(date_str):
         result.append(row_dict)
 
     return result
-
 
 def get_patients_in_month():
     nurse_id = session.get("nurse", {}).get("id")

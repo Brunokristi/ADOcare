@@ -16,7 +16,7 @@
         <div class="scroll" id="monthScroll">
             {% for month_dekurz in months_dekurz %}
             <a href="#" class="small-small-token month-select" data-id="{{ month_dekurz.id }}" data-mesiac="{{ month_dekurz.mesiac }}"
-                data-rok="{{ month_dekurz.rok }}" data-prvy-den="{{ month_dekurz.prvy_den }}"
+                data-rok="{{ month_dekurz.rok }}" data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie ="{{ month_dekurz.vysetrenie_start }}" data-vypisanie="{{ month_dekurz.vypis_start }}"
                 data-posledny-den="{{ month_dekurz.posledny_den }}">
                 {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
             </a>

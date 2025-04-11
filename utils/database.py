@@ -2,6 +2,9 @@ import sqlite3
 import os
 from calendar import monthrange
 from datetime import date
+from time import sleep
+from utils.geocode import geocode_address
+
 
 DATABASE_FILE = "ados_database.db"
 
@@ -271,6 +274,8 @@ def create_pacienti(cursor, existing_tables):
                 meno TEXT NOT NULL,
                 rodne_cislo INTEGER,
                 adresa TEXT,
+                longitude REAL,
+                latitude REAL,
                 poistovna INTEGER,
                 ados INTEGER,
                 sestra INTEGER,
@@ -430,6 +435,8 @@ def reconstruct_pacienti(cursor):
             meno TEXT NOT NULL,
             rodne_cislo INTEGER,
             adresa TEXT,
+            longitude REAL,
+            latitude REAL,
             poistovna INTEGER,
             ados INTEGER,
             sestra INTEGER,
@@ -551,6 +558,19 @@ def reconstruct_mesiac(cursor):
 
         cursor.execute("DROP TABLE mesiac_old")
 
+def update_coordinates(cursor):
+    cursor.execute("SELECT id, adresa FROM pacienti WHERE longitude IS NULL OR latitude IS NULL")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        longitude, latitude = geocode_address(row["adresa"])
+        if longitude is not None and latitude is not None:
+            cursor.execute("""
+                UPDATE pacienti
+                SET longitude = ?, latitude = ?
+                WHERE id = ?
+            """, (longitude, latitude, row["id"]))
+            sleep(1)  # Nominatim má limit 1 request / sec
 
 
 def update_db():
@@ -575,6 +595,7 @@ def update_db():
         migrate_to_mesiac_pacient(cursor)
         reconstruct_pacienti(cursor)
         reconstruct_mesiac(cursor)
+        update_coordinates(cursor)
 
 
 

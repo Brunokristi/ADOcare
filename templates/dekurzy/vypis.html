@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Dekurzy{% endblock %}
+
+{% block content %}
+
+<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
+
+    <h1>
+        {% if session.get('month') %}
+        Mesiac: {{ "%02d" | format(session['month']['mesiac'] | int) }}/{{ session['month']['rok'] }}
+        {% else %}
+        Mesiac
+        {% endif %}
+    </h1>
+</body>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/sk.js"></script>
+<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+{% endblock %}
