@@ -1,5 +1,6 @@
 from flask import Blueprint, request, redirect, url_for, render_template, jsonify, session
 from models.patient import Patient
+import json
 from utils.database import get_db_connection
 from routes.diagnoses import get_diagnosis
 from routes.doctors import get_doctors
@@ -96,8 +97,14 @@ def list_patients():
 
 @patient_bp.route('/patients/menu/')
 def menu():
-    patients = get_patients()
+    day = session.get("month", {}).get("prvy_den")
+    patients = get_patients_in_day(day)
     return render_template("dekurzy/menu.html", patients=patients)
+
+@patient_bp.route('/patients/day/<date_str>')
+def patients_in_day(date_str):
+    data = get_patients_in_day(date_str)
+    return jsonify(data)
 
 def get_patients():
     nurse_id = session.get('nurse', {}).get('id')
@@ -113,6 +120,7 @@ def get_patient(id):
     conn.close()
     return Patient(row) if row else None
 
+
 def get_patients_in_day(date_str):
     nurse_id = session.get("nurse", {}).get("id")
     month_id = session.get("month", {}).get("id")
@@ -121,14 +129,28 @@ def get_patients_in_day(date_str):
 
     conn = get_db_connection()
     rows = conn.execute("""
-        SELECT p.*, dp.vysetrenie, dp.vypis
-        FROM den-pacient dp
+        SELECT p.*, dp.vysetrenie, dp.vypis, mp.dates_all
+        FROM den_pacient dp
         JOIN dni d ON dp.den_id = d.id
-        JOIN pacienti p ON dp.patient_id = p.id
+        JOIN pacienti p ON dp.pacient_id = p.id
+        JOIN mesiac_pacient mp ON p.id = mp.pacient_id
         WHERE d.mesiac = ? AND d.datum = ?
+        ORDER BY p.meno
     """, (month_id, date_str)).fetchall()
     conn.close()
-    return rows
+
+    result = []
+    for row in rows:
+        row_dict = dict(row)
+        if "dates_all" in row_dict and row_dict["dates_all"]:
+            try:
+                row_dict["dates_all"] = json.loads(row_dict["dates_all"])
+            except json.JSONDecodeError:
+                row_dict["dates_all"] = []
+        result.append(row_dict)
+
+    return result
+
 
 def get_patients_in_month():
     nurse_id = session.get("nurse", {}).get("id")

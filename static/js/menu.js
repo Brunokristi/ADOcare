@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const messageEl = document.getElementById("message");
+
     const input = document.getElementById("patientSearch");
     const suggestionsContainer = document.getElementById("patient-suggestions");
     const selectedPatientDiv = document.getElementById("selected-patient");
@@ -10,50 +12,77 @@ document.addEventListener("DOMContentLoaded", function () {
     const patientRC = document.getElementById("patient-rc");
     const patientAdresa = document.getElementById("patient-adresa");
 
+    const selectedDateEl = document.getElementById("selectedDate");
+    const prevDayBtn = document.getElementById("prevDay");
+    const nextDayBtn = document.getElementById("nextDay");
+
     let selectedPatientId = null;
+    let allDates = [];
+    let currentIndex = 0;
+    let currentSelectedDate = null;
+
+
+
+    // klik na pacienta v zozname
+    document.getElementById("patient-list")?.addEventListener("click", function (e) {
+        const link = e.target.closest(".small-token");
+        if (!link) return;
+
+        e.preventDefault();
+        selectedPatientId = link.dataset.id;
+
+        patientMeno.textContent = link.dataset.meno;
+        patientRC.textContent = link.dataset.rc;
+        patientAdresa.textContent = link.dataset.adresa || "-";
+
+        editBtn.href = `/patient/update/${selectedPatientId}`;
+        selectedPatientDiv.style.display = "block";
+    });
 
     input?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
 
+    // upravit pacienta
     editBtn?.addEventListener("click", () => {
         if (selectedPatientId) {
             window.location.href = `/patient/update/${selectedPatientId}`;
         }
     });
 
+    // pridat pacienta do planu
     addBtn?.addEventListener("click", () => {
         if (!selectedPatientId) return;
 
         const startDate = document.getElementById("date_start")?.value;
         const endDate = document.getElementById("date_end")?.value;
-        const schedule = document.getElementById("schedule")?.value;
-        const exceptions = document.getElementById("exceptions")?._flatpickr?.selectedDates.map(d => d.toISOString().slice(0, 10)) || [];
+        const frequency = document.getElementById("frequency")?.value;
+        const exceptions = document.getElementById("exceptions")?._flatpickr?.selectedDates.map(
+            d => d.toLocaleDateString('sv-SE')
+        ) || [];
 
         const payload = {
             patient_id: selectedPatientId,
             start_date: startDate,
             end_date: endDate,
-            schedule,
+            frequency,
             exceptions
         };
 
-        fetch("/dashboard/add-patient", {
+        fetch("/schedule/insert", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    alert("Pacient bol pridaný do mesačného plánu.");
-                } else {
-                    alert("Nepodarilo sa pridať pacienta.");
-                }
+                showMessage(data.success ? "Pacient bol pridaný do mesačného plánu." : "Nepodarilo sa pridať pacienta.");
+                updateDisplayedDate();
             })
-            .catch(() => alert("Chyba pri komunikácii so serverom."));
+            .catch(() => showMessage("Chyba pri komunikácii so serverom."));
     });
 
     initFlatpickr();
+    initDayScroller();
 
     function handlePatientSearch() {
         const query = input.value.trim();
@@ -117,21 +146,113 @@ document.addEventListener("DOMContentLoaded", function () {
             dateFormat: "Y-m-d",
             defaultDate: firstDay,
             minDate: firstDay,
-            maxDate: lastDay
+            maxDate: lastDay,
+            locale: "sk"
         });
 
         flatpickr(dateEnd, {
             dateFormat: "Y-m-d",
             defaultDate: lastDay,
             minDate: firstDay,
-            maxDate: lastDay
+            maxDate: lastDay,
+            locale: "sk"
         });
 
         flatpickr(exceptions, {
             dateFormat: "Y-m-d",
             mode: "multiple",
             minDate: firstDay,
-            maxDate: lastDay
+            maxDate: lastDay,
+            locale: "sk"
         });
     }
+
+    function initDayScroller() {
+        const firstDay = new Date(document.body.dataset.firstDay);
+        const lastDay = new Date(document.body.dataset.lastDay);
+
+        let date = new Date(firstDay);
+        while (date <= lastDay) {
+            allDates.push(new Date(date));
+            date.setDate(date.getDate() + 1);
+        }
+
+        currentIndex = 0;
+        updateDisplayedDate();
+
+        prevDayBtn?.addEventListener("click", () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateDisplayedDate();
+            }
+        });
+
+        nextDayBtn?.addEventListener("click", () => {
+            if (currentIndex < allDates.length - 1) {
+                currentIndex++;
+                updateDisplayedDate();
+            }
+        });
+    }
+
+    function updateDisplayedDate() {
+        const date = allDates[currentIndex];
+        currentSelectedDate = date.toISOString().slice(0, 10);
+
+        const formatted = date.toLocaleDateString('sk-SK', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        if (selectedDateEl) {
+            selectedDateEl.textContent = formatted;
+        }
+
+        fetchPatientsForDate(currentSelectedDate);
+    }
+
+    function fetchPatientsForDate(date) {
+        fetch(`/patients/day/${encodeURIComponent(date)}`)
+            .then(res => res.json())
+            .then(patients => {
+                const container = document.getElementById("patient-list");
+                container.innerHTML = "";
+
+                if (!patients.length) {
+                    container.innerHTML = "<p>Žiadni pacienti na tento deň.</p>";
+                    return;
+                }
+
+                patients.forEach(p => {
+                    const link = document.createElement("a");
+                    link.href = "#";
+                    if (p.dates_all && Array.isArray(p.dates_all)) {
+                        link.title = "Dátumy: " + p.dates_all.join(", ");
+                    }
+                    link.className = "small-token";
+                    link.dataset.id = p.id;
+                    link.dataset.meno = p.meno;
+                    link.dataset.rc = p.rodne_cislo;
+                    link.dataset.adresa = p.adresa || "";
+                    link.dataset.dates_all = p.dates_all;
+                    link.textContent = `${p.meno} — ${p.rodne_cislo}`;
+
+                    container.appendChild(link);
+                });
+            })
+            .catch(() => {
+                const container = document.getElementById("patient-list");
+                container.innerHTML = "<p>Chyba pri načítaní pacientov.</p>";
+            });
+    }
+
+    function showMessage(msg) {
+        if (messageEl) {
+            messageEl.textContent = msg;
+
+            setTimeout(() => {
+                messageEl.textContent = "";
+            }, 2000);
+        }
+    }
+
 });

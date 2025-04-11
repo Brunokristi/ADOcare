@@ -45,7 +45,6 @@ def update_month(id):
 
     if request.method == "POST":
         data = request.form
-
         conn.execute("""
             UPDATE mesiac SET
                vysetrenie_start = ?, vysetrenie_koniec = ?,
@@ -92,7 +91,7 @@ def get_months_by_nurse():
 @month_bp.route('/month/select', methods=['POST'])
 def select_month():
     month_data = request.json
-    session['month'] = month_data  # store entire dict in session
+    session['month'] = month_data
     return {'success': True}
 
  
