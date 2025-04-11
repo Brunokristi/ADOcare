@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(data => {
                 if (data.success) {
-                    window.location.href = "/vypis";
+                    window.location.href = "/dekurz";
                 } else {
                     showMessage("Nepodarilo sa dokončiť generovanie trás.");
                 }

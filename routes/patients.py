@@ -204,11 +204,11 @@ def get_patients_in_month():
 
     conn = get_db_connection()
     rows = conn.execute("""
-        SELECT DISTINCT p.*
-        FROM den-pacient dp
-        JOIN dni d ON dp.den_id = d.id
-        JOIN pacienti p ON dp.patient_id = p.id
-        WHERE d.mesiac = ?
+        SELECT p.*
+        FROM mesiac_pacient as mp
+        JOIN pacienti p ON mp.pacient_id = p.id
+        WHERE mp.mesiac_id = ?
+        ORDER BY p.meno
     """, (month_id,)).fetchall()
     conn.close()
     return rows

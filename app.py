@@ -11,6 +11,7 @@ from routes.patients import patient_bp
 from routes.insurances import insurance_bp
 from routes.months import month_bp
 from routes.schedules import schedule_bp
+from routes.dekurzy import dekurz_bp
 
 from utils.database import DATABASE_FILE, check_db
 import threading
@@ -33,6 +34,7 @@ app.register_blueprint(patient_bp)
 app.register_blueprint(insurance_bp)
 app.register_blueprint(month_bp)
 app.register_blueprint(schedule_bp)
+app.register_blueprint(dekurz_bp)
 
 
 def open_browser():

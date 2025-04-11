@@ -4,15 +4,96 @@
 
 {% block content %}
 
-<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
+<body>
 
-    <h1>
-        {% if session.get('month') %}
-        Mesiac: {{ "%02d" | format(session['month']['mesiac'] | int) }}/{{ session['month']['rok'] }}
-        {% else %}
-        Mesiac
-        {% endif %}
-    </h1>
+    <div class="section">
+        <div class="lined-heading"><span>Pacienti</span></div>
+    
+        <div class="scroll-wrapper">
+            <button class="scroll-arrow left" onclick="scrollDekurzy(-1)">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="scroll" id="patientScroll">
+                {% for patient in patients %}
+                <a href="#" class="small-small-token month-select" data-id="{{ patient.id }}">
+                    {{ patient.meno }} - {{ patient.rodne_cislo }}
+                </a>
+                {% endfor %}
+            </div>
+    
+            <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <div class="section">
+        <div class="lined-heading"><span>Pacient</span></div>
+        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span class="accent">Meno</span>
+                        </td>
+                        <td id="patient-meno"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="accent">Rodné číslo</span>
+                        </td>
+                        <td id="patient-rc"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="accent">Adresa</span>
+                        </td>
+                        <td id="patient-adresa"></td>
+                    </tr>
+                </tbody>
+            </table>
+        
+            <a href="#" id="edit-patient-btn" class="text-button" style="margin-top: 20px;">Upraviť pacienta <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="lined-heading"><span>Dekurz</span></div>
+
+        {% for i in range(1, 9) %}
+        <div class="form-group">
+            <label for="podtext-{{ i }}" style="margin-top: 30px;">Text Dekurzu {{ i }}</label>
+            <textarea id="podtext-{{ i }}" name="podtext-{{ i }}" rows="15"></textarea>
+        </div>
+
+        <div class="scroll-wrapper">
+            <button class="scroll-arrow left" onclick="scrollDekurzy(-1)">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="scroll" id="patientScroll">
+                {% for macro in macros %}
+                <a href="#" class="small-small-token warning macro-select">
+                    {{ macro.skratka }}
+                </a>
+                {% endfor %}
+            </div>
+        
+            <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+        
+        <div class="form-group">
+            <label for="date_picker_{{ i }}">Dátumy</label>
+            <input class="dates" style="width: 50%; margin-bottom: 10px;" type="text" id="date_picker_{{ i }}" placeholder="Vyberte dátumy" autocomplete="off">
+            <input type="hidden" id="dates_list_{{ i }}" name="dates_list_{{ i }}">
+        
+            <textarea id="copy_paste_dates_{{ i }}" class="copy-paste-dates" rows="4" placeholder="Kopírujte dátumy sem"></textarea>
+        </div>
+        {% endfor %}
+    </div>
+    
 </body>
 {% endblock %}
 
