@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentIndex = 0;
     let currentSelectedDate = null;
 
+    const loader = document.getElementById("loader");
 
 
     // klik na pacienta v zozname
@@ -88,6 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const startAddress = document.getElementById("start").value;
 
+        // 👇 Show loader
+        loader.classList.add("loader-active");
+
         fetch("/schedule/month", {
             method: "POST",
             headers: {
@@ -96,9 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
             body: JSON.stringify({ start: startAddress })
         })
             .then(res => {
-                if (!res.ok) {
-                    throw new Error("Server error or invalid response");
-                }
+                if (!res.ok) throw new Error("Server error or invalid response");
                 return res.json();
             })
             .then(data => {
@@ -111,8 +113,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(err => {
                 console.error("Chyba pri generovaní plánu:", err);
                 showMessage("Nepodarilo sa vygenerovať plán.");
+            })
+            .finally(() => {
+                // 👇 Hide loader
+                loader.classList.remove("loader-active");
             });
     });
+
 
 
     initFlatpickr();

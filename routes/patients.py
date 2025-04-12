@@ -212,3 +212,34 @@ def get_patients_in_month():
     """, (month_id,)).fetchall()
     conn.close()
     return rows
+
+def get_all_patients_info_in_month():
+    nurse_id = session.get("nurse", {}).get("id")
+    if not nurse_id:
+        return []
+
+    conn = get_db_connection()
+    rows = conn.execute("""
+        SELECT p.*, mp.*
+        FROM pacienti p
+        LEFT JOIN mesiac_pacient mp 
+            ON mp.pacient_id = p.id 
+            AND mp.mesiac_id = (
+                SELECT m.id
+                FROM mesiac_pacient mp_inner
+                JOIN mesiac m ON m.id = mp_inner.mesiac_id
+                WHERE mp_inner.pacient_id = p.id
+                ORDER BY m.rok DESC, m.mesiac DESC
+                LIMIT 1
+            )
+        WHERE p.sestra = ?
+        ORDER BY p.meno
+    """, (nurse_id,)).fetchall()
+    conn.close()
+    return rows
+
+def update_dekurz_number(patient_id, dekurz_number):
+    conn = get_db_connection()
+    conn.execute("UPDATE pacienti SET cislo_dekurzu = ? WHERE id = ?", (dekurz_number, patient_id))
+    conn.commit()
+    conn.close()

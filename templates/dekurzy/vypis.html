@@ -15,7 +15,14 @@
             </button>
             <div class="scroll" id="patientScroll">
                 {% for patient in patients %}
-                <a href="#" class="small-small-token month-select" data-id="{{ patient.id }}">
+                <a href="#" class="small-small-token month-select" data-id="{{ patient.id }}"
+                    data-rodne-cislo="{{ patient.rodne_cislo }}" data-meno="{{ patient.meno }}" data-adresa="{{ patient.adresa }}"
+                    data-poistovna="{{ patient.poistovna }}" data-ados="{{ patient.ados }}" data-sestra="{{ patient.sestra }}"
+                    data-odosielatel="{{ patient.odosielatel }}" data-pohlavie="{{ patient.pohlavie }}"
+                    data-cislo-dekurzu="{{ patient.cislo_dekurzu }}" data-last-month="{{ patient.last_month }}"
+                    data-diagnoza="{{ patient.diagnoza }}" {% for i in range(8) %} data-podtext{{ i
+                    }}="{{ patient['podtext' ~ i]|default('')|e }}" data-dates{{ i }}="{{ patient['dates' ~ i]|default('')|tojson }}" {%
+                    endfor %} data-dates-all='{{ patient.dates_all | default([]) | tojson }}'>
                     {{ patient.meno }} - {{ patient.rodne_cislo }}
                 </a>
                 {% endfor %}
@@ -58,7 +65,7 @@
         </div>
     </div>
 
-    <div class="section">
+    <div class="section" style="margin-bottom: 200px;">
         <div class="lined-heading"><span>Dekurz</span></div>
 
         {% for i in range(1, 9) %}
@@ -73,25 +80,41 @@
             </button>
             <div class="scroll" id="patientScroll">
                 {% for macro in macros %}
-                <a href="#" class="small-small-token warning macro-select">
+                <a href="#" class="small-small-token warning macro-select" style="background-color: {{ macro.farba }};"
+                    data-text="{{ macro.text }}">
                     {{ macro.skratka }}
                 </a>
                 {% endfor %}
             </div>
+
         
             <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
                 <i class="bi bi-chevron-right"></i>
             </button>
         </div>
+
+        <div id="date-range" data-start="{{ session['month']['prvy_den'] }}" data-end="{{ session['month']['posledny_den'] }}">
+        </div>
+
         
         <div class="form-group">
             <label for="date_picker_{{ i }}">Dátumy</label>
             <input class="dates" style="width: 50%; margin-bottom: 10px;" type="text" id="date_picker_{{ i }}" placeholder="Vyberte dátumy" autocomplete="off">
             <input type="hidden" id="dates_list_{{ i }}" name="dates_list_{{ i }}">
-        
             <textarea id="copy_paste_dates_{{ i }}" class="copy-paste-dates" rows="4" placeholder="Kopírujte dátumy sem"></textarea>
         </div>
         {% endfor %}
+    </div>
+
+    <div class="bottom-section">
+        <div class="form-group" style="width: 600px;">
+            <label for="entry_number" style="margin-top: 30px;">Číslo dekurzu</label>
+            <input type="number" id="entry_number" name="entry_number" required>
+        </div>
+    
+        <div style="margin-bottom: 20px; width: 600px;">
+            <button type="button" class="btn" id="save-btn">Vytvoriť Dekurz</button>
+        </div>
     </div>
     
 </body>
@@ -104,5 +127,5 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/sk.js"></script>
-<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dekurzy/vypis.js') }}"></script>
 {% endblock %}
