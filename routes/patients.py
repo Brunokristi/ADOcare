@@ -179,7 +179,7 @@ def get_patients_in_day(date_str):
         JOIN dni d ON dp.den_id = d.id
         JOIN pacienti p ON dp.pacient_id = p.id
         JOIN mesiac_pacient mp ON p.id = mp.pacient_id
-        WHERE d.mesiac = ? AND d.datum = ?
+        WHERE mp.mesiac_id = ? AND d.datum = ?
         ORDER BY p.meno
     """, (month_id, date_str)).fetchall()
     conn.close()
@@ -230,7 +230,7 @@ def get_all_patients_info_in_month():
                 JOIN mesiac m ON m.id = mp_inner.mesiac_id
                 WHERE mp_inner.pacient_id = p.id
                 ORDER BY m.rok DESC, m.mesiac DESC
-                LIMIT 1
+                LIMIT 1 OFFSET 1
             )
         WHERE p.sestra = ?
         ORDER BY p.meno

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Dekurzy{% endblock %}
+
+{% block content %}
+
+<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
+
+    <h1>
+        {% if session.get('month') %}
+        Mesiac: {{ "%02d" | format(session['month']['mesiac'] | int) }}/{{ session['month']['rok'] }}
+        {% else %}
+        Mesiac
+        {% endif %}
+    </h1>
+
+    {% if session.get('nurse') %}
+
+    <div class="section">
+    </div>
+
+    <div class="section" style="margin-bottom: 120px;">
+    </div>
+
+    {% else %}
+    <p>Nie je prihlásený žiadny používateľ.</p>
+    {% endif %}
+
+</body>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transport/transport.js') }}"></script>
+{% endblock %}
