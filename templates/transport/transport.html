@@ -20,6 +20,50 @@
     </div>
 
     <div class="section" style="margin-bottom: 120px;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dátum</th>
+                        <th>Meno Pacienta</th>
+                        <th>Rodné Číslo</th>
+                        <th>Kód Poisťovne</th>
+                        <th>Diagnóza</th>
+                        <th>Počet km</th>
+                        <th>Číslo Jazdy</th>
+                        <th>ŠPZ</th>
+                        <th>Obec Začiatok</th>
+                        <th>Ulica Začiatok</th>
+                        <th>Obec Koniec</th>
+                        <th>Ulica Koniec</th>
+                        <th>Odosielajúci Lekár</th>
+                        <th>Odosielajúca PZS</th>
+                        <th>Ambulancia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td>{{ row.datum }}</td>
+                        <td>{{ row.pacient_meno }}</td>
+                        <td>{{ row.rodne_cislo }}</td>
+                        <td>{{ row.kod_poistovne }}</td>
+                        <td>{{ row.diagnoza }}</td>
+                        <td>{{ row.km }}</td>
+                        <td>{{ loop.index }}</td> <!-- číslo jazdy -->
+                        <td>{{ row.evc }}</td>
+                        <td>{{ row.start_obec }}</td>
+                        <td>{{ row.start_ulica }}</td>
+                        <td>{{ row.end_obec }}</td>
+                        <td>{{ row.end_ulica }}</td>
+                        <td>{{ row.odosielajuci_lekar }}</td>
+                        <td>{{ row.odosielajuca_pzs }}</td>
+                        <td>{{ row.ambulancia }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     {% else %}
@@ -27,6 +71,10 @@
     {% endif %}
 
 </body>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transport/transport.css') }}">
 {% endblock %}
 
 {% block scripts %}
