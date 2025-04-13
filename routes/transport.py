@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, url_for, render_template, session
+from flask import Blueprint, request, redirect, url_for, render_template, session, jsonify
 from utils.database import get_db_connection
 from routes.patients import get_patients_by_day
 from routes.insurances import get_insurances
@@ -6,6 +6,8 @@ import requests
 from math import radians, sin, cos, sqrt, atan2
 import math
 from datetime import datetime
+import time
+import os
 
 API_KEYS = [
     "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
@@ -42,26 +44,36 @@ def transport():
                         "coordinates": [[start[1], start[0]], [end[1], end[0]]]
                     }
                 )
-                res.raise_for_status()  # raises HTTPError if not 200 OK
+                if res.status_code == 429:
+                    print(f"[{key}] Rate limit reached. Waiting 3 seconds before next key...")
+                    time.sleep(3)
+                    continue  # skúsi ďalší kľúč
+                res.raise_for_status()
+
                 data = res.json()
 
-                # Handle API errors returned as JSON even when HTTP status is 200
                 if "routes" in data:
                     distance_km = data["routes"][0]["summary"]["distance"] / 1000
                     return math.ceil(distance_km)
                 else:
                     print(f"API key failed (no 'routes'): {key}")
+
             except Exception as e:
                 print(f"Error with API key {key}: {e}")
                 continue
+
+        # Ak žiadny kľúč nevyšiel ani po čakaní
+        print("⚠️ All API keys failed.")
         return 0
 
-    poistovna_id = request.form.get("poistovna_id")
-    poistovna_kod = request.form.get("poistovna_kod")
+    data = request.get_json()
+    poistovna_id = data.get("poistovna_id")
+
     month = session.get("month")
     month_number = month.get("mesiac")
     year_number = month.get("rok")
     nurse_id = session.get("nurse", {}).get("id")
+    sum_km = 0
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -103,15 +115,22 @@ def transport():
     ))
     rows = cursor.fetchall()
 
-    # Získaj súradnice len raz pre štart adresu
-    start_address = f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}" if rows else ""
-    res = requests.get("https://api.openrouteservice.org/geocode/search", params={
-        "api_key": "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d",
-        "text": start_address,
-        "size": 1
-    })
-    start_coords = res.json()["features"][0]["geometry"]["coordinates"]
-    start_lat, start_lon = start_coords[1], start_coords[0]
+    start_lat, start_lon = None, None
+    start_coords = None
+
+    if rows:
+        start_address = f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}"
+        res = requests.get("https://api.openrouteservice.org/geocode/search", params={
+            "api_key": "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d",
+            "text": start_address,
+            "size": 1
+        })
+
+        geo_data = res.json()
+        if geo_data.get("features") and len(geo_data["features"]) > 0:
+            start_coords = geo_data["features"][0]["geometry"]["coordinates"]
+            start_lat, start_lon = start_coords[1], start_coords[0]
+
 
     processed_coords = {}
     final_rows = []
@@ -131,6 +150,8 @@ def transport():
             else:
                 processed_coords[datum].append((end_lat, end_lon))
                 km = get_distance_km((start_lat, start_lon), (end_lat, end_lon))
+                sum_km += km
+            
 
         final_rows.append({
             "poradie": idx,
@@ -184,22 +205,91 @@ def transport():
     """, (poistovna_id, nurse_id))
     row = cursor.fetchone()
 
+    if row["kod_poistovne"] == "25":
+        pobocka = "2521"
+    elif row["kod_poistovne"] == "27":
+        pobocka = "2700"
+    elif row["kod_poistovne"] == "24":
+        pobocka = "2400"
+
     poistovna = {
-        "charakter_davky": "793n",
+        "typ_davky": "793n",
         "ico_odosielatela": row["ico_adosu"],
-        "datum_odoslania": datetime.now().strftime('%d.%m.%Y'),
-        "cislo_davky": cislo_davky,
-        "pocet_dokladov": pocet_dokladov,
-        "pocet_medii": pocet_medii,
-        "cislo_media": cislo_media,
-        "pobocka": pobocka
+        "datum_odoslania": datetime.now().strftime('%Y%m%d'),
+        "cislo_davky": "000002",
+        "pocet_dokladov": len(final_rows),
+        "pocet_medii": "002",
+        "cislo_media": "002",
+        "pobocka": pobocka,
+        "kilometre": sum_km,
+        "cena": 0.75 * sum_km,
     }
 
+    session['transport_data'] = final_rows
+    session['transport_sestra'] = sestra
+    session['transport_poistovna'] = poistovna
+
+    return render_template("transport/transport.html", data=final_rows, sestra=sestra, poistovna=poistovna)
 
 
-    return render_template("transport/transport.html", data=final_rows, sestra=sestra)
+@transport_bp.route('/transport/generate', methods=['POST'])
+def transport_generate():
+    data = request.get_json()
+    cislo_faktury = data.get("cislo_faktury")
+    charakter_davky = data.get("charakter_davky")
+
+    final_rows = session.get('transport_data')
+    sestra = session.get('transport_sestra')
+    poistovna = session.get('transport_poistovna')
+
+    filename = f"davka.{cislo_faktury}.txt"
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    folder = os.path.join(desktop, "davky")
+    os.makedirs(folder, exist_ok=True)
+    full_path = os.path.join(folder, filename)
 
 
+    try:
+        with open(full_path, "w", encoding="utf-8") as file:
+            file.write(
+                f"{charakter_davky}|"
+                f"{poistovna['typ_davky']}|"
+                f"{poistovna['ico_odosielatela']}|"
+                f"{poistovna['datum_odoslania']}|"
+                f"{poistovna['cislo_davky']}|"
+                f"{poistovna['pocet_dokladov']}|"
+                f"{poistovna['pocet_medii']}|"
+                f"{poistovna['cislo_media']}|"
+                f"{poistovna['pobocka']}|\n"
+            )
+
+            file.write(
+                f"{sestra['identifikator_pzs']}|"
+                f"{sestra['kod_pzs']}|"
+                f"{sestra['kod_zp']}|"
+                f"{sestra['uvazok']}|"
+                f"{sestra['obdobie']}|"
+                f"{cislo_faktury}|"
+                f"{sestra['mena']}|\n"
+            )
+
+            for row in final_rows:
+                file.write(
+                    f"{row['poradie']}|{row['den']}|{row['rodne_cislo']}|{row['pacient_meno']}|{row['diagnoza']}|"
+                    f"{row['stav_pacienta']}|{row['sprievodca']}|{row['typ_prepravy']}|{row['osobokm']}|"
+                    f"{row['odkial_obec'][:20]}|{row['odkial_ulica'][:20]}|{row['kam_obec'][:20]}|{row['kam_ulica'][:20]}|"
+                    f"{row['cislo_jazdy']}|{row['evc']}|{row['pocet_prepravovanych']}|{row['nahrady']}|"
+                    f"{row['typ_odosielatela']}|{row['kód_pzs']}|{row['kód_zpr']}|{row['clensky_stat']}|"
+                    f"{row['id_poistenca']}|{row['pohlavie']}|\n"
+                )
+
+
+        return jsonify({"success": True})
+    except Exception as e:
+        print("Chyba pri zápise súboru:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    
 
 
 
