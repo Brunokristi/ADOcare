@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
-                        window.location.href = `/transport`;
+                        window.location.href = `/transport/menu`;
                     }
                 });
         });

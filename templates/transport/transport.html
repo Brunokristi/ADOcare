@@ -17,48 +17,123 @@
     {% if session.get('nurse') %}
 
     <div class="section">
-    </div>
-
-    <div class="section" style="margin-bottom: 120px;">
+        <div class="lined-heading"><span>Poisťovňa</span></div>
+    
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Dátum</th>
-                        <th>Meno Pacienta</th>
+                        <th>Typ Dávky</th>
+                        <th>IČO Odosielateľa</th>
+                        <th>Dátum Odoslania Dávky</th>
+                        <th>Číslo Dávky</th>
+                        <th>Počet Dokladov</th>
+                        <th>Počet Médií</th>
+                        <th>Číslo Média</th>
+                        <th>Poisťovňa Pobočka</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="identifikator-pzs">{{ sestra.identifikator_pzs }}</td>
+                        <td id="kod-pzs">{{ sestra.kod_pzs }}</td>
+                        <td id="kod-zp">{{ sestra.kod_zp }}</td>
+                        <td id="uvazok-zp">{{ sestra.uvazok }}</td>
+                        <td id="obdobie">{{ sestra.obdobie }}</td>
+                        <td id="mena">{{ sestra.mena }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="lined-heading"><span>Zdravotnícky pracovník</span></div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Identifikátor PZS</th>
+                        <th>Kód PZS</th>
+                        <th>Kód Zdravotníckeho Pracovníka</th>
+                        <th>Úväzok Zdravotníckeho Pracovníka</th>
+                        <th>Zaúčtovacie obdobie</th>
+                        <th>Mena</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="identifikator-pzs">{{ sestra.identifikator_pzs }}</td>
+                        <td id="kod-pzs">{{ sestra.kod_pzs }}</td>
+                        <td id="kod-zp">{{ sestra.kod_zp }}</td>
+                        <td id="uvazok-zp">{{ sestra.uvazok }}</td>
+                        <td id="obdobie">{{ sestra.obdobie }}</td>
+                        <td id="mena">{{ sestra.mena }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section" style="margin-bottom: 120px;">
+        <div class="lined-heading"><span>Dáta</span></div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Poradové Číslo Riadku</th>
+                        <th>Ďeň</th>
                         <th>Rodné Číslo</th>
-                        <th>Kód Poisťovne</th>
-                        <th>Diagnóza</th>
-                        <th>Počet km</th>
+                        <th>Meno Pacienta</th>
+                        <th>Kód Diagnózy</th>
+                        <th>Stav Prepravovaného Pacienta</th>
+                        <th>Preprava Sprievodcu</th>
+                        <th>Typ Prepravy</th>
+                        <th>Počet Osobokilometrov</th>
+                        <th>Odkiaľ Obec</th>
+                        <th>Odkiaľ Ulica</th>
+                        <th>Kam Obec</th>
+                        <th>Kam Ulica</th>
                         <th>Číslo Jazdy</th>
-                        <th>ŠPZ</th>
-                        <th>Obec Začiatok</th>
-                        <th>Ulica Začiatok</th>
-                        <th>Obec Koniec</th>
-                        <th>Ulica Koniec</th>
-                        <th>Odosielajúci Lekár</th>
-                        <th>Odosielajúca PZS</th>
-                        <th>Ambulancia</th>
+                        <th>EČ Vozidla</th>
+                        <th>Počet Prepravovaných</th>
+                        <th>Náhrady</th>
+                        <th>Typ Odosielatela</th>
+                        <th>Kód PZS Odosielatela</th>
+                        <th>Kód ZPR Odosielatela</th>
+                        <th>Členský Štát Poistenca</th>
+                        <th>Identifikačné Číslo Poistenca</th>
+                        <th>Pohlavie Poistenca</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in data %}
                     <tr>
-                        <td>{{ row.datum }}</td>
-                        <td>{{ row.pacient_meno }}</td>
+                        <td>{{ row.poradie }}</td>
+                        <td>{{ row.den }}</td>
                         <td>{{ row.rodne_cislo }}</td>
-                        <td>{{ row.kod_poistovne }}</td>
+                        <td>{{ row.pacient_meno }}</td>
                         <td>{{ row.diagnoza }}</td>
-                        <td>{{ row.km }}</td>
-                        <td>{{ loop.index }}</td> <!-- číslo jazdy -->
+                        <td>{{ row.stav_pacienta }}</td>
+                        <td>{{ row.sprievodca }}</td>
+                        <td>{{ row.typ_prepravy }}</td>
+                        <td>{{ row.osobokm }}</td>
+                        <td>{{ row.odkial_obec }}</td>
+                        <td>{{ row.odkial_ulica }}</td>
+                        <td>{{ row.kam_obec }}</td>
+                        <td>{{ row.kam_ulica }}</td>
+                        <td>{{ row.cislo_jazdy }}</td>
                         <td>{{ row.evc }}</td>
-                        <td>{{ row.start_obec }}</td>
-                        <td>{{ row.start_ulica }}</td>
-                        <td>{{ row.end_obec }}</td>
-                        <td>{{ row.end_ulica }}</td>
-                        <td>{{ row.odosielajuci_lekar }}</td>
-                        <td>{{ row.odosielajuca_pzs }}</td>
-                        <td>{{ row.ambulancia }}</td>
+                        <td>{{ row.pocet_prepravovanych }}</td>
+                        <td>{{ row.nahrady }}</td>
+                        <td>{{ row.typ_odosielatela }}</td>
+                        <td>{{ row.kód_pzs }}</td>
+                        <td>{{ row.kód_zpr }}</td>
+                        <td>{{ row.clensky_stat }}</td>
+                        <td>{{ row.id_poistenca }}</td>
+                        <td>{{ row.pohlavie }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

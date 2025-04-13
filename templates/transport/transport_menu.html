@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Dekurzy{% endblock %}
+
+{% block content %}
+
+<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
+
+    <h1>
+        {% if session.get('month') %}
+        Mesiac: {{ "%02d" | format(session['month']['mesiac'] | int) }}/{{ session['month']['rok'] }}
+        {% else %}
+        Mesiac
+        {% endif %}
+    </h1>
+
+    {% if session.get('nurse') %}
+
+    <div class="section">
+        <div class="lined-heading"><span>Poisťovne</span></div>
+
+            <div class="scroll-wrapper">
+                <button class="scroll-arrow left" onclick="scrollDekurzy(-1)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <div class="scroll" id="monthScroll">
+                    {% for poistovna in poistovne %}
+                    <a href="#" class="small-small-token insurance-select" data-id="{{ poistovna.id }}" data-kod="{{ poistovna.kod }}"
+                        data-nazov="{{ poistovna.nazov }}">
+                        {{ poistovna.nazov }}
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+    </div>
+
+    {% else %}
+    <p>Nie je prihlásený žiadny používateľ.</p>
+    {% endif %}
+
+</body>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transport/transport_menu.js') }}"></script>
+{% endblock %}
