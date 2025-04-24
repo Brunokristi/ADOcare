@@ -72,6 +72,7 @@ def transport():
     month = session.get("month")
     month_number = month.get("mesiac")
     year_number = month.get("rok")
+    month_id = month.get("id")
     nurse_id = session.get("nurse", {}).get("id")
     sum_km = 0
 
@@ -99,19 +100,25 @@ def transport():
         FROM den_pacient dp
         LEFT JOIN dni d ON d.id = dp.den_id
         LEFT JOIN pacienti p ON p.id = dp.pacient_id
+        LEFT JOIN mesiac_pacient mp ON mp.pacient_id = p.id
         LEFT JOIN sestry s ON s.id = p.sestra
         LEFT JOIN adosky a ON a.id = s.ados
         LEFT JOIN diagnozy diag ON diag.id = p.diagnoza
         LEFT JOIN poistovne po ON po.id = p.poistovna
         LEFT JOIN auta car ON car.id = s.vozidlo
         LEFT JOIN doktori l ON l.id = p.odosielatel
-        WHERE strftime('%m', d.datum) = ? AND strftime('%Y', d.datum) = ? AND p.sestra = ? and p.poistovna = ?
+        WHERE strftime('%m', d.datum) = ? 
+        AND strftime('%Y', d.datum) = ? 
+        AND p.sestra = ? 
+        AND p.poistovna = ?
+        AND mp.mesiac_id = ?
         ORDER BY d.datum, dp.vysetrenie
     """, (
         f"{int(month_number):02}",
         str(year_number),
         nurse_id,
-        poistovna_id
+        poistovna_id,
+        month_id
     ))
     rows = cursor.fetchall()
 

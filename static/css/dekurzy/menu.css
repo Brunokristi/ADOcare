@@ -16,3 +16,14 @@
     color: #333;
     text-transform: capitalize;
 }
+
+.delete-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.delete-button btn {
+    background-color: none;
+}

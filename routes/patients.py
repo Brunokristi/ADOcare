@@ -215,28 +215,70 @@ def get_patients_in_month():
 
 def get_all_patients_info_in_month():
     nurse_id = session.get("nurse", {}).get("id")
-    if not nurse_id:
+    month_id = session.get("month", {}).get("id")
+    if not nurse_id or not month_id:
         return []
 
     conn = get_db_connection()
-    rows = conn.execute("""
-        SELECT p.*, mp.*
-        FROM pacienti p
-        LEFT JOIN mesiac_pacient mp 
-            ON mp.pacient_id = p.id 
-            AND mp.mesiac_id = (
-                SELECT m.id
-                FROM mesiac_pacient mp_inner
-                JOIN mesiac m ON m.id = mp_inner.mesiac_id
-                WHERE mp_inner.pacient_id = p.id
-                ORDER BY m.rok DESC, m.mesiac DESC
-                LIMIT 1 OFFSET 1
+    cursor = conn.cursor()
+
+    rows = cursor.execute("""
+        WITH ranked_data AS (
+            SELECT 
+                mp_inner.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY mp_inner.pacient_id 
+                    ORDER BY m.rok DESC, m.mesiac DESC
+                ) AS rn
+            FROM mesiac_pacient mp_inner
+            JOIN mesiac m ON m.id = mp_inner.mesiac_id
+            WHERE mp_inner.pacient_id IN (
+                SELECT p.id FROM pacienti p WHERE p.sestra = ?
             )
+            AND (
+                mp_inner.dates0 IS NOT NULL OR mp_inner.podtext0 IS NOT NULL OR
+                mp_inner.dates1 IS NOT NULL OR mp_inner.podtext1 IS NOT NULL OR
+                mp_inner.dates2 IS NOT NULL OR mp_inner.podtext2 IS NOT NULL OR
+                mp_inner.dates3 IS NOT NULL OR mp_inner.podtext3 IS NOT NULL OR
+                mp_inner.dates4 IS NOT NULL OR mp_inner.podtext4 IS NOT NULL OR
+                mp_inner.dates5 IS NOT NULL OR mp_inner.podtext5 IS NOT NULL OR
+                mp_inner.dates6 IS NOT NULL OR mp_inner.podtext6 IS NOT NULL OR
+                mp_inner.dates7 IS NOT NULL OR mp_inner.podtext7 IS NOT NULL
+            )
+        ),
+        latest_data AS (
+            SELECT * FROM ranked_data WHERE rn = 1
+        )
+        SELECT 
+            p.*,
+            mp_current.*,
+            ld.dates0 AS latest_dates0,
+            ld.podtext0 AS latest_podtext0,
+            ld.dates1 AS latest_dates1,
+            ld.podtext1 AS latest_podtext1,
+            ld.dates2 AS latest_dates2,
+            ld.podtext2 AS latest_podtext2,
+            ld.dates3 AS latest_dates3,
+            ld.podtext3 AS latest_podtext3,
+            ld.dates4 AS latest_dates4,
+            ld.podtext4 AS latest_podtext4,
+            ld.dates5 AS latest_dates5,
+            ld.podtext5 AS latest_podtext5,
+            ld.dates6 AS latest_dates6,
+            ld.podtext6 AS latest_podtext6,
+            ld.dates7 AS latest_dates7,
+            ld.podtext7 AS latest_podtext7
+        FROM pacienti p
+        JOIN mesiac_pacient mp_current 
+            ON mp_current.pacient_id = p.id AND mp_current.mesiac_id = ?
+        LEFT JOIN latest_data ld ON ld.pacient_id = p.id
         WHERE p.sestra = ?
         ORDER BY p.meno
-    """, (nurse_id,)).fetchall()
+    """, (nurse_id, month_id, nurse_id)).fetchall()
+
     conn.close()
-    return rows
+    return [dict(row) for row in rows]
+
 
 def update_dekurz_number(patient_id, dekurz_number):
     conn = get_db_connection()

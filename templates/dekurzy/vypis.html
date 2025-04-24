@@ -21,7 +21,7 @@
                     data-odosielatel="{{ patient.odosielatel }}" data-pohlavie="{{ patient.pohlavie }}"
                     data-cislo-dekurzu="{{ patient.cislo_dekurzu }}" data-last-month="{{ patient.last_month }}"
                     data-diagnoza="{{ patient.diagnoza }}" {% for i in range(8) %} data-podtext{{ i
-                    }}="{{ patient['podtext' ~ i]|default('')|e }}" data-dates{{ i }}="{{ patient['dates' ~ i]|default('')|tojson }}" {%
+                    }}="{{ patient['latest_podtext' ~ i]|default('')|e }}" data-dates{{ i }}="{{ patient['latest_dates' ~ i]|default('')|tojson }}" {%
                     endfor %} data-dates-all='{{ patient.dates_all | default([]) | tojson }}'>
                     {{ patient.meno }} - {{ patient.rodne_cislo }}
                 </a>

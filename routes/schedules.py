@@ -121,3 +121,22 @@ def generate_schedule(start_date, end_date, frequency, exceptions):
             current += timedelta(days=1)
 
     return schedule
+
+
+@schedule_bp.route('/schedule/delete/<int:pacient_id>', methods=['DELETE'])
+def delete_patient_from_schedule(pacient_id):
+
+    mesiac_id = session.get("month", {}).get("id")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM mesiac_pacient WHERE pacient_id = ? AND mesiac_id = ?", (pacient_id, mesiac_id))
+    conn.commit()
+    affected_rows = cursor.rowcount
+    conn.close()
+
+    if affected_rows > 0:
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False), 404

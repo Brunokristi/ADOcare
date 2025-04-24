@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const editBtn = document.getElementById("edit-patient-btn");
     const addBtn = document.getElementById("add-patient-btn");
+    const deleteBtn = document.getElementById("delete-patient-btn");
 
     const patientMeno = document.getElementById("patient-meno");
     const patientRC = document.getElementById("patient-rc");
@@ -89,7 +90,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const startAddress = document.getElementById("start").value;
 
-        // 👇 Show loader
         loader.classList.add("loader-active");
 
         fetch("/schedule/month", {
@@ -118,6 +118,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 // 👇 Hide loader
                 loader.classList.remove("loader-active");
             });
+    });
+
+    // zmazat pacienta z planu
+    deleteBtn?.addEventListener("click", () => {
+        if (!selectedPatientId) return;
+
+        fetch(`/schedule/delete/${selectedPatientId}`, { method: "DELETE" })
+            .then(res => res.json())
+            .then(data => {
+                showMessage(data.success ? "Pacient bol odstránený z plánu." : "Nepodarilo sa odstrániť pacienta.");
+                updateDisplayedDate();
+            })
+            .catch(() => showMessage("Chyba pri komunikácii so serverom."));
     });
 
 
@@ -269,14 +282,43 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (p.dates_all && Array.isArray(p.dates_all)) {
                         link.title = "Dátumy: " + p.dates_all.join(", ");
                     }
-                    link.className = "small-token";
+                    link.className = "small-token delete-button";
                     link.dataset.id = p.id;
                     link.dataset.meno = p.meno;
                     link.dataset.rc = p.rodne_cislo;
                     link.dataset.adresa = p.adresa || "";
                     link.dataset.dates_all = p.dates_all;
-                    link.textContent = `${p.meno} — ${p.rodne_cislo}`;
 
+                    // Add text content
+                    link.textContent = `${p.meno} — ${p.rodne_cislo} `;
+
+                    // Create and append delete button inside the link
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "delete-patient-btn";
+                    deleteBtn.dataset.id = p.id;
+                    deleteBtn.textContent = "🗑️";
+                    deleteBtn.style.marginLeft = "8px";
+
+                    // Prevent the delete button from triggering the <a> click
+                    deleteBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (confirm("Naozaj chceš odstrániť pacienta?")) {
+                            fetch(`/schedule/delete/${p.id}`, { method: "DELETE" })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        link.remove();
+                                        showMessage("Pacient bol odstránený z plánu.");
+                                    } else {
+                                        showMessage("Nepodarilo sa odstrániť pacienta.");
+                                    }
+                                })
+                                .catch(() => showMessage("Chyba pri komunikácii so serverom."));
+                        }
+                    });
+
+                    link.appendChild(deleteBtn);
                     container.appendChild(link);
                 });
             })
