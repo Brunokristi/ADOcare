@@ -251,7 +251,7 @@ def transport_generate():
 
     filename = f"davka.{cislo_faktury}.txt"
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-    folder = os.path.join(desktop, "davky")
+    folder = os.path.join(desktop, "ADOS_davky")
     os.makedirs(folder, exist_ok=True)
     full_path = os.path.join(folder, filename)
 

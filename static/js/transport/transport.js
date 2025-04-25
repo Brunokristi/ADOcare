@@ -24,7 +24,7 @@ document.getElementById("save-btn").addEventListener("click", async () => {
 
     const data = await response.json();
     if (data.success) {
-        showMessage("Súbor bol úspešne vytvorený na ploche v priečinku 'davky'.");
+        showMessage("Súbor bol úspešne vytvorený na ploche v priečinku 'ADOS_davky_do_poistovne'.");
     } else {
         showMessage("Nepodarilo sa vytvoriť súbor.");
     }

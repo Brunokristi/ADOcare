@@ -78,13 +78,19 @@ def generate(patient_id, month_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT meno, rodne_cislo, poistovna, cislo_dekurzu FROM pacienti WHERE id = ?", (patient_id,))
-    meno, rodne_cislo, poistovna, entry_number = cursor.fetchone()
+    cursor.execute("SELECT meno, rodne_cislo, adresa, poistovna, cislo_dekurzu FROM pacienti WHERE id = ?", (patient_id,))
+    meno, rodne_cislo, adresa, poistovna_id, entry_number = cursor.fetchone()
 
     meno = str(meno)
     rodne_cislo = str(rodne_cislo)
-    poistovna = str(poistovna)
+    adresa = str(adresa)
+    if len(adresa) > 100:
+        adresa = adresa[:100] + "..."
     entry_number = str(entry_number)
+
+    cursor.execute("SELECT kod FROM poistovne WHERE id = ?", (poistovna_id,))
+    poistovna = cursor.fetchone()
+    poistovna = str(poistovna[0]) if poistovna else ""
 
     name_worker = session.get("nurse", {}).get("meno", "Neznámy")
     company_id = session.get("nurse", {}).get("ados")
@@ -138,6 +144,7 @@ def generate(patient_id, month_id):
         editable_schedule=schedule,
         meno=meno,
         rodne_cislo=rodne_cislo,
+        adresa=adresa,
         pacient_id=patient_id,
         poistovna=poistovna,
         name_worker=name_worker,
@@ -167,11 +174,11 @@ def normalize_str(s):
         if unicodedata.category(c) != 'Mn'
     ).lower()
 
-def generate_pdf(editable_schedule, meno, rodne_cislo, pacient_id, poistovna, name_worker, company, entry_number):
+def generate_pdf(editable_schedule, meno, rodne_cislo, adresa, pacient_id, poistovna, name_worker, company, entry_number):
     if os.name == "nt":
-        documents_path = os.path.join(os.environ["USERPROFILE"], "Desktop", "ADOS")
+        documents_path = os.path.join(os.environ["USERPROFILE"], "Desktop", "ADOS_dekurzy")
     else:
-        documents_path = os.path.expanduser("~/Desktop/ADOS")
+        documents_path = os.path.expanduser("~/Desktop/ADOS_dekurzy")
 
     os.makedirs(documents_path, exist_ok=True)
 
@@ -193,6 +200,8 @@ def generate_pdf(editable_schedule, meno, rodne_cislo, pacient_id, poistovna, na
 
         c.setFont("Helvetica", 10)
         c.drawString(width - 200, height - 60, f"Poradové císlo strany dekurzu: {page_number}")
+        c.drawString(width - 200, height - 75, "Poistovna:")
+
 
         c.setStrokeColor(colors.black)
         c.rect(50, height - 110, width - 100, 45, stroke=1, fill=0)
@@ -207,8 +216,13 @@ def generate_pdf(editable_schedule, meno, rodne_cislo, pacient_id, poistovna, na
         c.drawString(55, height - 120, replace_slovak_chars("Meno, priezvisko, titul pacienta/pacientky:"))
         c.drawString(400, height - 120, replace_slovak_chars("Rodné číslo:"))
 
+        c.drawString(55, height - 145, replace_slovak_chars(adresa))
+
+
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(55, height - 140, replace_slovak_chars(meno))
+        c.drawString(width - 150, height - 75, replace_slovak_chars(poistovna))
+
+        c.drawString(55, height - 135, replace_slovak_chars(meno))
         c.drawString(400, height - 140, rodne_cislo)
         if (poistovna == "24 – DÔVERA zdravotná poisťovňa, a. s."):
             c.drawString(500, height - 140, replace_slovak_chars("24"))

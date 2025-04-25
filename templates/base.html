@@ -25,12 +25,17 @@
 <body>
     <header>
         <div class="navbar">
-            <div class="navbar-section">
-                <button id="backBtn" class="text-button" onclick="history.back();">
+            <div class="navbar-section" style="gap: 0px;">
+                <button id="backBtn" class="text-button" onclick="history.back();" style="padding: 10px;">
                     <i style="color: #fff;" class="bi bi-arrow-left"></i>
                 </button>
-                <a href="{{ url_for('main.index') }}" class="logo">
-                    <h1 class="logo">ADOS</h1>
+            
+                <button class="text-button" style="padding: 10px;" onclick="window.location.href='{{ url_for('main.index') }}'">
+                    <i style="color: #fff;" class="bi bi-house"></i>
+                </button>
+            
+                <a href="{{ url_for('main.index') }}" class="logo" style="margin-left: 20px;">
+                    <h1 class="logo" style="margin: 0;">ADOS</h1>
                 </a>
             </div>
 

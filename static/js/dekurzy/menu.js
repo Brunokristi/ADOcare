@@ -289,17 +289,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     link.dataset.adresa = p.adresa || "";
                     link.dataset.dates_all = p.dates_all;
 
-                    // Add text content
-                    link.textContent = `${p.meno} — ${p.rodne_cislo} `;
+                    const textSpan = document.createElement("span");
+                    textSpan.textContent = `${p.meno} — ${p.rodne_cislo}`;
 
-                    // Create and append delete button inside the link
                     const deleteBtn = document.createElement("button");
                     deleteBtn.className = "delete-patient-btn";
                     deleteBtn.dataset.id = p.id;
-                    deleteBtn.textContent = "🗑️";
-                    deleteBtn.style.marginLeft = "8px";
+                    deleteBtn.textContent = "✕";
 
-                    // Prevent the delete button from triggering the <a> click
                     deleteBtn.addEventListener("click", (e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -318,8 +315,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     });
 
+                    link.appendChild(textSpan);
                     link.appendChild(deleteBtn);
                     container.appendChild(link);
+
                 });
             })
             .catch(() => {

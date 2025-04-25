@@ -16,9 +16,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 data.forEach(d => {
-                    const div = document.createElement("div");
+                    const div = document.createElement("a");
                     div.className = "small-token";
                     div.innerHTML = `${d.meno} — ${d.rodne_cislo}`;
+                    div.href = `/patient/update/${d.id}`;
                     resultsContainer.appendChild(div);
                 });
             });
