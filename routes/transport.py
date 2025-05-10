@@ -8,6 +8,8 @@ import math
 from datetime import datetime
 import time
 import os
+import uuid
+import json
 
 API_KEYS = [
     "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
@@ -45,36 +47,26 @@ def transport():
                     }
                 )
                 if res.status_code == 429:
-                    print(f"[{key}] Rate limit reached. Waiting 3 seconds before next key...")
+                    print(f"[{key}] Rate limit reached. Waiting 3 seconds...")
                     time.sleep(3)
-                    continue  # skúsi ďalší kľúč
+                    continue
                 res.raise_for_status()
-
                 data = res.json()
-
                 if "routes" in data:
                     distance_km = data["routes"][0]["summary"]["distance"] / 1000
                     return math.ceil(distance_km)
-                else:
-                    print(f"API key failed (no 'routes'): {key}")
-
             except Exception as e:
                 print(f"Error with API key {key}: {e}")
-                continue
-
-        # Ak žiadny kľúč nevyšiel ani po čakaní
         print("⚠️ All API keys failed.")
         return 0
 
     data = request.get_json()
     poistovna_id = data.get("poistovna_id")
-
     month = session.get("month")
     month_number = month.get("mesiac")
     year_number = month.get("rok")
     month_id = month.get("id")
     nurse_id = session.get("nurse", {}).get("id")
-    sum_km = 0
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -123,8 +115,6 @@ def transport():
     rows = cursor.fetchall()
 
     start_lat, start_lon = None, None
-    start_coords = None
-
     if rows:
         start_address = f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}"
         res = requests.get("https://api.openrouteservice.org/geocode/search", params={
@@ -132,33 +122,29 @@ def transport():
             "text": start_address,
             "size": 1
         })
-
         geo_data = res.json()
-        if geo_data.get("features") and len(geo_data["features"]) > 0:
-            start_coords = geo_data["features"][0]["geometry"]["coordinates"]
-            start_lat, start_lon = start_coords[1], start_coords[0]
-
+        if geo_data.get("features"):
+            coords = geo_data["features"][0]["geometry"]["coordinates"]
+            start_lat, start_lon = coords[1], coords[0]
 
     processed_coords = {}
     final_rows = []
+    sum_km = 0
 
     for idx, row in enumerate(rows, 1):
         end_lat, end_lon = row["end_lat"], row["end_lon"]
         datum = row["datum"]
         datum_day = datum.split("-")[2]
-
         km = 0
         if start_lat and end_lat and end_lon:
             if datum not in processed_coords:
                 processed_coords[datum] = []
-
             if any(haversine(end_lat, end_lon, lat, lon) < 10 for lat, lon in processed_coords[datum]):
                 km = 0
             else:
                 processed_coords[datum].append((end_lat, end_lon))
                 km = get_distance_km((start_lat, start_lon), (end_lat, end_lon))
                 sum_km += km
-            
 
         final_rows.append({
             "poradie": idx,
@@ -186,15 +172,16 @@ def transport():
             "pohlavie": row["pohlavie"]
         })
 
-    cursor.execute("""
-        SELECT s.kod AS kod_zp, s.uvazok, a.identifikator, a.kod AS kod_pzs
-        FROM sestry s
-        LEFT JOIN adosky a ON s.ados = a.id
-        WHERE s.id = ?
-    """, (nurse_id,))
-    row = cursor.fetchone()
 
-    sestra = {
+        cursor.execute("""
+            SELECT s.kod AS kod_zp, s.uvazok, a.identifikator, a.kod AS kod_pzs
+            FROM sestry s
+            LEFT JOIN adosky a ON s.ados = a.id
+            WHERE s.id = ?
+        """, (nurse_id,))
+        row = cursor.fetchone()
+       
+        sestra = {
         "identifikator_pzs": row["identifikator"],
         "kod_pzs": row["kod_pzs"],
         "kod_zp": row["kod_zp"],
@@ -212,13 +199,7 @@ def transport():
     """, (poistovna_id, nurse_id))
     row = cursor.fetchone()
 
-    if row["kod_poistovne"] == "25":
-        pobocka = "2521"
-    elif row["kod_poistovne"] == "27":
-        pobocka = "2700"
-    elif row["kod_poistovne"] == "24":
-        pobocka = "2400"
-
+    pobocka = {"25": "2521", "27": "2700", "24": "2400"}.get(row["kod_poistovne"], "0000")
     poistovna = {
         "typ_davky": "793n",
         "ico_odosielatela": row["ico_adosu"],
@@ -232,11 +213,17 @@ def transport():
         "cena": 0.75 * sum_km,
     }
 
-    session['transport_data'] = final_rows
-    session['transport_sestra'] = sestra
-    session['transport_poistovna'] = poistovna
+    # 🔐 Uloženie do dočasného súboru
+    file_id = str(uuid.uuid4())
+    temp_path = f"/tmp/transport_data_{file_id}.json"
+    with open(temp_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "data": final_rows,
+            "sestra": sestra,
+            "poistovna": poistovna
+        }, f)
 
-    return render_template("transport/transport.html", data=final_rows, sestra=sestra, poistovna=poistovna)
+    return render_template("transport/transport.html", data=final_rows, sestra=sestra, poistovna=poistovna, file_id=file_id)
 
 
 @transport_bp.route('/transport/generate', methods=['POST'])
@@ -244,10 +231,16 @@ def transport_generate():
     data = request.get_json()
     cislo_faktury = data.get("cislo_faktury")
     charakter_davky = data.get("charakter_davky")
+    file_id = data.get("file_id")
 
-    final_rows = session.get('transport_data')
-    sestra = session.get('transport_sestra')
-    poistovna = session.get('transport_poistovna')
+    try:
+        with open(f"/tmp/transport_data_{file_id}.json", "r", encoding="utf-8") as f:
+            saved_data = json.load(f)
+        final_rows = saved_data["data"]
+        sestra = saved_data["sestra"]
+        poistovna = saved_data["poistovna"]
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Chyba pri čítaní dát: {e}"}), 500
 
     filename = f"davka.{cislo_faktury}.txt"
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -255,31 +248,17 @@ def transport_generate():
     os.makedirs(folder, exist_ok=True)
     full_path = os.path.join(folder, filename)
 
-
     try:
         with open(full_path, "w", encoding="utf-8") as file:
             file.write(
-                f"{charakter_davky}|"
-                f"{poistovna['typ_davky']}|"
-                f"{poistovna['ico_odosielatela']}|"
-                f"{poistovna['datum_odoslania']}|"
-                f"{poistovna['cislo_davky']}|"
-                f"{poistovna['pocet_dokladov']}|"
-                f"{poistovna['pocet_medii']}|"
-                f"{poistovna['cislo_media']}|"
+                f"{charakter_davky}|{poistovna['typ_davky']}|{poistovna['ico_odosielatela']}|{poistovna['datum_odoslania']}|"
+                f"{poistovna['cislo_davky']}|{poistovna['pocet_dokladov']}|{poistovna['pocet_medii']}|{poistovna['cislo_media']}|"
                 f"{poistovna['pobocka']}|\n"
             )
-
             file.write(
-                f"{sestra['identifikator_pzs']}|"
-                f"{sestra['kod_pzs']}|"
-                f"{sestra['kod_zp']}|"
-                f"{sestra['uvazok']}|"
-                f"{sestra['obdobie']}|"
-                f"{cislo_faktury}|"
-                f"{sestra['mena']}|\n"
+                f"{sestra['identifikator_pzs']}|{sestra['kod_pzs']}|{sestra['kod_zp']}|{sestra['uvazok']}|"
+                f"{sestra['obdobie']}|{cislo_faktury}|{sestra['mena']}|\n"
             )
-
             for row in final_rows:
                 file.write(
                     f"{row['poradie']}|{row['den']}|{row['rodne_cislo']}|{row['pacient_meno']}|{row['diagnoza']}|"
@@ -290,14 +269,11 @@ def transport_generate():
                     f"{row['id_poistenca']}|{row['pohlavie']}|\n"
                 )
 
-
         return jsonify({"success": True})
     except Exception as e:
-        print("Chyba pri zápise súboru:", e)
         return jsonify({"success": False, "error": str(e)}), 500
-
-    
-
-
-
-
+    finally:
+        try:
+            os.remove(f"/tmp/transport_data_{file_id}.json")
+        except Exception as e:
+            print(f"Chyba pri mazaní dočasného súboru: {e}")
