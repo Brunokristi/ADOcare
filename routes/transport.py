@@ -10,6 +10,8 @@ import time
 import os
 import uuid
 import json
+import re
+
 
 API_KEYS = [
     "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
@@ -149,21 +151,21 @@ def transport():
         final_rows.append({
             "poradie": idx,
             "den": datum_day,
-            "rodne_cislo": row["rodne_cislo"],
+            "rodne_cislo": re.sub(r'\D', '', str(row["rodne_cislo"])) if row["rodne_cislo"] else '',
             "pacient_meno": row["pacient_meno"],
-            "diagnoza": row["diagnoza"],
+            "diagnoza": re.sub(r'\W', '', row["diagnoza"]) if row["diagnoza"] else '',
             "stav_pacienta": "",
             "sprievodca": "",
             "typ_prepravy": "ADOS",
             "osobokm": km,
             "odkial_obec": row["start_obec"],
             "odkial_ulica": row["start_ulica"],
-            "kam_obec": "",
+            "kam_obec": extract_city_from_address(row["end_ulica"]),
             "kam_ulica": row["end_ulica"],
             "cislo_jazdy": idx,
             "evc": row["evc"],
             "pocet_prepravovanych": 0,
-            "nahrady": 0.8,
+            "nahrady": "",
             "typ_odosielatela": "N",
             "kód_pzs": row["odosielajuci_pzs"],
             "kód_zpr": row["odosielajuci_zpr"],
@@ -210,10 +212,9 @@ def transport():
         "cislo_media": "002",
         "pobocka": pobocka,
         "kilometre": sum_km,
-        "cena": 0.75 * sum_km,
+        "cena": 0.35 * sum_km,
     }
 
-    # 🔐 Uloženie do dočasného súboru
     file_id = str(uuid.uuid4())
     temp_path = f"/tmp/transport_data_{file_id}.json"
     with open(temp_path, "w", encoding="utf-8") as f:
@@ -277,3 +278,21 @@ def transport_generate():
             os.remove(f"/tmp/transport_data_{file_id}.json")
         except Exception as e:
             print(f"Chyba pri mazaní dočasného súboru: {e}")
+
+
+def extract_city_from_address(address: str) -> str:
+    if not address:
+        return ''
+    
+    parts = [p.strip() for p in address.split(',') if p.strip()]
+    slovensko_index = next((i for i, p in enumerate(parts) if 'slovensko' in p.lower()), len(parts))
+
+    for i in reversed(range(slovensko_index)):
+        part = parts[i]
+        if any(kw in part.lower() for kw in ['okres', 'kraj', 'slovensko', 'stredné', 'severné', 'západné', 'východné', 'južné', 'bc', 'banskobystrický']):
+            continue
+        if part.strip().isdigit() or re.match(r'^\d{3}\s?\d{2}$', part):
+            continue
+        return part
+
+    return ''

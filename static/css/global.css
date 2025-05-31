@@ -124,6 +124,7 @@ textarea {
     z-index: 10;
     max-height: 150px;
     overflow-y: auto;
+    z-index: 1000;
 }
 
 .suggestions div {

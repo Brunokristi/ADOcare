@@ -26,6 +26,8 @@
                     <div id="patient-suggestions" class="suggestions"></div>
                 </div>
 
+                
+
                 <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
                     <table class="table">
                         <tbody>
@@ -51,7 +53,10 @@
                     </table>
 
                     <a href="#" id="edit-patient-btn" class="text-button" style="margin-top: 20px;">Upraviť pacienta <i
-                            class="bi bi-arrow-right"></i></a>
+                            class="bi bi-arrow-right"></i>
+                    </a>
+
+                    
 
                     <div class="half-form-group">
                         <div class="form-group">
@@ -81,6 +86,10 @@
 
                     <button type="button" id="add-patient-btn" class="btn">Pridať pacienta</button>
                 </div>
+
+                <a class="text-button" href="{{ url_for('patient.create_patient') }}">
+                    nový pacient<i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>

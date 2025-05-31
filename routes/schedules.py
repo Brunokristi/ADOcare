@@ -91,6 +91,7 @@ def schedule_month():
     start_address = data.get("start")
     patients = get_patients_by_day()
     result = calculate_optimal_day_route(patients, start_address)
+    
     return jsonify(result)
 
 def generate_schedule(start_date, end_date, frequency, exceptions):

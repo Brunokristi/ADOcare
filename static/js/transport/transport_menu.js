@@ -30,6 +30,7 @@ document.querySelectorAll('.insurance-select').forEach(link => {
             .catch(err => {
                 console.error(err);
                 alert("Nastala chyba.");
+                print(err);
             })
             .finally(() => {
                 loader.classList.remove("loader-active");

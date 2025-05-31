@@ -1,7 +1,6 @@
 let autocompleteService;
 let debounceTimer;
 
-
 document.addEventListener("DOMContentLoaded", function () {
     const messageEl = document.getElementById("message");
     const form = document.getElementById("patientForm");
@@ -9,6 +8,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const suggestionsContainer = document.getElementById("address-suggestions");
     const diagnosisInput = document.getElementById("diagnoza");
     const diagnosisSuggestions = document.getElementById("diagnoza-suggestions");
+
+    const mapElement = document.getElementById('map');
+    let map, marker;
+
+    // === Inicializuj mapu a nastav bounds na LC, RS, FI ===
+    if (mapElement) {
+        map = L.map('map');
+        const bounds = L.latLngBounds([
+            [48.2717, 19.8236],  // Fiľakovo
+            [48.3321, 19.6675],  // Lučenec
+            [48.3840, 20.0225]   // Rimavská Sobota
+        ]);
+        map.fitBounds(bounds);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+    }
 
     if (form) {
         form.addEventListener("submit", function (e) {
@@ -56,9 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-
-
-
     function showMessage(msg) {
         if (messageEl) {
             messageEl.textContent = msg;
@@ -94,6 +108,15 @@ document.addEventListener("DOMContentLoaded", function () {
                         suggestionItem.addEventListener("click", function () {
                             addressInput.value = result.display_name;
                             suggestionsContainer.style.display = "none";
+
+                            // Zobraz miesto na mape podľa súradníc ak sú dostupné
+                            if (map && result.lat && result.lon) {
+                                const latlng = [parseFloat(result.lat), parseFloat(result.lon)];
+                                map.setView(latlng, 15);
+
+                                if (marker) marker.remove();
+                                marker = L.marker(latlng).addTo(map);
+                            }
                         });
 
                         suggestionsContainer.appendChild(suggestionItem);
@@ -130,9 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     suggestion.classList.add("suggestion-item");
                     suggestion.textContent = `${d.kod} — ${d.nazov}`;
                     suggestion.addEventListener("click", () => {
-                        // nastavíme do viditeľného inputu
                         diagnosisInput.value = `${d.kod} — ${d.nazov}`;
-                        // nastavíme ID diagnózy do hidden inputu
                         document.getElementById("diagnoza_id").value = d.id;
                         diagnosisSuggestions.style.display = "none";
                     });
