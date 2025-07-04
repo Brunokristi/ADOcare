@@ -126,8 +126,8 @@ def get_patients_by_day():
     conn = get_db_connection()
 
     days = conn.execute("""
-        SELECT id, datum 
-        FROM dni 
+        SELECT id, datum
+        FROM dni
         WHERE mesiac = ?
     """, (month_id,)).fetchall()
 
@@ -224,10 +224,10 @@ def get_all_patients_info_in_month():
 
     rows = cursor.execute("""
         WITH ranked_data AS (
-            SELECT 
+            SELECT
                 mp_inner.*,
                 ROW_NUMBER() OVER (
-                    PARTITION BY mp_inner.pacient_id 
+                    PARTITION BY mp_inner.pacient_id
                     ORDER BY m.rok DESC, m.mesiac DESC
                 ) AS rn
             FROM mesiac_pacient mp_inner
@@ -249,7 +249,7 @@ def get_all_patients_info_in_month():
         latest_data AS (
             SELECT * FROM ranked_data WHERE rn = 1
         )
-        SELECT 
+        SELECT
             p.*,
             mp_current.*,
             ld.dates0 AS latest_dates0,
@@ -269,7 +269,7 @@ def get_all_patients_info_in_month():
             ld.dates7 AS latest_dates7,
             ld.podtext7 AS latest_podtext7
         FROM pacienti p
-        JOIN mesiac_pacient mp_current 
+        JOIN mesiac_pacient mp_current
             ON mp_current.pacient_id = p.id AND mp_current.mesiac_id = ?
         LEFT JOIN latest_data ld ON ld.pacient_id = p.id
         WHERE p.sestra = ?

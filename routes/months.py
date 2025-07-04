@@ -95,8 +95,8 @@ def get_months_by_nurse():
     nurse_id = session.get("nurse", {}).get("id")
     conn = get_db_connection()
     rows = conn.execute("""
-        SELECT * FROM mesiac 
-        WHERE sestra_id = ? 
+        SELECT * FROM mesiac
+        WHERE sestra_id = ?
         ORDER BY rok DESC, mesiac DESC
     """, (nurse_id,)).fetchall()
     conn.close()
@@ -107,5 +107,3 @@ def select_month():
     month_data = request.json
     session['month'] = month_data
     return {'success': True}
-
- 

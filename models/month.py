@@ -10,6 +10,3 @@ class Macro:
         self.sestra_id = row['sestra_id']
         self.prvy_den = row['prvy_den']
         self.posledny_den = row['posledny_den']
-
-
-

@@ -39,7 +39,7 @@ def transport():
         for key in API_KEYS:
             try:
                 res = requests.post(
-                    "https://api.openrouteservice.org/v2/directions/driving-car/json", 
+                    "https://api.openrouteservice.org/v2/directions/driving-car/json",
                     headers={
                         "Authorization": key,
                         "Content-Type": "application/json"
@@ -101,9 +101,9 @@ def transport():
         LEFT JOIN poistovne po ON po.id = p.poistovna
         LEFT JOIN auta car ON car.id = s.vozidlo
         LEFT JOIN doktori l ON l.id = p.odosielatel
-        WHERE strftime('%m', d.datum) = ? 
-        AND strftime('%Y', d.datum) = ? 
-        AND p.sestra = ? 
+        WHERE strftime('%m', d.datum) = ?
+        AND strftime('%Y', d.datum) = ?
+        AND p.sestra = ?
         AND p.poistovna = ?
         AND mp.mesiac_id = ?
         ORDER BY d.datum, dp.vysetrenie
@@ -182,7 +182,7 @@ def transport():
             WHERE s.id = ?
         """, (nurse_id,))
         row = cursor.fetchone()
-       
+
         sestra = {
         "identifikator_pzs": row["identifikator"],
         "kod_pzs": row["kod_pzs"],
@@ -283,7 +283,7 @@ def transport_generate():
 def extract_city_from_address(address: str) -> str:
     if not address:
         return ''
-    
+
     parts = [p.strip() for p in address.split(',') if p.strip()]
     slovensko_index = next((i for i, p in enumerate(parts) if 'slovensko' in p.lower()), len(parts))
 

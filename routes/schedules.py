@@ -29,15 +29,15 @@ def insert_schedule():
         )
 
         cursor.execute("""
-            SELECT id, strftime('%Y-%m-%d', datum) AS datum 
-            FROM dni 
+            SELECT id, strftime('%Y-%m-%d', datum) AS datum
+            FROM dni
             WHERE mesiac = ?
         """, (month_id,))
         dni_records = {row["datum"]: row["id"] for row in cursor.fetchall()}
 
         cursor.execute("""
-            DELETE FROM den_pacient 
-            WHERE pacient_id = ? 
+            DELETE FROM den_pacient
+            WHERE pacient_id = ?
               AND den_id IN (SELECT id FROM dni WHERE mesiac = ?)
         """, (patient_id, month_id))
 
@@ -91,7 +91,7 @@ def schedule_month():
     start_address = data.get("start")
     patients = get_patients_by_day()
     result = calculate_optimal_day_route(patients, start_address)
-    
+
     return jsonify(result)
 
 def generate_schedule(start_date, end_date, frequency, exceptions):

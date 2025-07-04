@@ -313,5 +313,5 @@ def open_pdf(pdf_path):
     if os.name == "nt":
         os.system(f'start "" "{pdf_path}"')
     else:
-        os.system(f"open '{pdf_path}'") 
+        os.system(f"open '{pdf_path}'")
 

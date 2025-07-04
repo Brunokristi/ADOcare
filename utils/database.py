@@ -34,7 +34,7 @@ def initialize_db():
                 FOREIGN KEY (vozidlo) REFERENCES auta(id) ON DELETE SET NULL,
                 FOREIGN KEY (ados) REFERENCES adosky(id) ON DELETE SET NULL
             );
-                             
+
             CREATE TABLE auta (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 evc TEXT NOT NULL
@@ -108,7 +108,7 @@ def initialize_db():
                 FOREIGN KEY (den_id) REFERENCES dni(id) ON DELETE CASCADE,
                 FOREIGN KEY (pacient_id) REFERENCES pacienti(id) ON DELETE CASCADE
             );
-                             
+
             CREATE TABLE makra (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nazov VARCHAR(100) NOT NULL,
@@ -118,8 +118,6 @@ def initialize_db():
             );
         """)
 
-
-
 def get_existing_tables(cursor):
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     return {row[0] for row in cursor.fetchall()}
@@ -127,8 +125,6 @@ def get_existing_tables(cursor):
 def get_column_names(cursor, table_name):
     cursor.execute(f"PRAGMA table_info({table_name})")
     return [row["name"] for row in cursor.fetchall()]
-
-
 
 def create_auta(cursor, existing_tables):
     if "auta" not in existing_tables:
@@ -138,7 +134,7 @@ def create_auta(cursor, existing_tables):
                 evc TEXT NOT NULL
             );
         """)
-        
+
         cursor.executemany(
             "INSERT INTO auta (evc) VALUES (?)",
             [("LC505BC",), ("LC988CJ",)]
@@ -350,8 +346,6 @@ def create_mesiac(cursor, existing_tables):
             );
         """)
 
-
-
 def reconstruct_sestry(cursor):
     cursor.execute("PRAGMA table_info(sestry)")
     existing_columns = {row[1] for row in cursor.fetchall()}
@@ -426,7 +420,7 @@ def reconstruct_pacienti(cursor):
 
     if poistovna_col[2].upper() == "INTEGER":
         return
-    
+
     cursor.execute("ALTER TABLE pacienti RENAME TO pacienti_old")
 
     cursor.execute("""
@@ -572,7 +566,6 @@ def update_coordinates(cursor):
             """, (longitude, latitude, row["id"]))
             sleep(1)  # Nominatim má limit 1 request / sec
 
-
 def update_db():
     with sqlite3.connect(DATABASE_FILE) as conn:
         conn.row_factory = sqlite3.Row
@@ -590,16 +583,10 @@ def update_db():
         create_poistovna_mesiac(cursor, existing_tables)
         create_mesiac(cursor, existing_tables)
 
-
         reconstruct_sestry(cursor)
         migrate_to_mesiac_pacient(cursor)
         reconstruct_pacienti(cursor)
         reconstruct_mesiac(cursor)
         update_coordinates(cursor)
 
-
-
         conn.commit()
-
-
-

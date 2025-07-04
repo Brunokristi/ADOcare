@@ -3,4 +3,3 @@ class Diagnosis:
         self.id = row['id']
         self.kod = row['kod']
         self.nazov = row['nazov']
-        

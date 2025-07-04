@@ -75,9 +75,6 @@ def simulate_schedule(day, den_id, patients, tsp_path, matrix):
             update_vysetrenie_and_vypis(den_id, patient["id"], current_time, assigned_vypis_time)
 
 
-            
-
-
 def calculate_optimal_day_route(data, address):
     print(session)
     long, lat = geocode_address(address)
@@ -115,6 +112,5 @@ def calculate_optimal_day_route(data, address):
             tsp_path.append(0)
 
         simulate_schedule(day, den_id, patients, tsp_path, matrix)
-    
-    return { "success": True }
 
+    return { "success": True }

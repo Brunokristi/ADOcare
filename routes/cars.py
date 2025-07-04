@@ -13,7 +13,7 @@ def create_car():
         conn.commit()
         conn.close()
         return redirect(url_for('main.settings'))
-    
+
     return render_template("create/car.html")  # Optional, only if you have a form page
 
 @car_bp.route('/car/update/<int:id>', methods=['GET', 'POST'])
