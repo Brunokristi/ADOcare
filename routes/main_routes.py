@@ -31,17 +31,3 @@ def dashboard():
     if 'nurse' not in session:
         return redirect(url_for("main.index"))
     return render_template("dashboard.html", months_dekurz=months_dekurz)
-
-@main.route('/shutdown', methods=['POST'])
-def shutdown():
-    def shutdown_server():
-        func = request.environ.get('werkzeug.server.shutdown')
-        if func:
-            print("✅ Gracefully shutting down Flask via werkzeug...")
-            func()
-        else:
-            print("🛑 werkzeug shutdown not available, killing manually...")
-            os.kill(os.getpid(), signal.SIGTERM)
-
-    shutdown_server()
-    return jsonify(success=True)
