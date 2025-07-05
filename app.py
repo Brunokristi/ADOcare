@@ -13,10 +13,9 @@ from routes.months import month_bp
 from routes.schedules import schedule_bp
 from routes.dekurzy import dekurz_bp
 from routes.transport import transport_bp
-from routes.auth import auth_bp
+from routes.auth import auth_bp, setup_login_manager
 
 from flask_login import LoginManager
-from utils.auth import setup_login_manager
 
 from utils.database import DATABASE_FILE, check_db
 

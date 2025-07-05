@@ -1,3 +1,5 @@
+import sqlite3
+from utils.database import get_db_connection
 from flask_login import UserMixin
 
 class User(UserMixin):
@@ -9,10 +11,12 @@ class User(UserMixin):
     def get_id(self) -> int:
         return str(self.id)
 
-# tmd pseudo database
-USERS = {
-    "admin": User(id=1, username="admin", password="admin123")
-}
-
 def get_user_by_username(username: str) -> User:
-    return USERS.get(username)
+    conn = get_db_connection()
+    usedData = conn.execute("SELECT * FROM adosky WHERE identifikator = ?", (username,)).fetchone()
+    conn.close()
+    if isinstance(usedData, sqlite3.Row):
+        return User(id       = int(usedData['id']),
+                    username = usedData['identifikator'],
+                    password = usedData['passwordHash'])
+    return None
