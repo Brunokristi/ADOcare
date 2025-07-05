@@ -8,9 +8,12 @@ from routes.companies import get_companies
 from routes.insurances import get_insurances
 from utils.geocode import geocode_address
 
+from flask_login import login_required
+
 patient_bp = Blueprint("patient", __name__)
 
 @patient_bp.route('/patient/create', methods=['GET', 'POST'])
+@login_required
 def create_patient():
     if request.method == 'POST':
         data = request.form
@@ -41,6 +44,7 @@ def create_patient():
     return render_template("create/patient.html",doctors=doctors, insurances=insurances, companies=companies)
 
 @patient_bp.route('/patient/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_patient(id):
     if request.method == 'POST':
         data = request.form
@@ -74,6 +78,7 @@ def update_patient(id):
     return render_template("details/patient.html", patient=patient, insurances=insurances, doctors=doctors, companies=companies, diagnosis=diagnosis)
 
 @patient_bp.route('/patient/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_patient(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM pacienti WHERE id = ?", (id,))
@@ -82,6 +87,7 @@ def delete_patient(id):
     return redirect(url_for('patient.list_patients'))
 
 @patient_bp.route('/patient/search')
+@login_required
 def search_patients():
     query = request.args.get('q', '').strip().lower()
     nurse_id = session.get('nurse', {}).get('id')
@@ -101,22 +107,26 @@ def search_patients():
     return jsonify(results)
 
 @patient_bp.route('/patients/list/')
+@login_required
 def list_patients():
     patients = get_patients()
     return render_template("details/patients.html", patients=patients)
 
 @patient_bp.route('/patients/menu/')
+@login_required
 def menu():
     day = session.get("month", {}).get("prvy_den")
     patients = get_patients_in_day(day)
     return render_template("dekurzy/menu.html", patients=patients)
 
 @patient_bp.route('/patients/day/<date_str>')
+@login_required
 def patients_in_day(date_str):
     data = get_patients_in_day(date_str)
     return jsonify(data)
 
 @patient_bp.route('/patients/month/')
+@login_required
 def get_patients_by_day():
     month_id = session.get("month", {}).get("id")
 
@@ -278,7 +288,6 @@ def get_all_patients_info_in_month():
 
     conn.close()
     return [dict(row) for row in rows]
-
 
 def update_dekurz_number(patient_id, dekurz_number):
     conn = get_db_connection()

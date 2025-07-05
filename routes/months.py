@@ -4,9 +4,12 @@ import calendar
 from utils.database import get_db_connection
 from datetime import timedelta
 
+from flask_login import login_required
+
 month_bp = Blueprint("month", __name__)
 
 @month_bp.route("/month/create", methods=["GET", "POST"])
+@login_required
 def create_month():
     if request.method == "POST":
         data = request.form
@@ -54,6 +57,7 @@ def create_month():
     return render_template("create/month.html")
 
 @month_bp.route("/month/update/<int:id>", methods=["GET", "POST"])
+@login_required
 def update_month(id):
     conn = get_db_connection()
 
@@ -83,6 +87,7 @@ def update_month(id):
     return render_template("details/month.html", month=month)
 
 @month_bp.route("/month/delete/<int:id>", methods=["POST"])
+@login_required
 def delete_month(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM mesiac WHERE id = ?", (id,))
@@ -103,6 +108,7 @@ def get_months_by_nurse():
     return rows
 
 @month_bp.route('/month/select', methods=['POST'])
+@login_required
 def select_month():
     month_data = request.json
     session['month'] = month_data

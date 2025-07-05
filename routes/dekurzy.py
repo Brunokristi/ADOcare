@@ -11,9 +11,12 @@ from reportlab.lib import colors
 from reportlab.lib.utils import simpleSplit
 from collections import defaultdict
 
+from flask_login import login_required
+
 dekurz_bp = Blueprint("dekurz", __name__)
 
 @dekurz_bp.route("/dekurz", methods=["GET"])
+@login_required
 def dekurz():
     patients = get_all_patients_info_in_month()
     macros = get_macros()
@@ -21,6 +24,7 @@ def dekurz():
     return render_template("dekurzy/vypis.html", patients=patients, macros=macros)
 
 @dekurz_bp.route("/save", methods=["POST"])
+@login_required
 def save():
     conn = get_db_connection()
     cursor = conn.cursor()

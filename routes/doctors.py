@@ -2,9 +2,12 @@ from flask import Blueprint, request, redirect, url_for, render_template
 from models.doctor import Doctor
 from utils.database import get_db_connection
 
+from flask_login import login_required
+
 doctor_bp = Blueprint("doctor", __name__)
 
 @doctor_bp.route('/doctor/create', methods=['GET', 'POST'])
+@login_required
 def create_doctor():
     if request.method == 'POST':
         data = request.form
@@ -18,6 +21,7 @@ def create_doctor():
     return render_template("create/doctor.html")
 
 @doctor_bp.route('/doctor/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_doctor(id):
     if request.method == 'POST':
         data = request.form
@@ -36,6 +40,7 @@ def update_doctor(id):
     return render_template("details/doctor.html", doctor=doctor)
 
 @doctor_bp.route('/doctor/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_doctor(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM doktori WHERE id = ?", (id,))

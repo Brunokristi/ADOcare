@@ -2,9 +2,12 @@ from flask import Blueprint, request, redirect, url_for, render_template
 from models.company import Company
 from utils.database import get_db_connection
 
+from flask_login import login_required
+
 company_bp = Blueprint("company", __name__)
 
 @company_bp.route('/company/create', methods=['GET', 'POST'])
+@login_required
 def create_company():
     if request.method == 'POST':
         data = request.form
@@ -20,6 +23,7 @@ def create_company():
     return render_template("create/company.html")
 
 @company_bp.route('/company/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_company(id):
     if request.method == 'POST':
         data = request.form
@@ -43,6 +47,7 @@ def update_company(id):
     return render_template("details/company.html", company=company)
 
 @company_bp.route('/company/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_company(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM adosky WHERE id = ?", (id,))

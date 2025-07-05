@@ -2,9 +2,12 @@ from flask import Blueprint, request, redirect, url_for, render_template
 from models.car import Car
 from utils.database import get_db_connection
 
+from flask_login import login_required
+
 car_bp = Blueprint("car", __name__)
 
 @car_bp.route('/car/create', methods=['GET', 'POST'])
+@login_required
 def create_car():
     if request.method == 'POST':
         data = request.form
@@ -17,6 +20,7 @@ def create_car():
     return render_template("create/car.html")  # Optional, only if you have a form page
 
 @car_bp.route('/car/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_car(id):
     if request.method == 'POST':
         data = request.form
@@ -32,6 +36,7 @@ def update_car(id):
     return render_template("details/car.html", car=car)
 
 @car_bp.route('/car/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_car(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM auta WHERE id = ?", (id,))

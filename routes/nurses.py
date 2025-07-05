@@ -4,9 +4,12 @@ from utils.database import get_db_connection
 from routes.cars import get_cars
 from routes.companies import get_companies
 
+from flask_login import login_required
+
 nurse_bp = Blueprint("nurse", __name__)
 
 @nurse_bp.route('/nurse/create', methods=['GET', 'POST'])
+@login_required
 def create_nurse():
     if request.method == 'POST':
         data = request.form
@@ -25,6 +28,7 @@ def create_nurse():
     return render_template("create/nurse.html", cars=cars, comapnies=comapnies)
 
 @nurse_bp.route('/nurse/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_nurse(id):
     if request.method == 'POST':
         data = request.form
@@ -50,6 +54,7 @@ def update_nurse(id):
     return render_template("details/nurse.html", nurse=nurse, cars=cars, companies=companies)
 
 @nurse_bp.route('/nurse/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_nurse(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM sestry WHERE id = ?", (id,))
@@ -70,6 +75,7 @@ def get_nurse(id):
     return Nurse(row) if row else None
 
 @nurse_bp.route('/nurse/select', methods=['POST'])
+@login_required
 def select_nurse():
     data = request.get_json()
 

@@ -2,9 +2,12 @@ from flask import Blueprint, request, redirect, url_for, render_template
 from models.diagnosis import Diagnosis
 from utils.database import get_db_connection
 
+from flask_login import login_required
+
 diagnosis_bp = Blueprint("diagnosis", __name__)
 
 @diagnosis_bp.route('/diagnosis/create', methods=['GET', 'POST'])
+@login_required
 def create_diagnosis():
     if request.method == 'POST':
         data = request.form
@@ -18,6 +21,7 @@ def create_diagnosis():
     return render_template("create/diagnosis.html")
 
 @diagnosis_bp.route('/diagnosis/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_diagnosis(id):
     if request.method == 'POST':
         data = request.form
@@ -35,6 +39,7 @@ def update_diagnosis(id):
     return render_template("details/diagnosis.html", diagnosis=diagnosis)
 
 @diagnosis_bp.route('/diagnosis/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_diagnosis(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM diagnozy WHERE id = ?", (id,))
@@ -43,6 +48,7 @@ def delete_diagnosis(id):
     return redirect(url_for('main.settings'))
 
 @diagnosis_bp.route('/diagnosis/search')
+@login_required
 def search_diagnoses():
     query = request.args.get('q', '').strip()
 
@@ -69,6 +75,7 @@ def get_diagnosis(id):
     return Diagnosis(row) if row else None
 
 @diagnosis_bp.route('/diagnosis/list')
+@login_required
 def list_diagnoses():
     diagnoses = get_diagnoses()
     return render_template("details/diagnoses.html", diagnoses=diagnoses)

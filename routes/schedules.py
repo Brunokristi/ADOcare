@@ -5,9 +5,12 @@ from routes.patients import get_patients_by_day
 from utils.database import get_db_connection
 from utils.tsp import calculate_optimal_day_route
 
+from flask_login import login_required
+
 schedule_bp = Blueprint("schedule", __name__)
 
 @schedule_bp.route("/schedule/insert", methods=["POST"])
+@login_required
 def insert_schedule():
     try:
         conn = get_db_connection()
@@ -86,6 +89,7 @@ def insert_schedule():
         return jsonify({"error": str(e)}), 500
 
 @schedule_bp.route("/schedule/month", methods=["POST"])
+@login_required
 def schedule_month():
     data = request.get_json()
     start_address = data.get("start")
@@ -123,8 +127,8 @@ def generate_schedule(start_date, end_date, frequency, exceptions):
 
     return schedule
 
-
 @schedule_bp.route('/schedule/delete/<int:pacient_id>', methods=['DELETE'])
+@login_required
 def delete_patient_from_schedule(pacient_id):
 
     mesiac_id = session.get("month", {}).get("id")

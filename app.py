@@ -13,7 +13,10 @@ from routes.months import month_bp
 from routes.schedules import schedule_bp
 from routes.dekurzy import dekurz_bp
 from routes.transport import transport_bp
+from routes.auth import auth_bp
 
+from flask_login import LoginManager
+from utils.auth import setup_login_manager
 
 from utils.database import DATABASE_FILE, check_db
 
@@ -22,6 +25,10 @@ if __name__ == "__main__":
     app.secret_key = "a3f8d3e87b5a4e5f9c6d4b2f6a1e8c3d"
     CORS(app)
 
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = "auth.login"
+    setup_login_manager(login_manager)
 
     app.register_blueprint(main)
     app.register_blueprint(macro_bp)
@@ -36,6 +43,7 @@ if __name__ == "__main__":
     app.register_blueprint(schedule_bp)
     app.register_blueprint(dekurz_bp)
     app.register_blueprint(transport_bp)
+    app.register_blueprint(auth_bp)
 
     check_db()
     app.run(host="127.0.0.1", port=5000, debug=True)

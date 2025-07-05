@@ -12,6 +12,7 @@ import uuid
 import json
 import re
 
+from flask_login import login_required
 
 API_KEYS = [
     "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
@@ -21,12 +22,13 @@ API_KEYS = [
 transport_bp = Blueprint("transport", __name__)
 
 @transport_bp.route('/transport/menu', methods=['GET'])
+@login_required
 def transport_menu():
     poistovne = get_insurances()
     return render_template("transport/transport_menu.html", poistovne=poistovne)
 
-
 @transport_bp.route('/transport', methods=['POST'])
+@login_required
 def transport():
     def haversine(lat1, lon1, lat2, lon2):
         R = 6371000
@@ -226,8 +228,8 @@ def transport():
 
     return render_template("transport/transport.html", data=final_rows, sestra=sestra, poistovna=poistovna, file_id=file_id)
 
-
 @transport_bp.route('/transport/generate', methods=['POST'])
+@login_required
 def transport_generate():
     data = request.get_json()
     cislo_faktury = data.get("cislo_faktury")
@@ -278,7 +280,6 @@ def transport_generate():
             os.remove(f"/tmp/transport_data_{file_id}.json")
         except Exception as e:
             print(f"Chyba pri mazaní dočasného súboru: {e}")
-
 
 def extract_city_from_address(address: str) -> str:
     if not address:

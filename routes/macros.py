@@ -2,9 +2,12 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from models.macro import Macro
 from utils.database import get_db_connection
 
+from flask_login import login_required
+
 macro_bp = Blueprint("macro", __name__)
 
 @macro_bp.route('/macro/create', methods=['GET', 'POST'])
+@login_required
 def create_macro():
     if request.method == 'POST':
         data = request.form
@@ -19,6 +22,7 @@ def create_macro():
     return render_template("create/macro.html")
 
 @macro_bp.route('/macro/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_macro(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM makra WHERE id = ?", (id,))
@@ -27,6 +31,7 @@ def delete_macro(id):
     return redirect(url_for('main.settings'))
 
 @macro_bp.route('/macro/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_macro(id):
     if request.method == 'POST':
         data = request.form

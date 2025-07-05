@@ -9,8 +9,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
     {% block styles %}{% endblock %}
 
-
-
     <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;400;500;700&display=swap">
@@ -44,11 +42,14 @@
             </div>
 
             <div class="navbar-section">
-                {% if session.get('nurse') %}
+                {% if session.get('nurse') and current_user.is_authenticated%}
                     <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
                         <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
                     </a>
-                    <a class="navbar-button" href="{{ url_for('main.index') }}">Odhlásiť sa</a>
+                {% endif %}
+
+                {% if current_user.is_authenticated %}
+                    <a class="navbar-button" href="{{ url_for('auth.logout') }}">Odhlásiť sa</a>
                 {% endif %}
             </div>
         </div>
