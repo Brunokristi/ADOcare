@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/main.css') }}">
+
+<h1><b>Návrh na poskytovanie ošetrovateľskej starostlivosti</b></h1>
+
+<form method="post">
+    <div class="form-group inline-form">
+        <label>Zdravotnícke zariadenie: </label>
+        <input type = "text" id="zdravotnickeZariadenie">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>so sídlom v: </label>
+        <input type = "text" id="soSidlomV">
+    </div>
+
+    <div style="width: 600px">
+        <div class="form-group inline-form" style="position: relative;">
+            <label>Мeno, priezvisko, titul pacienta/pacientky: </label>
+            <input type="text" id="patientSearch" name="patientSearch" autocomplete="off"
+                placeholder="Zadaj meno alebo rodné číslo...">
+            <div id="patient-suggestions" class="suggestions"></div>
+        </div>
+
+        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
+            <div class="form-group inline-form">
+                <label>Rodné číslo: </label>
+                <p id="rodneCislo"></p>
+                <label>Číslný kód zdravotnej poisťovne: </label>
+                <p id="kodPoistovne"></p>
+            </div>
+
+            <div class="form-group inline-form"></div>
+                <label>Bydlisko trvalé: </label>
+                <p id="bydliskoTrvale"></p>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="form-group inline-form">
+        <label>Bydlisko prechodné: </label>
+        <input required type = "text" id="bydliskoPrechodne">
+    </div>
+    <div class="form-group">
+        <label>Epikriza a zdôvodnenie pre poskytovanie ošetrovateĺskej starostlivosti: </label>
+        <input required type = "text" id="epikrizaAZdovodnenie">
+    </div>
+
+    <div class="form-group" style="position: relative;">
+        <label for="diagnoza">Lekárská diagnóza (slovom alebo čislom podĺa MKCH):</label>
+        <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off">
+        <input type="hidden" id="diagnoza_id" name="diagnoza">
+        <div id="diagnoza-suggestions" class="suggestions"></div>
+    </div>
+
+    <div class="form-group">
+        <label>Sestrská diagnóza (slovom alebo čislom podĺa Zoznamu sesterských diagnz): </label>
+        <input required type = "text" id="sestrskaDiagnoza">
+    </div>
+
+    <div class="checkbox-container navrh-checkbox-container">
+        <input type="checkbox" id="HCheckBox">
+        <label for="HCheckBox">H - pacient/pacientka s obmedzenou pohyblivosťou</label>
+        <label for="HCheckBox">(50%)</label>
+    </div>
+    <div class="checkbox-container navrh-checkbox-container">
+        <input type="checkbox" id="ICheckBox">
+        <label for="ICheckBox">I - imobilný pacient/pacientka</label>
+        <label for="ICheckBox">(75%)</label>
+    </div>
+    <div class="checkbox-container navrh-checkbox-container">
+        <input type="checkbox" id="FCheckBox">
+        <label for="FCheckBox">F - pacient/pacientka s psychiatrickou diagnózou,<br> mentálne retardovaný pacient-pacientka</label>
+        <label for="FCheckBox">(75%)</label>
+    </div>
+
+    <div class="form-group">
+        <label>Plán ošetrovateĺskej startostlivosti:</label>
+        <input required type = "text" id="PlanOsStarostlivosty">
+    </div>
+
+    <div class="form-group">
+        <label>Výkony vyjadré kódom a ich frekvencia realizácie:</label>
+        <input required type = "text" id="vzkonyVyjadreKodom">
+    </div>
+
+    <label><b>Predpokladná dĺžka ošetrovateĺskej starostlivosti:</b></label>
+
+    <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="duration" value="1" checked>
+          do 1 mesiaca
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="duration" value="3">
+          do 3 mesiacov
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="duration" value="6">
+          do 6 mesiacov
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="duration" value="more">
+          nad 6 mesiacov
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label><b>Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval:</b></label>
+        <input required type = "text" id="lekar">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Dátum:</label>
+        <input type="text" id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+    </div>
+
+    <div class="form-group inline-form">
+        <div>
+            <label>........................</label>
+            <br>
+            <label>podpis lekára<br>a odtlačok pečiatky</label>
+        </div>
+        <div>
+            <label>................................................</label>
+            <br>
+            <label>podpis odborného zástupcu poskytovateĺa<br>ošetrovateĺskej starostlivosti a sdtlačok pečiatky</label>
+        </div>
+    </div>
+
+    <button class="button no-print", onclick="window.print()">Print document</button>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/documents/navrh.js') }}"></script>
+<script src="{{ url_for('static', filename='js/documents/navrhIllnessList.js') }}"></script>
+{% endblock %}
