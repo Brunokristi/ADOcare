@@ -6,21 +6,21 @@
 
 <h1><b>Návrh na poskytovanie ošetrovateľskej starostlivosti</b></h1>
 
-<form method="post">
+<form id="mainForm">
     <div class="form-group inline-form">
         <label>Zdravotnícke zariadenie: </label>
-        <input type = "text" id="zdravotnickeZariadenie">
+        <input type = "text" id="zdravotnickeZariadenie" name="zdravotnickeZariadenie">
     </div>
 
     <div class="form-group inline-form">
         <label>so sídlom v: </label>
-        <input type = "text" id="soSidlomV">
+        <input type = "text" id="soSidlomV" name="soSidlomV">
     </div>
 
     <div style="width: 600px">
         <div class="form-group inline-form" style="position: relative;">
             <label>Мeno, priezvisko, titul pacienta/pacientky: </label>
-            <input type="text" id="patientSearch" name="patientSearch" autocomplete="off"
+            <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
                 placeholder="Zadaj meno alebo rodné číslo...">
             <div id="patient-suggestions" class="suggestions"></div>
         </div>
@@ -43,23 +43,23 @@
 
     <div class="form-group inline-form">
         <label>Bydlisko prechodné: </label>
-        <input required type = "text" id="bydliskoPrechodne">
+        <input required type = "text" id="bydliskoPrechodne" name="bydliskoPrechodne">
     </div>
     <div class="form-group">
         <label>Epikriza a zdôvodnenie pre poskytovanie ošetrovateĺskej starostlivosti: </label>
-        <input required type = "text" id="epikrizaAZdovodnenie">
+        <input required type = "text" id="epikriza" name="epikriza">
     </div>
 
     <div class="form-group" style="position: relative;">
         <label for="diagnoza">Lekárská diagnóza (slovom alebo čislom podĺa MKCH):</label>
-        <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off">
-        <input type="hidden" id="diagnoza_id" name="diagnoza">
+        <input type="text" id="lekarskaDiagnoze" name="lekarskaDiagnoze" autocomplete="off">
+        <input type="hidden" id="diagnoza_id">
         <div id="diagnoza-suggestions" class="suggestions"></div>
     </div>
 
     <div class="form-group">
         <label>Sestrská diagnóza (slovom alebo čislom podĺa Zoznamu sesterských diagnz): </label>
-        <input required type = "text" id="sestrskaDiagnoza">
+        <input required type = "text" id="sesterskaDiagnoza" name="sesterskaDiagnoza">
     </div>
 
     <div class="checkbox-container navrh-checkbox-container">
@@ -80,12 +80,12 @@
 
     <div class="form-group">
         <label>Plán ošetrovateĺskej startostlivosti:</label>
-        <input required type = "text" id="PlanOsStarostlivosty">
+        <input required type = "text" id="PlanOsStarostlivosty" name="PlanOsStarostlivosty">
     </div>
 
     <div class="form-group">
         <label>Výkony vyjadré kódom a ich frekvencia realizácie:</label>
-        <input required type = "text" id="vzkonyVyjadreKodom">
+        <input required type = "text" id="Vykony" name="Vykony">
     </div>
 
     <label><b>Predpokladná dĺžka ošetrovateĺskej starostlivosti:</b></label>
@@ -111,12 +111,12 @@
 
     <div class="form-group">
         <label><b>Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval:</b></label>
-        <input required type = "text" id="lekar">
+        <input required type = "text" id="lekar" name="lekar">
     </div>
 
     <div class="form-group inline-form">
         <label>Dátum:</label>
-        <input type="text" id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+        <input type="text" name="currentDate", id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
     </div>
 
     <div class="form-group inline-form">
@@ -131,9 +131,8 @@
             <label>podpis odborného zástupcu poskytovateĺa<br>ošetrovateĺskej starostlivosti a sdtlačok pečiatky</label>
         </div>
     </div>
-
-    <button class="button no-print", onclick="window.print()">Print document</button>
 </form>
+<button id="printButton" class="button no-print">Print document</button>
 
 {% endblock %}
 

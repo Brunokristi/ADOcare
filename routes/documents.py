@@ -60,3 +60,46 @@ def getAdditionDataByRodneCislo():
     results['poitovnaFirstCode'] = results.pop('kod')
     results['doctorName'] = results.pop('meno')
     return jsonify(results)
+
+@documents_bp.route('/documents/storeDataFromNavrhForm', methods=['POST'])
+@login_required
+def storeDataFromNavrhForm():
+    data = request.form
+
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            UPDATE documents_navrh SET
+                bydliskoPrechodne = ?,
+                epikriza = ?,
+                lekarskaDiagnoze = ?,
+                sesterskaDiagnoza = ?,
+                PlanOsStarostlivosty = ?,
+                Vykony = ?,
+                HCheckBox = ?,
+                ICheckBox = ?,
+                FCheckBox = ?,
+                PredpokladnaDlzkaStarostlivosty = ?
+            WHERE id = 1;
+        """, (
+            data["bydliskoPrechodne"],
+            data["epikriza"],
+            data["lekarskaDiagnoze"],
+            data["sesterskaDiagnoza"],
+            data["PlanOsStarostlivosty"],
+            data["Vykony"],
+            data["HCheckBox"],
+            data["ICheckBox"],
+            data["FCheckBox"],
+            data["PredpokladnaDlzkaStarostlivosty"]
+        ))
+        conn.commit()
+
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Failed to save data!'}), 400
+
+    finally:
+        conn.close()
+
+    return jsonify({'message': 'The data has been successfully retrieved!'}), 200

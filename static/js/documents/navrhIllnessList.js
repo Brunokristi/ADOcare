@@ -2,7 +2,7 @@ let autocompleteService;
 let debounceTimer;
 
 document.addEventListener("DOMContentLoaded", function () {
-    const diagnosisInput = document.getElementById("diagnoza");
+    const diagnosisInput = document.getElementById("lekarskaDiagnoze");
     const diagnosisSuggestions = document.getElementById("diagnoza-suggestions");
 
     if (diagnosisInput) {

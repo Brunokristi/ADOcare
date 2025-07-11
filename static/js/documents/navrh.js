@@ -9,20 +9,52 @@ document.addEventListener("DOMContentLoaded", function () {
     const zdravotnickeZariadenie = document.getElementById("zdravotnickeZariadenie");
     const soSidlomV = document.getElementById("soSidlomV");
     const kodPoistovne  = document.getElementById("kodPoistovne");
-    const epikrizaAZdovodnenie = document.getElementById("epikrizaAZdovodnenie");
+    const epikriza = document.getElementById("epikriza");
     const sestrskaDiagnoza = document.getElementById("sestrskaDiagnoza");
-    const diagnoza = document.getElementById("diagnoza");
+    const lekarskaDiagnoze = document.getElementById("lekarskaDiagnoze");
     const bydliskoPrechodne = document.getElementById("bydliskoPrechodne");
     const HCheckBox = document.getElementById("HCheckBox");
     const ICheckBox = document.getElementById("ICheckBox");
     const FCheckBox = document.getElementById("FCheckBox");
     const PlanOsStarostlivosty = document.getElementById("PlanOsStarostlivosty");
-    const vzkonyVyjadreKodom = document.getElementById("vzkonyVyjadreKodom");
+    const Vykony = document.getElementById("Vykony");
     const lekar = document.getElementById("lekar");
     const currentDate = document.getElementById('currentDate');
+    const mainForm = document.getElementById('mainForm');
+    const printButton = document.getElementById("printButton");
 
     input?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
+
+    printButton.addEventListener("click", onPrinting);
+
+    function onPrinting(){
+        const formData = new FormData(mainForm);
+        const keysToDelete = ['duration', 'zdravotnickeZariadenie', 'soSidlomV', 'patientSearch', 'lekar', 'currentDate'];
+        keysToDelete.forEach(key => {
+            formData.delete(key);
+        });
+
+        formData.append(HCheckBox.id, HCheckBox.checked);
+        formData.append(ICheckBox.id, ICheckBox.checked);
+        formData.append(FCheckBox.id, FCheckBox.checked);
+        formData.append('PredpokladnaDlzkaStarostlivosty', getSelectedRadioIndex());
+
+        fetch('/documents/storeDataFromNavrhForm', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
+        }).then(data => {
+            showMessage("The data has been successfully saved.")
+        }).catch(error => {
+            showMessage("An error occurred while trying to save the data.")
+        });
+        window.print();
+    }
 
     function onLoading() {
         const url = '/documents/getDohodaFormData';
@@ -38,19 +70,19 @@ document.addEventListener("DOMContentLoaded", function () {
             zdravotnickeZariadenie.value = data.nazov;
             soSidlomV.value = data.ulica + ", " + data.mesto;
             bydliskoPrechodne.value = data.bydliskoPrechodne;
-            epikrizaAZdovodnenie.value = data.epikriza;
-            diagnoza.value = data.lekarskaDiagnoze;
-            sestrskaDiagnoza.value = data.sesterskaDiagnoza;
-            HCheckBox.checked = data.HCheckBox;
-            ICheckBox.checked = data.ICheckBox;
-            FCheckBox.checked = data.FCheckBox;
+            epikriza.value = data.epikriza;
+            lekarskaDiagnoze.value = data.lekarskaDiagnoze;
+            sesterskaDiagnoza.value = data.sesterskaDiagnoza;
+            HCheckBox.checked = (data.HCheckBox === "true") ? 1 : 0;
+            ICheckBox.checked = (data.ICheckBox === "true") ? 1 : 0;
+            FCheckBox.checked = (data.FCheckBox === "true") ? 1 : 0;
             PlanOsStarostlivosty.value = data.PlanOsStarostlivosty;
-            vzkonyVyjadreKodom.value = data.Vykony;
+            Vykony.value = data.Vykony;
             setRadioByIndex(data.PredpokladnaDlzkaStarostlivosty);
 
             const today = new Date();
             const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Місяці від 0 до 11
+            const month = String(today.getMonth() + 1).padStart(2, '0');
             const day = String(today.getDate()).padStart(2, '0');
 
             currentDate.value = `${day}.${month}.${year}`;
