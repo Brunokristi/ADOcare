@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.append(ICheckBox.id, ICheckBox.checked);
         formData.append(FCheckBox.id, FCheckBox.checked);
         formData.append('PredpokladnaDlzkaStarostlivosty', getSelectedRadioIndex());
-
+        formData.append("rodne_cislo", rodneCislo.innerText);
         fetch('/documents/storeDataFromNavrhForm', {
             method: 'POST',
             body: formData
@@ -87,16 +87,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log(data);
             zdravotnickeZariadenie.value = data.nazov;
             soSidlomV.value = data.ulica + ", " + data.mesto;
-            bydliskoPrechodne.value = data.bydliskoPrechodne;
-            epikriza.value = data.epikriza;
-            lekarskaDiagnoze.value = data.lekarskaDiagnoze;
-            sesterskaDiagnoza.value = data.sesterskaDiagnoza;
-            HCheckBox.checked = (data.HCheckBox === "true") ? 1 : 0;
-            ICheckBox.checked = (data.ICheckBox === "true") ? 1 : 0;
-            FCheckBox.checked = (data.FCheckBox === "true") ? 1 : 0;
-            PlanOsStarostlivosty.value = data.PlanOsStarostlivosty;
-            Vykony.value = data.Vykony;
-            setRadioByIndex(data.PredpokladnaDlzkaStarostlivosty);
 
             const today = new Date();
             const year = today.getFullYear();
@@ -120,14 +110,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (radios[index]) radios[index].checked = true;
     }
 
+    clearPatientDetails();
     onLoading()
 
 
     function handlePatientSearch() {
         const query = patientSearch.value.trim();
         if (query.length < 2) {
-            suggestionsContainer.style.display = "none";
-            selectedPatientDiv.style.display = "none";
+            clearPatientDetails();
             return;
         }
 
@@ -149,6 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         selectedPatientId = p.id;
                         getAdditionDataByRodneCislo(p.rodne_cislo).then(addInfo => {
                             const data = Object.assign({}, p, addInfo);
+                            clearPatientDetails();
                             fillPatientDetails(data);
                         })
                         .catch(error => {
@@ -165,8 +156,36 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    function fillPatientDetails(patient) {
-        console.log(patient)
+    function clearPatientDetails(){
+        lekar.value = "";
+        bydliskoPrechodne.value = "";
+        epikriza.value = "";
+        lekarskaDiagnoze.value = "";
+        sesterskaDiagnoza.value = "";
+        HCheckBox.checked = 0;
+        ICheckBox.checked = 0;
+        FCheckBox.checked = 0;
+        PlanOsStarostlivosty.value = "";
+        Vykony.value = "";
+        setRadioByIndex(0);
+        selectedPatientDiv.style.display = "none";
+        suggestionsContainer.style.display = "none";
+    }
+
+    function fillPatientDetails(patient){
+        if ("bydliskoPrechodne" in patient){
+            bydliskoPrechodne.value = patient.bydliskoPrechodne;
+            epikriza.value = patient.epikriza;
+            lekarskaDiagnoze.value = patient.lekarskaDiagnoze;
+            sesterskaDiagnoza.value = patient.sesterskaDiagnoza;
+            console.log(patient.HCheckBox);
+            HCheckBox.checked = (patient.HCheckBox === "true") ? 1 : 0;
+            ICheckBox.checked = (patient.ICheckBox === "true") ? 1 : 0;
+            FCheckBox.checked = (patient.FCheckBox === "true") ? 1 : 0;
+            PlanOsStarostlivosty.value = patient.PlanOsStarostlivosty;
+            Vykony.value = patient.Vykony;
+            setRadioByIndex(patient.PredpokladnaDlzkaStarostlivosty);
+        }
         patientSearch.value = patient.meno;
         rodneCislo.innerText = patient.rodne_cislo;
         bydliskoTrvale.innerText = patient.adresa || "-";

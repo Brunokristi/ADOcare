@@ -25,22 +25,22 @@ def showDohoda():
 @login_required
 def getDohodaFormData():
     conn = get_db_connection()
-    oldFormData = conn.execute("SELECT * FROM documents_navrh", ()).fetchall()
     adoskaData = conn.execute("""
         SELECT nazov, ulica, mesto FROM adosky
         WHERE identifikator = ?
     """, (current_user.username,)).fetchall()
     conn.close()
 
-    results = [dict(row) for row in oldFormData][0]
-    results = results | [dict(row) for row in adoskaData][0]
+    results = [dict(row) for row in adoskaData][0]
 
     return jsonify(results)
 
 @documents_bp.route('/documents/getAdditionDataByRodneCislo', methods=['GET'])
 @login_required
 def getAdditionDataByRodneCislo():
+    rodneCislo = request.args.get('rodne_cislo', '')
     conn = get_db_connection()
+    oldFormData = conn.execute("SELECT * FROM documents_navrh WHERE rodne_cislo = ?", (rodneCislo,)).fetchall()
     rows = conn.execute("""
         SELECT
             dok.meno,
@@ -53,10 +53,12 @@ def getAdditionDataByRodneCislo():
             doktori dok ON pac.odosielatel = dok.id
         WHERE
             pac.rodne_cislo = ?
-    """, (request.args.get('rodne_cislo', ''),)).fetchall()
+    """, (rodneCislo,)).fetchall()
     conn.close()
 
     results = [dict(row) for row in rows][0]
+    if (oldFormData):
+        results = results | [dict(row) for row in oldFormData][0]
     results['poitovnaFirstCode'] = results.pop('kod')
     results['doctorName'] = results.pop('meno')
     return jsonify(results)
@@ -69,19 +71,21 @@ def storeDataFromNavrhForm():
     conn = get_db_connection()
     try:
         conn.execute("""
-            UPDATE documents_navrh SET
-                bydliskoPrechodne = ?,
-                epikriza = ?,
-                lekarskaDiagnoze = ?,
-                sesterskaDiagnoza = ?,
-                PlanOsStarostlivosty = ?,
-                Vykony = ?,
-                HCheckBox = ?,
-                ICheckBox = ?,
-                FCheckBox = ?,
-                PredpokladnaDlzkaStarostlivosty = ?
-            WHERE id = 1;
+            INSERT INTO documents_navrh (rodne_cislo, bydliskoPrechodne, epikriza, lekarskaDiagnoze, sesterskaDiagnoza, PlanOsStarostlivosty, Vykony, HCheckBox, ICheckBox, FCheckBox, PredpokladnaDlzkaStarostlivosty)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(rodne_cislo) DO UPDATE SET
+                bydliskoPrechodne = excluded.bydliskoPrechodne,
+                epikriza = excluded.epikriza,
+                lekarskaDiagnoze = excluded.lekarskaDiagnoze,
+                sesterskaDiagnoza = excluded.sesterskaDiagnoza,
+                PlanOsStarostlivosty = excluded.PlanOsStarostlivosty,
+                Vykony = excluded.Vykony,
+                HCheckBox = excluded.HCheckBox,
+                ICheckBox = excluded.ICheckBox,
+                FCheckBox = excluded.FCheckBox,
+                PredpokladnaDlzkaStarostlivosty = excluded.PredpokladnaDlzkaStarostlivosty;
         """, (
+            data["rodne_cislo"],
             data["bydliskoPrechodne"],
             data["epikriza"],
             data["lekarskaDiagnoze"],
