@@ -1,16 +1,15 @@
 document.addEventListener("DOMContentLoaded", function () {
     const messageEl = document.getElementById("message");
-    const input = document.getElementById("patientSearch");
+    const patientSearch = document.getElementById("patientSearch");
     const suggestionsContainer = document.getElementById("patient-suggestions");
     const selectedPatientDiv = document.getElementById("selected-patient");
     const bydliskoTrvale = document.getElementById("bydliskoTrvale");
     const rodneCislo = document.getElementById("rodneCislo");
-    const inputFild = document.getElementById("patientSearch");
     const zdravotnickeZariadenie = document.getElementById("zdravotnickeZariadenie");
     const soSidlomV = document.getElementById("soSidlomV");
     const kodPoistovne  = document.getElementById("kodPoistovne");
     const epikriza = document.getElementById("epikriza");
-    const sestrskaDiagnoza = document.getElementById("sestrskaDiagnoza");
+    const sesterskaDiagnoza = document.getElementById("sesterskaDiagnoza");
     const lekarskaDiagnoze = document.getElementById("lekarskaDiagnoze");
     const bydliskoPrechodne = document.getElementById("bydliskoPrechodne");
     const HCheckBox = document.getElementById("HCheckBox");
@@ -23,12 +22,31 @@ document.addEventListener("DOMContentLoaded", function () {
     const mainForm = document.getElementById('mainForm');
     const printButton = document.getElementById("printButton");
 
-    input?.addEventListener("input", handlePatientSearch);
+    patientSearch?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
 
     printButton.addEventListener("click", onPrinting);
 
+    function checkInput(input, massage){
+        if (input.value.trim() === ""){
+            showMessage("Prosím vyplňte povinne pole: \"" + massage + "\"")
+            return true;
+        }
+        return false;
+    }
+
     function onPrinting(){
+        if (checkInput(zdravotnickeZariadenie, "Zdravotnícke zariadenie") ||
+            checkInput(soSidlomV, "So sídlom v") ||
+            checkInput(patientSearch, "Мeno, priezvisko, titul pacienta/pacientky") ||
+            checkInput(epikriza, "Epikriza a zdôvodnenie pre poskytovanie ošetrovateĺskej starostlivosti") ||
+            checkInput(lekarskaDiagnoze, "Lekárská diagnóza") ||
+            checkInput(sesterskaDiagnoza, "Sestrská diagnóza") ||
+            checkInput(lekar, "Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval" ||
+            checkInput(currentDate, "Dátum"))){
+                return;
+            }
+
         const formData = new FormData(mainForm);
         const keysToDelete = ['duration', 'zdravotnickeZariadenie', 'soSidlomV', 'patientSearch', 'lekar', 'currentDate'];
         keysToDelete.forEach(key => {
@@ -106,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     function handlePatientSearch() {
-        const query = input.value.trim();
+        const query = patientSearch.value.trim();
         if (query.length < 2) {
             suggestionsContainer.style.display = "none";
             selectedPatientDiv.style.display = "none";
@@ -149,7 +167,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fillPatientDetails(patient) {
         console.log(patient)
-        inputFild.value = patient.meno;
+        patientSearch.value = patient.meno;
         rodneCislo.innerText = patient.rodne_cislo;
         bydliskoTrvale.innerText = patient.adresa || "-";
 
@@ -177,7 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function closeSuggestionsOnClickOutside(e) {
-        if (!suggestionsContainer.contains(e.target) && e.target !== input) {
+        if (!suggestionsContainer.contains(e.target) && e.target !== patientSearch) {
             suggestionsContainer.style.display = "none";
         }
     }
@@ -188,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             setTimeout(() => {
                 messageEl.textContent = "";
-            }, 2000);
+            }, 3000);
         }
     }
 });
