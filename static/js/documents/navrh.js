@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const messageEl = document.getElementById("message");
     const patientSearch = document.getElementById("patientSearch");
     const suggestionsContainer = document.getElementById("patient-suggestions");
     const selectedPatientDiv = document.getElementById("selected-patient");
@@ -216,16 +215,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function closeSuggestionsOnClickOutside(e) {
         if (!suggestionsContainer.contains(e.target) && e.target !== patientSearch) {
             suggestionsContainer.style.display = "none";
-        }
-    }
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-
-            setTimeout(() => {
-                messageEl.textContent = "";
-            }, 3000);
         }
     }
 });

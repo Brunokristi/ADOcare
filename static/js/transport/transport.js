@@ -1,6 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    messageEl = document.getElementById("message");
-
     // uloží file_id z globálnej premennej do JS, ak existuje
     window.fileId = window.fileId || document.getElementById("file_id")?.value;
 });
@@ -42,9 +40,3 @@ document.getElementById("save-btn").addEventListener("click", async () => {
         showMessage("Nepodarilo sa vytvoriť súbor.");
     }
 });
-
-function showMessage(msg) {
-    if (messageEl) {
-        messageEl.textContent = msg;
-    }
-}

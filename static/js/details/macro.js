@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const picker = document.getElementById("colorPicker");
     const text = document.getElementById("farba");
-    const messageEl = document.getElementById("message");
 
     picker.addEventListener("input", () => {
         text.value = picker.value;
@@ -28,10 +27,4 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 });

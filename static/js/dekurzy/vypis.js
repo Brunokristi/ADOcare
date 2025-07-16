@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     let selectedPatient = null;
-    const messageEl = document.getElementById("message");
 
     initializePatientSelection();
     document.getElementById("save-btn").addEventListener("click", savePatientData);
@@ -292,13 +291,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 showMessage("Nastala chyba pri ukladaní.");
                 console.error("Chyba pri fetchnutí:", err);
             });
-    }
-
-    // zobrazenie spravy
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
     }
 
     // kopírovanie a vkladanie dátumov

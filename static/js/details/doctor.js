@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("doctorForm");
-    const messageEl = document.getElementById("message");
 
     if (!form) return;
 
@@ -27,10 +26,4 @@ document.addEventListener("DOMContentLoaded", function () {
                 showMessage("Chyba spojenia so serverom.");
             });
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 });

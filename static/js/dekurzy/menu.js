@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const messageEl = document.getElementById("message");
     const generateBtn = document.getElementById("generate_schedule");
 
     const input = document.getElementById("patientSearch");
@@ -326,15 +325,4 @@ document.addEventListener("DOMContentLoaded", function () {
                 container.innerHTML = "<p>Chyba pri načítaní pacientov.</p>";
             });
     }
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-
-            setTimeout(() => {
-                messageEl.textContent = "";
-            }, 2000);
-        }
-    }
-
 });

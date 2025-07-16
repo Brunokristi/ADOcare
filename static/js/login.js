@@ -1,7 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-
-    const messageEl = document.getElementById("message");
-
     document.querySelectorAll(".small-token").forEach(btn => {
         btn.addEventListener("click", function (e) {
             e.preventDefault();
@@ -31,10 +28,4 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         });
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 });

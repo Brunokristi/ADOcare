@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     const picker = document.getElementById("colorPicker");
     const text = document.getElementById("farba");
-    const messageEl = document.getElementById("message");
 
     const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
     picker.value = randomColor;
@@ -34,10 +33,4 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 });

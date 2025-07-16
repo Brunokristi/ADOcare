@@ -2,7 +2,6 @@ let autocompleteService;
 let debounceTimer;
 
 document.addEventListener("DOMContentLoaded", function () {
-    const messageEl = document.getElementById("message");
     const form = document.getElementById("patientForm");
     const addressInput = document.getElementById("adresa");
     const suggestionsContainer = document.getElementById("address-suggestions");
@@ -72,12 +71,6 @@ document.addEventListener("DOMContentLoaded", function () {
             suggestionsContainer.style.display = "none";
         }
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 
     function fetchSuggestions() {
         const query = addressInput.value.trim();

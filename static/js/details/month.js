@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("monthForm");
-    const messageEl = document.getElementById("message");
 
     if (!form) return;
 
@@ -31,10 +30,4 @@ document.addEventListener("DOMContentLoaded", function () {
                 showMessage("Chyba pri odosielaní údajov.");
             });
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 });

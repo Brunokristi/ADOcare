@@ -1,6 +1,5 @@
 
 document.addEventListener("DOMContentLoaded", function () {
-    const messageEl = document.getElementById("message");
     const submitBtn = document.querySelector(".btn");
 
     submitBtn.addEventListener("click", function (e) {
@@ -37,10 +36,4 @@ document.addEventListener("DOMContentLoaded", function () {
             showMessage("Chyba pri odosielaní požiadavky.");
         });
     });
-
-    function showMessage(msg) {
-        if (messageEl) {
-            messageEl.textContent = msg;
-        }
-    }
 });
