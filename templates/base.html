@@ -60,6 +60,28 @@
         </div>
     </header>
 
+    <!-- generating path for keyboard shortcuts -->
+    <!-- // Ctrl Z - back button
+    // Ctrl D - domov (dashboard/
+    // CTRL A - Ados
+    // f1 - sestra
+    // f2 - pacient
+    // f3 - nastavenia
+    // f4 - odhlasit sa -->
+    <script>
+        const dashboardUrl = "{{ url_for('main.dashboard') }}";
+        const adosUrl = "{{ url_for('main.index') }}";
+        const patientUrl = "{{ url_for('patient.list_patients') }}";
+        const settingsUrl = "{{ url_for('main.settings') }}";
+        const logoutUrl = "{{ url_for('auth.logout') }}";
+
+        {% if 'nurse' in session %}
+            const nurseUrl = "{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}";
+        {% else %}
+            const nurseUrl = "";
+        {% endif %}
+    </script>
+
     <main>
         {% block content %}{% endblock %}
     </main>
