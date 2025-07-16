@@ -217,4 +217,8 @@ document.addEventListener("DOMContentLoaded", function () {
             suggestionsContainer.style.display = "none";
         }
     }
+    flatpickr(currentDate, {
+        dateFormat: "d.m.Y",
+        locale: "sk"
+    });
 });
