@@ -62,31 +62,17 @@
 <div class="section">
     <div class="lined-heading"><span>Documents</span></div>
 
-    <div class="scroll-wrapper">
-        <button class="scroll-arrow left" onclick="scrollDekurzy(-1)">
-            <i class="bi bi-chevron-left"></i>
-        </button>
+    <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showNavrh') }}';" style="width: 700px;">
+        Návrh na poskytovanie ošetrovateľskej starostlivosti
+    </button>
 
-        <div class="scroll" id="monthScroll">
-            <a href="{{ url_for('documents.showNavrh') }}" class="small-small-token">
-                Нávrh na poskytovanie
-                <br>
-                ošetrovateľskej starostlivosti
-            </a>
-            <a href="{{ url_for('documents.showZaznam') }}" class="small-small-token">
-                Оšetrovateľský záznam
-            </a>
-            <a href="{{ url_for('documents.showDohoda') }}" class="small-small-token">
-                Dohoda o poskytovaní zdravotnej starostlivosti
-                <br>
-                v rozsahu ošetrovateľskej starostlivosti
-            </a>
-        </div>
+    <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showZaznam') }}';" style="width: 700px;">
+        Оšetrovateľský záznam
+    </button>
 
-        <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-    </div>
+    <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showDohoda') }}';" style="width: 700px;">
+        Dohoda o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti
+    </button>
 </div>
 
 <div class="section">
