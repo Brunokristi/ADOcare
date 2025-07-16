@@ -43,13 +43,16 @@
             </div>
 
             <div class="navbar-section">
-                {% if session.get('nurse') and current_user.is_authenticated%}
-                    <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
-                        <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
-                    </a>
-                {% endif %}
-
                 {% if current_user.is_authenticated %}
+                    {% if session.get('nurse')%}
+                        <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
+                            <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
+                        </a>
+                        <a class="navbar-button" href="{{ url_for('patient.list_patients') }}">👥</a>
+                    {% endif %}
+
+                    <a class="navbar-button" href="{{ url_for('main.settings') }}">⚙️</a>
+
                     <a class="navbar-button" href="{{ url_for('auth.logout') }}">Odhlásiť sa</a>
                 {% endif %}
             </div>
