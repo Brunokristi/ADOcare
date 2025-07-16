@@ -45,20 +45,6 @@
 </div>
 
 <div class="section">
-    <div class="lined-heading"><span>Adosky</span></div>
-    {% for company in companies %}
-    <a href="{{ url_for('company.update_company', id=company.id) }}" class="small-token" data-id="{{ company.id }}" data-nazov="{{ company.nazov }}" data-ico="{{ company.ico }}"
-        data-ulica="{{ company.ulica }}" data-mesto="{{ company.mesto }}" data-identifikator="{{ company.identifikator }}"
-        data-kod="{{ company.kod }}">
-        {{ company.nazov }}
-    </a>
-    {% endfor %}
-    <a class="text-button" href="{{ url_for('company.create_company') }}">
-        pridať adosku <i class="bi bi-arrow-right"></i>
-    </a>
-</div>
-
-<div class="section">
     <div class="lined-heading"><span>Doktori</span></div>
     {% for doctor in doctors %}
     <a href="{{ url_for('doctor.update_doctor', id=doctor.id) }}" class="small-token" data-id="{{ doctor.id }}"
