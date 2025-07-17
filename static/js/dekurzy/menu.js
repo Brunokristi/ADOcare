@@ -281,7 +281,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (p.dates_all && Array.isArray(p.dates_all)) {
                         link.title = "Dátumy: " + p.dates_all.join(", ");
                     }
-                    link.className = "small-token delete-button";
+                    link.className = "small-token-full delete-button";
                     link.dataset.id = p.id;
                     link.dataset.meno = p.meno;
                     link.dataset.rc = p.rodne_cislo;

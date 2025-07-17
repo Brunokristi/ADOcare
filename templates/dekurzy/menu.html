@@ -16,114 +16,116 @@
 
     {% if session.get('nurse') %}
 
-    <div class="section">
-        <div class="lined-heading"><span>Vyhľadávanie</span></div>
+    <div class="section-wrapper">
 
-            <div style="width: 600px">
-                <div class="form-group" style="position: relative;">
-                    <input type="text" id="patientSearch" name="patientSearch" autocomplete="off"
-                        placeholder="Zadaj meno alebo rodné číslo...">
-                    <div id="patient-suggestions" class="suggestions"></div>
-                </div>
+        <div class="section half-section">
+            <div class="lined-heading"><span>Vyhľadávanie</span></div>
 
-                
+                <div style="width: 100%; max-width: 600px; margin-bottom: 20px;">
+                    <div class="form-group" style="position: relative;">
+                        <input type="text" id="patientSearch" name="patientSearch" autocomplete="off"
+                            placeholder="Zadaj meno alebo rodné číslo...">
+                        <div id="patient-suggestions" class="suggestions"></div>
+                    </div>
 
-                <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
-                    <table class="table">
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <span class="accent">Meno</span>
-                                </td>
-                                <td id="patient-meno"></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="accent">Rodné číslo</span>
-                                </td>
-                                <td id="patient-rc"></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span class="accent">Adresa</span>
-                                </td>
-                                <td id="patient-adresa"></td>
-                            </tr>
-                        </tbody>
-                    </table>
 
-                    <a href="#" id="edit-patient-btn" class="text-button" style="margin-top: 20px;">Upraviť pacienta <i
-                            class="bi bi-arrow-right"></i>
+
+                    <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <span class="accent">Meno</span>
+                                    </td>
+                                    <td id="patient-meno"></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span class="accent">Rodné číslo</span>
+                                    </td>
+                                    <td id="patient-rc"></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span class="accent">Adresa</span>
+                                    </td>
+                                    <td id="patient-adresa"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <a href="#" id="edit-patient-btn" class="text-button" style="margin-top: 20px;">Upraviť pacienta <i
+                                class="bi bi-arrow-right"></i>
+                        </a>
+
+                        
+
+                        <div class="half-form-group">
+                            <div class="form-group">
+                                <label for="date_start">Poskytovanie ZS</label>
+                                <input class="dates" type="text" id="date_start" name="date_start" placeholder="Dátum od"
+                                    autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <input class="dates" type="text" id="date_end" name="date_end" placeholder="Dátum do"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="frequency">Opakovanie</label>
+                            <select id="frequency" name="frequency" required>
+                                <option value="daily">Každý deň</option>
+                                <option value="weekday">Každý pracovný deň</option>
+                                <option value="3x_week">3x v týždni</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exceptions">Výnimky</label>
+                            <input class="dates" type="text" id="exceptions" placeholder="Vyberte dátumy" autocomplete="off">
+                        </div>
+
+                        <button type="button" id="add-patient-btn" class="btn">Pridať pacienta</button>
+                    </div>
+
+                    <a class="text-button" href="{{ url_for('patient.create_patient') }}">
+                        nový pacient<i class="bi bi-arrow-right"></i>
                     </a>
-
-                    
-
-                    <div class="half-form-group">
-                        <div class="form-group">
-                            <label for="date_start">Poskytovanie ZS</label>
-                            <input class="dates" type="text" id="date_start" name="date_start" placeholder="Dátum od"
-                                autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <input class="dates" type="text" id="date_end" name="date_end" placeholder="Dátum do"
-                                autocomplete="off">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="frequency">Opakovanie</label>
-                        <select id="frequency" name="frequency" required>
-                            <option value="daily">Každý deň</option>
-                            <option value="weekday">Každý pracovný deň</option>
-                            <option value="3x_week">3x v týždni</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="exceptions">Výnimky</label>
-                        <input class="dates" type="text" id="exceptions" placeholder="Vyberte dátumy" autocomplete="off">
-                    </div>
-
-                    <button type="button" id="add-patient-btn" class="btn">Pridať pacienta</button>
                 </div>
+        </div>
 
-                <a class="text-button" href="{{ url_for('patient.create_patient') }}">
-                    nový pacient<i class="bi bi-arrow-right"></i>
-                </a>
+        <div class="section half-section" style="margin-bottom: 120px;">
+            <div class="lined-heading"><span>Pacienti</span></div>
+
+            <div class="form-group">
+                <label for="start">Začiatok cesty</label>
+                <select id="start" name="start" required onchange="updateRoute()">
+                    <option>SNP 8, Fiľakovo, BC, Slovensko</option>
+                    <option>Jánošíkova 2, Rimavská Sobota, BC, Slovensko</option>
+                </select>
             </div>
-        </div>
-    </div>
 
-    <div class="section" style="margin-bottom: 120px;">
-        <div class="lined-heading"><span>Pacienti</span></div>
-
-        <div class="form-group">
-            <label for="start">Začiatok cesty</label>
-            <select id="start" name="start" required onchange="updateRoute()">
-                <option>SNP 8, Fiľakovo, BC, Slovensko</option>
-                <option>Jánošíkova 2, Rimavská Sobota, BC, Slovensko</option>
-            </select>
-        </div>
-
-        <div class="one-line">
-            <button class="scroll-arrow left" id="prevDay"><i class="bi bi-chevron-left"></i></button>
-            <h2 class="selected-date" id="selectedDate"></h2>
-            <button class="scroll-arrow right" id="nextDay"><i class="bi bi-chevron-right right"></i></button>
-        </div>
-
-        <div id="patient-list">
-            {% for patient in patients %}
-            <div class="patient-entry">
-                <a href="#" class="small-token" data-id="{{ patient.id }}" data-meno="{{ patient.meno }}"
-                    data-rc="{{ patient.rodne_cislo }}" data-adresa="{{ patient.adresa }}">
-                    {{ patient.meno }} — {{ patient.rodne_cislo }}
-                </a>
-                <button class="delete-patient-btn" data-id="{{ patient.id }}">X</button>
+            <div class="one-line">
+                <button class="scroll-arrow left" id="prevDay"><i class="bi bi-chevron-left"></i></button>
+                <h2 class="selected-date" id="selectedDate"></h2>
+                <button class="scroll-arrow right" id="nextDay"><i class="bi bi-chevron-right right"></i></button>
             </div>
-            {% endfor %}
+
+            <div id="patient-list">
+                {% for patient in patients %}
+                <div class="patient-entry">
+                    <a href="#" class="small-token-full" data-id="{{ patient.id }}" data-meno="{{ patient.meno }}"
+                        data-rc="{{ patient.rodne_cislo }}" data-adresa="{{ patient.adresa }}">
+                        {{ patient.meno }} — {{ patient.rodne_cislo }}
+                    </a>
+                    <button class="delete-patient-btn" data-id="{{ patient.id }}">X</button>
+                </div>
+                {% endfor %}
+            </div>
+
+
         </div>
-
-
     </div>
 
     <div class="bottom-section">

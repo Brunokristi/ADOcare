@@ -14,8 +14,8 @@
         </button>
 
         <div class="scroll" id="monthScroll">
-            <a href="{{ url_for('month.create_month') }}" class="small-small-token">
-                novy
+            <a href="{{ url_for('month.create_month') }}" class="small-small-token outlined" id="newDekurz">
+                NOVÝ DEKURZ
             </a>
             {% for month_dekurz in months_dekurz %}
             <a href="#" class="small-small-token month-select" data-id="{{ month_dekurz.id }}" data-mesiac="{{ month_dekurz.mesiac }}"
@@ -59,7 +59,7 @@
 </div>
 
 <div class="section">
-    <div class="lined-heading"><span>Documents</span></div>
+    <div class="lined-heading"><span>Dokumenty</span></div>
 
     <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showNavrh') }}';" style="width: 700px;">
         Návrh na poskytovanie ošetrovateľskej starostlivosti

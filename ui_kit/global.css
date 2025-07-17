@@ -200,6 +200,12 @@ textarea {
     scroll-behavior: smooth;
 }
 
+.outlined {
+    background: transparent;
+    color: #5C9EAD;
+    border: solid 1px #5C9EAD;
+}
+
 .active-patient {
     background-color: #333;
 }
