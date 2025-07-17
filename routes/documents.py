@@ -113,10 +113,22 @@ def storeDataFromNavrhForm():
 def getAdditionDataByRodneCisloForDohoda():
     rodneCislo = request.args.get('rodne_cislo', '')
     conn = get_db_connection()
-    results = conn.execute("SELECT * FROM documents_dohoda WHERE rodne_cislo = ?", (rodneCislo,)).fetchall()
+    oldFormData = conn.execute("SELECT * FROM documents_dohoda WHERE rodne_cislo = ?", (rodneCislo,)).fetchall()
+    rows = conn.execute("""
+        SELECT
+            poist.kod
+        FROM
+            pacienti pac
+        JOIN
+            poistovne poist ON pac.poistovna = poist.id
+        WHERE
+            pac.rodne_cislo = ?
+    """, (rodneCislo,)).fetchall()
     conn.close()
-    if results:
-        results = [dict(row) for row in results][0]
+    results = [dict(row) for row in rows][0]
+    results['poitovnaFirstCode'] = results.pop('kod')
+    if oldFormData:
+        results = results | [dict(row) for row in oldFormData][0]
     return jsonify(results)
 
 @documents_bp.route('/documents/storeDataFromDohodaForm', methods=['POST'])
