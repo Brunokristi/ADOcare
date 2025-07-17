@@ -4,22 +4,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedPatientDiv = document.getElementById("selected-patient");
     const bydliskoTrvale = document.getElementById("bydliskoTrvale");
     const rodneCislo = document.getElementById("rodneCislo");
-    const zdravotnickeZariadenie = document.getElementById("zdravotnickeZariadenie");
-    const soSidlomV = document.getElementById("soSidlomV");
     const kodPoistovne  = document.getElementById("kodPoistovne");
-    const epikriza = document.getElementById("epikriza");
-    const sesterskaDiagnoza = document.getElementById("sesterskaDiagnoza");
-    const lekarskaDiagnoze = document.getElementById("lekarskaDiagnoze");
-    const bydliskoPrechodne = document.getElementById("bydliskoPrechodne");
-    const HCheckBox = document.getElementById("HCheckBox");
-    const ICheckBox = document.getElementById("ICheckBox");
-    const FCheckBox = document.getElementById("FCheckBox");
-    const PlanOsStarostlivosty = document.getElementById("PlanOsStarostlivosty");
-    const Vykony = document.getElementById("Vykony");
-    const lekar = document.getElementById("lekar");
+    const miesto_prechodneho_pobytu = document.getElementById("miesto_prechodneho_pobytu");
     const currentDate = document.getElementById('currentDate');
     const mainForm = document.getElementById('mainForm');
     const printButton = document.getElementById("printButton");
+    const nazovAAdresa = document.getElementById("nazovAAdresa");
+    const mesto = document.getElementById("mesto");
+    const kontaktna_osoba = document.getElementById("kontaktna_osoba");
 
     patientSearch?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
@@ -35,29 +27,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function onPrinting(){
-        if (checkInput(zdravotnickeZariadenie, "Zdravotnícke zariadenie") ||
-            checkInput(soSidlomV, "So sídlom v") ||
-            checkInput(patientSearch, "Мeno, priezvisko, titul pacienta/pacientky") ||
-            checkInput(epikriza, "Epikriza a zdôvodnenie pre poskytovanie ošetrovateĺskej starostlivosti") ||
-            checkInput(lekarskaDiagnoze, "Lekárská diagnóza") ||
-            checkInput(sesterskaDiagnoza, "Sestrská diagnóza") ||
-            checkInput(lekar, "Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval" ||
-            checkInput(currentDate, "Dátum"))){
+        if (checkInput(patientSearch, "Meno, priezvisko, titul poistenca") ||
+            checkInput(nazovAAdresa, "Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti") ||
+            checkInput(nurse, "Meno, priezvisko, titul odborného zástupcu") ||
+            checkInput(phone_number, "Telefónne číslo") ||
+            checkInput(mesto, "V/vo (mesto)") ||
+            checkInput(currentDate, "Dátum")){
                 return;
             }
 
         const formData = new FormData(mainForm);
-        const keysToDelete = ['duration', 'zdravotnickeZariadenie', 'soSidlomV', 'patientSearch', 'lekar', 'currentDate'];
+        const keysToDelete = ['nazovAAdresa', 'mesto', 'currentDate', "patientSearch"];
         keysToDelete.forEach(key => {
             formData.delete(key);
         });
 
-        formData.append(HCheckBox.id, HCheckBox.checked);
-        formData.append(ICheckBox.id, ICheckBox.checked);
-        formData.append(FCheckBox.id, FCheckBox.checked);
-        formData.append('PredpokladnaDlzkaStarostlivosty', getSelectedRadioIndex());
         formData.append("rodne_cislo", rodneCislo.innerText);
-        fetch('/documents/storeDataFromNavrhForm', {
+
+        fetch('/documents/storeDataFromDohodaForm', {
             method: 'POST',
             body: formData
         }).then(response => {
@@ -84,9 +71,9 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(data => {
             console.log(data);
-            zdravotnickeZariadenie.value = data.nazov;
-            soSidlomV.value = data.ulica + ", " + data.mesto;
 
+            nazovAAdresa.value = data.nazov + ", " + data.ulica + ", " + data.mesto;
+            mesto.value = data.mesto;
             const today = new Date();
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -99,15 +86,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function getSelectedRadioIndex() {
-        const radios = document.querySelectorAll('input[name="duration"]');
-        return [...radios].findIndex(radio => radio.checked);
-    }
-
-    function setRadioByIndex(index) {
-        const radios = document.querySelectorAll('input[name="duration"]');
-        if (radios[index]) radios[index].checked = true;
-    }
 
     clearPatientDetails();
     onLoading()
@@ -136,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     item.textContent = `${p.meno} — ${p.rodne_cislo}`;
                     item.addEventListener("click", () => {
                         selectedPatientId = p.id;
-                        getAdditionDataByRodneCisloForNavrh(p.rodne_cislo).then(addInfo => {
+                        getAdditionDataByRodneCisloForDohoda(p.rodne_cislo).then(addInfo => {
                             const data = Object.assign({}, p, addInfo);
                             clearPatientDetails();
                             fillPatientDetails(data);
@@ -156,34 +134,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function clearPatientDetails(){
-        lekar.value = "";
-        bydliskoPrechodne.value = "";
-        epikriza.value = "";
-        lekarskaDiagnoze.value = "";
-        sesterskaDiagnoza.value = "";
-        HCheckBox.checked = 0;
-        ICheckBox.checked = 0;
-        FCheckBox.checked = 0;
-        PlanOsStarostlivosty.value = "";
-        Vykony.value = "";
-        setRadioByIndex(0);
+        miesto_prechodneho_pobytu.value = "";
+        kontaktna_osoba.value = "";
         selectedPatientDiv.style.display = "none";
         suggestionsContainer.style.display = "none";
     }
 
     function fillPatientDetails(patient){
-        if ("bydliskoPrechodne" in patient){
-            bydliskoPrechodne.value = patient.bydliskoPrechodne;
-            epikriza.value = patient.epikriza;
-            lekarskaDiagnoze.value = patient.lekarskaDiagnoze;
-            sesterskaDiagnoza.value = patient.sesterskaDiagnoza;
-            console.log(patient.HCheckBox);
-            HCheckBox.checked = (patient.HCheckBox === "true") ? 1 : 0;
-            ICheckBox.checked = (patient.ICheckBox === "true") ? 1 : 0;
-            FCheckBox.checked = (patient.FCheckBox === "true") ? 1 : 0;
-            PlanOsStarostlivosty.value = patient.PlanOsStarostlivosty;
-            Vykony.value = patient.Vykony;
-            setRadioByIndex(patient.PredpokladnaDlzkaStarostlivosty);
+        if ("miesto_prechodneho_pobytu" in patient){
+            miesto_prechodneho_pobytu.value = patient.miesto_prechodneho_pobytu;
+        }
+        if ("kontaktna_osoba" in patient){
+            kontaktna_osoba.value = patient.kontaktna_osoba;
         }
         patientSearch.value = patient.meno;
         rodneCislo.innerText = patient.rodne_cislo;
@@ -191,13 +153,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         kodPoistovne.innerText = patient.poitovnaFirstCode+"--"
 
-        lekar.value = patient.doctorName;
         selectedPatientDiv.style.display = "block";
         suggestionsContainer.style.display = "none";
     }
 
-    function getAdditionDataByRodneCisloForNavrh(rodne_cislo) {
-        return fetch(`/documents/getAdditionDataByRodneCisloForNavrh?rodne_cislo=${encodeURIComponent(rodne_cislo)}`)
+    function getAdditionDataByRodneCisloForDohoda(rodne_cislo) {
+        return fetch(`/documents/getAdditionDataByRodneCisloForDohoda?rodne_cislo=${encodeURIComponent(rodne_cislo)}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to get additional parameters by rodne cislo.');

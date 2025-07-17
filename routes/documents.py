@@ -35,9 +35,9 @@ def getDohodaFormData():
 
     return jsonify(results)
 
-@documents_bp.route('/documents/getAdditionDataByRodneCislo', methods=['GET'])
+@documents_bp.route('/documents/getAdditionDataByRodneCisloForNavrh', methods=['GET'])
 @login_required
-def getAdditionDataByRodneCislo():
+def getAdditionDataByRodneCisloForNavrh():
     rodneCislo = request.args.get('rodne_cislo', '')
     conn = get_db_connection()
     oldFormData = conn.execute("SELECT * FROM documents_navrh WHERE rodne_cislo = ?", (rodneCislo,)).fetchall()
@@ -97,6 +97,49 @@ def storeDataFromNavrhForm():
             data["FCheckBox"],
             data["PredpokladnaDlzkaStarostlivosty"]
         ))
+        conn.commit()
+
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Failed to save data!'}), 400
+
+    finally:
+        conn.close()
+
+    return jsonify({'message': 'The data has been successfully retrieved!'}), 200
+
+@documents_bp.route('/documents/getAdditionDataByRodneCisloForDohoda', methods=['GET'])
+@login_required
+def getAdditionDataByRodneCisloForDohoda():
+    rodneCislo = request.args.get('rodne_cislo', '')
+    conn = get_db_connection()
+    results = conn.execute("SELECT * FROM documents_dohoda WHERE rodne_cislo = ?", (rodneCislo,)).fetchall()
+    conn.close()
+    if results:
+        results = [dict(row) for row in results][0]
+    return jsonify(results)
+
+@documents_bp.route('/documents/storeDataFromDohodaForm', methods=['POST'])
+@login_required
+def storeDataFromDohodaForm():
+    data = request.form
+
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            INSERT INTO documents_dohoda (
+                miesto_prechodneho_pobytu,
+                kontaktna_osoba,
+                rodne_cislo
+            ) VALUES (?, ?, ?)
+            ON CONFLICT(rodne_cislo) DO UPDATE SET
+                miesto_prechodneho_pobytu = excluded.miesto_prechodneho_pobytu,
+                kontaktna_osoba = excluded.kontaktna_osoba;
+        """, (
+            data["miesto_prechodneho_pobytu"],
+            data["kontaktna_osoba"],
+            data["rodne_cislo"]
+            ))
         conn.commit()
 
     except Exception as e:
