@@ -15,9 +15,9 @@ def create_nurse():
         data = request.form
         conn = get_db_connection()
         conn.execute("""
-            INSERT INTO sestry (meno, kod, uvazok, vozidlo, ados)
-            VALUES (?, ?, ?, ?, ?)""",
-            (data['meno'], data['kod'], data['uvazok'], data['vozidlo'], data['ados'])
+            INSERT INTO sestry (meno, kod, uvazok, vozidlo, ados, phone_number)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (data['meno'], data['kod'], data['uvazok'], data['vozidlo'], data['ados'], data['phone_number'])
         )
         conn.commit()
         conn.close()
@@ -35,11 +35,11 @@ def update_nurse(id):
         conn = get_db_connection()
         conn.execute("""
             UPDATE sestry
-            SET meno = ?, kod = ?, uvazok = ?, vozidlo = ?, ados = ?
+            SET meno = ?, kod = ?, uvazok = ?, vozidlo = ?, ados = ?, phone_number = ?
             WHERE id = ?
         """, (
             data['meno'], data['kod'], data['uvazok'],
-            data['vozidlo'], data['ados'], id
+            data['vozidlo'], data['ados'], data['phone_number'], id
         ))
         conn.commit()
         conn.close()
@@ -85,9 +85,8 @@ def select_nurse():
         'kod': data.get('kod'),
         'uvazok': data.get('uvazok'),
         'vozidlo': data.get('vozidlo'),
-        'ados': data.get('ados')
+        'ados': data.get('ados'),
+        'phone_number': data.get('phone_number')
     }
 
     return jsonify(success=True)
-
-

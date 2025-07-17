@@ -9,7 +9,7 @@
     {% for nurse in nurses %}
     <button type="button" class="small-token select-nurse" data-id="{{ nurse.id }}" data-meno="{{ nurse.meno }}"
         data-kod="{{ nurse.kod }}" data-uvazok="{{ nurse.uvazok }}" data-vozidlo="{{ nurse.vozidlo }}"
-        data-ados="{{ nurse.ados }}">
+        data-ados="{{ nurse.ados }}" data-phone_number="{{ nurse.phone_number }}">
         {{ nurse.meno }}
     </button>
     {% endfor %}

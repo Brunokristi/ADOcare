@@ -9,7 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 kod: this.dataset.kod,
                 uvazok: this.dataset.uvazok,
                 vozidlo: this.dataset.vozidlo,
-                ados: this.dataset.ados
+                ados: this.dataset.ados,
+                phone_number: this.dataset.phone_number
             };
 
             fetch('/nurse/select', {

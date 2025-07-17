@@ -8,7 +8,7 @@
     <div class="lined-heading"><span>Pracovníci</span></div>
     {% for nurse in nurses %}
     <a href="{{ url_for('nurse.update_nurse', id=nurse.id) }}" class="small-token" data-id="{{ nurse.id }}" data-meno="{{ nurse.meno }}" data-kod="{{ nurse.kod }}"
-        data-uvazok="{{ nurse.uvazok }}" data-vozidlo="{{ nurse.vozidlo }}" data-ados="{{ nurse.ados }}">
+        data-uvazok="{{ nurse.uvazok }}" data-vozidlo="{{ nurse.vozidlo }}" data-ados="{{ nurse.ados }}" data-phone_number="{{ nurse.phone_number }}">
         {{ nurse.meno }}
     </a>
     {% endfor %}

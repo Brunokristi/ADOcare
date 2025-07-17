@@ -6,3 +6,4 @@ class Nurse:
         self.uvazok = row['uvazok']
         self.vozidlo = row['vozidlo']
         self.ados = row['ados']
+        self.phone_number = row['phone_number']
