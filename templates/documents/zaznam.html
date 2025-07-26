@@ -1,0 +1,1903 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Zaznam{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/main.css') }}">
+
+<label>
+    Odtlačok pečiatky zariadenia<br>
+    poskytujúceho ošetrovateľskú starostlivosť:
+</label>
+
+<h1><b>OŠETROVATEĽSKÝ ZÁZNAM</b></h1>
+
+<form id="mainForm">
+
+    <div style="width: 600px">
+        <div class="form-group inline-form" style="position: relative;">
+            <label>Meno, priezvisko, titul pacienta/pacientky: </label>
+            <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
+                placeholder="Zadaj meno alebo rodné číslo...">
+
+            <div id="patient-suggestions" class="suggestions"></div>
+        </div>
+
+        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
+            <div class="form-group inline-form">
+                <label>Telefón: </label>
+                <input required type="text" id="mobilePhone" name="mobilePhone">
+                <label>Rodné číslo: </label>
+                <p id="rodneCislo"></p>
+                <label>Číselný kód zdravotnej poisťovne: </label>
+                <p id="kodPoistovne"></p>
+            </div>
+
+            <div class="form-group inline-form">
+                <label>Trvalý pobyt: </label>
+                <p id="bydliskoTrvale"></p>
+                <label>Poschodie:</label>
+                <input required type = "text">
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Prechodný pobyt: </label>
+        <input required type = "text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu">
+        <label>Poschodie:</label>
+        <input required type = "text">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Kontaktná osoba a vzťah k pacientovi(e):</label>
+        <input required type = "text" id="kontaktna_osoba" name="kontaktna_osoba">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Adresa kontaktnej osoby:</label>
+        <input required type = "text">
+        <label>Telefón:</label>
+        <input required type = "text">
+    </div>
+
+    <hr>
+
+    <div class="form-group" style="position: relative;">
+        <label for="diagnoza">Lekárska diagnóza (slovom alebo číslom podľa MKCH):</label>
+        <input type="text" id="lekarskaDiagnoze" name="lekarskaDiagnoze" autocomplete="off">
+        <input type="hidden" id="diagnoza_id">
+        <div id="diagnoza-suggestions" class="suggestions"></div>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Doporučená farmakoterapia:</label>
+        <input required type = "text">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Ošetrujúci lekár:</label>
+        <input type = "text" id="doctorName" name="doctorName">
+        <label>Pracovisko:</label>
+        <input type = "text" value="ADOS"> <!-- TODO: where get data for this place -->
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Dátum a čas prijatia do starostlivosti:</label>
+        <input type="text" name="currentDate" id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+    </div>
+
+    <hr>
+
+    <div class="checkbox-container navrh-checkbox-container inline-form">
+        <label>Alergia:</label>
+
+        <input type="checkbox" id="lieky" name="lieky">
+        <label for="lieky">lieky</label>
+
+        <input type="checkbox" id="potraviny" name="potraviny">
+        <label for="potraviny">potraviny</label>
+
+        <input type="checkbox" id="dezinfekcnePripravky" name="dezinfekcnePripravky">
+        <label for="dezinfekcnePripravky">dezinfekčné prípravky</label>
+
+        <input type="checkbox" id="leukoplast" name="leukoplast">
+        <label for="leukoplast">leukoplast</label>
+
+        <input type="checkbox" id="ustipnutie" name="ustipnutie">
+        <label for="ustipnutie">uštipnutie</label>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <hr>
+
+    <div class="checkbox-container navrh-checkbox-container inline-form">
+        <label>Abúzy:</label>
+
+        <input type="checkbox" id="kofein" name="kofein">
+        <label for="kofein">kofeín</label>
+
+        <input type="checkbox" id="nikotin" name="nikotin">
+        <label for="nikotin">nikotín</label>
+
+        <input type="checkbox" id="alkohol" name="alkohol">
+        <label for="alkohol">alkohol</label>
+
+        <input type="checkbox" id="lieky" name="lieky">
+        <label for="lieky">lieky</label>
+
+        <input type="checkbox" id="drogy" name="drogy">
+        <label for="drogy">drogy</label>
+    </div>
+
+    <hr>
+
+    <div class="checkbox-container navrh-checkbox-container inline-form">
+        <label>Rodinná anamnéza - </label>
+
+        <input type="checkbox" id="IM" name="IM">
+        <label for="IM">IM,</label>
+
+        <input type="checkbox" id="DM" name="DM">
+        <label for="DM">DM,</label>
+
+        <input type="checkbox" id="ICHS" name="ICHS">
+        <label for="ICHS">ICHS,</label>
+
+        <input type="checkbox" id="TBC" name="TBC">
+        <label for="TBC">TBC,</label>
+
+        <input type="checkbox" id="CA" name="CA">
+        <label for="CA">CA:</label>
+    </div>
+
+    <div class="form-group inline-form">
+        <input type = "text">
+    </div>
+
+    <hr>
+
+    <div class="form-group inline-form">
+        <label>Sociálna anamnéza povolanie:</label>
+        <input type = "text">
+    </div>
+
+    <label>Sociálne podmienky:</label>
+    <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" value="1" checked name="SocialnePodmienky">
+          Žije sám(a)
+        </label>
+        <label class="radio-option">
+          <input type="radio" value="3" name="SocialnePodmienky">
+          s rodinou
+        </label>
+        <label class="radio-option">
+          <input type="radio" value="6" name="SocialnePodmienky">
+          v zar. soc. služieb (ZSS)
+        </label>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div>
+        <label>Sociálne postavenie:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+            <input type="radio" value="1" checked name="socialnePostavenie">
+            zamestnaný (á)
+            </label>
+            <label class="radio-option">
+            <input type="radio" value="3" name="socialnePostavenie">
+            dôchodca
+            </label>
+            <label class="radio-option">
+            <input type="radio" value="6" name="socialnePostavenie">
+            MD
+            </label>
+        </div>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="9" name="socialnePostavenie">
+                    nezamestnaný (á)
+                </label>
+            <label class="radio-option">
+                <input type="radio" value="12" name="socialnePostavenie">
+                Invalidný (á) dôchodca
+            </label>
+        </div>
+    </div>
+
+    <div>
+        <label>Sociálny kontakt:</label>
+        <div class="inline-form">
+            <div class="radio-group">
+                <label class="radio-option">
+                <input type="radio" value="1" checked name="SocialnePodmienky">
+                deti
+                </label>
+                <label class="radio-option">
+                <input type="radio" value="3" name="SocialnePodmienky">
+                príbuzní
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="priatelia" name="priatelia">
+                <label for="priatelia">priatelia</label>
+
+                <input type="checkbox" id="susedia" name="susedia">
+                <label for="susedia">susedia</label>
+
+                <input type="checkbox" id="svojpomocneSkupiny" name="svojpomocneSkupiny">
+                <label for="svojpomocneSkupiny">svojpomocné skupiny</label>
+            </div>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="opatrovatelskaSluzba" name="opatrovatelskaSluzba">
+            <label for="opatrovatelskaSluzba">opatrovateľská služba</label>
+        </div>
+    </div>
+
+    <div>
+        <label>Spoločensko-kultúrna situácia:</label>
+        <div class="inline-form">
+            <div class="radio-group">
+                <label class="radio-option">
+                <input type="radio" value="1" checked name="SpolocenskoKulturnaSituacia">
+                Uprednostňuje samotu
+                </label>
+                <label class="radio-option">
+                <input type="radio" value="3" name="SpolocenskoKulturnaSituacia">
+                Spoločnosť
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="TV" name="TV">
+                <label for="TV">TV</label>
+
+                <input type="checkbox" id="Radio" name="Radio">
+                <label for="Radio">Rádio</label>
+
+                <input type="checkbox" id="dennuTlac" name="dennuTlac">
+                <label for="dennuTlac">Dennú tlač</label>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <label><b>Vnímanie zdravia <br></b></label>
+    <div class="form-group inline-form">
+        <label>Subjektívny popis problémov pacienta/pacientky:</label>
+        <input type = "text">
+    </div>
+
+    <label><b>Vstupný záznam sesterského posúdenia zdravotného stavu<br></b></label>
+    <label>Starostlivosť odporučil:</label>
+    <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" value="1" checked name="StarostlivostOdporucil">
+          Všeobecný lekár
+        </label>
+        <label class="radio-option">
+          <input type="radio" value="3" name="StarostlivostOdporucil">
+          Lekár LSPP
+        </label>
+        <label class="radio-option">
+          <input type="radio" value="6" name="StarostlivostOdporucil">
+          ZZS
+        </label>
+    </div>
+    <div class="checkbox-container navrh-checkbox-container inline-form">
+        <input type="checkbox" id="InyOsetrujuciLekar" name="InyOsetrujuciLekar">
+        <label for="InyOsetrujuciLekar">Iný ošetrujúci lekár, aký:</label>
+        <input type = "text">
+    </div>
+    <div class="checkbox-container navrh-checkbox-container inline-form">
+        <input type="checkbox" id="PrebratyZInehoZariadenia" name="PrebratyZInehoZariadenia">
+        <label for="PrebratyZInehoZariadenia">Prebratý(á) z iného zariadenia, odkiaľ:</label>
+        <input type = "text">
+    </div>
+    <div class="form-group inline-form">
+        <label>Oddelenie:</label>
+        <input type = "text">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Posledná hospitalizácia:</label>
+        <label>od</label>
+        <input type="text" name="PoslednaHospitalizaciaOD", id="PoslednaHospitalizaciaOD" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+        <label>do</label>
+        <input type="text" name="PoslednaHospitalizaciaDO", id="PoslednaHospitalizaciaDO" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+    </div>
+
+    <div class="inline-form">
+        <label>Vedomie:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="Vedomie">
+                Pri vedomí
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="3" name="Vedomie">
+                Somnolencia
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="6" name="Vedomie">
+                Semikóma
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="9" name="Vedomie">
+                Kóma
+            </label>
+        </div>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div class="inline-form">
+        <label>Orientácia:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="Orientácia">
+                Orientovaný
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="3" name="Orientácia">
+                Dezorientovaný
+            </label>
+        </div>
+        <label>v čase / v priestore</label>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div class="inline-form">
+        <label>Cirkulácia:</label>
+        <div class="form-group inline-form">
+            <label>TK:</label>
+            <input type = "text">
+            <label>mmHg</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>TK:</label>
+            <input type = "text">
+            <label>mmHg</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>TT:</label>
+            <input type = "text">
+            <label>°C</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>P:</label>
+            <input type = "text">
+            <label>/min</label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <label>Problém:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="Problem">
+                Áno
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="3" name="Problem">
+                Nie
+            </label>
+        </div>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="HypotenziaHypertenzia">
+                Hypotenzia
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="3" name="HypotenziaHypertenzia">
+                Hypertenzia
+            </label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="pulz" name="pulz">
+            <label for="pulz">pulz - </label>
+            <label>nepravidelný / slabo hmatný / Nitkovitý</label>
+        </div>
+    </div>
+    <div class="checkbox-container navrh-checkbox-container inline-form">
+        <input type="checkbox" id="kardiostimulator" name="kardiostimulator">
+        <label for="kardiostimulator">kardiostimulátor</label>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Dýchanie:</label>
+        <label>D:</label>
+        <input type = "text">
+        <label>/min</label>
+    </div>
+
+    <div>
+        <label>Problém</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="ProblemAnoNie">
+                Nie
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="3" name="ProblemAnoNie">
+                Áno
+            </label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="nepravidelne" name="nepravidelne">
+            <label for="nepravidelne">nepravidelné</label>
+
+            <input type="checkbox" id="rychle" name="rychle">
+            <label for="rychle">rýchle</label>
+
+            <input type="checkbox" id="pomale" name="pomale">
+            <label for="pomale">pomalé</label>
+
+            <input type="checkbox" id="stazene" name="stazene">
+            <label for="stazene">Sťažené</label>
+
+            <input type="checkbox" id="plytke" name="plytke">
+            <label for="plytke">plytké</label>
+
+            <input type="checkbox" id="prehlbene" name="prehlbene">
+            <label for="prehlbene">prehĺbené</label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="apnoickePauzy" name="apnoickePauzy">
+            <label for="apnoickePauzy">apnoické pauzy</label>
+
+            <input type="checkbox" id="stridor" name="stridor">
+            <label for="stridor">stridor</label>
+
+            <input type="checkbox" id="dychavicaVKlude" name="dychavicaVKlude">
+            <label for="dychavicaVKlude">dýchavica v kľude</label>
+
+            <input type="checkbox" id="kaseľ" name="kaseľ">
+            <label for="kaseľ">kašeľ</label>
+
+            <label>produktívny/neproduktívny</label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="tracheostomia" name="tracheostomia">
+            <label for="tracheostomia">tracheostómia</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+    <div>
+        <label>Odsávanie z dýchacích ciest:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="odsavanieZdychacíchCiest">
+                áno
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="3" name="odsavanieZdychacíchCiest">
+                nie
+            </label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <div>
+            <label>Oxygenoterapia:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="Oxygenoterapia">
+                    áno
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="3" name="Oxygenoterapia">
+                    nie
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <label>UPV:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="UPV">
+                    áno
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="3" name="UPV">
+                    nie
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <label>Inhalácia:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="Inhalacia">
+                    áno
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="3" name="Inhalacia">
+                    nie
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Výživa: diéta: č.</label>
+        <input type="text">
+    </div>
+
+    <div>
+        <label>Problém</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="ProblemAnoNie2">
+                nie
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="ProblemAnoNie2">
+                áno
+            </label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="obezita" name="obezita">
+            <label for="obezita">obezita</label>
+
+            <input type="checkbox" id="kachexia" name="kachexia">
+            <label for="kachexia">kachexia</label>
+        </div>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="ubytokPrirastokhmotnosti">
+                Úbytok hmotnosti
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="ubytokPrirastokhmotnosti">
+                Prírastok hmotnosti
+            </label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="nechutenstvo" name="nechutenstvo">
+            <label for="nechutenstvo">nechutenstvo</label>
+
+            <input type="checkbox" id="nauzea" name="nauzea">
+            <label for="nauzea">nauzea</label>
+
+            <input type="checkbox" id="zvracanie" name="zvracanie">
+            <label for="zvracanie">zvracanie</label>
+
+            <input type="checkbox" id="poruchaPrehltania" name="poruchaPrehltania">
+            <label for="poruchaPrehltania">porucha prehĺtania</label>
+
+            <input type="checkbox" id="palenieZahy" name="palenieZahy">
+            <label for="palenieZahy">pálenie záhy</label>
+        </div>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="enteralneNutricne">
+                enterálne
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="enteralneNutricne">
+                nutričné
+            </label>
+        </div>
+
+        <div class="form-group inline-form">
+            <label>prípravky, aké:</label>
+            <input type="text">
+        </div>
+    </div>
+
+    <div>
+        <label>Chuť do jedla:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="chutDoJedla">
+                primeraná
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="chutDoJedla">
+                obmedzená
+            </label>
+        </div>
+    </div>
+
+    <div>
+        <label>Príjem stravy:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="prijemStravy">
+                sám
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="prijemStravy">
+                s pomocou
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" name="prijemStravy">
+                nazog. sonda
+            </label>
+        </div>
+        <div class="form-group inline-form">
+            <label>/dátum zavedenia:</label>
+            <input type="text">
+        </div>
+    </div>
+
+    <div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="gastrostomia" name="gastrostomia">
+            <label for="gastrostomia">gastrostómia</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>/dátum zavedenia:</label>
+            <input type="text">
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="peg" name="peg">
+            <label for="peg">PEG</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>/dátum zavedenia:</label>
+            <input type="text">
+        </div>
+    </div>
+
+    <div>
+        <div class="form-group inline-form">
+            <label>Príjem tekutín / 24 hod.:</label>
+            <input type="text">
+            <label>ml</label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="enteralne" name="enteralne">
+            <label for="enteralne">enterálne</label>
+
+            <input type="checkbox" id="parenteralne" name="parenteralne">
+            <label for="parenteralne">parenterálne</label>
+
+            <input type="checkbox" id="sipping" name="sipping">
+            <label for="sipping">sipping</label>
+        </div>
+    </div>
+
+    <div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="cvk" name="cvk">
+            <label for="cvk">CVK</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>/dátum zavedenia:</label>
+            <input type="text">
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="perifernyPristup" name="perifernyPristup">
+            <label for="perifernyPristup">periférny i.v. prístup</label>
+        </div>
+        <div class="form-group inline-form">
+            <label>/dátum zavedenia:</label>
+            <input type="text">
+        </div>
+    </div>
+
+    <div>
+        <label>Kompenzačné pomôcky - zubná protéza:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="kompenzacnePomocky">
+                áno
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="kompenzacnePomocky">
+                nie
+            </label>
+        </div>
+    </div>
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div>
+        <label>Vylučovanie:</label>
+        <label>Defekácia:</label>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="defekaciaProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="defekaciaProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="nepravidelna" name="nepravidelna">
+                <label for="nepravidelna">nepravidelná</label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="hnackaZapcha">
+                    hnačka
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="hnackaZapcha">
+                    zápcha
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="sPrimesami" name="sPrimesami">
+                <label for="sPrimesami">s prímesami</label>
+
+                <input type="checkbox" id="inkontinencia" name="inkontinencia">
+                <label for="inkontinencia">inkontinencia</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="hemoroidy" name="hemoroidy">
+                <label for="hemoroidy">hemoroidy</label>
+
+                <input type="checkbox" id="stomiaOsetrenaNaposledy" name="stomiaOsetrenaNaposledy">
+                <label for="stomiaOsetrenaNaposledy">stómia - ošetrená naposledy</label>
+            </div>
+            <div class="form-group inline-form">
+                <label>/dátum zavedenia:</label>
+                <input type="text">
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Potreba pomoci pri ošetrovaní stómie: </label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="potrebaPomociPriOsetrovaniStomie">
+                    áno
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="potrebaPomociPriOsetrovaniStomie">
+                    nie
+                </label>
+            </div>
+            <label>Regulácia vyprázdňovania: </label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="regulaciaVyprázdňovania">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="regulaciaVyprázdňovania">
+                    áno
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Spôsob regulácie vyprázdňovania: </label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="sposobRegulacieVyprázdňovania">
+                    čaj
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="sposobRegulacieVyprázdňovania">
+                    čípok
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="sposobRegulacieVyprázdňovania">
+                    klyzma
+                </label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Močenie:</label>
+            <label>Diuréza/24 hod.:</label>
+            <input type = "text">
+            <label>ml</label>
+        </div>
+        <div class="inline-form">
+            <label>problem</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="MocenieProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="MocenieProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="dyzuria" name="dyzuria">
+                <label for="dyzuria">dyzúria</label>
+
+                <input type="checkbox" id="retencia" name="retencia">
+                <label for="retencia">retencia</label>
+
+                <input type="checkbox" id="inkontinencia" name="inkontinencia">
+                <label for="inkontinencia">inkontinencia</label>
+
+                <input type="checkbox" id="absorpcnePomocky" name="absorpcnePomocky">
+                <label for="absorpcnePomocky">absorpčné pomôcky</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="RK" name="RK">
+                <label for="RK">RK</label>
+            </div>
+            <div class="form-group inline-form">
+                <label>/dátum zavedenia:</label>
+                <input type="text">
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="farbaMocu" name="farbaMocu">
+                <label for="farbaMocu">Farba moču</label>
+                <input type="text">
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="urostomia" name="urostomia">
+                <label for="urostomia">Urostómia</label>
+            </div>
+            <div class="form-group inline-form">
+                <label>/dátum zavedenia:</label>
+                <input type="text">
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="peritonealnaDialyzaHemodialyza">
+                    peritoneálna dialýza
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="peritonealnaDialyzaHemodialyza">
+                    Hemodialýza
+                </label>
+            </div>
+            <div class="form-group inline-form">
+                <label>/dátum zavedenia:</label>
+                <input type="text">
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="urinarnyKondomovySystem" name="urinarnyKondomovySystem">
+                <label for="urinarnyKondomovySystem">urinárny kondómový systém</label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <label>Spánok:</label>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="spanokProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="spanokProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="nespavost" name="nespavost">
+                <label for="nespavost">nespavosť</label>
+
+                <input type="checkbox" id="nocneBudenie" name="nocneBudenie">
+                <label for="nocneBudenie">nočné budenie</label>
+
+                <input type="checkbox" id="farmakoterapia" name="farmakoterapia">
+                <label for="farmakoterapia">farmakoterapia</label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-group">
+            <label>Mobilita:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="mobilitaRadio">
+                    1 plná mobilita
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="mobilitaRadio">
+                    3 - mobilita veľmi obmedzená
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="mobilitaRadio">
+                    4 - imobilita
+                </label>
+            </div>
+        </div>
+        <div class="inline-group">
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="mobilitaRadio">
+                    2 - mobilita mierne obmedzená
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="mobilitaRadio">
+                    Kompenzačné pomôcky, aké:
+                </label>
+            </div>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <label>Pohybový systém:</label>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="pohybovySystemProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="pohybovySystemProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="deformacia" name="deformacia">
+                <label for="deformacia">deformácia</label>
+
+                <input type="checkbox" id="trpnutieKoncatin" name="trpnutieKoncatin">
+                <label for="trpnutieKoncatin">tŕpnutie končatín</label>
+
+                <input type="checkbox" id="zlomenina" name="zlomenina">
+                <label for="zlomenina">zlomenina</label>
+
+                <input type="checkbox" id="ochrnutie" name="ochrnutie">
+                <label for="ochrnutie">ochrnutie</label>
+
+                <input type="checkbox" id="amputacia" name="amputacia">
+                <label for="amputacia">amputácia</label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <label>Koža:</label>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="kozaProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="kozaTeplaStudena">
+                    teplá
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaTeplaStudena">
+                    studená
+                </label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="kozaSuchaSpotena">
+                    suchá
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaSuchaSpotena">
+                    spotená
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Farba:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="kozaFarba">
+                    ružová
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaFarba">
+                    bledá
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaFarba">
+                    ikterická
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaFarba">
+                    cyanotická
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Turgor:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="kozaTurgorPrimeranyZnizeny">
+                    primeraný
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="kozaTurgorPrimeranyZnizeny">
+                    znížený
+                </label>
+            </div>
+            <label>Clistvost kože:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="clistvostKozeNenarusenaNarusena">
+                    Nenarušená
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="clistvostKozeNenarusenaNarusena">
+                    narušená
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Zmeny na koži:</label>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="kozneVyrazky" name="kozneVyrazky">
+                <label for="kozneVyrazky">Kožné vyrážky</label>
+
+                <input type="checkbox" id="svrbenie" name="svrbenie">
+                <label for="svrbenie">svrbenie</label>
+
+                <input type="checkbox" id="olupovanie" name="olupovanie">
+                <label for="olupovanie">olupovanie</label>
+
+                <input type="checkbox" id="zapareniny" name="zapareniny">
+                <label for="zapareniny">zapareniny</label>
+
+                <input type="checkbox" id="modriny" name="modriny">
+                <label for="modriny">modriny</label>
+
+                <input type="checkbox" id="zapal" name="zapal">
+                <label for="zapal">zápal</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="5" name="zmenyNaKoze">
+                    povrchové poranenie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="4" name="zmenyNaKoze">
+                    otvorená rana
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="zmenyNaKoze">
+                    operačná rana
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="zmenyNaKoze">
+                    abdominálna
+                </label>
+
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="1" name="zmenyNaKoze">
+                    vaginálna
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="krvacanie" name="krvacanie">
+                <label for="krvacanie">krvácanie</label>
+
+                <input type="checkbox" id="ulcusCruris" name="ulcusCruris">
+                <label for="ulcusCruris">ulcus cruris</label>
+
+                <input type="checkbox" id="gangrena" name="gangrena">
+                <label for="gangrena">gangréna</label>
+
+                <input type="checkbox" id="dekubity" name="dekubity">
+                <label for="dekubity">dekubity</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="lokalizacia" name="lokalizacia">
+                <label for="lokalizacia">lokalizácia:</label>
+            </div>
+            <input type = "text">
+        </div>
+        <div class="inline-form">
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="velkostDefektu:" name="velkostDefektu">
+                <label for="velkostDefektu">veľkosť defektu:</label>
+            </div>
+            <input type = "text">
+            <label>sm</label>
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Pacient/pacientka je:</label>
+            <input type = "text">
+            <label>deň po operácii:</label>
+        </div>
+        <label>Edémy:</label>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="edemyProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="edemyProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="edemyMiestneCelkove">
+                    miestne
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="edemyMiestneCelkove">
+                    celkové
+                </label>
+                <div class="checkbox-container navrh-checkbox-container inline-form">
+                    <input type="checkbox" id="bandazDK" name="bandazDK">
+                    <label for="bandazDK">bandáž DK:</label>
+
+                    <input type="checkbox" id="antitrombotickePancuchy" name="antitrombotickePancuchy">
+                    <label for="antitrombotickePancuchy">Antitrombotické pančuchy:</label>
+                </div>
+            </div>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="cievnaGymnastika" name="cievnaGymnastika">
+            <label for="cievnaGymnastika">cievna gymnastika:</label>
+        </div>
+    </div>
+
+    <div>
+        <label>Sliznice:</label>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="slizniceProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="slizniceProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="neprekvene" name="neprekvene">
+                <label for="neprekvene">neprekvené</label>
+
+                <input type="checkbox" id="krvácanie" name="krvácanie">
+                <label for="krvácanie">krvácanie</label>
+
+                <input type="checkbox" id="infekcia" name="infekcia">
+                <label for="infekcia">infekcia</label>
+
+                <input type="checkbox" id="zmenyNaSlizniciDutinyUstnej" name="zmenyNaSlizniciDutinyUstnej">
+                <label for="zmenyNaSlizniciDutinyUstnej">zmeny na sliznici dutiny ústnej</label>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Hygienický stav pri prijatí:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="HygienickyStavPrimeranyZanedbany">
+                    primeraný
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="HygienickyStavPrimeranyZanedbany">
+                    zanedbaný
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Hygienickú starostlivosť vykonáva:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="hygienickuStarostlivostVykonava">
+                    samostatne
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="hygienickuStarostlivostVykonava">
+                    s pomocou
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="hygienickuStarostlivostVykonava">
+                    je úplne závislý (á)
+                </label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <label>Pôrodné posúdenie (v prípade, ak ide o šestonedieľku)</label>
+        <div class="inline-form">
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="prvoDruhoViacrodicka">
+                    prvorodička
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="prvoDruhoViacrodicka">
+                    druhorodička
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="prvoDruhoViacrodicka">
+                    viacrodička
+                </label>
+            </div>
+            <div class="form-group inline-form">
+                <label>Dátum pôrodu:</label>
+                <input type = "text">
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Pôrod:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="PorodSpontannyOperacny">
+                    spontánny
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="PorodSpontannyOperacny">
+                    operačný
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Komplikácie po pôrode:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="komplikaciePoPorodeAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="komplikaciePoPorodeAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="form-group inline-form">
+                <label>charakter komplikácií:</label>
+                <input type = "text">
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Fundus maternice:</label>
+        <input type = "text">
+    </div>
+
+    <div class="form-group inline-form">
+        <label>stav krvácania/lochie:</label>
+        <label>vzhľad:</label>
+        <input type = "text">
+        <label>množstvo:</label>
+        <input type = "text">
+    </div>
+
+    <div class="inline-form">
+        <label>Hojenie popôrodného poranenia:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="hojeniePoporodnehoPoraneniaPrimamSecundam">
+                per primam
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="hojeniePoporodnehoPoraneniaPrimamSecundam">
+                per secundam
+            </label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <label>Prsníky:</label>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="prsnikyVolne" name="prsnikyVolne">
+            <label for="prsnikyVolne">voľné</label>
+
+            <input type="checkbox" id="prsnikyZacervenanie" name="prsnikyZacervenanie">
+            <label for="prsnikyZacervenanie">začervenanie</label>
+
+            <input type="checkbox" id="trhlinkyBradaviek" name="trhlinkyBradaviek">
+            <label for="trhlinkyBradaviek">trhlinky bradaviek</label>
+
+            <input type="checkbox" id="bolestivost" name="bolestivost">
+            <label for="bolestivost">bolestivosť</label>
+
+            <input type="checkbox" id="retenciaMlieka" name="retenciaMlieka">
+            <label for="retenciaMlieka">retencia mlieka</label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <label>Prsníky:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="prsníkyAnoCasticneNie">
+                áno
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" name="prsníkyAnoCasticneNie">
+                čiastočne
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" name="prsníkyAnoCasticneNie">
+                nie
+            </label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <label>Novorodenec:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="novorodenecChlapecDievca">
+                chlapec
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" name="novorodenecChlapecDievca">
+                dievča
+            </label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <label>Pôrodná hmotnosť:</label>
+        <input type = "text">
+        <label>g</label>
+
+        <label>Dĺžka:</label>
+        <input type = "text">
+        <label>cm</label>
+
+        <label>Obvod hlavy:</label>
+        <input type = "text">
+        <label>cm</label>
+
+        <label>Obvod hrudníka:</label>
+        <input type = "text">
+        <label>cm</label>
+    </div>
+
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div class="inline-form">
+        <label>Bolesť:</label>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="bolestAnoNie">
+                nie
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="bolestAnoNie">
+                áno
+            </label>
+        </div>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" value="3" name="bolestAkutnaChronicka">
+                akútna
+            </label>
+            <label class="radio-option">
+                <input type="radio" value="1" checked name="bolestAkutnaChronicka">
+                chronická
+            </label>
+        </div>
+    </div>
+
+    <div class="inline-form">
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="bolestLokalizacia" name="bolestLokalizacia">
+            <label for="bolestLokalizacia">lokalizácia: </label>
+            <input type = "text">
+        </div>
+    </div>
+    <div class="inline-form">
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="bolestCharakter" name="bolestCharakter">
+            <label for="bolestCharakter">charakter: </label>
+            <input type = "text">
+        </div>
+    </div>
+    <div class="form-group inline-form">
+        <label>Iné zistenia:</label>
+        <input type = "text">
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Komunikácia:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="komunikaciaVerbalnaNeverbalna">
+                    verbálna
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="komunikaciaVerbalnaNeverbalna">
+                    neverbálna
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>problém</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="komunikaciaProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="komunikaciaProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="poruchyReciNemozna">
+                    poruchy reči
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="poruchyReciNemozna">
+                    nemožná
+                </label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <label>Učenie, zmyslové vnímanie:</label>
+        <div class="inline-form">
+            <label>Problém:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="ucenieZmysloveVnimanieProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="ucenieZmysloveVnimanieProblemAnoNie">
+                    áno
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Zmeny v zmysloch-</label>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="zrak" name="zrak">
+                <label for="zrak">zrak</label>
+
+                <input type="checkbox" id="sluch" name="sluch">
+                <label for="sluch">sluch</label>
+
+                <input type="checkbox" id="rec" name="rec">
+                <label for="rec">reč</label>
+            </div>
+
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="zmenyVZmyslochAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="zmenyVZmyslochAnoNie">
+                    áno
+                </label>
+            </div>
+            <label>, aké:</label>
+            <input type = "text">
+        </div>
+
+        <div class="inline-form">
+            <label>Kompenzačné pomôcky:</label>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="okuliare" name="okuliare">
+                <label for="okuliare">okuliare</label>
+
+                <input type="checkbox" id="sosovky" name="sosovky">
+                <label for="sosovky">šošovky</label>
+
+                <input type="checkbox" id="načúvací aparát" name="načúvací aparát">
+                <label for="načúvací aparát">načúvací aparát</label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Vedomosti o chorobe:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="vedomostiOChorobeDostatokNedostatok">
+                    dostatok
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="vedomostiOChorobeDostatokNedostatok">
+                    nedostatok
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <label>Edukácia pacienta/pacientky:</label>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="oOsetrovatelskejStarostlivostiVDomacomProstredi" name="oOsetrovatelskejStarostlivostiVDomacomProstredi">
+                <label for="oOsetrovatelskejStarostlivostiVDomacomProstredi">o ošetrovateľskej starostlivosti v domácom prostredí</label>
+
+                <input type="checkbox" id="oPaliativnejStarostalivosti" name="oPaliativnejStarostalivosti">
+                <label for="oPaliativnejStarostalivosti">o paliativnej starostalivosti</label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="oOsetrovatelskejStarostlivostiVPooperacnomObdobi" name="oOsetrovatelskejStarostlivostiVPooperacnomObdobi">
+                <label for="oOsetrovatelskejStarostlivostiVPooperacnomObdobi">O ošetrovateľskej starostlivosti v pooperačnom období</label>
+
+                <input type="checkbox" id="oOsetrovatelskeyStarostlivostiPoChamoterapii" name="oOsetrovatelskeyStarostlivostiPoChamoterapii">
+                <label for="oOsetrovatelskeyStarostlivostiPoChamoterapii">o ošetrovateĺskey starostlivosti po chamoterapií</label>
+        </div>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="oOsetrovatelskejStarostlivostiVSestonedeli" name="oOsetrovatelskejStarostlivostiVSestonedeli">
+            <label for="oOsetrovatelskejStarostlivostiVSestonedeli">o ošetrovateľskej starostlivosti v šestonedelí</label>
+        </div>
+    </div>
+
+    <div>
+        <label>Psychické potreby:</label>
+        <div class="inline-form">
+            <label>Problém:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="psychickePotrebyProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="psychickePotrebyProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <input type = "text">
+        </div>
+
+        <div class="inline-form">
+            <label>Nálada:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" checked name="nalada">
+                    primerna
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="nalada">
+                    apatia
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="nalada">
+                    depresia
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="nalada">
+                    eufória
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="nalada">
+                    agresia
+                </label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>Istota, bezpečie:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" checked name="istotaBezpecie">
+                    kľudný
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    smútok
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    depresia
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    zmätenosť
+                </label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" checked name="istotaBezpecie">
+                    vyrovnaný
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    úzkosť
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    beznádej
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    sebaobviňovanie
+                </label>
+            </div>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" checked name="istotaBezpecie">
+                    strach
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    hnev
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    bezmocnosť
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" name="istotaBezpecie">
+                    sebaľútovanie
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <label>Sociálne potreby:</label>
+        <div class="inline-form">
+            <label>Problém:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="socialnePotrebyProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="socialnePotrebyProblemAnoNie">
+                    áno
+                </label>
+            </div>
+                    <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="odkazanyNeOdkazanyNaSocialnuPomoc">
+                    je odkázaný(á) na sociálnu pomoc
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="odkazanyNeOdkazanyNaSocialnuPomoc">
+                    nie je odkázaný(á) na sociálnu pomoc
+                </label>
+            </div>
+        </div>
+        <label>Duchovné potreby:</label>
+        <div class="inline-form">
+            <label>Problém:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="duchovnePotrebyProblemAnoNie">
+                    nie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="duchovnePotrebyProblemAnoNie">
+                    áno
+                </label>
+            </div>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <div class="inline-form">
+            <label>Nedostatočnosť v oblasti:</label>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="vyzivy" name="vyzivy">
+                <label for="vyzivy">výživy</label>
+
+                <input type="checkbox" id="vyprazdnovania" name="vyprazdnovania">
+                <label for="vyprazdnovania">vyprázdňovania</label>
+
+                <input type="checkbox" id="hygieny" name="hygieny">
+                <label for="hygieny">hygieny</label>
+
+                <input type="checkbox" id="obliekania" name="obliekania">
+                <label for="obliekania">obliekania</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="chronickejLiecbyInzLiekyPreOS">
+                    chronickej liečby
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="chronickejLiecbyInzLiekyPreOS">
+                    aplik. INZ, s.c. inj.
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="chronickejLiecbyInzLiekyPreOS">
+                    podávania liekov per os
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="eliminacieBolesti" name="eliminacieBolesti">
+                <label for="eliminacieBolesti">eliminácie bolesti</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>starostlivosti o</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="ranuStomiuDekubit">
+                    ranu
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="ranuStomiuDekubit">
+                    stómiu
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="ranuStomiuDekubit">
+                    dekubit
+                </label>
+            </div>
+            <div class="checkbox-container navrh-checkbox-container inline-form">
+                <input type="checkbox" id="starostlivostiORanu" name="starostlivostiORanu">
+                <label for="starostlivostiORanu">starostlivosti o ranu hojaciu sa per secundam</label>
+            </div>
+        </div>
+        <div class="inline-form">
+            <label>starostlivosti o</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="hradzuPrsniky">
+                    hrádzu
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="hradzuPrsniky">
+                    prsníky
+                </label>
+            </div>
+            <label>starostlivosti o</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" value="3" name="dojcenieNovorodenca">
+                    dojčenie
+                </label>
+                <label class="radio-option">
+                    <input type="radio" value="1" checked name="dojcenieNovorodenca">
+                    novorodenca
+                </label>
+            </div>
+        </div>
+        <div class="form-group inline-form">
+            <label>Iné zistenia:</label>
+            <input type = "text">
+        </div>
+    </div>
+
+    <div>
+        <label>Pacient/pacientka je poučený(á) o:</label>
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="pravachAPovinnostiachHospitalizovanychPacientov" name="pravachAPovinnostiachHospitalizovanychPacientov">
+            <label for="pravachAPovinnostiachHospitalizovanychPacientov">právach a povinnostiach hospitalizovaných pacientov</label>
+
+            <input type="checkbox" id="domacomPoriadku" name="domacomPoriadku">
+            <label for="domacomPoriadku">domácom poriadku</label>
+        </div>
+
+        <div class="checkbox-container navrh-checkbox-container inline-form">
+            <input type="checkbox" id="uschovePenaziCennosti" name="uschovePenaziCennosti">
+            <label for="uschovePenaziCennosti">uschove peňazí/cenností</label>
+
+            <input type="checkbox" id="zakazeFajceniaUzivaniaAlkoholuADrog" name="zakazeFajceniaUzivaniaAlkoholuADrog">
+            <label for="zakazeFajceniaUzivaniaAlkoholuADrog">Zákaze fajčenia, užívania alkoholu a drog</label>
+        </div>
+        <label>Pri prijatí pacient/pacientka odovzdal(a):</label>
+        <input type = "text">
+
+        <div class="inline-form">
+            <label>Dátum:</label>
+            <input type="text" name="date", id="date" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+            <label>Podpis pacienta/pacientky:</label>
+        </div>
+        <label>Stanovenie sesterských diagnóz pri príjme:</label>
+        <input type = "text">
+        <div class="inline-form">
+            <label>Dátum a čas:</label>
+            <input type="text" name="dateAndTime" id="dateAndTime" class="dateAndTime-input" placeholder="DD.MM.YYYY H:M" maxlength="10">
+            <label>čitateľný podpis sestry/pôrodnej asistentky:</label>
+        </div>
+    </div>
+</form>
+<button id="printButton" class="button no-print">Print document</button>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/documents/zaznam.js') }}"></script>
+<script src="{{ url_for('static', filename='js/documents/navrhIllnessList.js') }}"></script>
+{% endblock %}

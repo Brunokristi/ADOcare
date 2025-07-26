@@ -43,7 +43,6 @@
 
 .radio-group {
   display: flex;
-  background-color: #b3d9ff;
   padding: 5px 10px;
   border-radius: 4px;
   gap: 20px;
@@ -60,6 +59,5 @@
 }
 
 .radio-option input[type="radio"] {
-  accent-color: #004080;
   cursor: pointer;
 }
