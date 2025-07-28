@@ -162,6 +162,25 @@ textarea {
     text-decoration: none;
 }
 
+.delete-btn {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.delete-btn:hover {
+    color: #d9534f;
+}
+
 .text-button {
     display: flex;
     justify-content: center;
@@ -249,6 +268,7 @@ textarea {
 }
 
 .small-token {
+    position: relative;
     padding: 8px;
     background: #5C9EAD;
     border-radius: 20px;

@@ -47,16 +47,15 @@
 <div class="section">
     <div class="lined-heading"><span>Doktori</span></div>
     {% for doctor in doctors %}
-    <a href="{{ url_for('doctor.update_doctor', id=doctor.id) }}" class="small-token" data-id="{{ doctor.id }}"
-        data-meno="{{ doctor.meno }}" data-pzs="{{ doctor.pzs }}" data-zpr="{{ doctor.zpr }}">
-        {{ doctor.meno }}
-    </a>
+    <div class="small-token" data-id="{{ doctor.id }}">
+        <span>{{ doctor.meno }}</span>
+        <button class="delete-btn" type="button" title="Odstrániť doktora">×</button>
+    </div>
     {% endfor %}
-    <a class="text-button" href="{{ url_for('doctor.create_doctor') }}">
+    <a class="text-button" href="{{ url_for('doctor.list_doctors') }}">
         pridať doktora <i class="bi bi-arrow-right"></i>
     </a>
 </div>
-
 
 <div class="section">
     <div class="lined-heading"><span>Diagnózy</span></div>
@@ -73,3 +72,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 {% endblock %}
 
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}
