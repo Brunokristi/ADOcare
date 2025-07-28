@@ -287,6 +287,7 @@ textarea {
 }
 
 .small-token-full {
+    position: relative;
     padding: 8px;
     background: #5C9EAD;
     border-radius: 20px;

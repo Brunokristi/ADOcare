@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     textSpan.textContent = `${p.meno} — ${p.rodne_cislo}`;
 
                     const deleteBtn = document.createElement("button");
-                    deleteBtn.className = "delete-patient-btn";
+                    deleteBtn.className = "delete-btn";
                     deleteBtn.dataset.id = p.id;
                     deleteBtn.textContent = "✕";
 
