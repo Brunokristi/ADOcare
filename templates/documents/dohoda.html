@@ -4,29 +4,29 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/dohoda.css') }}">
 
-<h1><b>Dohoda o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti</b></h1>
+<h1><b>Dohoda o poskytovaní zdravotnej starostlivosti v rozsahu <br> ošetrovateľskej starostlivosti</b></h1>
 
 <form id="mainForm">
 
     <div style="width: 600px">
         <div class="form-group inline-form" style="position: relative;">
-            <label>Meno, priezvisko, titul poistenca: </label>
+            <label>Meno, priezvisko, titul poistenca:</label>
             <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
                 placeholder="Zadaj meno alebo rodné číslo...">
             <div id="patient-suggestions" class="suggestions"></div>
         </div>
 
-        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
-            <div class="form-group inline-form">
+        <div id="selected-patient" class="selected-patient">
+            <div class="inline">
                 <label>Rodné číslo: </label>
-                <p id="rodneCislo"></p>
+                <p id="rodneCislo" style="margin-right: 100px"></p>
                 <label>Číselný kód zdravotnej poisťovne: </label>
                 <p id="kodPoistovne"></p>
             </div>
 
-            <div class="form-group inline-form"></div>
+            <div class="inline">
                 <label>Miesto trvalého pobytu: </label>
                 <p id="bydliskoTrvale"></p>
             </div>
@@ -48,7 +48,7 @@
 
     <p><b>Poskytovateľ ošetrovateľskej starostlivosti: ADOS</b></p>
 
-    <div class="form-group inline-form">
+    <div class="form-group">
         <label>Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti</label>
         <input type = "text" id="nazovAAdresa" name="nazovAAdresa">
     </div>
@@ -62,32 +62,36 @@
         <input type = "text" value="{{ session['nurse']['phone_number'] }}" id="phone_number" required>
     </div>
 
-    <p>
-        Vyhlasujem na svoju česť, že nemám súbežne uzavretú žiadnu inú dohodu o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti s iným poskytovateľom.
-        <br>
-        Svojím podpisom potvrdzujem, že som bol(a) riadne poučený(á) podľa zákona č. 576/2004 Z. z. § 6 a dávam týmto informovaný súhlas na poskytovanie zdravotnej starostlivosti uhrádzanej na základe verejného zdravotného poistenia v rozsahu ošetrovateľskej starostlivosti v ZSS, v súlade s platnou legislatívou.
-    </p>
+    <b>
+        <p>
+            Vyhlasujem na svoju česť, že nemám súbežne uzavretú žiadnu inú dohodu o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti s iným poskytovateľom.
+        </p>
+        <p>
+            Svojím podpisom potvrdzujem, že som bol(a) riadne poučený(á) podľa zákona č. 576/2004 Z. z. § 6 a dávam týmto informovaný súhlas na poskytovanie zdravotnej starostlivosti uhrádzanej na základe verejného zdravotného poistenia v rozsahu ošetrovateľskej starostlivosti v ZSS, v súlade s platnou legislatívou.
+        </p>
+    </b>
 
-    <div class="form-group inline-form">
-        <label>V/vo </label>
-        <input required type = "text" id="mesto" name="mesto">
+    <div class="inline-form">
+        <div class="form-group inline-form">
+            <label>V/vo </label>
+            <input required type = "text" id="mesto" name="mesto">
+        </div>
+
+
+        <div class="form-group inline-form">
+            <label>dňa:</label>
+            <input type="text" name="currentDate", id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
+        </div>
     </div>
 
-
-    <div class="form-group inline-form">
-        <label>dňa:</label>
-        <input type="text" name="currentDate", id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
-    </div>
-
-
-    <div class="form-group inline-form">
+    <div class="inline-form sign">
         <div>
-            <label>........................</label>
+            <label>....................................................................</label>
             <br>
             <label>Podpis odborného zástupcu poskytovateľa<br>ošetrovateľskej starostlivosti:</label>
         </div>
         <div>
-            <label>................................................</label>
+            <label>...............................................................</label>
             <br>
             <label>Podpis poistenca / zákonného zástupcu:</label>
         </div>
