@@ -35,9 +35,26 @@
                     <i style="color: #333;" class="bi bi-arrow-left"></i>            
                 </a>
 
-                <a href="{{ url_for('main.index') }}" class="navbar-button" id="switch">
-                    <i style="color: #333;" class="bi bi-arrow-repeat"></i>
-                </a>
+                
+                {% if current_user.is_authenticated %}
+                    {% if session.get('nurse')%}
+                        <a href="{{ url_for('main.dashboard') }}" class="navbar-button" target="_blank" id="newTab">
+                            <i style="color: #333;" class="bi bi-plus"></i>
+                        </a>
+    
+                        <a class="navbar-button" href="{{ url_for('main.settings') }}">
+                            <i style="color: #333;" class="bi bi-gear"></i>
+                        </a>
+
+                        <a class="navbar-button" href="{{ url_for('patient.list_patients') }}">
+                            <i style="color: #333;" class="bi bi-people"></i>
+                        </a>
+
+                        <a class="navbar-button" href="{{ url_for('main.dashboard') }}">
+                            <i style="color: #333;" class="bi bi-box"></i>
+                        </a>
+                    {% endif %}
+                {% endif %}
 
             </div>
 
@@ -52,12 +69,10 @@
                             <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
                         </a>
 
-                        <a class="navbar-button" href="{{ url_for('main.dashboard') }}"><i style="color: #333;" class="bi bi-box"></i></a>
-
-                        <a class="navbar-button" href="{{ url_for('patient.list_patients') }}"><i style="color: #333;" class="bi bi-people"></i></a>
+                        <a href="{{ url_for('main.index') }}" class="navbar-button" id="switch">
+                            <i style="color: #333;" class="bi bi-arrow-repeat"></i>    
+                        </a>
                     {% endif %}
-
-                    <a class="navbar-button" href="{{ url_for('main.settings') }}"><i style="color: #333;" class="bi bi-gear"></i></a>
 
                     <a class="navbar-button" href="{{ url_for('auth.logout') }}"><i style="color: #333;" class="bi bi-box-arrow-right"></i></a>
                 {% endif %}
