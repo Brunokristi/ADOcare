@@ -169,12 +169,12 @@ textarea {
 .delete-btn {
     position: absolute;
     top: 50%;
-    right: 8px;
+    right: 20px;
     transform: translateY(-50%);
     background: transparent;
     border: none;
     color: #fff;
-    font-size: 20px;
+    font-size: 20px !important;
     line-height: 1;
     cursor: pointer;
     padding: 0;
