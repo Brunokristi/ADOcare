@@ -9,12 +9,12 @@
     <form id="patientForm" method="POST" action="{{ url_for('patient.update_patient', id=patient.id) }}">
         <div class="form-group">
             <label for="meno">Meno</label>
-            <input type="text" name="meno" value="{{ patient.meno }}" required>
+            <input type="text" name="meno" value="{{ patient.meno }}">
         </div>
 
         <div class="form-group">
             <label for="rodne_cislo">Rodné číslo</label>
-            <input type="text" name="rodne_cislo" value="{{ patient.rodne_cislo }}">
+            <input type="number" name="rodne_cislo" value="{{ patient.rodne_cislo }}">
         </div>
 
         <div class="form-group">
@@ -43,6 +43,12 @@
             <div id="address-suggestions" class="suggestions"></div>
         </div>
 
+        <div class="form-group" style="position: relative;">
+            <label for="mesto">Mesto</label>
+            <input type="text" id="mesto" name="mesto" autocomplete="off" {% if patient.mesto and patient.mesto !='None'
+                %}value="{{ patient.mesto }}" {% endif %}>
+        </div>
+
         <div class="form-group">
             <label>Vyber na mape</label>
             <div id="map" style="height: 300px;"></div>  
@@ -64,10 +70,12 @@
         <div class="form-group" style="position: relative;">
             <label for="diagnoza">Diagnóza</label>
             <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off"
-                value="{{ diagnosis.kod }} - {{ diagnosis.nazov }}">
-            <input type="hidden" id="diagnoza_id" name="diagnoza" value="{{ patient.diagnoza }}">
+                value="{% if diagnosis and diagnosis.kod and diagnosis.nazov %}{{ diagnosis.kod }} - {{ diagnosis.nazov }}{% endif %}">
+        
+            <input type="hidden" id="diagnoza_id" name="diagnoza" value="{{ patient.diagnoza or '' }}">
             <div id="diagnoza-suggestions" class="suggestions"></div>
         </div>
+        
 
         <div class="form-group">
             <label for="ados">ADOS</label>
@@ -88,7 +96,11 @@
         <button type="submit" class="btn">Uložiť</button>
     </form>
 
-    <form method="POST" action="{{ url_for('patient.delete_patient', id=patient.id) }}" style="display:inline;">
+    <form>
+        <button type="button" class="btn warning" id="discardChangesBtn">Zahodiť zmeny</button>
+    </form>
+
+    <form id="deletePatientForm" method="POST" action="{{ url_for('patient.delete_patient', id=patient.id) }}" style="display:inline;">
         <button type="submit" class="btn warning">Vymazať</button>
     </form>
 </div>

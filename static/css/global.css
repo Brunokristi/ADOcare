@@ -509,3 +509,9 @@ textarea {
     align-items: center;
     padding: 20px 0;
 }
+
+input.invalid,
+select.invalid {
+    border-color: red;
+    background-color: #fff0f0;
+}

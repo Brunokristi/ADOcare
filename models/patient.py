@@ -4,6 +4,7 @@ class Patient:
         self.meno = row['meno']
         self.rodne_cislo = row['rodne_cislo']
         self.adresa = row['adresa']
+        self.mesto = row['mesto']
         self.poistovna = row['poistovna']
         self.ados = row['ados']
         self.sestra = row['sestra']

@@ -46,33 +46,69 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // === Formulár odoslanie ===
-    if (form) {
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const payload = new URLSearchParams(formData);
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
 
-            fetch(form.action, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: payload
-            })
-                .then(res => {
-                    if (res.ok) {
-                        showMessage("Pacient bol uložený.");
-                        setTimeout(() => {
-                            window.location.href = document.referrer || "/nastavenia";
-                        }, 1000);
-                    } else {
-                        showMessage("Nepodarilo sa uložiť pacienta.");
-                    }
-                })
-                .catch(() => {
-                    showMessage("Chyba pri odosielaní údajov.");
-                });
+        const requiredFields = [
+            "meno",
+            "rodne_cislo",
+            "pohlavie",
+            "poistovna",
+            "adresa",
+            "mesto",
+            "sestra",
+            "odosielatel",
+            "diagnoza_display",
+            "ados",
+            "cislo_dekurzu"
+        ];
+
+        let valid = true;
+        let firstInvalidField = null;
+
+        requiredFields.forEach(name => {
+            const field = form.elements[name];
+            const value = field?.value?.trim();
+
+            if (!value || value === "None" || value === "") {
+                valid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = field;
+                }
+                field?.classList.add("invalid");
+            } else {
+                field?.classList.remove("invalid");
+            }
         });
-    }
+
+        if (!valid) {
+            showMessage("Vyplňte všetky polia.");
+            firstInvalidField?.focus();
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = new URLSearchParams(formData);
+
+        fetch(form.action, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: payload
+        })
+            .then(res => {
+                if (res.ok) {
+                    showMessage("Pacient bol uložený.");
+                    setTimeout(() => {
+                        window.location.href = document.referrer || "/nastavenia";
+                    }, 1000);
+                } else {
+                    showMessage("Nepodarilo sa uložiť pacienta.");
+                }
+            })
+            .catch(() => {
+                showMessage("Chyba pri odosielaní údajov.");
+            });
+    });
 
     if (addressInput) {
         addressInput.addEventListener("input", fetchSuggestions);
@@ -189,7 +225,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    // === Ak je adresa predvyplnená – zobraz ju na mape ===
     if (map && addressInput && addressInput.value.trim().length > 4) {
         const query = addressInput.value.trim();
         fetch(`https://api.openrouteservice.org/geocode/search?api_key=${orsApiKey}&text=${encodeURIComponent(query)}&size=1`)
@@ -207,4 +242,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("ORS forward geocoding on page load error:", err);
             });
     }
+
+    const deleteForm = document.getElementById("deletePatientForm");
+    if (deleteForm) {
+        deleteForm.addEventListener("submit", function (e) {
+            const confirmed = confirm("Naozaj chcete vymazať tohto pacienta?");
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        });
+    }
+
+
+    const discardBtn = document.getElementById("discardChangesBtn");
+    if (discardBtn) {
+        discardBtn.addEventListener("click", function () {
+            if (confirm("Naozaj chcete zahodiť všetky zmeny?")) {
+                location.reload();
+            }
+        });
+    }
+
 });

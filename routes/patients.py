@@ -24,12 +24,12 @@ def create_patient():
         conn = get_db_connection()
         conn.execute("""
             INSERT INTO pacienti (
-                meno, rodne_cislo, adresa, poistovna, ados,
+                meno, rodne_cislo, adresa, mesto, poistovna, ados,
                 sestra, odosielatel, pohlavie, cislo_dekurzu, diagnoza, longitude, latitude
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                data['meno'], data['rodne_cislo'], data['adresa'], data['poistovna'],
+                data['meno'], data['rodne_cislo'], data['adresa'], data['mesto'], data['poistovna'],
                 data['ados'], data['sestra'], data['odosielatel'],
                 data['pohlavie'], data['cislo_dekurzu'], data['diagnoza'], longitude, latitude
 
@@ -55,11 +55,11 @@ def update_patient(id):
         conn = get_db_connection()
         conn.execute("""
             UPDATE pacienti SET
-                meno = ?, rodne_cislo = ?, adresa = ?, poistovna = ?, ados = ?,
+                meno = ?, rodne_cislo = ?, adresa = ?, mesto = ?, poistovna = ?, ados = ?,
                 sestra = ?, odosielatel = ?, pohlavie = ?, cislo_dekurzu = ?, diagnoza = ?, longitude = ?, latitude = ?
             WHERE id = ?""",
             (
-                data['meno'], data['rodne_cislo'], data['adresa'], data['poistovna'],
+                data['meno'], data['rodne_cislo'], data['adresa'], data['mesto'], data['poistovna'],
                 data['ados'], data['sestra'], data['odosielatel'],
                 data['pohlavie'], data['cislo_dekurzu'], data['diagnoza'], longitude, latitude, id
             ))

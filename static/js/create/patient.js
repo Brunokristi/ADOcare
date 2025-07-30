@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const mapElement = document.getElementById('map');
     let map, marker;
 
-    // === Inicializuj mapu a nastav bounds na LC, RS, FI ===
     if (mapElement) {
         map = L.map('map');
         const bounds = L.latLngBounds([
@@ -26,33 +25,69 @@ document.addEventListener("DOMContentLoaded", function () {
         }).addTo(map);
     }
 
-    if (form) {
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
 
-            const formData = new FormData(form);
-            const payload = new URLSearchParams(formData);
+        const requiredFields = [
+            "meno",
+            "rodne_cislo",
+            "pohlavie",
+            "poistovna",
+            "adresa",
+            "mesto",
+            "sestra",
+            "odosielatel",
+            "diagnoza_display",
+            "ados",
+            "cislo_dekurzu"
+        ];
 
-            fetch(form.action, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: payload
-            })
-                .then(res => {
-                    if (res.ok) {
-                        showMessage("Pacient bol uložený.");
-                        setTimeout(() => {
-                            window.location.href = document.referrer || "/nastavenia";
-                        }, 1000);
-                    } else {
-                        showMessage("Nepodarilo sa uložiť pacienta.");
-                    }
-                })
-                .catch(() => {
-                    showMessage("Chyba pri odosielaní údajov.");
-                });
+        let valid = true;
+        let firstInvalidField = null;
+
+        requiredFields.forEach(name => {
+            const field = form.elements[name];
+            const value = field?.value?.trim();
+
+            if (!value || value === "None" || value === "") {
+                valid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = field;
+                }
+                field?.classList.add("invalid");
+            } else {
+                field?.classList.remove("invalid");
+            }
         });
-    }
+
+        if (!valid) {
+            showMessage("Vyplňte všetky polia.");
+            firstInvalidField?.focus();
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = new URLSearchParams(formData);
+
+        fetch(form.action, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: payload
+        })
+            .then(res => {
+                if (res.ok) {
+                    showMessage("Pacient bol uložený.");
+                    setTimeout(() => {
+                        window.location.href = document.referrer || "/nastavenia";
+                    }, 1000);
+                } else {
+                    showMessage("Nepodarilo sa uložiť pacienta.");
+                }
+            })
+            .catch(() => {
+                showMessage("Chyba pri odosielaní údajov.");
+            });
+    });
 
     if (addressInput) {
         addressInput.addEventListener("input", fetchSuggestions);
@@ -158,5 +193,14 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(() => {
                 diagnosisSuggestions.style.display = "none";
             });
+    }
+
+    const discardBtn = document.getElementById("discardChangesBtn");
+    if (discardBtn) {
+        discardBtn.addEventListener("click", function () {
+            if (confirm("Naozaj chcete zahodiť všetky zmeny?")) {
+                location.reload();
+            }
+        });
     }
 });
