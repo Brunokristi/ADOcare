@@ -101,62 +101,70 @@ document.addEventListener("DOMContentLoaded", function () {
     function initializeFlatpickers() {
         if (!selectedPatient || !selectedPatient.dates_all) return;
 
-        flatpickr.localize(flatpickr.l10ns.sk);
+        try {
+            let raw = selectedPatient.dates_all;
 
-        const rangeElement = document.getElementById("date-range");
-        const firstDay = rangeElement?.dataset.start || null;
-        const lastDay = rangeElement?.dataset.end || null;
-
-        const expectedDates = getAllExpectedDates(firstDay, lastDay);
-        const allowedDates = selectedPatient.dates_all;
-        const disabledDates = expectedDates.filter(d => !allowedDates.includes(d));
-
-        document.querySelectorAll(".dates").forEach((inputElem, index) => {
-            const hiddenInput = document.getElementById(`dates_list_${index + 1}`);
-            const copyPasteArea = document.getElementById(`copy_paste_dates_${index + 1}`);
-
-            if (inputElem._flatpickr) {
-                inputElem._flatpickr.destroy();
+            // Recursively parse stringified arrays
+            let parsed = raw;
+            while (typeof parsed === "string") {
+                parsed = JSON.parse(parsed);
             }
 
-            const selectedDates = selectedPatient.dates[index] || [];
-            const formattedDates = selectedDates.map(d => {
-                const date = new Date(d);
-                return date.toLocaleDateString("sk-SK", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric"
+            if (!Array.isArray(parsed)) {
+                throw new Error("Očakávalo sa pole dátumov.");
+            }
+
+            // Convert to Date objects for Flatpickr and formatted strings for UI
+            const defaultDates = parsed.map(iso => {
+                const [year, month, day] = iso.split("-");
+                return new Date(year, month - 1, day); // Month is zero-based
+            });
+
+            const formattedDates = parsed.map(iso => {
+                const [year, month, day] = iso.split("-");
+                return `${day}-${month}-${year}`;
+            });
+
+            flatpickr.localize(flatpickr.l10ns.sk);
+
+            document.querySelectorAll(".dates").forEach((inputElem, index) => {
+                const hiddenInput = document.getElementById(`dates_list_${index + 1}`);
+                const copyPasteArea = document.getElementById(`copy_paste_dates_${index + 1}`);
+
+                if (inputElem._flatpickr) {
+                    inputElem._flatpickr.destroy();
+                }
+
+
+                flatpickr(inputElem, {
+                    mode: "multiple",
+                    dateFormat: "d-m-Y",
+                    enable: defaultDates,
+                    allowInput: true,
+                    enableTime: false,
+                    locale: { firstDayOfWeek: 1 },
+                    onChange: function (selectedDates) {
+                        const selectedValues = selectedDates.map(date => {
+                            return flatpickr.formatDate(date, "Y-m-d");
+                        });
+
+                        hiddenInput.value = selectedValues.join(",");
+                        copyPasteArea.value = selectedValues.map(d => {
+                            const [y, m, d2] = d.split("-");
+                            return `${d2}-${m}-${y}`;
+                        }).join(", ");
+
+                        inputElem.value = "";
+                        updatePatientDataAttributes();
+                    }
                 });
             });
-
-            copyPasteArea.value = formattedDates.join(", ");
-            hiddenInput.value = selectedDates.join(",");
-
-            flatpickr(inputElem, {
-                mode: "multiple",
-                dateFormat: "Y-m-d",
-                minDate: firstDay,
-                maxDate: lastDay,
-                allowInput: true,
-                enableTime: false,
-                disable: disabledDates,
-                locale: { firstDayOfWeek: 1 },
-                onChange: function (selectedDates) {
-                    const selectedValues = selectedDates.map(date => {
-                        const adjustedDate = new Date(date);
-                        adjustedDate.setDate(adjustedDate.getDate() + 1);
-                        return adjustedDate.toISOString().split("T")[0];
-                    });
-
-                    hiddenInput.value = selectedValues.join(",");
-                    copyPasteArea.value = selectedValues.join(", ");
-                    inputElem.value = "";
-
-                    updatePatientDataAttributes();
-                }
-            });
-        });
+        } catch (e) {
+            console.error("❌ Chyba pri spracovaní dátumov:", e);
+            showMessage("Nepodarilo sa načítať dátumy.");
+        }
     }
+
 
     // aktualizacia dat pacienta
     // pri zmene textu v textarea alebo zmeny datumu

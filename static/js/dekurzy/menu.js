@@ -17,6 +17,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const prevDayBtn = document.getElementById("prevDay");
     const nextDayBtn = document.getElementById("nextDay");
 
+    const toggleBtn = document.getElementById("toggleModeBtn");
+    const autoBlock = document.querySelector(".input-automatic");
+    const manualBlock = document.querySelector(".input-manual");
+
     let selectedPatientId = null;
     let allDates = [];
     let currentIndex = 0;
@@ -51,6 +55,98 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // vypocitanie datumov na frontende
+    function calculateDates() {
+        const isManual = document.querySelector(".input-manual").style.display === "block";
+        const allDates = [];
+
+        if (isManual) {
+            const manualInput = document.querySelector(".input-manual input");
+            const rawDates = manualInput.value.split(",");
+
+            rawDates.forEach(dateStr => {
+                const date = parseDateDMY(dateStr.trim());
+                if (!isNaN(date)) {
+                    allDates.push(formatDateDMY(date));
+                }
+            });
+
+            if (!allDates.length) {
+                showMessage("Vyberte aspoň jeden platný dátum.");
+                return [];
+            }
+
+            return allDates;
+        }
+
+        // Automatic mode
+        const dateStartStr = document.getElementById("date_start").value;
+        const dateEndStr = document.getElementById("date_end").value;
+        const frequency = document.getElementById("frequency").value;
+        const exceptionsRaw = document.getElementById("exceptions").value;
+
+        if (!dateStartStr || !dateEndStr) {
+            showMessage("Prosím, vyberte dátumy.");
+            return [];
+        }
+
+        const start = parseDateDMY(dateStartStr);
+        const end = parseDateDMY(dateEndStr);
+
+        if (start > end) {
+            showMessage("Začiatok nemôže byť po konci.");
+            return [];
+        }
+
+        const exceptionDates = exceptionsRaw
+            .split(",")
+            .map(d => formatDateDMY(parseDateDMY(d.trim())))
+            .filter(Boolean);
+
+        let current = new Date(start);
+
+        while (current <= end) {
+            const day = current.getDay(); // 1 = Monday, 0 = Sunday
+            const formatted = formatDateDMY(current);
+            let include = false;
+
+            if (frequency === "daily") {
+                include = true;
+            } else if (frequency === "weekday") {
+                include = day >= 1 && day <= 5; // Mon–Fri
+            } else if (frequency === "3x_week") {
+                include = [1, 3, 5].includes(day); // Mon, Wed, Fri
+            }
+
+            if (include && !exceptionDates.includes(formatted)) {
+                allDates.push(formatted);
+            }
+
+            current.setDate(current.getDate() + 1);
+        }
+
+        if (!allDates.length) {
+            showMessage("Nie sú žiadne platné dátumy podľa výberu.");
+        }
+
+        return allDates;
+    }
+
+    // Helper: Parse dd-mm-yyyy to Date
+    function parseDateDMY(dateStr) {
+        const [day, month, year] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day);
+    }
+
+    // Helper: Format Date to dd-mm-yyyy
+    function formatDateDMY(date) {
+        const d = String(date.getDate()).padStart(2, "0");
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const y = date.getFullYear();
+        return `${d}-${m}-${y}`;
+    }
+
+
     // pridat pacienta do planu
     addBtn?.addEventListener("click", () => {
         if (!selectedPatientId) return;
@@ -62,12 +158,11 @@ document.addEventListener("DOMContentLoaded", function () {
             d => d.toLocaleDateString('sv-SE')
         ) || [];
 
+        calculatedDates = calculateDates();
+
         const payload = {
             patient_id: selectedPatientId,
-            start_date: startDate,
-            end_date: endDate,
-            frequency,
-            exceptions
+            dates: calculatedDates,
         };
 
         fetch("/schedule/insert", {
@@ -119,7 +214,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     });
 
-    // zmazat pacienta z planu
     deleteBtn?.addEventListener("click", () => {
         if (!selectedPatientId) return;
 
@@ -131,8 +225,6 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(() => showMessage("Chyba pri komunikácii so serverom."));
     });
-
-
 
     initFlatpickr();
     initDayScroller();
@@ -191,12 +283,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const dateStart = document.getElementById("date_start");
         const dateEnd = document.getElementById("date_end");
         const exceptions = document.getElementById("exceptions");
+        const manual = document.getElementById("manual");
 
         const firstDay = new Date(document.body.dataset.firstDay);
         const lastDay = new Date(document.body.dataset.lastDay);
 
         flatpickr(dateStart, {
-            dateFormat: "Y-m-d",
+            dateFormat: "d-m-Y",
             defaultDate: firstDay,
             minDate: firstDay,
             maxDate: lastDay,
@@ -204,7 +297,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         flatpickr(dateEnd, {
-            dateFormat: "Y-m-d",
+            dateFormat: "d-m-Y",
             defaultDate: lastDay,
             minDate: firstDay,
             maxDate: lastDay,
@@ -212,7 +305,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         flatpickr(exceptions, {
-            dateFormat: "Y-m-d",
+            dateFormat: "d-m-Y",
+            mode: "multiple",
+            minDate: firstDay,
+            maxDate: lastDay,
+            locale: "sk"
+        });
+
+        flatpickr(manual, {
+            dateFormat: "d-m-Y",
             mode: "multiple",
             minDate: firstDay,
             maxDate: lastDay,
@@ -325,4 +426,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 container.innerHTML = "<p>Chyba pri načítaní pacientov.</p>";
             });
     }
+
+
+    let manualMode = false;
+
+    function updateUI() {
+        if (manualMode) {
+            autoBlock.style.display = "none";
+            manualBlock.style.display = "block";
+            toggleBtn.textContent = "Prepnúť na automatické zadávanie";
+        } else {
+            autoBlock.style.display = "block";
+            manualBlock.style.display = "none";
+            toggleBtn.textContent = "Prepnúť na manuálne zadávanie";
+        }
+    }
+
+    toggleBtn.addEventListener("click", function () {
+        manualMode = !manualMode;
+        updateUI();
+    });
+
+    updateUI();
 });

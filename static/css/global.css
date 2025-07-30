@@ -519,3 +519,7 @@ select.invalid {
     border-color: red;
     background-color: #fff0f0;
 }
+
+textarea {
+    resize: none;
+}

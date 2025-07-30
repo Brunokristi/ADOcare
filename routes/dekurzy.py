@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.utils import simpleSplit
 from collections import defaultdict
+from datetime import datetime
 
 from flask_login import login_required
 
@@ -220,7 +221,9 @@ def generate_pdf(editable_schedule, meno, rodne_cislo, adresa, pacient_id, poist
         c.drawString(55, height - 120, replace_slovak_chars("Meno, priezvisko, titul pacienta/pacientky:"))
         c.drawString(400, height - 120, replace_slovak_chars("Rodné číslo:"))
 
-        c.drawString(55, height - 145, replace_slovak_chars(adresa))
+        text = replace_slovak_chars(adresa)
+        trimmed = (text[:62] + "...") if len(text) > 65 else text
+        c.drawString(55, height - 145, trimmed)
 
 
         c.setFont("Helvetica-Bold", 12)
@@ -259,7 +262,7 @@ def generate_pdf(editable_schedule, meno, rodne_cislo, adresa, pacient_id, poist
 
     for date, zs_time, write_time, text in editable_schedule:
         text = zs_time + ": " + text
-        lines = text.split("\n")  # ✅ respect user-inserted newlines
+        lines = text.split("\n")
         wrapped_lines = []
 
         for line in lines:
@@ -275,7 +278,12 @@ def generate_pdf(editable_schedule, meno, rodne_cislo, adresa, pacient_id, poist
             draw_header()
             y_position = height - 200
 
-        c.drawString(55, y_position, date)
+        try:
+            slovak_date = datetime.strptime(date, "%Y-%m-%d").strftime("%-d.%-m.%Y")
+        except ValueError:
+            slovak_date = date  # fallback in case the format is unexpected
+
+        c.drawString(55, y_position, slovak_date)
         c.drawString(55, y_position - 10, write_time)
 
         for line in wrapped_lines:

@@ -16,7 +16,7 @@
 
     {% if session.get('nurse') %}
 
-    <div class="section-wrapper">
+    <div class="section-wrapper" style="padding-bottom: 100px;">
 
         <div class="section half-section">
             <div class="lined-heading"><span>Vyhľadávanie</span></div>
@@ -58,40 +58,51 @@
                                 class="bi bi-arrow-right"></i>
                         </a>
 
-                        
 
-                        <div class="half-form-group">
-                            <div class="form-group">
-                                <label for="date_start">Poskytovanie ZS</label>
-                                <input class="dates" type="text" id="date_start" name="date_start" placeholder="Dátum od"
-                                    autocomplete="off">
+
+
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <button type="button" id="toggleModeBtn" class="btn outlined">Prepnúť na manuálne zadávanie</button>                  
+                        </div>
+
+                        <div class="input-automatic">
+                            <div class="half-form-group">
+                                <div class="form-group">
+                                    <label for="date_start">Poskytovanie ZS</label>
+                                    <input class="dates" type="text" id="date_start" name="date_start" placeholder="Dátum od"
+                                        autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <input class="dates" type="text" id="date_end" name="date_end" placeholder="Dátum do"
+                                        autocomplete="off">
+                                </div>
                             </div>
+
                             <div class="form-group">
-                                <input class="dates" type="text" id="date_end" name="date_end" placeholder="Dátum do"
-                                    autocomplete="off">
+                                <label for="frequency">Opakovanie</label>
+                                <select id="frequency" name="frequency" required>
+                                    <option value="daily">Každý deň</option>
+                                    <option value="weekday">Každý pracovný deň</option>
+                                    <option value="3x_week">3x v týždni</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="exceptions">Výnimky</label>
+                                <input class="dates" type="text" id="exceptions" placeholder="Vyberte dátumy" autocomplete="off">
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="frequency">Opakovanie</label>
-                            <select id="frequency" name="frequency" required>
-                                <option value="daily">Každý deň</option>
-                                <option value="weekday">Každý pracovný deň</option>
-                                <option value="3x_week">3x v týždni</option>
-                            </select>
+                        <div class="input-manual">
+                            <div class="form-group">
+                                <label for="exceptions">Vyberte manuálne dátumy</label>
+                                <input class="dates" type="text" id="manual" placeholder="Vyberte dátumy" autocomplete="off">
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="exceptions">Výnimky</label>
-                            <input class="dates" type="text" id="exceptions" placeholder="Vyberte dátumy" autocomplete="off">
-                        </div>
-
-                        <button type="button" id="add-patient-btn" class="btn">Pridať pacienta</button>
+                        <button type="button" id="add-patient-btn" class="btn">Pridať pacienta do rozvrhu</button>
                     </div>
-
-                    <a class="text-button" href="{{ url_for('patient.create_patient') }}">
-                        nový pacient<i class="bi bi-arrow-right"></i>
-                    </a>
                 </div>
         </div>
 
