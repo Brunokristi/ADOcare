@@ -5,6 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}My App{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
     {% block styles %}{% endblock %}
@@ -24,19 +25,20 @@
 <body>
     <header>
         <div class="navbar no-print">
-            <div class="navbar-section" style="gap: 0px;">
-                <button id="backBtn" class="text-button" onclick="history.back();" style="padding: 10px;">
-                    <i style="color: #fff;" class="bi bi-arrow-left"></i>
-                </button>
+            <div class="navbar-section">
 
-                {% if current_user.is_authenticated and session.get('nurse')%}
-                    <button class="text-button" style="padding: 10px;" onclick="window.location.href='{{ url_for('main.dashboard') }}'">
-                        <i style="color: #fff;" class="bi bi-house"></i>
-                    </button>
-                {% endif %}
-                <a href="{{ url_for('main.index') }}" class="logo" style="margin-left: 20px;">
-                    <h1 class="logo" style="margin: 0;">ADOS</h1>
+                <a href="{{ url_for('auth.logout') }}" class="navbar-button" style="background-color: #5C9EAD; margin-right: 20px;">
+                    <i style="color: #fff;" class="bi bi-flower2"></i>
                 </a>
+                
+                <a href="#" class="navbar-button" id="backBtn">
+                    <i style="color: #333;" class="bi bi-arrow-left"></i>            
+                </a>
+
+                <a href="{{ url_for('main.index') }}" class="navbar-button" id="switch">
+                    <i style="color: #333;" class="bi bi-arrow-repeat"></i>
+                </a>
+
             </div>
 
             <div class="navbar-section">
@@ -49,12 +51,15 @@
                         <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
                             <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
                         </a>
-                        <a class="navbar-button" href="{{ url_for('patient.list_patients') }}">👥</a>
+
+                        <a class="navbar-button" href="{{ url_for('main.dashboard') }}"><i style="color: #333;" class="bi bi-box"></i></a>
+
+                        <a class="navbar-button" href="{{ url_for('patient.list_patients') }}"><i style="color: #333;" class="bi bi-people"></i></a>
                     {% endif %}
 
-                    <a class="navbar-button" href="{{ url_for('main.settings') }}">⚙️</a>
+                    <a class="navbar-button" href="{{ url_for('main.settings') }}"><i style="color: #333;" class="bi bi-gear"></i></a>
 
-                    <a class="navbar-button" href="{{ url_for('auth.logout') }}">Odhlásiť sa</a>
+                    <a class="navbar-button" href="{{ url_for('auth.logout') }}"><i style="color: #333;" class="bi bi-box-arrow-right"></i></a>
                 {% endif %}
             </div>
         </div>

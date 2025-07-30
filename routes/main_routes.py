@@ -36,3 +36,7 @@ def dashboard():
     if 'nurse' not in session:
         return redirect(url_for("main.index"))
     return render_template("dashboard.html", months_dekurz=months_dekurz)
+
+@main.route("/favicon.ico")
+def favicon():
+    return redirect(url_for('static', filename='favicon.ico'))

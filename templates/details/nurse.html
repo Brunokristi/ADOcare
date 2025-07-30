@@ -9,11 +9,11 @@
     <form id="nurseForm" method="POST" action="{{ url_for('nurse.update_nurse', id=nurse.id) }}">
         <div class="form-group">
             <label for="meno">Meno</label>
-            <input type="text" name="meno" id="meno" value="{{ nurse.meno }}" required>
+            <input type="text" name="meno" id="meno" value="{{ nurse.meno }}">
         </div>
         <div class="form-group">
             <label for="phone_number">Telefónne číslo</label>
-            <input type="text" name="phone_number" id="phone_number" value="{{ nurse.phone_number }}" required>
+            <input type="text" name="phone_number" id="phone_number" value="{{ nurse.phone_number }}">
         </div>
         <div class="form-group">
             <label for="kod">Kód</label>
@@ -48,7 +48,8 @@
         <button type="submit" class="btn">Uložiť</button>
     </form>
 
-    <form method="POST" action="{{ url_for('nurse.delete_nurse', id=nurse.id) }}" style="margin-top: 1rem;">
+    <form method="POST" action="{{ url_for('nurse.delete_nurse', id=nurse.id) }}" style="margin-top: 1rem;"
+        onsubmit="return confirm('Naozaj chcete vymazať sestru?');">
         <button type="submit" class="btn warning">Vymazať</button>
     </form>
 </div>

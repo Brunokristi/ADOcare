@@ -6,6 +6,37 @@ document.addEventListener("DOMContentLoaded", function () {
     form.addEventListener("submit", function (e) {
         e.preventDefault();
 
+        const requiredFields = [
+            "meno",
+            "phone_number",
+            "kod",
+            "uvazok",
+            "vozidlo",
+            "ados"
+        ];
+
+        let valid = true;
+        let firstInvalid = null;
+
+        requiredFields.forEach(name => {
+            const field = form.elements[name];
+            const value = field?.value?.trim();
+
+            if (!value || value === "None" || value === "") {
+                valid = false;
+                field?.classList.add("invalid");
+                if (!firstInvalid) firstInvalid = field;
+            } else {
+                field?.classList.remove("invalid");
+            }
+        });
+
+        if (!valid) {
+            showMessage("Vyplňte všetky polia.");
+            firstInvalid?.focus();
+            return;
+        }
+
         const formData = new FormData(form);
         const payload = new URLSearchParams(formData);
 
