@@ -45,6 +45,10 @@ h3 {
     margin: 0;
 }
 
+p {
+    text-align: center;
+}
+
 .section {
     padding: 30px;
     height: fit-content;

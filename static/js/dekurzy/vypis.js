@@ -293,20 +293,18 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    // kopírovanie a vkladanie dátumov
     document.querySelectorAll(".copy-paste-dates").forEach((textarea, index) => {
         textarea.addEventListener("input", () => {
             const hiddenInput = document.getElementById(`dates_list_${index + 1}`);
             const rawText = textarea.value;
 
-            // Rozdelíme text podľa čiarky a osekáme medzery
             const dates = rawText
                 .split(",")
                 .map(d => d.trim())
-                .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));  // jednoduchý regex na "YYYY-MM-DD"
+                .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
 
             hiddenInput.value = dates.join(",");
-            updatePatientDataAttributes(); // ak chceš hneď aj zaktualizovať dataset
+            updatePatientDataAttributes();
         });
     });
 

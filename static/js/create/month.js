@@ -30,7 +30,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     window.location.href = document.referrer || "/nastavenia";
                 }, 1000);
             } else {
-                showMessage("Nepodarilo sa vytvoriť mesiac.");
+                showMessage("Mesiac už je vytvorený.");
+                setTimeout(() => {
+                    window.location.href = document.referrer || "/nastavenia";
+                }, 1000);
             }
         }).catch(() => {
             showMessage("Chyba pri odosielaní požiadavky.");

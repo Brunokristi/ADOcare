@@ -16,13 +16,25 @@ def create_month():
 
         mesiac = int(data["mesiac"])
         rok = int(data["rok"])
+        sestra_id = session.get("nurse", {}).get("id")
+
         first_day = date(rok, mesiac, 1)
         last_day = date(rok, mesiac, calendar.monthrange(rok, mesiac)[1])
 
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Insert new month
+        # 🔍 Check if this month already exists for this sestra
+        cur.execute("""
+            SELECT id FROM mesiac
+            WHERE mesiac = ? AND rok = ? AND sestra_id = ?
+        """, (mesiac, rok, sestra_id))
+        existing = cur.fetchone()
+
+        if existing:
+            conn.close()
+            return "Tento mesiac už existuje.", 409
+
         cur.execute("""
             INSERT INTO mesiac (
                 mesiac, rok, vysetrenie_start, vysetrenie_koniec,
@@ -35,15 +47,14 @@ def create_month():
             data["vysetrenie_koniec"],
             data["vypis_start"],
             data["vypis_koniec"],
-            session.get("nurse", {}).get("id"),
+            sestra_id,
             first_day,
             last_day,
         ))
 
-        # Get inserted month ID (optional, in case you need it later)
         mesiac_id = cur.lastrowid
 
-        # Insert days manually
+        # ⏱️ Create daily records
         current_day = first_day
         while current_day <= last_day:
             cur.execute("INSERT INTO dni (datum, mesiac) VALUES (?, ?)", (current_day, mesiac_id))
@@ -52,7 +63,7 @@ def create_month():
         conn.commit()
         conn.close()
 
-        return redirect(url_for("main.settings"))
+        return "OK", 200
 
     return render_template("create/month.html")
 
