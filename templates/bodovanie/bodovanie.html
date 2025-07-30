@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}ADOS - Bodovanie{% endblock %}
+
+{% block content %}
+<h1>Bodovanie Pacienta</h1>
+
+<div class="section">
+    <div class="lined-heading"><span>Bodovanie</span></div>
+    <form id="patientForm" method="POST">
+        <div class="form-group" style="position: relative;">
+            <input type="text" id="patientSearch" name="patientSearch" autocomplete="off"
+                placeholder="Zadaj meno alebo rodné číslo...">
+            <div id="patient-suggestions" class="suggestions"></div>
+            <input type="hidden" id="pacient_id" name="pacient_id">
+        </div>
+
+        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span class="accent">Meno</span>
+                        </td>
+                        <td id="patient-meno"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="accent">Rodné číslo</span>
+                        </td>
+                        <td id="patient-rc"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="accent">Poisťovňa</span>
+                        </td>
+                        <td id="patient-poistovna"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-group">
+            <label for="date">Dátum</label>
+            <input class="dates" type="text" id="date" placeholder="Vyberte dátum" autocomplete="off">
+        </div>
+
+        <div class="form-group" style="position: relative;">
+            <label for="diagnoza">Diagnóza</label>
+            <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off">
+            <input type="hidden" id="diagnoza_id" name="diagnoza">
+            <div id="diagnoza-suggestions" class="suggestions"></div>
+        </div>
+
+        <div class="half-form-group">
+            <div class="form-group" style="position: relative;">
+                <label for="diagnoza">Výkon</label>
+                <input type="text" id="vykon" name="vykon-display" autocomplete="off">
+                <div id="vykon-suggestions" class="suggestions"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="body">Počet bodov</label>
+                <input type="number" name="body" value="5">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="pocet">Počet</label>
+            <input type="number" name="pocet" value="1">
+        </div>
+
+        <div class="form-group">
+            <label for="odosielatel">Odosielateľ (doktor)</label>
+            <select name="odosielatel">
+                <option value="">—</option>
+                {% for doctor in doctors %}
+                <option value="{{ doctor.id }}">{{ doctor.meno }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="odporucenie">Dátum odporučenia</label>
+            <input class="dates" type="text" id="odporucenie" placeholder="Vyberte dátumy" autocomplete="off">
+        </div>
+
+        <button type="submit" class="btn">Pridať</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/bodovanie/bodovanie.js') }}"></script>
+{% endblock %}
