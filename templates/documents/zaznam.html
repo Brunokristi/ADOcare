@@ -38,7 +38,7 @@
                 <label>Trvalý pobyt: </label>
                 <p id="bydliskoTrvale"></p>
                 <label>Poschodie:</label>
-                <input required type = "text">
+                <input required type = "text" id="trvalyPobytPoschodie" name="trvalyPobytPoschodie">
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
         <label>Prechodný pobyt: </label>
         <input required type = "text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu">
         <label>Poschodie:</label>
-        <input required type = "text">
+        <input required type = "text" id="prehodnyPobitPoschodie", name="prehodnyPobitPoschodie">
     </div>
 
     <div class="form-group inline-form">
@@ -57,9 +57,9 @@
 
     <div class="form-group inline-form">
         <label>Adresa kontaktnej osoby:</label>
-        <input required type = "text">
+        <input required type = "text" id="adresaKontaktnejOsoby" name="adresaKontaktnejOsoby">
         <label>Telefón:</label>
-        <input required type = "text">
+        <input required type = "text" id="telefonKontaktnejOsoby" name="telefonKontaktnejOsoby">
     </div>
 
     <hr>
@@ -73,7 +73,7 @@
 
     <div class="form-group inline-form">
         <label>Doporučená farmakoterapia:</label>
-        <input required type = "text">
+        <input required type = "text" id="doporucenaFarmakoterapia" name="doporucenaFarmakoterapia">
     </div>
 
     <div class="form-group inline-form">
@@ -93,8 +93,8 @@
     <div class="checkbox-container navrh-checkbox-container inline-form">
         <label>Alergia:</label>
 
-        <input type="checkbox" id="lieky" name="lieky">
-        <label for="lieky">lieky</label>
+        <input type="checkbox" id="alergiaLieky" name="alergiaLieky">
+        <label for="alergiaLieky">lieky</label>
 
         <input type="checkbox" id="potraviny" name="potraviny">
         <label for="potraviny">potraviny</label>
@@ -111,7 +111,7 @@
 
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="alergiaIneZistenia" name="alergiaIneZistenia">
     </div>
 
     <hr>
@@ -157,60 +157,60 @@
     </div>
 
     <div class="form-group inline-form">
-        <input type = "text">
+        <input type = "text" id="rodinnaAnamnezaKomentar" name="rodinnaAnamnezaKomentar">
     </div>
 
     <hr>
 
     <div class="form-group inline-form">
         <label>Sociálna anamnéza povolanie:</label>
-        <input type = "text">
+        <input type = "text" id="socialnaAnamnezaPovolanie" name="socialnaAnamnezaPovolanie">
     </div>
 
     <label>Sociálne podmienky:</label>
     <div class="radio-group">
         <label class="radio-option">
-          <input type="radio" value="1" checked name="SocialnePodmienky">
+          <input type="radio" value="Žije sám(a)" name="SocialnePodmienky">
           Žije sám(a)
         </label>
         <label class="radio-option">
-          <input type="radio" value="3" name="SocialnePodmienky">
+          <input type="radio" value="s rodinou" name="SocialnePodmienky">
           s rodinou
         </label>
         <label class="radio-option">
-          <input type="radio" value="6" name="SocialnePodmienky">
+          <input type="radio" value="v zar. soc. služieb (ZSS)" name="SocialnePodmienky">
           v zar. soc. služieb (ZSS)
         </label>
     </div>
 
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" name="socialnePodmienkyIneZistenia">
     </div>
 
     <div>
         <label>Sociálne postavenie:</label>
         <div class="radio-group">
             <label class="radio-option">
-            <input type="radio" value="1" checked name="socialnePostavenie">
+            <input type="radio" value="zamestnaný (á)" name="socialnePostavenie">
             zamestnaný (á)
             </label>
             <label class="radio-option">
-            <input type="radio" value="3" name="socialnePostavenie">
+            <input type="radio" value="dôchodca" name="socialnePostavenie">
             dôchodca
             </label>
             <label class="radio-option">
-            <input type="radio" value="6" name="socialnePostavenie">
+            <input type="radio" value="MD" name="socialnePostavenie">
             MD
             </label>
         </div>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="9" name="socialnePostavenie">
+                <input type="radio" value="nezamestnaný (á)" name="socialnePostavenie">
                     nezamestnaný (á)
                 </label>
             <label class="radio-option">
-                <input type="radio" value="12" name="socialnePostavenie">
+                <input type="radio" value="Invalidný (á) dôchodca" name="socialnePostavenie">
                 Invalidný (á) dôchodca
             </label>
         </div>
@@ -221,11 +221,11 @@
         <div class="inline-form">
             <div class="radio-group">
                 <label class="radio-option">
-                <input type="radio" value="1" checked name="SocialnePodmienky">
+                <input type="radio" value="deti" name="SocialnePodmienkyKontakt">
                 deti
                 </label>
                 <label class="radio-option">
-                <input type="radio" value="3" name="SocialnePodmienky">
+                <input type="radio" value="príbuzní" name="SocialnePodmienkyKontakt">
                 príbuzní
                 </label>
             </div>
@@ -251,11 +251,11 @@
         <div class="inline-form">
             <div class="radio-group">
                 <label class="radio-option">
-                <input type="radio" value="1" checked name="SpolocenskoKulturnaSituacia">
+                <input type="radio" value="Uprednostňuje samotu" name="SpolocenskoKulturnaSituacia">
                 Uprednostňuje samotu
                 </label>
                 <label class="radio-option">
-                <input type="radio" value="3" name="SpolocenskoKulturnaSituacia">
+                <input type="radio" value="Spoločnosť" name="SpolocenskoKulturnaSituacia">
                 Spoločnosť
                 </label>
             </div>
@@ -277,38 +277,38 @@
     <label><b>Vnímanie zdravia <br></b></label>
     <div class="form-group inline-form">
         <label>Subjektívny popis problémov pacienta/pacientky:</label>
-        <input type = "text">
+        <input type = "text" id="subjektívnyPopisProblémovPacienta" name="subjektívnyPopisProblémovPacienta">
     </div>
 
     <label><b>Vstupný záznam sesterského posúdenia zdravotného stavu<br></b></label>
     <label>Starostlivosť odporučil:</label>
     <div class="radio-group">
         <label class="radio-option">
-          <input type="radio" value="1" checked name="StarostlivostOdporucil">
+          <input type="radio" value="Všeobecný lekár" name="StarostlivostOdporucil">
           Všeobecný lekár
         </label>
         <label class="radio-option">
-          <input type="radio" value="3" name="StarostlivostOdporucil">
+          <input type="radio" value="Lekár LSPP" name="StarostlivostOdporucil">
           Lekár LSPP
         </label>
         <label class="radio-option">
-          <input type="radio" value="6" name="StarostlivostOdporucil">
+          <input type="radio" value="ZZS" name="StarostlivostOdporucil">
           ZZS
         </label>
     </div>
     <div class="checkbox-container navrh-checkbox-container inline-form">
         <input type="checkbox" id="InyOsetrujuciLekar" name="InyOsetrujuciLekar">
         <label for="InyOsetrujuciLekar">Iný ošetrujúci lekár, aký:</label>
-        <input type = "text">
+        <input type = "text" id="InyOsetrujuciLekarText" name="InyOsetrujuciLekarText">
     </div>
     <div class="checkbox-container navrh-checkbox-container inline-form">
         <input type="checkbox" id="PrebratyZInehoZariadenia" name="PrebratyZInehoZariadenia">
         <label for="PrebratyZInehoZariadenia">Prebratý(á) z iného zariadenia, odkiaľ:</label>
-        <input type = "text">
+        <input type = "text" id="PrebratyZInehoZariadeniaText" name="PrebratyZInehoZariadeniaText">
     </div>
     <div class="form-group inline-form">
         <label>Oddelenie:</label>
-        <input type = "text">
+        <input type = "text" id="oddelenie" name="oddelenie">
     </div>
 
     <div class="form-group inline-form">
@@ -323,19 +323,19 @@
         <label>Vedomie:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="1" checked name="Vedomie">
+                <input type="radio" value="Pri vedomí" name="Vedomie">
                 Pri vedomí
             </label>
             <label class="radio-option">
-                <input type="radio" value="3" name="Vedomie">
+                <input type="radio" value="Somnolencia" name="Vedomie">
                 Somnolencia
             </label>
             <label class="radio-option">
-                <input type="radio" value="6" name="Vedomie">
+                <input type="radio" value="Semikóma" name="Vedomie">
                 Semikóma
             </label>
             <label class="radio-option">
-                <input type="radio" value="9" name="Vedomie">
+                <input type="radio" value="Kóma" name="Vedomie">
                 Kóma
             </label>
         </div>
@@ -343,18 +343,18 @@
 
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="vstupnyZaznamIneZistenia" name="vstupnyZaznamIneZistenia">
     </div>
 
     <div class="inline-form">
         <label>Orientácia:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="1" checked name="Orientácia">
+                <input type="radio" value="Orientovaný" name="Orientácia">
                 Orientovaný
             </label>
             <label class="radio-option">
-                <input type="radio" value="3" name="Orientácia">
+                <input type="radio" value="Dezorientovaný" name="Orientácia">
                 Dezorientovaný
             </label>
         </div>
@@ -363,29 +363,24 @@
 
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="orientaciaIneZistenia" name="orientaciaIneZistenia">
     </div>
 
     <div class="inline-form">
         <label>Cirkulácia:</label>
         <div class="form-group inline-form">
             <label>TK:</label>
-            <input type = "text">
-            <label>mmHg</label>
-        </div>
-        <div class="form-group inline-form">
-            <label>TK:</label>
-            <input type = "text">
+            <input type = "text" id="cirkulaciaTKmmHg" name="cirkulaciaTKmmHg">
             <label>mmHg</label>
         </div>
         <div class="form-group inline-form">
             <label>TT:</label>
-            <input type = "text">
+            <input type = "text" id="cirkulaciaTTC" name="cirkulaciaTTC">
             <label>°C</label>
         </div>
         <div class="form-group inline-form">
             <label>P:</label>
-            <input type = "text">
+            <input type = "text" id="cirkulaciaPmin" name="cirkulaciaPmin">
             <label>/min</label>
         </div>
     </div>
@@ -394,21 +389,21 @@
         <label>Problém:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="1" checked name="Problem">
+                <input type="radio" value="Áno" name="cirkulaciaProblem">
                 Áno
             </label>
             <label class="radio-option">
-                <input type="radio" value="3" name="Problem">
+                <input type="radio" value="Nie" name="cirkulaciaProblem">
                 Nie
             </label>
         </div>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="1" checked name="HypotenziaHypertenzia">
+                <input type="radio" value="Hypotenzia" name="HypotenziaHypertenzia">
                 Hypotenzia
             </label>
             <label class="radio-option">
-                <input type="radio" value="3" name="HypotenziaHypertenzia">
+                <input type="radio" value="Hypertenzia" name="HypotenziaHypertenzia">
                 Hypertenzia
             </label>
         </div>
@@ -425,13 +420,13 @@
 
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="cirkulaciaIneZistenia" name="cirkulaciaIneZistenia">
     </div>
 
     <div class="form-group inline-form">
         <label>Dýchanie:</label>
         <label>D:</label>
-        <input type = "text">
+        <input type = "text" id="dychanieDmin" name="dychanieDmin">
         <label>/min</label>
     </div>
 
@@ -439,11 +434,11 @@
         <label>Problém</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="1" checked name="ProblemAnoNie">
+                <input type="radio" value="Nie" name="ProblemAnoNie">
                 Nie
             </label>
             <label class="radio-option">
-                <input type="radio" value="3" name="ProblemAnoNie">
+                <input type="radio" value="Áno" name="ProblemAnoNie">
                 Áno
             </label>
         </div>
@@ -487,18 +482,18 @@
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="dychanieIneZistenia" name="dychanieIneZistenia">
         </div>
     </div>
     <div>
         <label>Odsávanie z dýchacích ciest:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="1" checked name="odsavanieZdychacíchCiest">
+                <input type="radio" value="áno" name="odsavanieZdychacíchCiest">
                 áno
             </label>
             <label class="radio-option">
-                <input type="radio" value="3" name="odsavanieZdychacíchCiest">
+                <input type="radio" value="nie" name="odsavanieZdychacíchCiest">
                 nie
             </label>
         </div>
@@ -509,11 +504,11 @@
             <label>Oxygenoterapia:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="Oxygenoterapia">
+                    <input type="radio" value="áno" name="Oxygenoterapia">
                     áno
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="3" name="Oxygenoterapia">
+                    <input type="radio" value="nie" name="Oxygenoterapia">
                     nie
                 </label>
             </div>
@@ -523,11 +518,11 @@
             <label>UPV:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="UPV">
+                    <input type="radio" value="áno" name="UPV">
                     áno
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="3" name="UPV">
+                    <input type="radio" value="nie" name="UPV">
                     nie
                 </label>
             </div>
@@ -537,11 +532,11 @@
             <label>Inhalácia:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="Inhalacia">
+                    <input type="radio" value="áno" name="Inhalacia">
                     áno
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="3" name="Inhalacia">
+                    <input type="radio" value="nie" name="Inhalacia">
                     nie
                 </label>
             </div>
@@ -550,18 +545,18 @@
 
     <div class="form-group inline-form">
         <label>Výživa: diéta: č.</label>
-        <input type="text">
+        <input type="text" id="vyzivaDietaV" name="vyzivaDietaV">
     </div>
 
     <div>
         <label>Problém</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="ProblemAnoNie2">
+                <input type="radio" value="nie" name="ProblemAnoNie2">
                 nie
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="ProblemAnoNie2">
+                <input type="radio" value="áno" name="ProblemAnoNie2">
                 áno
             </label>
         </div>
@@ -574,11 +569,11 @@
         </div>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="ubytokPrirastokhmotnosti">
+                <input type="radio" value="Úbytok hmotnosti" name="ubytokPrirastokhmotnosti">
                 Úbytok hmotnosti
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="ubytokPrirastokhmotnosti">
+                <input type="radio" value="Prírastok hmotnosti" name="ubytokPrirastokhmotnosti">
                 Prírastok hmotnosti
             </label>
         </div>
@@ -600,18 +595,18 @@
         </div>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="enteralneNutricne">
+                <input type="radio" value="enterálne" name="enteralneNutricne">
                 enterálne
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="enteralneNutricne">
+                <input type="radio" value="nutričné" name="enteralneNutricne">
                 nutričné
             </label>
         </div>
 
         <div class="form-group inline-form">
             <label>prípravky, aké:</label>
-            <input type="text">
+            <input type="text" id="pripravkyAke" name="pripravkyAke">
         </div>
     </div>
 
@@ -619,11 +614,11 @@
         <label>Chuť do jedla:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="chutDoJedla">
+                <input type="radio" value="primeraná" name="chutDoJedla">
                 primeraná
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="chutDoJedla">
+                <input type="radio" value="obmedzená" name="chutDoJedla">
                 obmedzená
             </label>
         </div>
@@ -633,21 +628,21 @@
         <label>Príjem stravy:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="prijemStravy">
+                <input type="radio" value="sám" name="prijemStravy">
                 sám
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="prijemStravy">
+                <input type="radio" value="s pomocou" name="prijemStravy">
                 s pomocou
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" name="prijemStravy">
+                <input type="radio" value="nazog. sonda" name="prijemStravy">
                 nazog. sonda
             </label>
         </div>
         <div class="form-group inline-form">
             <label>/dátum zavedenia:</label>
-            <input type="text">
+            <input type="text" id="prijemStravyDatumZavedenia" name="prijemStravyDatumZavedenia">
         </div>
     </div>
 
@@ -658,7 +653,7 @@
         </div>
         <div class="form-group inline-form">
             <label>/dátum zavedenia:</label>
-            <input type="text">
+            <input type="text" id="gastrostomiaDatumZavedenia" name="gastrostomiaDatumZavedenia">
         </div>
         <div class="checkbox-container navrh-checkbox-container inline-form">
             <input type="checkbox" id="peg" name="peg">
@@ -666,14 +661,14 @@
         </div>
         <div class="form-group inline-form">
             <label>/dátum zavedenia:</label>
-            <input type="text">
+            <input type="text" id="PEGDatumZavedenia" name="PEGDatumZavedenia">
         </div>
     </div>
 
     <div>
         <div class="form-group inline-form">
             <label>Príjem tekutín / 24 hod.:</label>
-            <input type="text">
+            <input type="text" id="prijemTekutin" name="prijemTekutin">
             <label>ml</label>
         </div>
         <div class="checkbox-container navrh-checkbox-container inline-form">
@@ -695,7 +690,7 @@
         </div>
         <div class="form-group inline-form">
             <label>/dátum zavedenia:</label>
-            <input type="text">
+            <input type="text" id="CVKDatumZavedenia" name="CVKDatumZavedenia">
         </div>
         <div class="checkbox-container navrh-checkbox-container inline-form">
             <input type="checkbox" id="perifernyPristup" name="perifernyPristup">
@@ -703,7 +698,7 @@
         </div>
         <div class="form-group inline-form">
             <label>/dátum zavedenia:</label>
-            <input type="text">
+            <input type="text" id="periférnyDatumZavedenia" name="periférnyDatumZavedenia">
         </div>
     </div>
 
@@ -711,18 +706,18 @@
         <label>Kompenzačné pomôcky - zubná protéza:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="kompenzacnePomocky">
+                <input type="radio" value="áno" name="kompenzacnePomocky">
                 áno
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="kompenzacnePomocky">
+                <input type="radio" value="nie" name="kompenzacnePomocky">
                 nie
             </label>
         </div>
     </div>
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="kompenzacnePomockyIneZistenia" name="kompenzacnePomockyIneZistenia">
     </div>
 
     <div>
@@ -732,11 +727,11 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="defekaciaProblemAnoNie">
+                    <input type="radio" value="nie" name="defekaciaProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="defekaciaProblemAnoNie">
+                    <input type="radio" value="áno" name="defekaciaProblemAnoNie">
                     áno
                 </label>
             </div>
@@ -746,11 +741,11 @@
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="hnackaZapcha">
+                    <input type="radio" value="hnačka" name="hnackaZapcha">
                     hnačka
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="hnackaZapcha">
+                    <input type="radio" value="zápcha" name="hnackaZapcha">
                     zápcha
                 </label>
             </div>
@@ -772,12 +767,12 @@
             </div>
             <div class="form-group inline-form">
                 <label>/dátum zavedenia:</label>
-                <input type="text">
+                <input type="text" id="vylucovanieDefekaciaDatumZavedenia" name="vylucovanieDefekaciaDatumZavedenia">
             </div>
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="vylucovanieDefekaciaIneZistenia" name="vylucovanieDefekaciaIneZistenia">
         </div>
     </div>
 
@@ -786,22 +781,22 @@
             <label>Potreba pomoci pri ošetrovaní stómie: </label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="potrebaPomociPriOsetrovaniStomie">
+                    <input type="radio" value="áno" name="potrebaPomociPriOsetrovaniStomie">
                     áno
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="potrebaPomociPriOsetrovaniStomie">
+                    <input type="radio" value="nie" name="potrebaPomociPriOsetrovaniStomie">
                     nie
                 </label>
             </div>
             <label>Regulácia vyprázdňovania: </label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="regulaciaVyprázdňovania">
+                    <input type="radio" value="nie" name="regulaciaVyprázdňovania">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="regulaciaVyprázdňovania">
+                    <input type="radio" value="áno" name="regulaciaVyprázdňovania">
                     áno
                 </label>
             </div>
@@ -810,22 +805,22 @@
             <label>Spôsob regulácie vyprázdňovania: </label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="sposobRegulacieVyprázdňovania">
+                    <input type="radio" value="čaj" name="sposobRegulacieVyprázdňovania">
                     čaj
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="sposobRegulacieVyprázdňovania">
+                    <input type="radio" value="čípok" name="sposobRegulacieVyprázdňovania">
                     čípok
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="sposobRegulacieVyprázdňovania">
+                    <input type="radio" value="klyzma" name="sposobRegulacieVyprázdňovania">
                     klyzma
                 </label>
             </div>
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="sposobRegulacieVyprazdnovaniaIneZistenia" name="sposobRegulacieVyprazdnovaniaIneZistenia">
         </div>
     </div>
 
@@ -833,18 +828,18 @@
         <div class="inline-form">
             <label>Močenie:</label>
             <label>Diuréza/24 hod.:</label>
-            <input type = "text">
+            <input type = "text" id="mocenieDiurezaMl" name="mocenieDiurezaMl">
             <label>ml</label>
         </div>
         <div class="inline-form">
             <label>problem</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="MocenieProblemAnoNie">
+                    <input type="radio" value="nie" name="MocenieProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="MocenieProblemAnoNie">
+                    <input type="radio" value="áno" name="MocenieProblemAnoNie">
                     áno
                 </label>
             </div>
@@ -855,8 +850,8 @@
                 <input type="checkbox" id="retencia" name="retencia">
                 <label for="retencia">retencia</label>
 
-                <input type="checkbox" id="inkontinencia" name="inkontinencia">
-                <label for="inkontinencia">inkontinencia</label>
+                <input type="checkbox" id="mocenieInkontinencia" name="mocenieInkontinencia">
+                <label for="mocenieInkontinencia">inkontinencia</label>
 
                 <input type="checkbox" id="absorpcnePomocky" name="absorpcnePomocky">
                 <label for="absorpcnePomocky">absorpčné pomôcky</label>
@@ -869,12 +864,12 @@
             </div>
             <div class="form-group inline-form">
                 <label>/dátum zavedenia:</label>
-                <input type="text">
+                <input type="text" id="RKDatumZavedenia" name="RKDatumZavedenia">
             </div>
             <div class="checkbox-container navrh-checkbox-container inline-form">
                 <input type="checkbox" id="farbaMocu" name="farbaMocu">
                 <label for="farbaMocu">Farba moču</label>
-                <input type="text">
+                <input type="text" id="farbaMocuText" name="farbaMocuText">
             </div>
         </div>
         <div class="inline-form">
@@ -884,23 +879,23 @@
             </div>
             <div class="form-group inline-form">
                 <label>/dátum zavedenia:</label>
-                <input type="text">
+                <input type="text" id="urostomiaDatumZavedenia" name="urostomiaDatumZavedenia">
             </div>
         </div>
         <div class="inline-form">
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="peritonealnaDialyzaHemodialyza">
+                    <input type="radio" value="peritoneálna dialýza" name="peritonealnaDialyzaHemodialyza">
                     peritoneálna dialýza
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="peritonealnaDialyzaHemodialyza">
-                    Hemodialýza
+                    <input type="radio" value="Hemodialýza" name="peritonealnaDialyzaHemodialyza">
+                    hemodialýza
                 </label>
             </div>
             <div class="form-group inline-form">
                 <label>/dátum zavedenia:</label>
-                <input type="text">
+                <input type="text" id="peritonealnaDialyzaHemodialyzaDatumZavedenia" name="peritonealnaDialyzaHemodialyzaDatumZavedenia">
             </div>
         </div>
         <div class="inline-form">
@@ -911,7 +906,7 @@
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="urinarnyKondomovySystemIneZistenia" name="urinarnyKondomovySystemIneZistenia">
         </div>
     </div>
 
@@ -921,11 +916,11 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="spanokProblemAnoNie">
+                    <input type="radio" value="nie" name="spanokProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="spanokProblemAnoNie">
+                    <input type="radio" value="áno" name="spanokProblemAnoNie">
                     áno
                 </label>
             </div>
@@ -942,7 +937,7 @@
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="spanokIneZistenia" name="spanokIneZistenia">
         </div>
     </div>
 
@@ -951,15 +946,15 @@
             <label>Mobilita:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="mobilitaRadio">
+                    <input type="radio" value="1 plná mobilita" name="mobilitaRadio">
                     1 plná mobilita
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="mobilitaRadio">
+                    <input type="radio" value="3 - mobilita veľmi obmedzená" name="mobilitaRadio">
                     3 - mobilita veľmi obmedzená
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="mobilitaRadio">
+                    <input type="radio" value="4 - imobilita" name="mobilitaRadio">
                     4 - imobilita
                 </label>
             </div>
@@ -967,15 +962,15 @@
         <div class="inline-group">
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="mobilitaRadio">
+                    <input type="radio" value="2 - mobilita mierne obmedzená" name="mobilitaRadio">
                     2 - mobilita mierne obmedzená
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="mobilitaRadio">
+                    <input type="radio" value="Kompenzačné pomôcky, aké:" name="mobilitaRadio">
                     Kompenzačné pomôcky, aké:
                 </label>
             </div>
-            <input type = "text">
+            <input type = "text" id="mobilita" name="mobilita">
         </div>
     </div>
 
@@ -985,11 +980,11 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="pohybovySystemProblemAnoNie">
+                    <input type="radio" value="nie" name="pohybovySystemProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="pohybovySystemProblemAnoNie">
+                    <input type="radio" value="áno" name="pohybovySystemProblemAnoNie">
                     áno
                 </label>
             </div>
@@ -1012,7 +1007,7 @@
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="pohybovySystemIneZistenia" name="pohybovySystemIneZistenia">
         </div>
     </div>
 
@@ -1022,31 +1017,31 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="kozaProblemAnoNie">
+                    <input type="radio" value="nie" name="kozaProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaProblemAnoNie">
+                    <input type="radio" value="áno" name="kozaProblemAnoNie">
                     áno
                 </label>
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="kozaTeplaStudena">
+                    <input type="radio" value="teplá" name="kozaTeplaStudena">
                     teplá
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaTeplaStudena">
+                    <input type="radio" value="studená" name="kozaTeplaStudena">
                     studená
                 </label>
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="kozaSuchaSpotena">
+                    <input type="radio" value="suchá" name="kozaSuchaSpotena">
                     suchá
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaSuchaSpotena">
+                    <input type="radio" value="spotená" name="kozaSuchaSpotena">
                     spotená
                 </label>
             </div>
@@ -1055,19 +1050,19 @@
             <label>Farba:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="kozaFarba">
+                    <input type="radio" value="ružová" name="kozaFarba">
                     ružová
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaFarba">
+                    <input type="radio" value="bledá" name="kozaFarba">
                     bledá
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaFarba">
+                    <input type="radio" value="ikterická" name="kozaFarba">
                     ikterická
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaFarba">
+                    <input type="radio" value="cyanotická" name="kozaFarba">
                     cyanotická
                 </label>
             </div>
@@ -1076,22 +1071,22 @@
             <label>Turgor:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="kozaTurgorPrimeranyZnizeny">
+                    <input type="radio" value="primeraný" name="kozaTurgorPrimeranyZnizeny">
                     primeraný
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="kozaTurgorPrimeranyZnizeny">
+                    <input type="radio" value="znížený" name="kozaTurgorPrimeranyZnizeny">
                     znížený
                 </label>
             </div>
             <label>Clistvost kože:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="clistvostKozeNenarusenaNarusena">
+                    <input type="radio" value="Nenarušená" name="clistvostKozeNenarusenaNarusena">
                     Nenarušená
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="clistvostKozeNenarusenaNarusena">
+                    <input type="radio" value="narušená" name="clistvostKozeNenarusenaNarusena">
                     narušená
                 </label>
             </div>
@@ -1121,26 +1116,25 @@
         <div class="inline-form">
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="5" name="zmenyNaKoze">
+                    <input type="radio" value="povrchové poranenie" name="zmenyNaKoze">
                     povrchové poranenie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="4" name="zmenyNaKoze">
+                    <input type="radio" value="otvorená rana" name="zmenyNaKoze">
                     otvorená rana
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="zmenyNaKoze">
+                    <input type="radio" value="operačná rana" name="zmenyNaKoze">
                     operačná rana
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="zmenyNaKoze">
+                    <input type="radio" value="abdominálna" name="zmenyNaKoze">
                     abdominálna
                 </label>
-
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="1" name="zmenyNaKoze">
+                    <input type="radio" value="vaginálna" name="zmenyNaKoze">
                     vaginálna
                 </label>
             </div>
@@ -1165,14 +1159,14 @@
                 <input type="checkbox" id="lokalizacia" name="lokalizacia">
                 <label for="lokalizacia">lokalizácia:</label>
             </div>
-            <input type = "text">
+            <input type = "text" id="lokalizaciaText" name="lokalizaciaText">
         </div>
         <div class="inline-form">
             <div class="checkbox-container navrh-checkbox-container inline-form">
                 <input type="checkbox" id="velkostDefektu:" name="velkostDefektu">
                 <label for="velkostDefektu">veľkosť defektu:</label>
             </div>
-            <input type = "text">
+            <input type = "text" id="velkostDefektuText" name="velkostDefektuText">
             <label>sm</label>
         </div>
     </div>
@@ -1180,7 +1174,7 @@
     <div>
         <div class="inline-form">
             <label>Pacient/pacientka je:</label>
-            <input type = "text">
+            <input type = "text" id="pacientPacientkaJe" name="pacientPacientkaJe">
             <label>deň po operácii:</label>
         </div>
         <label>Edémy:</label>
@@ -1188,21 +1182,21 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="edemyProblemAnoNie">
+                    <input type="radio" value="nie" name="edemyProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="edemyProblemAnoNie">
+                    <input type="radio" value="áno" name="edemyProblemAnoNie">
                     áno
                 </label>
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="edemyMiestneCelkove">
+                    <input type="radio" value="miestne" name="edemyMiestneCelkove">
                     miestne
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="edemyMiestneCelkove">
+                    <input type="radio" value="celkové" name="edemyMiestneCelkove">
                     celkové
                 </label>
                 <div class="checkbox-container navrh-checkbox-container inline-form">
@@ -1226,11 +1220,11 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="slizniceProblemAnoNie">
+                    <input type="radio" value="nie" name="slizniceProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="slizniceProblemAnoNie">
+                    <input type="radio" value="áno" name="slizniceProblemAnoNie">
                     áno
                 </label>
             </div>
@@ -1255,11 +1249,11 @@
             <label>Hygienický stav pri prijatí:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="HygienickyStavPrimeranyZanedbany">
+                    <input type="radio" value="primeraný" name="HygienickyStavPrimeranyZanedbany">
                     primeraný
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="HygienickyStavPrimeranyZanedbany">
+                    <input type="radio" value="zanedbaný" name="HygienickyStavPrimeranyZanedbany">
                     zanedbaný
                 </label>
             </div>
@@ -1268,22 +1262,22 @@
             <label>Hygienickú starostlivosť vykonáva:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="hygienickuStarostlivostVykonava">
+                    <input type="radio" value="samostatne" name="hygienickuStarostlivostVykonava">
                     samostatne
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="hygienickuStarostlivostVykonava">
+                    <input type="radio" value="s pomocou" name="hygienickuStarostlivostVykonava">
                     s pomocou
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="hygienickuStarostlivostVykonava">
+                    <input type="radio" value="je úplne závislý (á)" name="hygienickuStarostlivostVykonava">
                     je úplne závislý (á)
                 </label>
             </div>
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="hygienickuStarostlivostText" name="hygienickuStarostlivostText">
         </div>
     </div>
 
@@ -1292,32 +1286,32 @@
         <div class="inline-form">
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="prvoDruhoViacrodicka">
+                    <input type="radio" value="prvorodička" name="prvoDruhoViacrodicka">
                     prvorodička
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="prvoDruhoViacrodicka">
+                    <input type="radio" value="druhorodička" name="prvoDruhoViacrodicka">
                     druhorodička
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="prvoDruhoViacrodicka">
+                    <input type="radio" value="viacrodička" name="prvoDruhoViacrodicka">
                     viacrodička
                 </label>
             </div>
             <div class="form-group inline-form">
                 <label>Dátum pôrodu:</label>
-                <input type = "text">
+                <input type = "text" id="datumPorodu" name="datumPorodu">
             </div>
         </div>
         <div class="inline-form">
             <label>Pôrod:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="PorodSpontannyOperacny">
+                    <input type="radio" value="spontánny" name="PorodSpontannyOperacny">
                     spontánny
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="PorodSpontannyOperacny">
+                    <input type="radio" value="operačný" name="PorodSpontannyOperacny">
                     operačný
                 </label>
             </div>
@@ -1326,43 +1320,43 @@
             <label>Komplikácie po pôrode:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="komplikaciePoPorodeAnoNie">
+                    <input type="radio" value="nie" name="komplikaciePoPorodeAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="komplikaciePoPorodeAnoNie">
+                    <input type="radio" value="áno" name="komplikaciePoPorodeAnoNie">
                     áno
                 </label>
             </div>
             <div class="form-group inline-form">
                 <label>charakter komplikácií:</label>
-                <input type = "text">
+                <input type = "text" id="charakterKomplikacii" name="charakterKomplikacii">
             </div>
         </div>
     </div>
 
     <div class="form-group inline-form">
         <label>Fundus maternice:</label>
-        <input type = "text">
+        <input type = "text" id="fundusMaternice" name="fundusMaternice">
     </div>
 
     <div class="form-group inline-form">
         <label>stav krvácania/lochie:</label>
         <label>vzhľad:</label>
-        <input type = "text">
+        <input type = "text" id="stavKrvacaniaLochieVzhlad" name="stavKrvacaniaLochieVzhlad">
         <label>množstvo:</label>
-        <input type = "text">
+        <input type = "text" id="stavKrvacaniaLochieMnozstvo" name="stavKrvacaniaLochieMnozstvo">
     </div>
 
     <div class="inline-form">
         <label>Hojenie popôrodného poranenia:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="hojeniePoporodnehoPoraneniaPrimamSecundam">
+                <input type="radio" value="per primam" name="hojeniePoporodnehoPoraneniaPrimamSecundam">
                 per primam
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="hojeniePoporodnehoPoraneniaPrimamSecundam">
+                <input type="radio" value="per secundam" name="hojeniePoporodnehoPoraneniaPrimamSecundam">
                 per secundam
             </label>
         </div>
@@ -1392,15 +1386,15 @@
         <label>Prsníky:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="prsníkyAnoCasticneNie">
+                <input type="radio" value="áno" name="prsníkyAnoCasticneNie">
                 áno
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" name="prsníkyAnoCasticneNie">
+                <input type="radio" value="čiastočne" name="prsníkyAnoCasticneNie">
                 čiastočne
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" name="prsníkyAnoCasticneNie">
+                <input type="radio" value="nie" name="prsníkyAnoCasticneNie">
                 nie
             </label>
         </div>
@@ -1410,11 +1404,11 @@
         <label>Novorodenec:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="novorodenecChlapecDievca">
+                <input type="radio" value="chlapec" name="novorodenecChlapecDievca">
                 chlapec
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" name="novorodenecChlapecDievca">
+                <input type="radio" value="dievča" name="novorodenecChlapecDievca">
                 dievča
             </label>
         </div>
@@ -1422,46 +1416,46 @@
 
     <div class="inline-form">
         <label>Pôrodná hmotnosť:</label>
-        <input type = "text">
+        <input type = "text" id="porodnaHmotnost" name="porodnaHmotnost">
         <label>g</label>
 
         <label>Dĺžka:</label>
-        <input type = "text">
+        <input type = "text" id="dlzka" name="dlzka">
         <label>cm</label>
 
         <label>Obvod hlavy:</label>
-        <input type = "text">
+        <input type = "text" id="obvodHlavy" name="obvodHlavy">
         <label>cm</label>
 
         <label>Obvod hrudníka:</label>
-        <input type = "text">
+        <input type = "text" id="obvodHrudnika" name="obvodHrudnika">
         <label>cm</label>
     </div>
 
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="novorodenecIneZistenia" name="novorodenecIneZistenia">
     </div>
 
     <div class="inline-form">
         <label>Bolesť:</label>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="bolestAnoNie">
+                <input type="radio" value="nie" name="bolestAnoNie">
                 nie
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="bolestAnoNie">
+                <input type="radio" value="áno" name="bolestAnoNie">
                 áno
             </label>
         </div>
         <div class="radio-group">
             <label class="radio-option">
-                <input type="radio" value="3" name="bolestAkutnaChronicka">
+                <input type="radio" value="akútna" name="bolestAkutnaChronicka">
                 akútna
             </label>
             <label class="radio-option">
-                <input type="radio" value="1" checked name="bolestAkutnaChronicka">
+                <input type="radio" value="chronická" name="bolestAkutnaChronicka">
                 chronická
             </label>
         </div>
@@ -1471,19 +1465,19 @@
         <div class="checkbox-container navrh-checkbox-container inline-form">
             <input type="checkbox" id="bolestLokalizacia" name="bolestLokalizacia">
             <label for="bolestLokalizacia">lokalizácia: </label>
-            <input type = "text">
+            <input type = "text" id="lokalizaciaBolestiText" name="lokalizaciaBolestiText">
         </div>
     </div>
     <div class="inline-form">
         <div class="checkbox-container navrh-checkbox-container inline-form">
             <input type="checkbox" id="bolestCharakter" name="bolestCharakter">
             <label for="bolestCharakter">charakter: </label>
-            <input type = "text">
+            <input type = "text" id="charakterBolestiText" name="charakterBolestiText">
         </div>
     </div>
     <div class="form-group inline-form">
         <label>Iné zistenia:</label>
-        <input type = "text">
+        <input type = "text" id="bolestIneZistenia" name="bolestIneZistenia">
     </div>
 
     <div>
@@ -1491,11 +1485,11 @@
             <label>Komunikácia:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="komunikaciaVerbalnaNeverbalna">
+                    <input type="radio" value="verbálna" name="komunikaciaVerbalnaNeverbalna">
                     verbálna
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="komunikaciaVerbalnaNeverbalna">
+                    <input type="radio" value="neverbálna" name="komunikaciaVerbalnaNeverbalna">
                     neverbálna
                 </label>
             </div>
@@ -1504,28 +1498,28 @@
             <label>problém</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="komunikaciaProblemAnoNie">
+                    <input type="radio" value="nie" name="komunikaciaProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="komunikaciaProblemAnoNie">
+                    <input type="radio" value="áno" name="komunikaciaProblemAnoNie">
                     áno
                 </label>
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="poruchyReciNemozna">
+                    <input type="radio" value="poruchy reči" name="poruchyReciNemozna">
                     poruchy reči
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="poruchyReciNemozna">
+                    <input type="radio" value="nemožná" name="poruchyReciNemozna">
                     nemožná
                 </label>
             </div>
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="komunikaciaIneZistenia" name="komunikaciaIneZistenia">
         </div>
     </div>
 
@@ -1535,11 +1529,11 @@
             <label>Problém:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="ucenieZmysloveVnimanieProblemAnoNie">
+                    <input type="radio" value="nie" name="ucenieZmysloveVnimanieProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="ucenieZmysloveVnimanieProblemAnoNie">
+                    <input type="radio" value="áno" name="ucenieZmysloveVnimanieProblemAnoNie">
                     áno
                 </label>
             </div>
@@ -1559,16 +1553,16 @@
 
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="zmenyVZmyslochAnoNie">
+                    <input type="radio" value="nie" name="zmenyVZmyslochAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="zmenyVZmyslochAnoNie">
+                    <input type="radio" value="áno" name="zmenyVZmyslochAnoNie">
                     áno
                 </label>
             </div>
             <label>, aké:</label>
-            <input type = "text">
+            <input type = "text" id="ucenieZmysloveVnimanieText" name="ucenieZmysloveVnimanieText">
         </div>
 
         <div class="inline-form">
@@ -1586,7 +1580,7 @@
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="kompenzacnePomockyIneZisteniaText" name="kompenzacnePomockyIneZisteniaText">
         </div>
     </div>
 
@@ -1595,11 +1589,11 @@
             <label>Vedomosti o chorobe:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="vedomostiOChorobeDostatokNedostatok">
+                    <input type="radio" value="dostatok" name="vedomostiOChorobeDostatokNedostatok">
                     dostatok
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="vedomostiOChorobeDostatokNedostatok">
+                    <input type="radio" value="nedostatok" name="vedomostiOChorobeDostatokNedostatok">
                     nedostatok
                 </label>
             </div>
@@ -1634,38 +1628,38 @@
             <label>Problém:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="psychickePotrebyProblemAnoNie">
+                    <input type="radio" value="nie" name="psychickePotrebyProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="psychickePotrebyProblemAnoNie">
+                    <input type="radio" value="áno" name="psychickePotrebyProblemAnoNie">
                     áno
                 </label>
             </div>
-            <input type = "text">
+            <input type = "text" id="psychickePotrebyText" name="psychickePotrebyText">
         </div>
 
         <div class="inline-form">
             <label>Nálada:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" checked name="nalada">
+                    <input type="radio" value="primerna" name="nalada">
                     primerna
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="nalada">
+                    <input type="radio" value="apatia" name="nalada">
                     apatia
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="nalada">
+                    <input type="radio" value="depresia" name="nalada">
                     depresia
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="nalada">
+                    <input type="radio" value="eufória" name="nalada">
                     eufória
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="nalada">
+                    <input type="radio" value="agresia" name="nalada">
                     agresia
                 </label>
             </div>
@@ -1674,55 +1668,55 @@
             <label>Istota, bezpečie:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" checked name="istotaBezpecie">
+                    <input type="radio" value="kľudný" name="istotaBezpecie">
                     kľudný
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="smútok" name="istotaBezpecie">
                     smútok
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="depresia" name="istotaBezpecie">
                     depresia
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="zmätenosť" name="istotaBezpecie">
                     zmätenosť
                 </label>
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" checked name="istotaBezpecie">
+                    <input type="radio" value="vyrovnaný" name="istotaBezpecie">
                     vyrovnaný
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="úzkosť" name="istotaBezpecie">
                     úzkosť
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="beznádej" name="istotaBezpecie">
                     beznádej
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="sebaobviňovanie" name="istotaBezpecie">
                     sebaobviňovanie
                 </label>
             </div>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" checked name="istotaBezpecie">
+                    <input type="radio" value="strach" name="istotaBezpecie">
                     strach
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="hnev" name="istotaBezpecie">
                     hnev
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="bezmocnosť" name="istotaBezpecie">
                     bezmocnosť
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" name="istotaBezpecie">
+                    <input type="radio" value="sebaľútovanie" name="istotaBezpecie">
                     sebaľútovanie
                 </label>
             </div>
@@ -1735,21 +1729,21 @@
             <label>Problém:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="socialnePotrebyProblemAnoNie">
+                    <input type="radio" value="nie" name="socialnePotrebyProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="socialnePotrebyProblemAnoNie">
+                    <input type="radio" value="áno" name="socialnePotrebyProblemAnoNie">
                     áno
                 </label>
             </div>
-                    <div class="radio-group">
+            <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="odkazanyNeOdkazanyNaSocialnuPomoc">
+                    <input type="radio" value="je odkázaný(á) na sociálnu pomoc" name="odkazanyNeOdkazanyNaSocialnuPomoc">
                     je odkázaný(á) na sociálnu pomoc
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="odkazanyNeOdkazanyNaSocialnuPomoc">
+                    <input type="radio" value="nie je odkázaný(á) na sociálnu pomoc" name="odkazanyNeOdkazanyNaSocialnuPomoc">
                     nie je odkázaný(á) na sociálnu pomoc
                 </label>
             </div>
@@ -1759,15 +1753,15 @@
             <label>Problém:</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="duchovnePotrebyProblemAnoNie">
+                    <input type="radio" value="nie" name="duchovnePotrebyProblemAnoNie">
                     nie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="duchovnePotrebyProblemAnoNie">
+                    <input type="radio" value="áno" name="duchovnePotrebyProblemAnoNie">
                     áno
                 </label>
             </div>
-            <input type = "text">
+            <input type = "text" id="duchovnePotrebyText" name="duchovnePotrebyText">
         </div>
     </div>
 
@@ -1791,15 +1785,15 @@
         <div class="inline-form">
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="chronickejLiecbyInzLiekyPreOS">
+                    <input type="radio" value="chronickej liečby" name="chronickejLiecbyInzLiekyPreOS">
                     chronickej liečby
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="chronickejLiecbyInzLiekyPreOS">
+                    <input type="radio" value="aplik. INZ, s.c. inj." name="chronickejLiecbyInzLiekyPreOS">
                     aplik. INZ, s.c. inj.
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="chronickejLiecbyInzLiekyPreOS">
+                    <input type="radio" value="podávania liekov per os" name="chronickejLiecbyInzLiekyPreOS">
                     podávania liekov per os
                 </label>
             </div>
@@ -1812,15 +1806,15 @@
             <label>starostlivosti o</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="ranuStomiuDekubit">
+                    <input type="radio" value="ranu" name="ranuStomiuDekubit">
                     ranu
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="ranuStomiuDekubit">
+                    <input type="radio" value="stómiu" name="ranuStomiuDekubit">
                     stómiu
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="ranuStomiuDekubit">
+                    <input type="radio" value="dekubit" name="ranuStomiuDekubit">
                     dekubit
                 </label>
             </div>
@@ -1833,29 +1827,29 @@
             <label>starostlivosti o</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="hradzuPrsniky">
+                    <input type="radio" value="hrádzu" name="hradzuPrsniky">
                     hrádzu
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="hradzuPrsniky">
+                    <input type="radio" value="prsníky" name="hradzuPrsniky">
                     prsníky
                 </label>
             </div>
             <label>starostlivosti o</label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" value="3" name="dojcenieNovorodenca">
+                    <input type="radio" value="dojčenie" name="dojcenieNovorodenca">
                     dojčenie
                 </label>
                 <label class="radio-option">
-                    <input type="radio" value="1" checked name="dojcenieNovorodenca">
+                    <input type="radio" value="novorodenca" name="dojcenieNovorodenca">
                     novorodenca
                 </label>
             </div>
         </div>
         <div class="form-group inline-form">
             <label>Iné zistenia:</label>
-            <input type = "text">
+            <input type = "text" id="duchovnePotrebyText" name="duchovnePotrebyText">
         </div>
     </div>
 
@@ -1877,7 +1871,7 @@
             <label for="zakazeFajceniaUzivaniaAlkoholuADrog">Zákaze fajčenia, užívania alkoholu a drog</label>
         </div>
         <label>Pri prijatí pacient/pacientka odovzdal(a):</label>
-        <input type = "text">
+        <input type = "text" id="priPrijatiPacientPacientkaOdovzdal" name="priPrijatiPacientPacientkaOdovzdal">
 
         <div class="inline-form">
             <label>Dátum:</label>

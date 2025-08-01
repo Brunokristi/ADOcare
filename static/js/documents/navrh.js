@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
         rodneCislo.innerText = patient.rodne_cislo;
         bydliskoTrvale.innerText = patient.adresa || "-";
 
-        kodPoistovne.innerText = patient.poitovnaFirstCode+"--"
+        kodPoistovne.innerText = patient.poistovnaFirstCode+"--"
 
         lekar.value = patient.doctorName;
         selectedPatientDiv.style.display = "block";

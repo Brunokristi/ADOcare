@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
         rodneCislo.innerText = patient.rodne_cislo;
         bydliskoTrvale.innerText = patient.adresa || "-";
 
-        kodPoistovne.innerText = patient.poitovnaFirstCode+"--"
+        kodPoistovne.innerText = patient.poistovnaFirstCode+"--"
 
         selectedPatientDiv.style.display = "block";
         suggestionsContainer.style.display = "none";

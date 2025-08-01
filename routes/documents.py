@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify, session, request
 from utils.database import get_db_connection
 from flask_login import current_user
-
+import json
 from flask_login import login_required
 
 documents_bp = Blueprint("documents", __name__)
@@ -59,7 +59,7 @@ def getAdditionDataByRodneCisloForNavrh():
     results = [dict(row) for row in rows][0]
     if (oldFormData):
         results = results | [dict(row) for row in oldFormData][0]
-    results['poitovnaFirstCode'] = results.pop('kod')
+    results['poistovnaFirstCode'] = results.pop('kod')
     results['doctorName'] = results.pop('meno')
     return jsonify(results)
 
@@ -126,7 +126,7 @@ def getAdditionDataByRodneCisloForDohoda():
     """, (rodneCislo,)).fetchall()
     conn.close()
     results = [dict(row) for row in rows][0]
-    results['poitovnaFirstCode'] = results.pop('kod')
+    results['poistovnaFirstCode'] = results.pop('kod')
     if oldFormData:
         results = results | [dict(row) for row in oldFormData][0]
     return jsonify(results)
@@ -162,3 +162,49 @@ def storeDataFromDohodaForm():
         conn.close()
 
     return jsonify({'message': 'The data has been successfully retrieved!'}), 200
+
+@documents_bp.route('/documents/storeDataFromZaznamForm', methods=['POST'])
+@login_required
+def storeDataFromZaznamForm():
+    data = request.form.to_dict()
+
+    conn = get_db_connection()
+
+    try:
+        conn.execute("""
+            INSERT INTO documents_zaznam (
+                form_data,
+                rodne_cislo
+            ) VALUES (?, ?)
+            ON CONFLICT(rodne_cislo) DO UPDATE SET
+                form_data = excluded.form_data
+        """, (
+            json.dumps(data),
+            data["rodne_cislo"]
+            ))
+        conn.commit()
+
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Failed to save data!'}), 400
+
+    finally:
+        conn.close()
+
+    return jsonify({'message': 'The data has been successfully retrieved!'}), 200
+
+@documents_bp.route('/documents/getDataFromZaznamForm', methods=['GET'])
+@login_required
+def getDataFromZaznamForm():
+    rodne_cislo = request.args.get('rodne_cislo')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT form_data FROM documents_zaznam WHERE rodne_cislo = ?', (rodne_cislo,))
+    row = cur.fetchone()
+    conn.close()
+
+    if row:
+        form_dict = json.loads(row[0])
+        return jsonify(form_dict)
+    else:
+        return jsonify({'error': 'No data found'}), 404

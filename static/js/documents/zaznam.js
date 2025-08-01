@@ -17,6 +17,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     printButton.addEventListener("click", onPrinting);
 
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const hours = String(today.getHours()).padStart(2, '0');
+    const minutes = String(today.getMinutes()).padStart(2, '0');
+
     function checkInput(input, massage){
         if (input.value.trim() === ""){
             showMessage("Prosím vyplňte povinne pole: \"" + massage + "\"")
@@ -30,6 +37,24 @@ document.addEventListener("DOMContentLoaded", function () {
             checkInput(currentDate, "Dátum")){
                 return;
             }
+
+        const formData = new FormData(mainForm);
+
+        formData.append("rodne_cislo", rodneCislo.innerText);
+
+        fetch('/documents/storeDataFromZaznamForm', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
+        }).then(data => {
+            showMessage("The data has been successfully saved.")
+        }).catch(error => {
+            showMessage("An error occurred while trying to save the data.")
+        });
 
         window.print();
     }
@@ -80,10 +105,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     item.textContent = `${p.meno} — ${p.rodne_cislo}`;
                     item.addEventListener("click", () => {
                         selectedPatientId = p.id;
-                        getAdditionDataByRodneCisloForNavrh(p.rodne_cislo).then(addInfo => {
-                            const data = Object.assign({}, p, addInfo);
-                            clearPatientDetails();
-                            fillPatientDetails(data);
+                        getAdditionDataByRodneCisloForZaznam(p.rodne_cislo).then(addInfo => {
+                            getAdditionDataByRodneCisloForNavrh(p.rodne_cislo).then(baseAdditionalInfo => {
+                                const data = Object.assign({}, p, addInfo, baseAdditionalInfo);
+                                clearPatientDetails();
+                                fillPatientDetails(data);
+                            })
                         })
                         .catch(error => {
                             console.error('Fail:', error);
@@ -100,24 +127,42 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function clearPatientDetails(){
-        miesto_prechodneho_pobytu.value = "";
+        const patientName = patientSearch.value
+        mainForm.reset();
+        patientSearch.value = patientName
         selectedPatientDiv.style.display = "none";
         suggestionsContainer.style.display = "none";
+        setFlatpickrs();
     }
 
-    function fillPatientDetails(patient){
-        if ("miesto_prechodneho_pobytu" in patient){
-            miesto_prechodneho_pobytu.value = patient.miesto_prechodneho_pobytu;
-        }
-        patientSearch.value = patient.meno;
-        rodneCislo.innerText = patient.rodne_cislo;
-        bydliskoTrvale.innerText = patient.adresa || "-";
-
-        kodPoistovne.innerText = patient.poistovnaFirstCode+"--"
-        doctorName.value = patient.doctorName;
+    function fillPatientDetails(data){
+        patientSearch.value = data.meno;
+        rodneCislo.innerText = data.rodne_cislo;
+        bydliskoTrvale.innerText = data.adresa || "-";
+        kodPoistovne.innerText = data.poistovnaFirstCode+"--"
+        doctorName.value = data.doctorName;
 
         selectedPatientDiv.style.display = "block";
         suggestionsContainer.style.display = "none";
+
+        console.log(data)
+        for (const [key, value] of Object.entries(data)) {
+            const fields = document.querySelectorAll(`[name="${key}"]`);
+
+            fields.forEach(field => {
+                if (field.type === "checkbox") {
+                    if (Array.isArray(value)) {
+                        field.checked = value.includes(field.value);
+                    } else {
+                        field.checked = value == field.value || value === "on";
+                    }
+                } else if (field.type === "radio") {
+                    field.checked = field.value == value;
+                } else {
+                    field.value = value;
+                }
+            });
+        }
     }
 
     function getAdditionDataByRodneCisloForNavrh(rodne_cislo) {
@@ -136,36 +181,45 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
+    function getAdditionDataByRodneCisloForZaznam(rodne_cislo) {
+        return fetch(`/documents/getDataFromZaznamForm?rodne_cislo=${encodeURIComponent(rodne_cislo)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to get additional parameters by rodne cislo.');
+                }
+                return response.json();
+            }).then(data => {
+                return data
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    }
+
     function closeSuggestionsOnClickOutside(e) {
         if (!suggestionsContainer.contains(e.target) && e.target !== patientSearch) {
             suggestionsContainer.style.display = "none";
         }
     }
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const hours = String(today.getHours()).padStart(2, '0');
-    const minutes = String(today.getMinutes()).padStart(2, '0');
-
-
-    datepickers.forEach(datepicker => {
-        flatpickr(datepicker, {
-            dateFormat: "d.m.Y",
-            locale: "sk"
+    function setFlatpickrs() {
+        datepickers.forEach(datepicker => {
+            flatpickr(datepicker, {
+                dateFormat: "d.m.Y",
+                locale: "sk"
+            });
+            datepicker.value = `${day}.${month}.${year}`;
         });
-        datepicker.value = `${day}.${month}.${year}`;
-    });
 
-    andTimePickers.forEach(datepicker => {
-        flatpickr(datepicker, {
-            dateFormat: "d.m.Y H:i",
-            enableTime: true,
-            noCalendar: false,
-            time_24hr: true,
-            locale: "sk"
+        andTimePickers.forEach(datepicker => {
+            flatpickr(datepicker, {
+                dateFormat: "d.m.Y H:i",
+                enableTime: true,
+                noCalendar: false,
+                time_24hr: true,
+                locale: "sk"
+            });
+            datepicker.value = `${day}.${month}.${year} ${hours}:${minutes}`;
         });
-        datepicker.value = `${day}.${month}.${year} ${hours}:${minutes}`;
-    });
+    }
 });
