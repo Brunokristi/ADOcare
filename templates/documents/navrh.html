@@ -4,38 +4,38 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/navrh.css') }}">
 
 <h1><b>Návrh na poskytovanie ošetrovateľskej starostlivosti</b></h1>
 
 <form id="mainForm">
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Zdravotnícke zariadenie: </label>
         <input type = "text" id="zdravotnickeZariadenie" name="zdravotnickeZariadenie">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>so sídlom v: </label>
         <input type = "text" id="soSidlomV" name="soSidlomV">
     </div>
 
     <div style="width: 600px">
         <div class="form-group inline-form" style="position: relative;">
-            <label>Мeno, priezvisko, titul pacienta/pacientky: </label>
+            <label>Meno, priezvisko, titul pacienta/pacientky: </label>
             <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
                 placeholder="Zadaj meno alebo rodné číslo...">
             <div id="patient-suggestions" class="suggestions"></div>
         </div>
 
-        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
-            <div class="form-group inline-form">
+        <div id="selected-patient" class="selected-patient" style="display: none;">
+            <div class="inline-form special-margin-bottom">
                 <label>Rodné číslo: </label>
                 <p id="rodneCislo"></p>
                 <label>Číslný kód zdravotnej poisťovne: </label>
                 <p id="kodPoistovne"></p>
             </div>
 
-            <div class="form-group inline-form"></div>
+            <div class="inline-form">
                 <label>Bydlisko trvalé: </label>
                 <p id="bydliskoTrvale"></p>
             </div>
@@ -43,14 +43,13 @@
     </div>
 
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Bydlisko prechodné: </label>
         <input required type = "text" id="bydliskoPrechodne" name="bydliskoPrechodne">
     </div>
-    <div class="form-group">
-        <label>Epikriza a zdôvodnenie pre poskytovanie ošetrovateĺskej starostlivosti: </label>
-        <input required type = "text" id="epikriza" name="epikriza">
-    </div>
+
+    <label>Epikriza a zdôvodnenie pre poskytovanie ošetrovateĺskej starostlivosti: </label>
+    <input required type = "text" id="epikriza" name="epikriza">
 
     <div class="form-group" style="position: relative;">
         <label for="diagnoza">Lekárská diagnóza (slovom alebo čislom podĺa MKCH):</label>
@@ -59,10 +58,9 @@
         <div id="diagnoza-suggestions" class="suggestions"></div>
     </div>
 
-    <div class="form-group">
-        <label>Sestrská diagnóza (slovom alebo čislom podĺa Zoznamu sesterských diagnz): </label>
-        <input required type = "text" id="sesterskaDiagnoza" name="sesterskaDiagnoza">
-    </div>
+    <label>Sestrská diagnóza (slovom alebo čislom podĺa Zoznamu sesterských diagnz): </label>
+    <input required type = "text" id="sesterskaDiagnoza" name="sesterskaDiagnoza">
+
 
     <div class="checkbox-container navrh-checkbox-container">
         <input type="checkbox" id="HCheckBox">
@@ -76,25 +74,21 @@
     </div>
     <div class="checkbox-container navrh-checkbox-container">
         <input type="checkbox" id="FCheckBox">
-        <label for="FCheckBox">F - pacient/pacientka s psychiatrickou diagnózou,<br> mentálne retardovaný pacient-pacientka</label>
+        <label for="FCheckBox">F - pacient/pacientka s psychiatrickou diagnózou,<br>mentálne retardovaný pacient-pacientka</label>
         <label for="FCheckBox">(75%)</label>
     </div>
 
-    <div class="form-group">
-        <label>Plán ošetrovateĺskej startostlivosti:</label>
-        <input required type = "text" id="PlanOsStarostlivosty" name="PlanOsStarostlivosty">
-    </div>
+    <label><b>Plán ošetrovateĺskej startostlivosti:</b></label>
+    <input required type = "text" id="PlanOsStarostlivosty" name="PlanOsStarostlivosty">
 
-    <div class="form-group">
-        <label>Výkony vyjadré kódom a ich frekvencia realizácie:</label>
-        <input required type = "text" id="Vykony" name="Vykony">
-    </div>
+    <label>Výkony vyjadré kódom a ich frekvencia realizácie:</label>
+    <input required type = "text" id="Vykony" name="Vykony">
 
     <label><b>Predpokladná dĺžka ošetrovateĺskej starostlivosti:</b></label>
 
     <div class="radio-group">
         <label class="radio-option">
-          <input type="radio" name="duration" value="1" checked>
+          <input type="radio" name="duration" value="1">
           do 1 mesiaca
         </label>
         <label class="radio-option">
@@ -111,26 +105,26 @@
         </label>
     </div>
 
-    <div class="form-group">
-        <label><b>Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval:</b></label>
-        <input required type = "text" id="lekar" name="lekar">
-    </div>
+    <label><b>Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval:</b></label>
+    <input required type = "text" id="lekar" name="lekar">
 
-    <div class="form-group inline-form">
-        <label>Dátum:</label>
-        <input type="text" name="currentDate", id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
-    </div>
-
-    <div class="form-group inline-form">
-        <div>
-            <label>........................</label>
-            <br>
-            <label>podpis lekára<br>a odtlačok pečiatky</label>
+    <div class="footer">
+        <div class="inline-form">
+            <label>Dátum:</label>
+            <input type="text" name="currentDate", id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
         </div>
-        <div>
-            <label>................................................</label>
-            <br>
-            <label>podpis odborného zástupcu poskytovateĺa<br>ošetrovateĺskej starostlivosti a sdtlačok pečiatky</label>
+
+        <div class="inline-form sign">
+            <div class="special-margin">
+                <label>........................</label>
+                <br>
+                <label>podpis lekára<br>a odtlačok pečiatky</label>
+            </div>
+            <div>
+                <label>............................................................................</label>
+                <br>
+                <label>podpis odborného zástupcu poskytovateĺa<br>ošetrovateĺskej starostlivosti a sdtlačok pečiatky</label>
+            </div>
         </div>
     </div>
 </form>
