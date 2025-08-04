@@ -14,6 +14,7 @@ from routes.schedules import schedule_bp
 from routes.dekurzy import dekurz_bp
 from routes.transport import transport_bp
 from routes.points import points_bp
+from routes.vykony import vykon_bp
 from routes.auth import auth_bp, setup_login_manager
 from routes.documents import documents_bp
 
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     app.register_blueprint(auth_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(points_bp)
+    app.register_blueprint(vykon_bp)
 
 
     check_db()

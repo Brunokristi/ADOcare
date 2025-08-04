@@ -7,6 +7,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const patientPoistovna = document.getElementById("patient-poistovna");
     const diagnosisInput = document.getElementById("diagnoza");
     const diagnosisSuggestions = document.getElementById("diagnoza-suggestions");
+    const vykonInput = document.getElementById("vykon");
+    const vykonSuggestions = document.getElementById("vykon-suggestions");
+
     let selectedPatientId = null;
 
     initFlatpickr();
@@ -28,6 +31,8 @@ document.addEventListener("DOMContentLoaded", function () {
     diagnosisInput.addEventListener("input", fetchDiagnoses);
     input?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
+    vykonInput.addEventListener("input", fetchVykony);
+
 
     function initFlatpickr() {
         const date = document.getElementById("date");
@@ -131,6 +136,49 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(() => {
                 diagnosisSuggestions.style.display = "none";
             });
+    }
+
+    function fetchVykony() {
+        const query = vykonInput.value.trim();
+
+        if (query.length < 2) {
+            vykonSuggestions.style.display = "none";
+            return;
+        }
+
+        fetch(`/vykon/search?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                vykonSuggestions.innerHTML = "";
+
+                if (data.length === 0) {
+                    vykonSuggestions.style.display = "none";
+                    return;
+                }
+
+                data.forEach(v => {
+                    const suggestion = document.createElement("div");
+                    suggestion.classList.add("suggestion-item");
+                    suggestion.textContent = `${v.vykon}`;
+                    suggestion.addEventListener("click", () => {
+                        vykonInput.value = `${v.vykon}`;
+                        vykonSuggestions.style.display = "none";
+
+                        const bodyField = document.getElementById("body");
+                        if (bodyField) {
+                            bodyField.value = v.body;
+                        }
+                    });
+                    vykonSuggestions.appendChild(suggestion);
+                });
+
+                vykonSuggestions.style.display = "block";
+            })
+            .catch(() => {
+                vykonSuggestions.style.display = "none";
+            });
+
+
     }
 
 });
