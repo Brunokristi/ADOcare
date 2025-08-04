@@ -26,24 +26,10 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentIndex = 0;
     let currentSelectedDate = null;
 
+    let fpStart, fpEnd, fpExceptions, fpManual;
+
     const loader = document.getElementById("loader");
 
-
-    // klik na pacienta v zozname
-    document.getElementById("patient-list")?.addEventListener("click", function (e) {
-        const link = e.target.closest(".small-token");
-        if (!link) return;
-
-        e.preventDefault();
-        selectedPatientId = link.dataset.id;
-
-        patientMeno.textContent = link.dataset.meno;
-        patientRC.textContent = link.dataset.rc;
-        patientAdresa.textContent = link.dataset.adresa || "-";
-
-        editBtn.href = `/patient/update/${selectedPatientId}`;
-        selectedPatientDiv.style.display = "block";
-    });
 
     input?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
@@ -146,7 +132,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${d}-${m}-${y}`;
     }
 
-
     // pridat pacienta do planu
     addBtn?.addEventListener("click", () => {
         if (!selectedPatientId) return;
@@ -226,7 +211,6 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(() => showMessage("Chyba pri komunikácii so serverom."));
     });
 
-    initFlatpickr();
     initDayScroller();
 
     function handlePatientSearch() {
@@ -271,6 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
         patientAdresa.textContent = patient.adresa || "-";
         selectedPatientDiv.style.display = "block";
         suggestionsContainer.style.display = "none";
+        initFlatpickr();
     }
 
     function closeSuggestionsOnClickOutside(e) {
@@ -288,7 +273,14 @@ document.addEventListener("DOMContentLoaded", function () {
         const firstDay = new Date(document.body.dataset.firstDay);
         const lastDay = new Date(document.body.dataset.lastDay);
 
-        flatpickr(dateStart, {
+        // Destroy previous instances if they exist
+        fpStart?.destroy();
+        fpEnd?.destroy();
+        fpExceptions?.destroy();
+        fpManual?.destroy();
+
+        // Initialize new instances and store them
+        fpStart = flatpickr(dateStart, {
             dateFormat: "d-m-Y",
             defaultDate: firstDay,
             minDate: firstDay,
@@ -296,7 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
             locale: "sk"
         });
 
-        flatpickr(dateEnd, {
+        fpEnd = flatpickr(dateEnd, {
             dateFormat: "d-m-Y",
             defaultDate: lastDay,
             minDate: firstDay,
@@ -304,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function () {
             locale: "sk"
         });
 
-        flatpickr(exceptions, {
+        fpExceptions = flatpickr(exceptions, {
             dateFormat: "d-m-Y",
             mode: "multiple",
             minDate: firstDay,
@@ -312,7 +304,7 @@ document.addEventListener("DOMContentLoaded", function () {
             locale: "sk"
         });
 
-        flatpickr(manual, {
+        fpManual = flatpickr(manual, {
             dateFormat: "d-m-Y",
             mode: "multiple",
             minDate: firstDay,
@@ -426,7 +418,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 container.innerHTML = "<p>Chyba pri načítaní pacientov.</p>";
             });
     }
-
 
     let manualMode = false;
 
