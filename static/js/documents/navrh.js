@@ -189,7 +189,14 @@ document.addEventListener("DOMContentLoaded", function () {
         rodneCislo.innerText = patient.rodne_cislo;
         bydliskoTrvale.innerText = patient.adresa || "-";
 
-        kodPoistovne.innerText = patient.poistovnaFirstCode+"--"
+        // parsing and substituting poistovna code
+        if (parseInt(patient.poistovnaFirstCode) === 25){
+            kodPoistovne.innerText = 2521
+        } else if (parseInt(patient.poistovnaFirstCode) === 24){
+            kodPoistovne.innerText = 2400
+        } else {
+            kodPoistovne.innerText = 2700
+        }
 
         lekar.value = patient.doctorName;
         selectedPatientDiv.style.display = "block";
