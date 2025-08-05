@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return data
             })
             .catch(error => {
-                console.error(error);
+                console.log("No previous data about patient found")
             });
     }
 

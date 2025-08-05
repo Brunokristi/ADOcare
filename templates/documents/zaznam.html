@@ -4,28 +4,26 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/main.css') }}">
-
-<label>
-    Odtlačok pečiatky zariadenia<br>
-    poskytujúceho ošetrovateľskú starostlivosť:
-</label>
-
-<h1><b>OŠETROVATEĽSKÝ ZÁZNAM</b></h1>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/zaznam.css') }}">
 
 <form id="mainForm">
+    <label>
+        Odtlačok pečiatky zariadenia<br>
+        poskytujúceho ošetrovateľskú starostlivosť:
+    </label>
+
+    <h1 style="text-align: center;"><b>OŠETROVATEĽSKÝ ZÁZNAM</b></h1>
 
     <div style="width: 600px">
-        <div class="form-group inline-form" style="position: relative;">
+        <div class="inline-form" style="position: relative;">
             <label>Meno, priezvisko, titul pacienta/pacientky: </label>
-            <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
-                placeholder="Zadaj meno alebo rodné číslo...">
+            <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off" placeholder="Zadaj meno alebo rodné číslo...">
 
             <div id="patient-suggestions" class="suggestions"></div>
         </div>
 
         <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>Telefón: </label>
                 <input required type="text" id="mobilePhone" name="mobilePhone">
                 <label>Rodné číslo: </label>
@@ -34,7 +32,7 @@
                 <p id="kodPoistovne"></p>
             </div>
 
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>Trvalý pobyt: </label>
                 <p id="bydliskoTrvale"></p>
                 <label>Poschodie:</label>
@@ -43,19 +41,19 @@
         </div>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Prechodný pobyt: </label>
         <input required type = "text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu">
         <label>Poschodie:</label>
         <input required type = "text" id="prehodnyPobitPoschodie", name="prehodnyPobitPoschodie">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Kontaktná osoba a vzťah k pacientovi(e):</label>
         <input required type = "text" id="kontaktna_osoba" name="kontaktna_osoba">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Adresa kontaktnej osoby:</label>
         <input required type = "text" id="adresaKontaktnejOsoby" name="adresaKontaktnejOsoby">
         <label>Telefón:</label>
@@ -64,26 +62,26 @@
 
     <hr>
 
-    <div class="form-group" style="position: relative;">
+    <div  style="position: relative;">
         <label for="diagnoza">Lekárska diagnóza (slovom alebo číslom podľa MKCH):</label>
         <input type="text" id="lekarskaDiagnoze" name="lekarskaDiagnoze" autocomplete="off">
         <input type="hidden" id="diagnoza_id">
         <div id="diagnoza-suggestions" class="suggestions"></div>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Doporučená farmakoterapia:</label>
         <input required type = "text" id="doporucenaFarmakoterapia" name="doporucenaFarmakoterapia">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Ošetrujúci lekár:</label>
         <input type = "text" id="doctorName" name="doctorName">
         <label>Pracovisko:</label>
         <input type = "text" value="ADOS"> <!-- TODO: where get data for this place -->
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Dátum a čas prijatia do starostlivosti:</label>
         <input type="text" name="currentDate" id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
     </div>
@@ -109,7 +107,7 @@
         <label for="ustipnutie">uštipnutie</label>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="alergiaIneZistenia" name="alergiaIneZistenia">
     </div>
@@ -156,13 +154,13 @@
         <label for="CA">CA:</label>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <input type = "text" id="rodinnaAnamnezaKomentar" name="rodinnaAnamnezaKomentar">
     </div>
 
     <hr>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Sociálna anamnéza povolanie:</label>
         <input type = "text" id="socialnaAnamnezaPovolanie" name="socialnaAnamnezaPovolanie">
     </div>
@@ -183,7 +181,7 @@
         </label>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" name="socialnePodmienkyIneZistenia">
     </div>
@@ -275,10 +273,9 @@
     <hr>
 
     <label><b>Vnímanie zdravia <br></b></label>
-    <div class="form-group inline-form">
+    <!-- <div class="inline-form"> -->
         <label>Subjektívny popis problémov pacienta/pacientky:</label>
-        <input type = "text" id="subjektívnyPopisProblémovPacienta" name="subjektívnyPopisProblémovPacienta">
-    </div>
+        <textarea id="subjektívnyPopisProblémovPacienta" name="subjektívnyPopisProblémovPacienta" rows="5"></textarea>
 
     <label><b>Vstupný záznam sesterského posúdenia zdravotného stavu<br></b></label>
     <label>Starostlivosť odporučil:</label>
@@ -306,12 +303,12 @@
         <label for="PrebratyZInehoZariadenia">Prebratý(á) z iného zariadenia, odkiaľ:</label>
         <input type = "text" id="PrebratyZInehoZariadeniaText" name="PrebratyZInehoZariadeniaText">
     </div>
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Oddelenie:</label>
         <input type = "text" id="oddelenie" name="oddelenie">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Posledná hospitalizácia:</label>
         <label>od</label>
         <input type="text" name="PoslednaHospitalizaciaOD", id="PoslednaHospitalizaciaOD" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
@@ -341,7 +338,7 @@
         </div>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="vstupnyZaznamIneZistenia" name="vstupnyZaznamIneZistenia">
     </div>
@@ -361,24 +358,24 @@
         <label>v čase / v priestore</label>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="orientaciaIneZistenia" name="orientaciaIneZistenia">
     </div>
 
     <div class="inline-form">
         <label>Cirkulácia:</label>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>TK:</label>
             <input type = "text" id="cirkulaciaTKmmHg" name="cirkulaciaTKmmHg">
             <label>mmHg</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>TT:</label>
             <input type = "text" id="cirkulaciaTTC" name="cirkulaciaTTC">
             <label>°C</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>P:</label>
             <input type = "text" id="cirkulaciaPmin" name="cirkulaciaPmin">
             <label>/min</label>
@@ -418,12 +415,12 @@
         <label for="kardiostimulator">kardiostimulátor</label>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="cirkulaciaIneZistenia" name="cirkulaciaIneZistenia">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Dýchanie:</label>
         <label>D:</label>
         <input type = "text" id="dychanieDmin" name="dychanieDmin">
@@ -480,7 +477,7 @@
             <input type="checkbox" id="tracheostomia" name="tracheostomia">
             <label for="tracheostomia">tracheostómia</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="dychanieIneZistenia" name="dychanieIneZistenia">
         </div>
@@ -543,7 +540,7 @@
         </div>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Výživa: diéta: č.</label>
         <input type="text" id="vyzivaDietaV" name="vyzivaDietaV">
     </div>
@@ -604,7 +601,7 @@
             </label>
         </div>
 
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>prípravky, aké:</label>
             <input type="text" id="pripravkyAke" name="pripravkyAke">
         </div>
@@ -640,7 +637,7 @@
                 nazog. sonda
             </label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>/dátum zavedenia:</label>
             <input type="text" id="prijemStravyDatumZavedenia" name="prijemStravyDatumZavedenia">
         </div>
@@ -651,7 +648,7 @@
             <input type="checkbox" id="gastrostomia" name="gastrostomia">
             <label for="gastrostomia">gastrostómia</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>/dátum zavedenia:</label>
             <input type="text" id="gastrostomiaDatumZavedenia" name="gastrostomiaDatumZavedenia">
         </div>
@@ -659,14 +656,14 @@
             <input type="checkbox" id="peg" name="peg">
             <label for="peg">PEG</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>/dátum zavedenia:</label>
             <input type="text" id="PEGDatumZavedenia" name="PEGDatumZavedenia">
         </div>
     </div>
 
     <div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Príjem tekutín / 24 hod.:</label>
             <input type="text" id="prijemTekutin" name="prijemTekutin">
             <label>ml</label>
@@ -688,7 +685,7 @@
             <input type="checkbox" id="cvk" name="cvk">
             <label for="cvk">CVK</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>/dátum zavedenia:</label>
             <input type="text" id="CVKDatumZavedenia" name="CVKDatumZavedenia">
         </div>
@@ -696,7 +693,7 @@
             <input type="checkbox" id="perifernyPristup" name="perifernyPristup">
             <label for="perifernyPristup">periférny i.v. prístup</label>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>/dátum zavedenia:</label>
             <input type="text" id="periférnyDatumZavedenia" name="periférnyDatumZavedenia">
         </div>
@@ -715,7 +712,7 @@
             </label>
         </div>
     </div>
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="kompenzacnePomockyIneZistenia" name="kompenzacnePomockyIneZistenia">
     </div>
@@ -765,12 +762,12 @@
                 <input type="checkbox" id="stomiaOsetrenaNaposledy" name="stomiaOsetrenaNaposledy">
                 <label for="stomiaOsetrenaNaposledy">stómia - ošetrená naposledy</label>
             </div>
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>/dátum zavedenia:</label>
                 <input type="text" id="vylucovanieDefekaciaDatumZavedenia" name="vylucovanieDefekaciaDatumZavedenia">
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="vylucovanieDefekaciaIneZistenia" name="vylucovanieDefekaciaIneZistenia">
         </div>
@@ -818,7 +815,7 @@
                 </label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="sposobRegulacieVyprazdnovaniaIneZistenia" name="sposobRegulacieVyprazdnovaniaIneZistenia">
         </div>
@@ -862,7 +859,7 @@
                 <input type="checkbox" id="RK" name="RK">
                 <label for="RK">RK</label>
             </div>
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>/dátum zavedenia:</label>
                 <input type="text" id="RKDatumZavedenia" name="RKDatumZavedenia">
             </div>
@@ -877,7 +874,7 @@
                 <input type="checkbox" id="urostomia" name="urostomia">
                 <label for="urostomia">Urostómia</label>
             </div>
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>/dátum zavedenia:</label>
                 <input type="text" id="urostomiaDatumZavedenia" name="urostomiaDatumZavedenia">
             </div>
@@ -893,7 +890,7 @@
                     hemodialýza
                 </label>
             </div>
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>/dátum zavedenia:</label>
                 <input type="text" id="peritonealnaDialyzaHemodialyzaDatumZavedenia" name="peritonealnaDialyzaHemodialyzaDatumZavedenia">
             </div>
@@ -904,7 +901,7 @@
                 <label for="urinarnyKondomovySystem">urinárny kondómový systém</label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="urinarnyKondomovySystemIneZistenia" name="urinarnyKondomovySystemIneZistenia">
         </div>
@@ -935,7 +932,7 @@
                 <label for="farmakoterapia">farmakoterapia</label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="spanokIneZistenia" name="spanokIneZistenia">
         </div>
@@ -1005,7 +1002,7 @@
                 <label for="amputacia">amputácia</label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="pohybovySystemIneZistenia" name="pohybovySystemIneZistenia">
         </div>
@@ -1275,7 +1272,7 @@
                 </label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="hygienickuStarostlivostText" name="hygienickuStarostlivostText">
         </div>
@@ -1298,7 +1295,7 @@
                     viacrodička
                 </label>
             </div>
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>Dátum pôrodu:</label>
                 <input type = "text" id="datumPorodu" name="datumPorodu">
             </div>
@@ -1328,19 +1325,19 @@
                     áno
                 </label>
             </div>
-            <div class="form-group inline-form">
+            <div class="inline-form">
                 <label>charakter komplikácií:</label>
                 <input type = "text" id="charakterKomplikacii" name="charakterKomplikacii">
             </div>
         </div>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Fundus maternice:</label>
         <input type = "text" id="fundusMaternice" name="fundusMaternice">
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>stav krvácania/lochie:</label>
         <label>vzhľad:</label>
         <input type = "text" id="stavKrvacaniaLochieVzhlad" name="stavKrvacaniaLochieVzhlad">
@@ -1432,7 +1429,7 @@
         <label>cm</label>
     </div>
 
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="novorodenecIneZistenia" name="novorodenecIneZistenia">
     </div>
@@ -1475,7 +1472,7 @@
             <input type = "text" id="charakterBolestiText" name="charakterBolestiText">
         </div>
     </div>
-    <div class="form-group inline-form">
+    <div class="inline-form">
         <label>Iné zistenia:</label>
         <input type = "text" id="bolestIneZistenia" name="bolestIneZistenia">
     </div>
@@ -1517,7 +1514,7 @@
                 </label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="komunikaciaIneZistenia" name="komunikaciaIneZistenia">
         </div>
@@ -1578,7 +1575,7 @@
                 <label for="načúvací aparát">načúvací aparát</label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="kompenzacnePomockyIneZisteniaText" name="kompenzacnePomockyIneZisteniaText">
         </div>
@@ -1664,9 +1661,9 @@
                 </label>
             </div>
         </div>
-        <div class="inline-form">
+        <div>
             <label>Istota, bezpečie:</label>
-            <div class="radio-group">
+            <div class="radio-group inline-form"">
                 <label class="radio-option">
                     <input type="radio" value="kľudný" name="istotaBezpecie">
                     kľudný
@@ -1684,7 +1681,7 @@
                     zmätenosť
                 </label>
             </div>
-            <div class="radio-group">
+            <div class="radio-group inline-form"">
                 <label class="radio-option">
                     <input type="radio" value="vyrovnaný" name="istotaBezpecie">
                     vyrovnaný
@@ -1702,7 +1699,7 @@
                     sebaobviňovanie
                 </label>
             </div>
-            <div class="radio-group">
+            <div class="radio-group inline-form"">
                 <label class="radio-option">
                     <input type="radio" value="strach" name="istotaBezpecie">
                     strach
@@ -1847,7 +1844,7 @@
                 </label>
             </div>
         </div>
-        <div class="form-group inline-form">
+        <div class="inline-form">
             <label>Iné zistenia:</label>
             <input type = "text" id="duchovnePotrebyText" name="duchovnePotrebyText">
         </div>
@@ -1879,7 +1876,7 @@
             <label>Podpis pacienta/pacientky:</label>
         </div>
         <label>Stanovenie sesterských diagnóz pri príjme:</label>
-        <input type = "text">
+        <input type = "text" id="stanovenieSesterskychDiagnozPriPrijme" name="stanovenieSesterskychDiagnozPriPrijme">
         <div class="inline-form">
             <label>Dátum a čas:</label>
             <input type="text" name="dateAndTime" id="dateAndTime" class="dateAndTime-input" placeholder="DD.MM.YYYY H:M" maxlength="10">
