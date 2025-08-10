@@ -6,6 +6,7 @@ from routes.diagnoses import get_diagnosis
 from routes.doctors import get_doctors
 from routes.companies import get_companies
 from routes.insurances import get_insurances
+from utils.roads_manager import Road_manager
 from utils.geocode import geocode_address
 
 from flask_login import login_required
@@ -20,6 +21,8 @@ def create_patient():
 
         address = data['adresa']
         longitude, latitude = geocode_address(address)
+
+        Road_manager().addClient(latitude=latitude, longitude=longitude)
 
         conn = get_db_connection()
         conn.execute("""
@@ -51,6 +54,8 @@ def update_patient(id):
 
         address = data['adresa']
         longitude, latitude = geocode_address(address)
+
+        Road_manager().addClient(latitude=latitude, longitude=longitude)
 
         conn = get_db_connection()
         conn.execute("""

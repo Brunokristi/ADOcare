@@ -64,8 +64,7 @@ def transport():
         print("⚠️ All API keys failed.")
         return 0
 
-    data = request.get_json()
-    poistovna_id = data.get("poistovna_id")
+    poistovna_id = request.get_json().get("poistovna_id")
     month = session.get("month")
     month_number = month.get("mesiac")
     year_number = month.get("rok")
@@ -186,14 +185,12 @@ def transport():
         """, (nurse_id,))
         row = cursor.fetchone()
 
-        sestra = {
-        "identifikator_pzs": row["identifikator"],
-        "kod_pzs": row["kod_pzs"],
-        "kod_zp": row["kod_zp"],
-        "uvazok": f'{row["uvazok"]:.2f}',
-        "obdobie": f'{year_number}{int(month_number):02d}',
-        "mena": "EUR"
-    }
+        sestra = {"identifikator_pzs": row["identifikator"],
+                  "kod_pzs": row["kod_pzs"],
+                  "kod_zp": row["kod_zp"],
+                  "uvazok": f'{row["uvazok"]:.2f}',
+                  "obdobie": f'{year_number}{int(month_number):02d}',
+                  "mena": "EUR"}
 
     cursor.execute("""
         SELECT a.ico AS ico_adosu, po.kod AS kod_poistovne

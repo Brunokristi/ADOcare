@@ -2,6 +2,7 @@ blinker==1.9.0
 certifi==2025.6.15
 charset-normalizer==3.4.2
 click==8.2.1
+easy @ git+https://github.com/Klipar/easy.git@929885e09c67b52975199c3e08262704f5bc60ec
 Flask==3.1.1
 flask-cors==6.0.1
 Flask-Login==0.6.3

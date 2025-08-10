@@ -22,9 +22,16 @@ from flask_login import LoginManager
 
 from utils.database import DATABASE_FILE, check_db
 
+from easy import Config, Logger
+
+from utils.roads_manager import Road_manager
+
 if __name__ == "__main__":
+    config = Config("Configs/config.json")
+    Road_manager(config=config, logger=Logger())
+
     app = Flask(__name__)
-    app.secret_key = "a3f8d3e87b5a4e5f9c6d4b2f6a1e8c3d"
+    app.secret_key = config.getValue("app secret key")
     CORS(app)
 
     login_manager = LoginManager()

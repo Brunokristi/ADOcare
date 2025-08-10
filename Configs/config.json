@@ -1,0 +1,13 @@
+{
+    "app secret key": "a3f8d3e87b5a4e5f9c6d4b2f6a1e8c3d",
+
+    "open route": {
+        "API keys": [
+            "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
+            "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d"
+        ],
+        "sleep time after unsuccessful polling of all API keys, in seconds": 0.1,
+
+        "delta distance between coordinates for searching hashed paths, in meters": 10
+    }
+}
