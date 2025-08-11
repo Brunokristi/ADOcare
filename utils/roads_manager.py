@@ -87,7 +87,10 @@ class Road_manager:
 
         conn.close()
 
-        return rows[0]["distance"], rows[0]["time"]
+        if rows:
+            return rows[0]["distance"], rows[0]["time"]
+
+        return None, None
 
     def _cache_road(self, start: Tuple[float, float], end: Tuple[float, float], data: Tuple[float, int]) -> None:
         """save cache to database."""
@@ -177,3 +180,10 @@ class Road_manager:
 
         return (latitude - lat_degree, latitude + lat_degree, longitude - lon_degree, longitude + lon_degree)
 
+    def get_road_data(self, start: Tuple[float, float], end: Tuple[float, float], force_use_api: bool = False) -> Tuple[float, int]:
+        if not force_use_api:
+            data = self._search_road_in_cache(start, end)
+            if data:
+                return data
+
+        return self._calculate_travel_time_and_distance(start, end)

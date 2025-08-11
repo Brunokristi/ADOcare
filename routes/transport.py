@@ -14,10 +14,7 @@ import re
 
 from flask_login import login_required
 
-API_KEYS = [
-    "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
-    "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d"
-]
+from utils.roads_manager import Road_manager
 
 transport_bp = Blueprint("transport", __name__)
 
@@ -36,33 +33,6 @@ def transport():
         dlon = radians(lon2 - lon1)
         a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
         return R * 2 * atan2(sqrt(a), sqrt(1 - a))
-
-    def get_distance_km(start, end):
-        for key in API_KEYS:
-            try:
-                res = requests.post(
-                    "https://api.openrouteservice.org/v2/directions/driving-car/json",
-                    headers={
-                        "Authorization": key,
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "coordinates": [[start[1], start[0]], [end[1], end[0]]]
-                    }
-                )
-                if res.status_code == 429:
-                    print(f"[{key}] Rate limit reached. Waiting 3 seconds...")
-                    time.sleep(3)
-                    continue
-                res.raise_for_status()
-                data = res.json()
-                if "routes" in data:
-                    distance_km = data["routes"][0]["summary"]["distance"] / 1000
-                    return math.ceil(distance_km)
-            except Exception as e:
-                print(f"Error with API key {key}: {e}")
-        print("⚠️ All API keys failed.")
-        return 0
 
     poistovna_id = request.get_json().get("poistovna_id")
     month = session.get("month")
@@ -147,8 +117,10 @@ def transport():
                 km = 0
             else:
                 processed_coords[datum].append((end_lat, end_lon))
-                km = get_distance_km((start_lat, start_lon), (end_lat, end_lon))
-                sum_km += km
+
+                data = Road_manager().get_road_data((start_lat, start_lon), (end_lat, end_lon))
+
+                sum_km += data[0]
 
         final_rows.append({
             "poradie": idx,
