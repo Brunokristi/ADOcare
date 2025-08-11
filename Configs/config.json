@@ -9,7 +9,7 @@
             "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
             "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d"
         ],
-        "sleep time after unsuccessful polling of all API keys, in seconds": 0.1,
+        "sleep time after unsuccessful polling of all API keys, in seconds": 60,
 
         "delta distance between coordinates for searching hashed paths, in meters": 10,
 

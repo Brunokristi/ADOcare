@@ -175,9 +175,8 @@ class Road_manager:
         if not callable(method):
             raise ValueError(f"Function '{method_name}' does not exist.")
 
+        backup_api_client_index: int = self.api_client_index
         while True:
-            backup_api_client_index: int = self.api_client_index
-
             try:
                 return method(*args, **kwargs)
 
@@ -185,6 +184,7 @@ class Road_manager:
                 if e.message["error"] == "Rate Limit Exceeded":
                     prev_api_index: int = self.api_client_index
                     self._toggle_clients_index()
+                    method = getattr(self._get_open_route_service_client(), method_name)
 
                     self.logger.inform(f"The request limit for API key number {prev_api_index} has been reached, switching to number {self.api_client_index}...")
 
