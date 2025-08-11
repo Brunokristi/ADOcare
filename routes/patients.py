@@ -22,7 +22,7 @@ def create_patient():
         address = data['adresa']
         longitude, latitude = geocode_address(address)
 
-        Road_manager().addClient(latitude=latitude, longitude=longitude)
+        Road_manager().addClient((latitude, longitude))
 
         conn = get_db_connection()
         conn.execute("""
@@ -55,7 +55,7 @@ def update_patient(id):
         address = data['adresa']
         longitude, latitude = geocode_address(address)
 
-        Road_manager().addClient(latitude=latitude, longitude=longitude)
+        Road_manager().addClient((latitude, longitude))
 
         conn = get_db_connection()
         conn.execute("""

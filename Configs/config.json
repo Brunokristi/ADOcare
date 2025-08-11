@@ -8,6 +8,8 @@
         ],
         "sleep time after unsuccessful polling of all API keys, in seconds": 0.1,
 
-        "delta distance between coordinates for searching hashed paths, in meters": 10
+        "delta distance between coordinates for searching hashed paths, in meters": 10,
+
+        "cache all data from open route": true
     }
 }

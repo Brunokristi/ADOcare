@@ -3,11 +3,10 @@ from utils.database import get_db_connection
 from openrouteservice import Client
 from easy import Config, Logger
 from time import sleep
-
 import math
 
 class Road_manager:
-    """Singleton obj for  using open route service api and managing hashes for it"""
+    """Singleton obj for using open route service api and managing hashes for it"""
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -34,39 +33,77 @@ class Road_manager:
             for api_key in self.config.getValue("open route", "API keys"):
                 self.clients.append(Client(key=api_key, retry_over_query_limit=False))
 
-    def addClient(self, latitude: float, longitude: float) -> None:
+    def addClient(self, client_coordinate: Tuple[float, float]) -> None:
         """In the absence of such parameters as latitude and longitude for the client,
-        it adds them to the hash database table to avoid unnecessary requests to the server."""
+        it adds them to the hash database table to avoid unnecessary requests to the server.
+
+        Parameters:
+        coordinate (latitude, longitude)
+        + latitude (float): The latitude of the center point in decimal degrees.
+        + longitude (float): The longitude of the center point in decimal degrees."""
         conn = get_db_connection()
 
-        lat_min, lat_max, lon_min, lon_max = self._calculate_bounds(latitude, longitude)
+        for organization in conn.execute("SELECT latitude, longitude FROM adosky", ()).fetchall():
+            ados_coordinate = (organization["latitude"], organization["longitude"])
 
-        distances = conn.execute("""
-            SELECT * FROM distance
-            WHERE latitude_patient BETWEEN ? AND ?
-            AND longitude_patient BETWEEN ? AND ?
-        """, (lat_min, lat_max, lon_min, lon_max)).fetchall()
+            if not self._search_road_in_cache(ados_coordinate, client_coordinate):
+                data = self._calculate_travel_time_and_distance(ados_coordinate, client_coordinate)
 
-        if not distances:
-            organizations = conn.execute("SELECT latitude, longitude FROM adosky", ()).fetchall()
-            for organization in organizations:
-                distance, pathTime = self.calculate_travel_time_and_distance((organization["latitude"], organization["longitude"]),
-                    (latitude, longitude)
-                )
-
-                conn.execute("""
-                    INSERT INTO distance
-                    (latitude_compani, longitude_compani, latitude_patient, longitude_patient, distance, time)
-                    VALUES(?, ?, ?, ?, ?, ?)""",
-                    (
-                        organization["latitude"], organization["longitude"], latitude, longitude, distance, pathTime
-
-                    ))
-                conn.commit()
+                self._cache_road(start=ados_coordinate, end=client_coordinate, data=data)
 
         conn.close()
 
-    def calculate_travel_time_and_distance(self, start: Tuple[float, float], end: Tuple[float, float]) -> Tuple[float, int]:
+    def _search_road_in_cache(self, start: Tuple[float, float], end: Tuple[float, float]) -> Tuple[float, int]:
+        conn = get_db_connection()
+
+        start_lat_min, start_lat_max, start_lon_min, start_lon_max = self._calculate_bounds(start)
+        end_lat_min, end_lat_max, end_lon_min, end_lon_max = self._calculate_bounds(end)
+
+        rows = conn.execute("""
+        SELECT distance, time FROM distance
+        WHERE (
+                latitude_start BETWEEN ? AND ?
+            AND
+                longitude_start BETWEEN ? AND ?
+            AND
+                latitude_end BETWEEN ? AND ?
+            AND
+                longitude_end BETWEEN ? AND ?
+            )
+        OR (
+                latitude_start BETWEEN ? AND ?
+            AND
+                longitude_start BETWEEN ? AND ?
+            AND
+                latitude_end BETWEEN ? AND ?
+            AND
+                longitude_end BETWEEN ? AND ?
+            )
+        """, (start_lat_min, start_lat_max, start_lon_min, start_lon_max,
+              end_lat_min, end_lat_max, end_lon_min, end_lon_max,
+              end_lat_min, end_lat_max, end_lon_min, end_lon_max,
+              start_lat_min, start_lat_max, start_lon_min, start_lon_max,
+              )).fetchall()
+
+        conn.close()
+
+        return rows[0]["distance"], rows[0]["time"]
+
+    def _cache_road(self, start: Tuple[float, float], end: Tuple[float, float], data: Tuple[float, int]) -> None:
+        """save cache to database."""
+
+        conn = get_db_connection()
+        conn.execute("""
+                    INSERT INTO distance
+                    (latitude_start, longitude_start, latitude_end, longitude_end, distance, time)
+                    VALUES(?, ?, ?, ?, ?, ?)""",
+                    (
+                        start[0], start[1], end[0], end[1], data[0], data[1]
+
+                    ))
+        conn.commit()
+
+    def _calculate_travel_time_and_distance(self, start: Tuple[float, float], end: Tuple[float, float]) -> Tuple[float, int]:
         """
         Returns a tuple containing the distance between two points in meters and the time required for the journey in seconds.
 
@@ -84,8 +121,12 @@ class Road_manager:
                     profile='driving-car',
                     format='json'
                 )
+                data = (routes["routes"][0]["summary"]["distance"], int(routes['routes'][0]['summary']['duration']))
 
-                return routes["routes"][0]["summary"]["distance"], int(routes['routes'][0]['summary']['duration'])
+                if self.config.getValue("open route", "cache all data from open route"):
+                    self._cache_road(start=start, end=end, data=data)
+
+                return data
 
             except Exception as e:
                 if e.message["error"] == "Rate Limit Exceeded":
@@ -106,8 +147,8 @@ class Road_manager:
         if self.api_client_index >= len(self.clients):
             self.api_client_index = 0
 
-    def _calculate_bounds(self, latitude: float, longitude: float) -> Tuple[float, float, float, float]:
-        """Calculates the bounding coordinates based on a given latitude and longitude.
+    def _calculate_bounds(self, coordinate: Tuple[float, float]) -> Tuple[float, float, float, float]:
+        """Calculates the bounding coordinates based on a given latitude and longitude as coordinate tuple.
 
         This method computes the minimum and maximum latitude and longitude values
         that define a rectangular area around the specified coordinates. The size of
@@ -117,17 +158,22 @@ class Road_manager:
         latitude and longitude to calculate the corresponding degree offsets.
 
         Parameters:
-        latitude (float): The latitude of the center point in decimal degrees.
-        longitude (float): The longitude of the center point in decimal degrees.
+        coordinate (latitude, longitude)
+        + latitude (float): The latitude of the center point in decimal degrees.
+        + longitude (float): The longitude of the center point in decimal degrees.
 
         Returns:
         tuple: A tuple containing the minimum latitude, maximum latitude,
             minimum longitude, and maximum longitude, respectively.
             The format is (min_latitude, max_latitude, min_longitude, max_longitude).
         """
+        latitude = coordinate[0]
+        longitude = coordinate[1]
+
         distance_meters = self.config.getValue("open route", "delta distance between coordinates for searching hashed paths, in meters")
 
         lat_degree = distance_meters / 111320
         lon_degree = distance_meters / (111320 * math.cos(math.radians(latitude)))
 
         return (latitude - lat_degree, latitude + lat_degree, longitude - lon_degree, longitude + lon_degree)
+
