@@ -17,13 +17,9 @@ from routes.points import points_bp
 from routes.vykony import vykon_bp
 from routes.auth import auth_bp, setup_login_manager
 from routes.documents import documents_bp
-
 from flask_login import LoginManager
-
 from utils.database import DATABASE_FILE, check_db
-
 from easy import Config, Logger
-
 from utils.roads_manager import Road_manager
 
 if __name__ == "__main__":
@@ -59,4 +55,8 @@ if __name__ == "__main__":
 
 
     check_db()
-    app.run(host="127.0.0.1", port=5000, debug=True)
+
+    app.run(host=config.getValue("host"),
+            port=config.getValue("port"),
+            debug=config.getValue("debug mode")
+    )

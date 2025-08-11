@@ -1,5 +1,8 @@
 {
     "app secret key": "a3f8d3e87b5a4e5f9c6d4b2f6a1e8c3d",
+    "host": "127.0.0.1",
+    "port": 5000,
+    "debug mode": true,
 
     "open route": {
         "API keys": [
