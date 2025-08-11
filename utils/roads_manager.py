@@ -119,7 +119,7 @@ class Road_manager:
             backup_api_client_index: int = self.api_client_index
 
             try:
-                routes = self.clients[self.api_client_index].directions( # API request
+                routes = self.get_open_route_service_client().directions( # API request
                     coordinates=[[start[1], start[0]], [end[1], end[0]]],
                     profile='driving-car',
                     format='json'
@@ -183,7 +183,10 @@ class Road_manager:
     def get_road_data(self, start: Tuple[float, float], end: Tuple[float, float], force_use_api: bool = False) -> Tuple[float, int]:
         if not force_use_api:
             data = self._search_road_in_cache(start, end)
-            if data:
+            if data[0] is not None and data[1] is not None:
                 return data
 
         return self._calculate_travel_time_and_distance(start, end)
+
+    def get_open_route_service_client(self) -> Client:
+        return self.clients[self.api_client_index]

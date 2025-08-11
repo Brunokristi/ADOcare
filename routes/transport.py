@@ -90,15 +90,13 @@ def transport():
 
     start_lat, start_lon = None, None
     if rows:
-        start_address = f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}"
-        res = requests.get("https://api.openrouteservice.org/geocode/search", params={
-            "api_key": "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d",
-            "text": start_address,
-            "size": 1
-        })
-        geo_data = res.json()
-        if geo_data.get("features"):
-            coords = geo_data["features"][0]["geometry"]["coordinates"]
+        result = Road_manager().get_open_route_service_client().pelias_search(
+            f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}",
+            size=1
+        )
+
+        if result["features"]:
+            coords = result["features"][0]["geometry"]["coordinates"]
             start_lat, start_lon = coords[1], coords[0]
 
     processed_coords = {}
@@ -120,7 +118,7 @@ def transport():
 
                 data = Road_manager().get_road_data((start_lat, start_lon), (end_lat, end_lon))
 
-                sum_km += data[0]
+                sum_km += math.ceil(data[0] / 1000)
 
         final_rows.append({
             "poradie": idx,
