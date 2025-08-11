@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Any, List, Tuple
 from utils.database import get_db_connection
 from openrouteservice import Client
 from easy import Config, Logger
@@ -115,40 +115,21 @@ class Road_manager:
         @return: A tuple where the first element is the distance in meters and the second element is the time in seconds.
         Returns (None, None) if an error occurs while fetching the path time.
         """
-        while True:
-            backup_api_client_index: int = self.api_client_index
+        routes = self.execute_open_route_request(method_name="directions",
+            coordinates=[[start[1], start[0]], [end[1], end[0]]],
+            profile='driving-car',
+            format='json'
+        )
 
-            try:
-                routes = self.get_open_route_service_client().directions( # API request
-                    coordinates=[[start[1], start[0]], [end[1], end[0]]],
-                    profile='driving-car',
-                    format='json'
-                )
-                data = (routes["routes"][0]["summary"]["distance"], int(routes['routes'][0]['summary']['duration']))
+        data = (routes["routes"][0]["summary"]["distance"], int(routes['routes'][0]['summary']['duration']))
 
-                if self.config.getValue("open route", "cache all data from open route"):
-                    self._cache_road(start=start, end=end, data=data)
+        if self.config.getValue("open route", "cache all data from open route"):
+            self._cache_road(start=start, end=end, data=data)
 
-                return data
-
-            except Exception as e:
-                if e.message["error"] == "Rate Limit Exceeded":
-                    prev_api_index: int = self.api_client_index
-                    self._toggle_clients_index()
-
-                    self.logger.inform(f"The request limit for API key number {prev_api_index} has been reached, switching to number {self.api_client_index}...")
-
-                    if self.api_client_index == backup_api_client_index: # sleep because we created cycle
-                        sleep(self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds"))
-
-                else:
-                    return None, None
+        return data
 
     def _toggle_clients_index(self) -> None:
-        self.api_client_index += 1
-
-        if self.api_client_index >= len(self.clients):
-            self.api_client_index = 0
+        self.api_client_index = (self.api_client_index + 1) % len(self.clients)
 
     def _calculate_bounds(self, coordinate: Tuple[float, float]) -> Tuple[float, float, float, float]:
         """Calculates the bounding coordinates based on a given latitude and longitude as coordinate tuple.
@@ -188,5 +169,30 @@ class Road_manager:
 
         return self._calculate_travel_time_and_distance(start, end)
 
-    def get_open_route_service_client(self) -> Client:
+    def execute_open_route_request(self, method_name: str, *args, **kwargs) -> Any:
+        method = getattr(self._get_open_route_service_client(), method_name)
+
+        if not callable(method):
+            raise ValueError(f"Function '{method_name}' does not exist.")
+
+        while True:
+            backup_api_client_index: int = self.api_client_index
+
+            try:
+                return method(*args, **kwargs)
+
+            except Exception as e:
+                if e.message["error"] == "Rate Limit Exceeded":
+                    prev_api_index: int = self.api_client_index
+                    self._toggle_clients_index()
+
+                    self.logger.inform(f"The request limit for API key number {prev_api_index} has been reached, switching to number {self.api_client_index}...")
+
+                    if self.api_client_index == backup_api_client_index: # sleep because we created cycle
+                        sleep(self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds"))
+
+                else:
+                    return None
+
+    def _get_open_route_service_client(self) -> Client:
         return self.clients[self.api_client_index]

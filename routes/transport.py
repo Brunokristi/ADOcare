@@ -90,7 +90,7 @@ def transport():
 
     start_lat, start_lon = None, None
     if rows:
-        result = Road_manager().get_open_route_service_client().pelias_search(
+        result = Road_manager().execute_open_route_request("pelias_search",
             f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}",
             size=1
         )

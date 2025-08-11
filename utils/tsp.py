@@ -5,26 +5,7 @@ from datetime import datetime, timedelta
 from flask import session
 from utils.database import get_db_connection
 from utils.geocode import geocode_address
-
-ORS_API_KEYS = [
-    "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
-    "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d"
-]
-
-api_call_counter = 0
-api_key_index = 0
-client = openrouteservice.Client(key=ORS_API_KEYS[api_key_index])
-
-
-def switch_key_if_needed():
-    global api_call_counter, api_key_index, client
-
-    api_call_counter += 1
-    if api_call_counter % 20 == 0:
-        api_key_index = (api_key_index + 1) % len(ORS_API_KEYS)
-        client = openrouteservice.Client(key=ORS_API_KEYS[api_key_index])
-        print(f"🔄 Switching to API key {api_key_index + 1}: {ORS_API_KEYS[api_key_index]}")
-
+from utils.roads_manager import Road_manager
 
 def update_vysetrenie_and_vypis(den_id, pacient_id, vysetrenie_time, vypis_time):
     conn = get_db_connection()
@@ -76,7 +57,6 @@ def simulate_schedule(day, den_id, patients, tsp_path, matrix):
 
 
 def calculate_optimal_day_route(data, address):
-    print(session)
     long, lat = geocode_address(address)
     start_point = (long, lat)
 
@@ -86,14 +66,14 @@ def calculate_optimal_day_route(data, address):
 
         coords = [start_point] + [(p["longitude"], p["latitude"]) for p in patients]
 
-        switch_key_if_needed()
         try:
-            matrix = client.distance_matrix(
+             matrix = Road_manager().execute_open_route_request(method_name="distance_matrix",
                 locations=coords,
                 profile='driving-car',
                 metrics=['duration'],
                 units='m'
             )["durations"]
+
         except Exception as e:
             continue
 
