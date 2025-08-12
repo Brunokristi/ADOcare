@@ -49,7 +49,8 @@ class Road_manager:
             if not self._search_road_in_cache(ados_coordinate, client_coordinate):
                 data = self._calculate_travel_time_and_distance(ados_coordinate, client_coordinate)
 
-                self._cache_road(start=ados_coordinate, end=client_coordinate, data=data)
+                if not self.config.getValue("open route", "cache all data from open route"):
+                    self._cache_road(start=ados_coordinate, end=client_coordinate, data=data)
 
         conn.close()
 
