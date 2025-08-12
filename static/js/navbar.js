@@ -22,8 +22,6 @@ function showMessage(msg) {
 
 
 
-
-
 // ===== set key shortcuts =====
 // Ctrl Z - back button
 // Ctrl D - domov (dashboard/

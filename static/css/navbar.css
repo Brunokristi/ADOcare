@@ -55,3 +55,139 @@
 .text-button i {
     padding: 0;
 }
+
+/* Dropdown container */
+.navbar-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+
+.navbar-popup {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    min-width: 180px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+    display: grid;
+    gap: 6px;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px) scale(0.98);
+    transform-origin: top right;
+    transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Show on hover or keyboard focus */
+.navbar-dropdown:hover .navbar-popup,
+.navbar-dropdown:focus-within .navbar-popup,
+.navbar-dropdown.open .navbar-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition-delay: 0s;
+    pointer-events: auto;
+}
+
+/* Forgiving hover buffer — invisible area between trigger & popup */
+.navbar-dropdown::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 240px;
+    /* match popup width or slightly larger */
+    height: 14px;
+    /* adjust buffer size */
+    /* stays transparent; just keeps hover alive */
+}
+
+/* Popup items */
+.navbar-popup-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+}
+
+.navbar-popup-item:hover,
+.navbar-popup-item:focus {
+    background: #f2f4f7;
+}
+
+/* Minimal styles so the window shows and can be toggled */
+.fp {
+    position: fixed;
+    top: 100px;
+    left: 100px;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    background: #fff;
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, .1);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .2);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+    z-index: 2000;
+}
+
+.fp.is-hidden {
+    display: none;
+}
+
+.fp__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    cursor: move;
+    background: #f7f8fa;
+    border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+
+.fp__actions {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.fp__btn {
+    border: none;
+    background: transparent;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.fp__btn:hover {
+    background: #eef1f5;
+}
+
+.fp__body {
+    padding: 10px;
+    overflow: auto;
+    height: 240px;
+}
+
+.fp__resizer {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, .25) 50%) no-repeat;
+}

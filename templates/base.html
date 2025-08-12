@@ -11,8 +11,7 @@
     {% block styles %}{% endblock %}
 
     <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/documents/main.css') }}">
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;400;500;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -26,58 +25,95 @@
     <header>
         <div class="navbar no-print">
             <div class="navbar-section">
-
-                <a href="{{ url_for('auth.logout') }}" class="navbar-button" style="background-color: #5C9EAD; margin-right: 20px;">
+        
+                <!-- Logo / Flower -->
+                <a href="{{ url_for('auth.logout') }}" class="navbar-button"
+                    style="background-color: #5C9EAD; margin-right: 20px;" title="Domov">
                     <i style="color: #fff;" class="bi bi-flower2"></i>
                 </a>
-                
-                <a href="#" class="navbar-button" id="backBtn">
-                    <i style="color: #333;" class="bi bi-arrow-left"></i>            
+        
+                <!-- Back button -->
+                <a href="#" class="navbar-button" id="backBtn" title="Späť">
+                    <i style="color: #333;" class="bi bi-arrow-left"></i>
                 </a>
-
-                
+        
                 {% if current_user.is_authenticated %}
-                    {% if session.get('nurse')%}
-                        <a href="{{ url_for('main.dashboard') }}" class="navbar-button" target="_blank" id="newTab">
-                            <i style="color: #333;" class="bi bi-plus"></i>
+                {% if session.get('nurse')%}
+                <!-- Open dashboard in new tab -->
+                <a href="{{ url_for('main.dashboard') }}" class="navbar-button" target="_blank" id="newTab"
+                    title="Nové okno">
+                    <i style="color: #333;" class="bi bi-plus"></i>
+                </a>
+        
+                <!-- Settings -->
+                <a class="navbar-button" href="{{ url_for('main.settings') }}" title="Nastavenia">
+                    <i style="color: #333;" class="bi bi-gear"></i>
+                </a>
+        
+                <!-- Patients -->
+                <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" title="Pacienti" data-popup
+                    data-popup-title="Pacienti">
+                    <i style="color: #333;" class="bi bi-people"></i>
+                </a>
+                
+        
+                <!-- Dashboard dropdown -->
+                <div class="navbar-dropdown">
+                    <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.dashboard') }}" aria-haspopup="true"
+                        aria-expanded="false" title="Dashboard - rýchle odkazy">
+                        <i style="color: #333;" class="bi bi-box"></i>
+                    </a>
+        
+                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
+                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" role="menuitem"
+                            title="Otvoriť dashboard">
+                            <i class="bi bi-grid-3x3-gap"></i> Dashboard
                         </a>
-    
-                        <a class="navbar-button" href="{{ url_for('main.settings') }}">
-                            <i style="color: #333;" class="bi bi-gear"></i>
+                        <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
+                            title="Prejsť na pacientov">
+                            <i class="bi bi-people"></i> Pacienti
                         </a>
-
-                        <a class="navbar-button" href="{{ url_for('patient.list_patients') }}">
-                            <i style="color: #333;" class="bi bi-people"></i>
+                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem"
+                            title="Otvoriť nastavenia">
+                            <i class="bi bi-gear"></i> Nastavenia
                         </a>
-
-                        <a class="navbar-button" href="{{ url_for('main.dashboard') }}">
-                            <i style="color: #333;" class="bi bi-box"></i>
+                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
+                            title="Otvoriť dashboard v novom okne">
+                            <i class="bi bi-plus-square"></i> Nové okno
                         </a>
-                    {% endif %}
+                    </div>
+                </div>
                 {% endif %}
-
+                {% endif %}
+        
             </div>
-
+        
             <div class="navbar-section">
                 <p id="message"></p>
             </div>
-
+        
             <div class="navbar-section">
                 {% if current_user.is_authenticated %}
-                    {% if session.get('nurse')%}
-                        <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo">
-                            <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
-                        </a>
-
-                        <a href="{{ url_for('main.index') }}" class="navbar-button" id="switch">
-                            <i style="color: #333;" class="bi bi-arrow-repeat"></i>    
-                        </a>
-                    {% endif %}
-
-                    <a class="navbar-button" href="{{ url_for('auth.logout') }}"><i style="color: #333;" class="bi bi-box-arrow-right"></i></a>
+                {% if session.get('nurse')%}
+                <!-- Nurse profile -->
+                <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo" title="Profil sestry">
+                    <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
+                </a>
+        
+                <!-- Switch -->
+                <a href="{{ url_for('main.index') }}" class="navbar-button" id="switch" title="Prepnúť používateľa">
+                    <i style="color: #333;" class="bi bi-arrow-repeat"></i>
+                </a>
+                {% endif %}
+        
+                <!-- Logout -->
+                <a class="navbar-button" href="{{ url_for('auth.logout') }}" title="Odhlásiť sa">
+                    <i style="color: #333;" class="bi bi-box-arrow-right"></i>
+                </a>
                 {% endif %}
             </div>
         </div>
+        
     </header>
 
     <!-- generating path for keyboard shortcuts -->
@@ -107,6 +143,35 @@
     </main>
 
     {% block scripts %}{% endblock %}
+
+    <div id="floating-popup" class="fp is-hidden" role="dialog" aria-modal="false" aria-hidden="true"
+        aria-label="Plávajúce okno">
+        <div class="fp__header" id="fpDragHandle">
+            <div class="fp__title" id="fpTitle">Testovacie okno</div>
+            <div class="fp__actions">
+                <button class="fp__btn" type="button" id="fpMinimizeBtn" title="Minimalizovať">
+                    <i class="bi bi-dash"></i>
+                </button>
+                <button class="fp__btn" type="button" id="fpCloseBtn" title="Zavrieť">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+        <div class="fp__body" id="fpBody" tabindex="0">
+            <p>Ahoj! Toto je <strong>ukážkové plávajúce okno</strong>.</p>
+            <p>Môžeš ho ťahať, minimalizovať a zatvoriť.</p>
+            <p>Po potvrdení, že funguje, tu vieme načítať obsah z ľubovoľnej routy.</p>
+        </div>
+        <div class="fp__resizer" id="fpResizer" title="Zmeniť veľkosť"></div>
+    </div>
+    
+    <!-- Trigger button for demo -->
+    <a href="#" class="navbar-button" id="openPopupBtn" title="Otvoriť testovacie okno">
+        <i style="color: #333;" class="bi bi-window"></i>
+    </a>
+    
+    <!-- Include the popup script -->
+    <script src="{{ url_for('static', filename='js/popup.js') }}"></script>
 
 </body>
 
