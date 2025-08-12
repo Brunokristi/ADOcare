@@ -117,8 +117,8 @@ def transport():
                 processed_coords[datum].append((end_lat, end_lon))
 
                 data = Road_manager().get_road_data((start_lat, start_lon), (end_lat, end_lon))
-
-                sum_km += math.ceil(data[0] / 1000)
+                km = math.ceil(data[0] / 1000)
+                sum_km += km
 
         final_rows.append({
             "poradie": idx,
