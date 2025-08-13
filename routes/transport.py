@@ -1,17 +1,14 @@
-from flask import Blueprint, request, redirect, url_for, render_template, session, jsonify
+from flask import Blueprint, request, render_template, session, jsonify
 from utils.database import get_db_connection
-from routes.patients import get_patients_by_day
 from routes.insurances import get_insurances
-import requests
 from math import radians, sin, cos, sqrt, atan2
 import math
+from easy.message import *
 from datetime import datetime
-import time
 import os
 import uuid
 import json
 import re
-
 from flask_login import login_required
 
 from utils.roads_manager import Road_manager
@@ -23,6 +20,34 @@ transport_bp = Blueprint("transport", __name__)
 def transport_menu():
     poistovne = get_insurances()
     return render_template("transport/transport_menu.html", poistovne=poistovne)
+
+def build_final_row(idx, datum, km, row):
+    datum_day = datum.split("-")[2]
+    return {
+        "poradie": idx,
+        "den": datum_day,
+        "rodne_cislo": re.sub(r'\D', '', str(row["rodne_cislo"])) if row["rodne_cislo"] else '',
+        "pacient_meno": row["pacient_meno"],
+        "diagnoza": re.sub(r'\W', '', row["diagnoza"]) if row["diagnoza"] else '',
+        "stav_pacienta": "",
+        "sprievodca": "",
+        "typ_prepravy": "ADOS",
+        "osobokm": km,
+        "odkial_obec": row["start_obec"],
+        "odkial_ulica": row["start_ulica"],
+        "kam_obec": row["mesto"],
+        "kam_ulica": row["end_ulica"],
+        "cislo_jazdy": idx,
+        "evc": row["evc"],
+        "pocet_prepravovanych": 0,
+        "nahrady": "",
+        "typ_odosielatela": "N",
+        "kód_pzs": row["odosielajuci_pzs"],
+        "kód_zpr": row["odosielajuci_zpr"],
+        "clensky_stat": "SK",
+        "id_poistenca": "",
+        "pohlavie": row["pohlavie"]
+    }
 
 @transport_bp.route('/transport', methods=['POST'])
 @login_required
@@ -103,10 +128,10 @@ def transport():
     final_rows = []
     sum_km = 0
 
+    road_manager = Road_manager()
     for idx, row in enumerate(rows, 1):
         end_lat, end_lon = row["end_lat"], row["end_lon"]
         datum = row["datum"]
-        datum_day = datum.split("-")[2]
         km = 0
         if start_lat and end_lat and end_lon:
             if datum not in processed_coords:
@@ -116,51 +141,26 @@ def transport():
             else:
                 processed_coords[datum].append((end_lat, end_lon))
 
-                data = Road_manager().get_road_data((start_lat, start_lon), (end_lat, end_lon))
+                data = road_manager.get_road_data((start_lat, start_lon), (end_lat, end_lon))
                 km = math.ceil(data[0] / 1000)
                 sum_km += km
 
-        final_rows.append({
-            "poradie": idx,
-            "den": datum_day,
-            "rodne_cislo": re.sub(r'\D', '', str(row["rodne_cislo"])) if row["rodne_cislo"] else '',
-            "pacient_meno": row["pacient_meno"],
-            "diagnoza": re.sub(r'\W', '', row["diagnoza"]) if row["diagnoza"] else '',
-            "stav_pacienta": "",
-            "sprievodca": "",
-            "typ_prepravy": "ADOS",
-            "osobokm": km,
-            "odkial_obec": row["start_obec"],
-            "odkial_ulica": row["start_ulica"],
-            "kam_obec": row["mesto"],
-            "kam_ulica": row["end_ulica"],
-            "cislo_jazdy": idx,
-            "evc": row["evc"],
-            "pocet_prepravovanych": 0,
-            "nahrady": "",
-            "typ_odosielatela": "N",
-            "kód_pzs": row["odosielajuci_pzs"],
-            "kód_zpr": row["odosielajuci_zpr"],
-            "clensky_stat": "SK",
-            "id_poistenca": "",
-            "pohlavie": row["pohlavie"]
-        })
+        final_rows.append(build_final_row(idx, datum, km, row))
 
+    cursor.execute("""
+        SELECT s.kod AS kod_zp, s.uvazok, a.identifikator, a.kod AS kod_pzs
+        FROM sestry s
+        LEFT JOIN adosky a ON s.ados = a.id
+        WHERE s.id = ?
+    """, (nurse_id,))
+    row = cursor.fetchone()
 
-        cursor.execute("""
-            SELECT s.kod AS kod_zp, s.uvazok, a.identifikator, a.kod AS kod_pzs
-            FROM sestry s
-            LEFT JOIN adosky a ON s.ados = a.id
-            WHERE s.id = ?
-        """, (nurse_id,))
-        row = cursor.fetchone()
-
-        sestra = {"identifikator_pzs": row["identifikator"],
-                  "kod_pzs": row["kod_pzs"],
-                  "kod_zp": row["kod_zp"],
-                  "uvazok": f'{row["uvazok"]:.2f}',
-                  "obdobie": f'{year_number}{int(month_number):02d}',
-                  "mena": "EUR"}
+    sestra = {"identifikator_pzs": row["identifikator"],
+                "kod_pzs": row["kod_pzs"],
+                "kod_zp": row["kod_zp"],
+                "uvazok": f'{row["uvazok"]:.2f}',
+                "obdobie": f'{year_number}{int(month_number):02d}',
+                "mena": "EUR"}
 
     cursor.execute("""
         SELECT a.ico AS ico_adosu, po.kod AS kod_poistovne
