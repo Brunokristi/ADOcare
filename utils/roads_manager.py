@@ -3,6 +3,8 @@ from utils.database import get_db_connection
 from openrouteservice import Client
 from easy import Config, Logger
 from time import sleep
+import time
+import threading
 import math
 
 class Road_manager:
@@ -25,6 +27,8 @@ class Road_manager:
             self.config: Config = config
             self.logger: Logger = logger if logger else config.logger
             self._set_api_clients()
+            self._lock = threading.Lock()
+            self.tried_keys = set()
 
     def _set_api_clients(self) -> None:
             self.api_client_index: int = 0
@@ -176,22 +180,29 @@ class Road_manager:
         if not callable(method):
             raise ValueError(f"Function '{method_name}' does not exist.")
 
-        backup_api_client_index: int = self.api_client_index
         while True:
+            current_tried_index = self.api_client_index
+            timestamp = int(time.time())
             try:
                 return method(*args, **kwargs)
 
             except Exception as e:
                 if e.message["error"] == "Rate Limit Exceeded":
-                    prev_api_index: int = self.api_client_index
-                    self._toggle_clients_index()
-                    method = getattr(self._get_open_route_service_client(), method_name)
+                    with self._lock:
+                        if timestamp + self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds") > int(time.time()):
+                            self.tried_keys.add(current_tried_index)
 
-                    self.logger.inform(f"The request limit for API key number {prev_api_index} has been reached, switching to number {self.api_client_index}...")
+                        if current_tried_index == self.api_client_index:
+                            prev_api_index: int = self.api_client_index
+                            self._toggle_clients_index()
+                            self.logger.inform(f"The request limit for API key number {prev_api_index} has been reached, switching to number {self.api_client_index}...")
 
-                    if self.api_client_index == backup_api_client_index: # sleep because we created cycle
-                        sleep(self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds"))
+                        method = getattr(self._get_open_route_service_client(), method_name)
 
+                        if len(self.tried_keys) == len(self.clients):
+                            self.logger.inform(f"we created a cycle, slipping for {self.config.getValue('open route', 'sleep time after unsuccessful polling of all API keys, in seconds')} seconds...")
+                            sleep(self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds"))
+                            self.tried_keys.clear()
                 else:
                     return None
 
