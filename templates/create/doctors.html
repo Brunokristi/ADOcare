@@ -1,29 +1,22 @@
-{% extends "base.html" %}
-{% block title %}ADOS - Pridať doktora{% endblock %}
+<main-popup>
+    <h1>Zoznam Doktorov</h1>
 
-{% block content %}
-<h1>Zoznam Doktorov</h1>
-
-<div class="section">
-    <div class="form-group">
-        <input type="text" id="searchInput" placeholder="Vyhľadaj doktora podľa mena alebo kódu..." />
-    </div>
-
-    <div id="results">
-        {% for doctor in doctors %}
-        <div class="small-token" data-meno="{{ doctor.meno }}" data-pzs="{{ doctor.pzs }}" data-zpr="{{ doctor.zpr }}">
-            {{ doctor.meno }} — {{ doctor.pzs }}, {{ doctor.zpr }}
+    <div class="section">
+        <div class="form-group">
+            <input type="text" id="searchInput" placeholder="Vyhľadaj doktora podľa mena alebo kódu..." />
         </div>
-        {% endfor %}
-    </div>
 
-</div>
-{% endblock %}
+        <div id="results">
+            {% for doctor in doctors %}
+            <div class="small-token" data-meno="{{ doctor.meno }}" data-pzs="{{ doctor.pzs }}" data-zpr="{{ doctor.zpr }}">
+                {{ doctor.meno }} — {{ doctor.pzs }}, {{ doctor.zpr }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</main-popup>
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/details/lists.css') }}">
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/create/doctors.js') }}"></script>
-{% endblock %}

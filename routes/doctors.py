@@ -88,3 +88,9 @@ def get_doctor(id):
     row = conn.execute("SELECT * FROM doktori WHERE id = ?", (id,)).fetchone()
     conn.close()
     return Doctor(row) if row else None
+
+@doctor_bp.route('/doctor/settings')
+@login_required
+def doctor_settings():
+    doctors = get_doctors()
+    return render_template("fragments/doctors.html", doctors=doctors)

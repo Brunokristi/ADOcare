@@ -1,0 +1,16 @@
+<main-popup>
+    <div class="section">
+        <div class="lined-heading"><span>Doktori</span></div>
+
+        <a class="text-button" href="{{ url_for('doctor.list_doctors') }}">
+            pridať doktora <i class="bi bi-arrow-right"></i>
+        </a>
+
+        {% for doctor in doctors %}
+        <div class="small-token" data-id="{{ doctor.id }}">
+            <span>{{ doctor.meno }}</span>
+            <button class="delete-btn" type="button" title="Odstrániť doktora">×</button>
+        </div>
+        {% endfor %}
+        </div>
+</main-popup>

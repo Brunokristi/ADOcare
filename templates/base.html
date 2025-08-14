@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{ url_for('static', filename='js/popup.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/create/doctors.js') }}"></script>
 
 </head>
 
@@ -53,20 +55,20 @@
                     </a>
                 
                     <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <a href="{{ url_for('main.settings') }}" class="navbar-popup-item" data-popup
-                            data-popup-title="Zdravotný personál">
-                            <i class="bi bi-person"></i> Zdravotný personál
+                        <a href="{{ url_for('doctor.doctor_settings') }}" class="navbar-popup-item" data-popup
+                            data-popup-title="Pridať doktora">
+                            <i class="bi bi-person"></i> Doktori
                         </a>
                         <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
-                            title="Prejsť na pacientov">
-                            <i class="bi bi-people"></i> Pacienti
+                            title="Prehľadávať diagnózy">
+                            <i class="bi bi-file-medical"></i> Diagnózy
                         </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Otvoriť nastavenia">
-                            <i class="bi bi-gear"></i> Nastavenia
+                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Vytvotiť makrá">
+                            <i class="bi-pencil-square"></i> Makrá
                         </a>
                         <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
-                            title="Otvoriť dashboard v novom okne">
-                            <i class="bi bi-plus-square"></i> Nové okno
+                            title="Upraviť autá">
+                            <i class="bi bi-speedometer"></i> Autá
                         </a>
                     </div>
                 </div>

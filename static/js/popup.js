@@ -1,6 +1,5 @@
-// static/js/popup.js
 (function () {
-    if (window.__popupInit) return; // prevent double init
+    if (window.__popupInit) return;
     window.__popupInit = true;
 
     const ready = (fn) =>
@@ -12,15 +11,12 @@
         const win = document.getElementById('floating-popup');
         if (!win) return;
 
-        const titleEl = document.getElementById('fpTitle');
         const bodyEl = document.getElementById('fpBody');
         const closeBtn = document.getElementById('fpCloseBtn');
-        const minimizeBtn = document.getElementById('fpMinimizeBtn');
+        const minimizeBtn = document.getElementById('fpMinimizeBtn'); // optional
         const dragHandle = document.getElementById('fpDragHandle');
         const resizer = document.getElementById('fpResizer');
-        const demoBtn = document.getElementById('openPopupBtn');
 
-        // ---------- Utils ----------
         const safeUrl = (u) => {
             try {
                 const url = new URL(u, window.location.origin);
@@ -31,17 +27,13 @@
         const sameOrigin = (url) => url.origin === window.location.origin;
 
         const setBusy = (msg = 'Načítavam…') => {
-            bodyEl.innerHTML =
-                `<div style="padding:12px" aria-busy="true" aria-live="polite">${msg}</div>`;
+            bodyEl.innerHTML = `<div style="padding:12px" aria-busy="true" aria-live="polite">${msg}</div>`;
         };
         const setError = (msg = 'Nepodarilo sa načítať obsah.') => {
-            bodyEl.innerHTML =
-                `<div style="padding:12px; color:#b00020">${msg}</div>`;
+            bodyEl.innerHTML = `<div style="padding:12px; color:#b00020">${msg}</div>`;
         };
 
-        // ---------- API: open/close/title/content ----------
-        const open = ({ title = 'Okno', html } = {}) => {
-            if (title) titleEl.textContent = title;
+        const open = ({ html } = {}) => {
             if (html != null) bodyEl.innerHTML = html;
             win.classList.remove('is-hidden');
             win.setAttribute('aria-hidden', 'false');
@@ -53,10 +45,8 @@
             win.setAttribute('aria-hidden', 'true');
             win.setAttribute('aria-modal', 'false');
         };
-        const setTitle = (t) => { titleEl.textContent = t; };
         const setContent = (html) => { bodyEl.innerHTML = html; };
 
-        // ---------- In‑popup history ----------
         const hist = { stack: [], index: -1 };
         const pushHistory = (url) => {
             hist.stack = hist.stack.slice(0, hist.index + 1);
@@ -64,15 +54,10 @@
             hist.index++;
         };
 
-        // ---------- Core loader (GET/POST into popup) ----------
-        async function loadIntoPopup(
-            url,
-            { push = true, method = 'GET', body = null } = {}
-        ) {
+        async function loadIntoPopup(url, { push = true, method = 'GET', body = null } = {}) {
             const u = safeUrl(url);
             if (!u) { setError('Neplatná adresa.'); return; }
 
-            // Cross‑origin → open in new window (safer than trying to iframe)
             if (!sameOrigin(u)) {
                 window.open(u.toString(), '_blank', 'noopener,noreferrer');
                 return;
@@ -84,17 +69,22 @@
                     method,
                     body,
                     credentials: 'same-origin',
-                    headers: { 'X-Requested-With': 'popup' } // lets Flask return fragments
+                    headers: { 'X-Requested-With': 'popup' }
                 });
                 const html = await resp.text();
                 setContent(html);
+
+                // Let page scripts know new content is ready
+                window.dispatchEvent(new CustomEvent('popup:loaded', {
+                    detail: { container: bodyEl, url: u.toString() }
+                }));
+
                 if (push) pushHistory(u.toString());
-            } catch (e) {
+            } catch {
                 setError();
             }
         }
 
-        // ---------- Global trigger: <a data-popup> ----------
         document.addEventListener('click', (e) => {
             const a = e.target.closest('a[data-popup]');
             if (!a) return;
@@ -103,40 +93,23 @@
             if (!href || href === '#') return;
 
             e.preventDefault();
-            const title = a.getAttribute('data-popup-title') || a.title || 'Okno';
-            open({ title, html: 'Načítavam…' });
+            open({ html: 'Načítavam…' });
             loadIntoPopup(href, { push: true });
         });
 
-        // Optional demo button
-        if (demoBtn) {
-            demoBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                open({ title: 'Testovacie okno' });
-            });
-        }
-
-        // ---------- Keep navigation INSIDE the popup ----------
-        // Links inside popup
         bodyEl.addEventListener('click', (e) => {
             const a = e.target.closest('a[href]');
             if (a && bodyEl.contains(a)) {
-                // Opt‑out: allow modified clicks to open in new tab
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-
-                // Opt‑out: explicit external
                 if (a.hasAttribute('data-popup-external')) return;
-
                 const href = a.getAttribute('href');
                 if (!href || href.startsWith('#')) return;
-
                 const u = safeUrl(href);
-                if (!u || !sameOrigin(u)) return; // let browser handle cross‑origin
+                if (!u || !sameOrigin(u)) return;
                 e.preventDefault();
                 loadIntoPopup(u.toString(), { push: true });
             }
 
-            // Buttons that navigate: <button data-href="/route">
             const btn = e.target.closest('button[data-href], .btn[data-href]');
             if (btn && bodyEl.contains(btn)) {
                 const href = btn.getAttribute('data-href');
@@ -147,24 +120,16 @@
             }
         });
 
-        // Forms inside popup (POST/GET via fetch)
         bodyEl.addEventListener('submit', (e) => {
             const form = e.target;
             if (!bodyEl.contains(form)) return;
-
             e.preventDefault();
-
             const method = (form.getAttribute('method') || 'POST').toUpperCase();
-            const action =
-                form.getAttribute('action') ||
-                hist.stack[hist.index] ||
-                window.location.href;
-
-            const fd = new FormData(form); // carries CSRF hidden field if present
+            const action = form.getAttribute('action') || hist.stack[hist.index] || window.location.href;
+            const fd = new FormData(form);
             loadIntoPopup(action, { push: true, method, body: fd });
         });
 
-        // ---------- Back/Forward inside popup (Alt + ← / →) ----------
         win.addEventListener('keydown', (e) => {
             if (e.altKey && e.key === 'ArrowLeft') {
                 if (hist.index > 0) {
@@ -183,10 +148,13 @@
             if (e.key === 'Escape') close();
         });
 
-        // ---------- Close  ----------
         closeBtn?.addEventListener('click', close);
+        minimizeBtn?.addEventListener('click', () => {
+            win.classList.toggle('fp--minimized');
+            const minimized = win.classList.contains('fp--minimized');
+            minimizeBtn.setAttribute('aria-pressed', minimized ? 'true' : 'false');
+        });
 
-        // ---------- Dragging ----------
         let drag = null;
         const startDrag = (e) => {
             const rect = win.getBoundingClientRect();
@@ -220,7 +188,6 @@
             dragHandle.addEventListener('touchstart', startDrag, { passive: true });
         }
 
-        // ---------- Resizing ----------
         let rs = null;
         const startResize = (e) => {
             const rect = win.getBoundingClientRect();
@@ -232,10 +199,8 @@
             if (!rs) return;
             let w = rs.w + (e.clientX - rs.sx);
             let h = rs.h + (e.clientY - rs.sy);
-
             if (w < 800) w = 800;
             if (h < 300) h = 300;
-
             win.style.width = w + 'px';
             win.style.height = h + 'px';
         };
@@ -246,10 +211,9 @@
         };
         if (resizer) resizer.addEventListener('mousedown', startResize);
 
-        // ---------- Expose tiny API ----------
         window.FloatingPopup = {
-            open, close, setTitle, setContent,
-            load: (url, opts) => { open(); return loadIntoPopup(url, opts); },
+            open, close, setContent,
+            load: (url, opts) => { open({}); return loadIntoPopup(url, opts); },
             back: () => {
                 if (hist.index > 0) {
                     hist.index--;
