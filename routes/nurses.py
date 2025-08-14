@@ -43,7 +43,6 @@ def update_nurse(id):
         ))
         conn.commit()
         conn.close()
-        return redirect(url_for('nurse.nurses_settings'))
 
     cars = get_cars()
     companies = get_companies()
@@ -51,7 +50,7 @@ def update_nurse(id):
     if not nurse:
         return "Sestra nenájdená", 404
 
-    return render_template("details/nurse.html", nurse=nurse, cars=cars, companies=companies)
+    return render_template("fragments/nurses.html", nurse=nurse, cars=cars, companies=companies)
 
 @nurse_bp.route('/nurse/delete/<int:id>', methods=['POST'])
 @login_required
@@ -90,9 +89,3 @@ def select_nurse():
     }
 
     return jsonify(success=True)
-
-@nurse_bp.route('/nurses/settings')
-@login_required
-def nurses_settings():
-    nurses = get_nurses()
-    return render_template("fragments/nurses.html", nurses=nurses)

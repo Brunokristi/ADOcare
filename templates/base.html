@@ -18,6 +18,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="{{ url_for('static', filename='js/popup.js') }}"></script>
 
 </head>
 
@@ -52,7 +53,7 @@
                     </a>
                 
                     <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <a href="{{ url_for('nurse.nurses_settings') }}" class="navbar-popup-item" data-popup
+                        <a href="{{ url_for('main.settings') }}" class="navbar-popup-item" data-popup
                             data-popup-title="Zdravotný personál">
                             <i class="bi bi-person"></i> Zdravotný personál
                         </a>
@@ -116,7 +117,8 @@
                 {% if current_user.is_authenticated %}
                 {% if session.get('nurse')%}
                 <!-- Nurse profile -->
-                <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo" title="Profil sestry">
+                <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo" title="Profil sestry" data-popup
+                data-popup-title="Zdravotný personál">
                     <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
                 </a>
         
@@ -179,14 +181,6 @@
         <div class="fp__resizer" id="fpResizer" title="Zmeniť veľkosť"></div>
     </div>
     
-    <!-- Trigger button for demo -->
-    <a href="#" class="navbar-button" id="openPopupBtn" title="Otvoriť testovacie okno">
-        <i style="color: #333;" class="bi bi-window"></i>
-    </a>
-    
-    <!-- Include the popup script -->
-    <script src="{{ url_for('static', filename='js/popup.js') }}"></script>
-
 </body>
 
 </html>

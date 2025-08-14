@@ -1,16 +1,50 @@
 <main-popup>
     <div class="section">
-        <div class="lined-heading"><span>Zdravotný personál</span></div>
-        {% for nurse in nurses %}
-        <a href="{{ url_for('nurse.update_nurse', id=nurse.id) }}" class="small-token" data-id="{{ nurse.id }}"
-            data-meno="{{ nurse.meno }}" data-kod="{{ nurse.kod }}" data-uvazok="{{ nurse.uvazok }}"
-            data-vozidlo="{{ nurse.vozidlo }}" data-ados="{{ nurse.ados }}" data-phone_number="{{ nurse.phone_number }}">
-            {{ nurse.meno }}
-        </a>
-        {% endfor %}
-
-        <a class="text-button" href="{{ url_for('nurse.create_nurse') }}">
-            pridať pracovníka <i class="bi bi-arrow-right"></i>
-        </a>
+        <div class="lined-heading"><span>Údaje o sestre</span></div>
+        <form id="nurseForm" method="POST" action="{{ url_for('nurse.update_nurse', id=nurse.id) }}">
+            <div class="form-group">
+                <label for="meno">Meno</label>
+                <input type="text" name="meno" id="meno" value="{{ nurse.meno }}">
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Telefónne číslo</label>
+                <input type="text" name="phone_number" id="phone_number" value="{{ nurse.phone_number }}">
+            </div>
+            <div class="form-group">
+                <label for="kod">Kód</label>
+                <input type="text" name="kod" id="kod" value="{{ nurse.kod }}">
+            </div>
+            <div class="form-group">
+                <label for="uvazok">Úväzok</label>
+                <input type="number" name="uvazok" id="uvazok" value="{{ nurse.uvazok }}" step="0.1" min="0" max="1">
+            </div>
+            <div class="form-group">
+                <label for="vozidlo">Vozidlo</label>
+                <select name="vozidlo" id="vozidlo">
+                    <option value="">– Vyber vozidlo –</option>
+                    {% for car in cars %}
+                    <option value="{{ car.id }}" {% if car.id==nurse.vozidlo %}selected{% endif %}>
+                        {{ car.evc }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ados">Spoločnosť (ADOS)</label>
+                <select name="ados" id="ados">
+                    <option value="">– Vyber spoločnosť –</option>
+                    {% for company in companies %}
+                    <option value="{{ company.id }}" {% if company.id==nurse.ados %}selected{% endif %}>
+                        {{ company.nazov }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn">Uložiť</button>
+        </form>
     </div>
 </main-popup>
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/details/nurse.js') }}"></script>
+{% endblock %}
