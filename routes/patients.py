@@ -171,7 +171,7 @@ def get_patients():
     nurse_id = session.get('nurse', {}).get('id')
 
     conn = get_db_connection()
-    rows = conn.execute("SELECT * FROM pacienti WHERE sestra = ?", (nurse_id,)).fetchall()
+    rows = conn.execute("SELECT * FROM pacienti WHERE sestra = ? ORDER BY meno ASC", (nurse_id,)).fetchall()
     conn.close()
     return [Patient(row) for row in rows]
 

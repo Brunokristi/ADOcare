@@ -1,0 +1,14 @@
+<main-popup>
+    <div class="section">
+        <div class="lined-heading"><span>Autá</span></div>
+        {% for car in cars %}
+        <a href="{{ url_for('car.update_car', id=car.id) }}" class="small-token" data-id="{{ car.id }}"
+            data-evc="{{ car.evc }}">
+            {{ car.evc }}
+        </a>
+        {% endfor %}
+        <a class="text-button" href="{{ url_for('car.create_car') }}">
+            pridať auto <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+</main-popup>

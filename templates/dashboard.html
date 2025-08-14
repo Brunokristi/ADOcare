@@ -2,83 +2,51 @@
 {% block title %}ADOS - Dashboard{% endblock %}
 
 {% block content %}
-<h1>Prehľad</h1>
-
-{% if session.get('nurse') %}
-<div class="section">
-    <div class="lined-heading"><span>Dekurzy</span></div>
-
-    <div class="scroll-wrapper">
-        <button class="scroll-arrow left" onclick="scrollDekurzy(-1)">
-            <i class="bi bi-chevron-left"></i>
-        </button>
-
-        <div class="scroll" id="monthScroll">
-            <a href="{{ url_for('month.create_month') }}" class="small-small-token outlined" id="newDekurz">
-                NOVÝ DEKURZ
-            </a>
-            {% for month_dekurz in months_dekurz %}
-            <a href="#" class="small-small-token month-select" data-id="{{ month_dekurz.id }}" data-mesiac="{{ month_dekurz.mesiac }}"
-                data-rok="{{ month_dekurz.rok }}" data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie ="{{ month_dekurz.vysetrenie_start }}" data-vypisanie="{{ month_dekurz.vypis_start }}"
-                data-posledny-den="{{ month_dekurz.posledny_den }}">
-                {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
-            </a>
-            {% endfor %}
-        </div>
-
-        <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-    </div>
+<div class="one-line">
+    <i class="bi bi-flower2 centerpiece"></i>
+    <p>AdoCare</p>
 </div>
 
 
-<div class="section">
-    <div class="lined-heading"><span>Doprava</span></div>
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+    }
 
-    <div class="scroll-wrapper">
-        <button class="scroll-arrow left" onclick="scrollDekurzy(-1)">
-            <i class="bi bi-chevron-left"></i>
-        </button>
+    .centerpiece {
+        font-size: 8rem;
+        color: #5C9EAD;
+        animation: spin 50s linear infinite;
+    }
 
-        <div class="scroll" id="monthScroll">
-            {% for month_dekurz in months_dekurz %}
-            <a href="#" class="small-small-token transport-select" data-id="{{ month_dekurz.id }}"
-                data-mesiac="{{ month_dekurz.mesiac }}" data-rok="{{ month_dekurz.rok }}"
-                data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie="{{ month_dekurz.vysetrenie_start }}"
-                data-vypisanie="{{ month_dekurz.vypis_start }}" data-posledny-den="{{ month_dekurz.posledny_den }}">
-                {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
-            </a>
-            {% endfor %}
-        </div>
+    p {
+        font-size: 2rem;
+        color: #5C9EAD;
+        margin-top: 20px;
+    }
 
-        <button class="scroll-arrow right" onclick="scrollDekurzy(1)">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-    </div>
-</div>
+    .one-line {
+        text-align: center;
+        justify-content: center;
+        align-items: center;
+    }
 
-<div class="section">
-    <div class="lined-heading"><span>Dokumenty</span></div>
 
-    <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showNavrh') }}';" style="width: 700px;">
-        Návrh na poskytovanie ošetrovateľskej starostlivosti
-    </button>
 
-    <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showZaznam') }}';" style="width: 700px;">
-        Ošetrovateľský záznam
-    </button>
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
 
-    <button class="small-token" type="button" onclick="window.location.href='{{ url_for('documents.showDohoda') }}';" style="width: 700px;">
-        Dohoda o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti
-    </button>
-</div>
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 
-{% else %}
-<p>Nie je prihlásený žiadny používateľ.</p>
-{% endif %}
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

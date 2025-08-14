@@ -56,7 +56,6 @@
     padding: 0;
 }
 
-/* Dropdown container */
 .navbar-dropdown {
     position: relative;
     display: inline-flex;
@@ -78,7 +77,7 @@
     opacity: 0;
     visibility: hidden;
     transform: translateY(6px) scale(0.98);
-    transform-origin: top right;
+    transform-origin: top left;
     transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
     z-index: 1000;
     pointer-events: none;
@@ -98,10 +97,9 @@
     content: "";
     position: absolute;
     top: 100%;
-    right: 0;
+    left: 0;
     width: 240px;
     height: 14px;
-
 }
 
 .navbar-popup-item {
@@ -118,6 +116,68 @@
 
 .navbar-popup-item:hover,
 .navbar-popup-item:focus {
+    background: #f2f4f7;
+}
+
+.navbar-popup-item.has-submenu {
+    position: relative;
+}
+
+/* Submenu */
+.navbar-submenu {
+    --item-h: 36px;
+    --gap: 6px;
+    --pad: 8px;
+
+    position: absolute;
+    top: 0;
+    left: calc(100%);
+    min-width: 180px;
+    padding: var(--pad);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+    display: grid;
+    gap: var(--gap);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px) scale(0.98);
+    transform-origin: top left;
+    transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
+    z-index: 1100;
+    pointer-events: none;
+
+    /* Limit to 4 items */
+    max-height: calc((var(--item-h) * 4) + (var(--gap) * 3) + (var(--pad) * 2));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.navbar-popup-item.has-submenu:hover>.navbar-submenu,
+.navbar-popup-item.has-submenu:focus-within>.navbar-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition-delay: 0s;
+    pointer-events: auto;
+}
+
+.navbar-submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+}
+
+.navbar-submenu-item:hover {
     background: #f2f4f7;
 }
 

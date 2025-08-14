@@ -1,5 +1,5 @@
 window.addEventListener("popup:loaded", (e) => {
-    const container = e.detail.container; // popup body element
+    const container = e.detail.container;
 
     const input = container.querySelector("#searchInputDiagnosis");
     const resultsContainer = container.querySelector("#results");

@@ -28,7 +28,7 @@ def update_car(id):
         conn.execute("UPDATE auta SET evc = ? WHERE id = ?", (data['evc'], id))
         conn.commit()
         conn.close()
-        return redirect(url_for('main.settings'))
+        return redirect(url_for('car.cars_settings'))
 
     car = get_car(id)
     if not car:
@@ -42,7 +42,7 @@ def delete_car(id):
     conn.execute("DELETE FROM auta WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    return redirect(url_for('main.settings'))
+    return redirect(url_for('car.cars_settings'))
 
 def get_cars():
     conn = get_db_connection()
@@ -55,3 +55,10 @@ def get_car(id):
     row = conn.execute("SELECT * FROM auta WHERE id = ?", (id,)).fetchone()
     conn.close()
     return Car(row) if row else None
+
+
+@car_bp.route('/car/settings')
+@login_required
+def cars_settings():
+    cars = get_cars()
+    return render_template("fragments/cars.html", cars=cars)

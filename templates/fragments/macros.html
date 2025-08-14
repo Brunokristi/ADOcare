@@ -1,0 +1,15 @@
+<main-popup>
+    <div class="section">
+        <div class="lined-heading"><span>Makrá</span></div>
+        {% for macro in macros %}
+        <a href="{{ url_for('macro.update_macro', id=macro.id) }}" class="small-token" data-id="{{ macro.id }}"
+            data-nazov="{{ macro.nazov }}" data-skratka="{{ macro.skratka }}" data-farba="{{ macro.farba }}"
+            data-text="{{ macro.text }}">
+            {{ macro.nazov }}
+        </a>
+        {% endfor %}
+        <a class="text-button" href="{{ url_for('macro.create_macro') }}">
+            pridať makro <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+</main-popup>

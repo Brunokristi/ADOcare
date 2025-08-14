@@ -18,7 +18,7 @@ def create_macro():
         )
         conn.commit()
         conn.close()
-        return redirect(url_for('main.settings'))  # OK to redirect elsewhere
+        return redirect(url_for('macro.macros_settings'))
     return render_template("create/macro.html")
 
 @macro_bp.route('/macro/delete/<int:id>', methods=['POST'])
@@ -28,7 +28,7 @@ def delete_macro(id):
     conn.execute("DELETE FROM makra WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-    return redirect(url_for('main.settings'))
+    return redirect(url_for('macro.macros_settings'))
 
 @macro_bp.route('/macro/update/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -42,7 +42,7 @@ def update_macro(id):
         """, (data['nazov'], data['text'], data['skratka'], data['farba'], id))
         conn.commit()
         conn.close()
-        return redirect(url_for('main.settings'))
+        return redirect(url_for('macro.macros_settings'))
 
     macro = get_macro(id)
     if not macro:
@@ -60,3 +60,9 @@ def get_macro(id):
     row = conn.execute("SELECT * FROM makra WHERE id = ?", (id,)).fetchone()
     conn.close()
     return Macro(row) if row else None
+
+@macro_bp.route('/macros/settings')
+@login_required
+def macros_settings():
+    macros = get_macros()
+    return render_template("fragments/macros.html", macros=macros)

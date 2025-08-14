@@ -1,52 +1,43 @@
-{% extends "base.html" %}
-
-{% block title %}ADOS - detail{% endblock %}
-
-{% block content %}
-<h1>nové makro</h1>
-<div class="section">
-    <div class="lined-heading"><span>údaje</span></div>
-    <form id="macroForm" method="POST" action="{{ url_for('macro.update_macro', id=macro.id) }}">
-        <div class="form-group">
-            <label for="nazov">Názov</label>
-            <input type="text" name="nazov" id="nazov" value="{{ macro.nazov }}" required>
-        </div>
-    
-        <div class="form-group">
-            <label for="skratka">Skratka</label>
-            <input type="text" name="skratka" id="skratka" value="{{ macro.skratka }}">
-        </div>
-    
-        <div class="half-form-group">
+<main-popup>
+    <h1>nové makro</h1>
+    <div class="section">
+        <div class="lined-heading"><span>údaje</span></div>
+        <form id="macroForm" method="POST" action="{{ url_for('macro.update_macro', id=macro.id) }}">
             <div class="form-group">
-                <label for="colorPicker">Farba</label>
-                <input type="color" id="colorPicker" name="colorPicker" value="{{ macro.farba }}">
+                <label for="nazov">Názov</label>
+                <input type="text" name="nazov" id="nazov" value="{{ macro.nazov }}" required>
             </div>
-    
+        
             <div class="form-group">
-                <input type="text" id="farba" name="farba" readonly value="{{ macro.farba }}">
+                <label for="skratka">Skratka</label>
+                <input type="text" name="skratka" id="skratka" value="{{ macro.skratka }}">
             </div>
-        </div>
-    
-        <div class="form-group">
-            <label for="text">Text makra</label>
-            <textarea name="text" id="text" rows="15" required>{{ macro.text }}</textarea>
-        </div>
-    
-        <button type="submit" class="btn">Uložiť</button>
-    </form>
+        
+            <div class="half-form-group">
+                <div class="form-group">
+                    <label for="colorPicker">Farba</label>
+                    <input type="color" id="colorPicker" name="colorPicker" value="{{ macro.farba }}">
+                </div>
+        
+                <div class="form-group">
+                    <input type="text" id="farba" name="farba" readonly value="{{ macro.farba }}">
+                </div>
+            </div>
+        
+            <div class="form-group">
+                <label for="text">Text makra</label>
+                <textarea name="text" id="text" rows="15" required>{{ macro.text }}</textarea>
+            </div>
+        
+            <button type="submit" class="btn">Uložiť</button>
+        </form>
 
-    <form method="POST" action="{{ url_for('macro.delete_macro', id=macro.id) }}" style="display:inline;">
-        <button type="submit" class="btn warning">Vymazať</button>
-    </form>
-</div>
-
-{% endblock %}
+        <form method="POST" action="{{ url_for('macro.delete_macro', id=macro.id) }}" style="display:inline;">
+            <button type="submit" class="btn warning">Vymazať</button>
+        </form>
+    </div>
+</main-popup>
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/create/macro.css') }}">
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/details/macro.js') }}"></script>
 {% endblock %}

@@ -37,6 +37,23 @@ def dashboard():
         return redirect(url_for("main.index"))
     return render_template("dashboard.html", months_dekurz=months_dekurz)
 
+@main.route("/dekurzy")
+@login_required
+def dekurzy():
+    months_dekurz = get_months_by_nurse()
+    if 'nurse' not in session:
+        return redirect(url_for("main.index"))
+    return render_template("fragments/dekurzy.html", months_dekurz=months_dekurz)
+
+@main.route("/routes")
+@login_required
+def routes():
+    months_dekurz = get_months_by_nurse()
+    if 'nurse' not in session:
+        return redirect(url_for("main.index"))
+    return render_template("fragments/routes.html", months_dekurz=months_dekurz)
+
+
 @main.route("/favicon.ico")
 def favicon():
     return redirect(url_for('static', filename='favicon.ico'))

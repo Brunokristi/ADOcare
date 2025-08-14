@@ -22,6 +22,8 @@
     <script src="{{ url_for('static', filename='js/details/doctors.js') }}"></script>
     <script src="{{ url_for('static', filename='js/create/doctors.js') }}"></script>
     <script src="{{ url_for('static', filename='js/details/diagnoses.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/create/macro.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/create/car.js') }}"></script>
 
 </head>
 
@@ -44,31 +46,6 @@
                 {% if current_user.is_authenticated %}
                 {% if session.get('nurse')%}
 
-                <div class="navbar-dropdown">
-                    <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.dashboard') }}" aria-haspopup="true"
-                        aria-expanded="false" title="Dashboard - rýchle odkazy">
-                        <i style="color: #333;" class="bi bi-grid-3x3-gap"></i>
-                    </a>
-                
-                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" role="menuitem" title="Otvoriť dashboard">
-                            <i class="bi bi-grid-3x3-gap"></i> Dashboard
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
-                            title="Prejsť na pacientov">
-                            <i class="bi bi-people"></i> Pacienti
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Otvoriť nastavenia">
-                            <i class="bi bi-gear"></i> Nastavenia
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
-                            title="Otvoriť dashboard v novom okne">
-                            <i class="bi bi-plus-square"></i> Nové okno
-                        </a>
-                    </div>
-                </div>
-                
-
                 <a href="{{ url_for('main.dashboard') }}" class="navbar-button" title="Prejsť na domovskú stránku">
                     <i style="color: #333;" class="bi bi-house"></i>
                 </a>
@@ -78,13 +55,9 @@
                     <i style="color: #333;" class="bi bi-plus"></i>
                 </a>
 
-                <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" target="_blank" title="Pacienti">
-                    <i style="color: #333;" class="bi bi-people"></i>
-                </a>
-
                 <div class="navbar-dropdown">
-                    <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.settings') }}" aria-haspopup="true"
-                        aria-expanded="false" title="Nastavenia">
+                    <a class="navbar-button navbar-dropdown-trigger" href="#" aria-haspopup="true" aria-expanded="false"
+                        title="Nastavenia">
                         <i style="color: #333;" class="bi bi-gear"></i>
                     </a>
                 
@@ -96,15 +69,92 @@
                             title="Prehľadávať diagnózy">
                             <i class="bi bi-file-medical"></i> Diagnózy
                         </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Vytvotiť makrá">
+                        <a class="navbar-popup-item" href="{{ url_for('macro.macros_settings') }}" role="menuitem"
+                            title="Vytvotiť makrá" data-popup>
                             <i class="bi-pencil-square"></i> Makrá
                         </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
-                            title="Upraviť autá">
+                        <a class="navbar-popup-item" href="{{ url_for('car.cars_settings') }}" target="_blank" role="menuitem"
+                            data-popup title="Upraviť autá">
                             <i class="bi bi-speedometer"></i> Autá
                         </a>
                     </div>
                 </div>
+
+                
+                <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" target="_blank" title="Pacienti">
+                    <i style="color: #333;" class="bi bi-people"></i>
+                </a>
+
+                
+
+                <div class="navbar-dropdown">
+                    <a class="navbar-button navbar-dropdown-trigger" href="#" aria-haspopup="true"
+                        aria-expanded="false" title="Dashboard - rýchle odkazy">
+                        <i style="color: #333;" class="bi bi-grid-3x3-gap"></i>
+                    </a>
+                
+                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
+                        <div class="navbar-popup-item has-submenu">
+                            <i class="bi bi-journal-text"></i> Dekurzy
+                            <div class="navbar-submenu" role="menu">
+                                <a class="navbar-submenu-item" href="{{ url_for('month.create_month') }}"><i class="bi bi-plus"></i> Nový dekurz</a>
+                                {% if months_dekurz %}
+                                {% for month_dekurz in months_dekurz %}
+                                <a href="#" class="navbar-submenu-item month-select" data-id="{{ month_dekurz.id }}"
+                                    data-mesiac="{{ month_dekurz.mesiac }}" data-rok="{{ month_dekurz.rok }}"
+                                    data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie="{{ month_dekurz.vysetrenie_start }}"
+                                    data-vypisanie="{{ month_dekurz.vypis_start }}" data-posledny-den="{{ month_dekurz.posledny_den }}">
+                                    {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
+                                </a>
+                                {% endfor %}
+                                {% else %}
+                                <div class="navbar-submenu-item" style="opacity:.6;cursor:default">
+                                    Žiadne dekurzy
+                                </div>
+                                {% endif %}
+                            </div>                    
+                        </div>
+                        <div class="navbar-popup-item has-submenu">
+                            <i class="bi bi-cursor"></i> Cesty
+                            <div class="navbar-submenu" role="menu">
+                                {% if months_dekurz %}
+                                {% for month_dekurz in months_dekurz %}
+                                <a href="#" class="navbar-submenu-item transport-select" data-id="{{ month_dekurz.id }}"
+                                    data-mesiac="{{ month_dekurz.mesiac }}" data-rok="{{ month_dekurz.rok }}"
+                                    data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie="{{ month_dekurz.vysetrenie_start }}"
+                                    data-vypisanie="{{ month_dekurz.vypis_start }}" data-posledny-den="{{ month_dekurz.posledny_den }}">
+                                    {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
+                                </a>
+                                {% endfor %}
+                                {% else %}
+                                <div class="navbar-submenu-item" style="opacity:.6;cursor:default">
+                                    Žiadne dekurzy
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Otvoriť nastavenia">
+                            <i class="bi bi-plus-circle"></i> Bodovanie
+                        </a>
+                        <div class="navbar-popup-item has-submenu" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                            <i class="bi bi-file-earmark"></i> Dokumenty
+                        
+                            <!-- Second-level menu -->
+                            <div class="navbar-submenu" role="menu" aria-label="Dokumenty odkazy">
+                                <a href="{{ url_for('documents.showNavrh') }}" class="navbar-submenu-item" role="menuitem">
+                                    Návrh
+                                </a>
+                                <a href="{{ url_for('documents.showDohoda') }}" class="navbar-submenu-item" role="menuitem">
+                                    Dohoda
+                                </a>
+                                <a href="{{ url_for('documents.showZaznam') }}" class="navbar-submenu-item" role="menuitem">
+                                    Ošetrovateľský záznam
+                                </a>
+                            </div>         
+                        </div>
+                    </div>
+                </div>
+
                 {% endif %}
                 {% endif %}
         
