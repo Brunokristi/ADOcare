@@ -76,10 +76,9 @@ def get_doctors_all():
     conn.close()
     return [dict(row) for row in rows]
 
-
 def get_doctors():
     conn = get_db_connection()
-    rows = conn.execute("SELECT * FROM doktori").fetchall()
+    rows = conn.execute("SELECT * FROM doktori ORDER BY meno ASC").fetchall()
     conn.close()
     return [Doctor(row) for row in rows]
 

@@ -1,6 +1,10 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const input = document.getElementById("searchInput");
-    const resultsContainer = document.getElementById("results");
+window.addEventListener("popup:loaded", (e) => {
+    const container = e.detail.container; // popup body element
+
+    const input = container.querySelector("#searchInputDiagnosis");
+    const resultsContainer = container.querySelector("#results");
+
+    if (!input || !resultsContainer) return; // not the diagnosis search page
 
     input.addEventListener("input", function () {
         const query = input.value.trim();

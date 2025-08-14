@@ -78,4 +78,4 @@ def get_diagnosis(id):
 @login_required
 def list_diagnoses():
     diagnoses = get_diagnoses()
-    return render_template("details/diagnoses.html", diagnoses=diagnoses)
+    return render_template("fragments/diagnoses.html", diagnoses=diagnoses)

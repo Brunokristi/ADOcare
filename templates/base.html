@@ -19,8 +19,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{ url_for('static', filename='js/popup.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/details/doctors.js') }}"></script>
     <script src="{{ url_for('static', filename='js/create/doctors.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/details/diagnoses.js') }}"></script>
 
 </head>
 
@@ -42,12 +43,45 @@
         
                 {% if current_user.is_authenticated %}
                 {% if session.get('nurse')%}
-                <!-- Open dashboard in new tab -->
+
+                <div class="navbar-dropdown">
+                    <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.dashboard') }}" aria-haspopup="true"
+                        aria-expanded="false" title="Dashboard - rýchle odkazy">
+                        <i style="color: #333;" class="bi bi-grid-3x3-gap"></i>
+                    </a>
+                
+                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
+                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" role="menuitem" title="Otvoriť dashboard">
+                            <i class="bi bi-grid-3x3-gap"></i> Dashboard
+                        </a>
+                        <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
+                            title="Prejsť na pacientov">
+                            <i class="bi bi-people"></i> Pacienti
+                        </a>
+                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Otvoriť nastavenia">
+                            <i class="bi bi-gear"></i> Nastavenia
+                        </a>
+                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
+                            title="Otvoriť dashboard v novom okne">
+                            <i class="bi bi-plus-square"></i> Nové okno
+                        </a>
+                    </div>
+                </div>
+                
+
+                <a href="{{ url_for('main.dashboard') }}" class="navbar-button" title="Prejsť na domovskú stránku">
+                    <i style="color: #333;" class="bi bi-house"></i>
+                </a>
+
                 <a href="{{ url_for('main.dashboard') }}" class="navbar-button" target="_blank" id="newTab"
                     title="Nové okno">
                     <i style="color: #333;" class="bi bi-plus"></i>
                 </a>
-        
+
+                <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" target="_blank" title="Pacienti">
+                    <i style="color: #333;" class="bi bi-people"></i>
+                </a>
+
                 <div class="navbar-dropdown">
                     <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.settings') }}" aria-haspopup="true"
                         aria-expanded="false" title="Nastavenia">
@@ -55,11 +89,10 @@
                     </a>
                 
                     <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <a href="{{ url_for('doctor.doctor_settings') }}" class="navbar-popup-item" data-popup
-                            data-popup-title="Pridať doktora">
+                        <a href="{{ url_for('doctor.doctor_settings') }}" class="navbar-popup-item" data-popup>
                             <i class="bi bi-person"></i> Doktori
                         </a>
-                        <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
+                        <a class="navbar-popup-item" href="{{ url_for('diagnosis.list_diagnoses') }}" role="menuitem" data-popup
                             title="Prehľadávať diagnózy">
                             <i class="bi bi-file-medical"></i> Diagnózy
                         </a>
@@ -69,40 +102,6 @@
                         <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
                             title="Upraviť autá">
                             <i class="bi bi-speedometer"></i> Autá
-                        </a>
-                    </div>
-                </div>
-        
-                <!-- Patients -->
-                <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" title="Pacienti" data-popup
-                    data-popup-title="Pacienti">
-                    <i style="color: #333;" class="bi bi-people"></i>
-                </a>
-                
-        
-                <!-- Dashboard dropdown -->
-                <div class="navbar-dropdown">
-                    <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.dashboard') }}" aria-haspopup="true"
-                        aria-expanded="false" title="Dashboard - rýchle odkazy">
-                        <i style="color: #333;" class="bi bi-box"></i>
-                    </a>
-        
-                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" role="menuitem"
-                            title="Otvoriť dashboard">
-                            <i class="bi bi-grid-3x3-gap"></i> Dashboard
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
-                            title="Prejsť na pacientov">
-                            <i class="bi bi-people"></i> Pacienti
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem"
-                            title="Otvoriť nastavenia">
-                            <i class="bi bi-gear"></i> Nastavenia
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
-                            title="Otvoriť dashboard v novom okne">
-                            <i class="bi bi-plus-square"></i> Nové okno
                         </a>
                     </div>
                 </div>

@@ -1,0 +1,21 @@
+<main-popup>
+<h1>Zoznam diagnóz</h1>
+    <div class="section">
+        <div class="form-group">
+            <input type="text" id="searchInputDiagnosis" placeholder="Vyhľadaj diagnózu podľa názvu alebo kódu..." />
+        </div>
+
+        <div id="results">
+            {% for diagnosis in diagnoses %}
+            <div class="small-token">
+                {{ diagnosis.kod }} — {{ diagnosis.nazov }}
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</main-popup>
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/details/lists.css') }}">
+{% endblock %}
