@@ -1,0 +1,16 @@
+<main-popup>
+    <div class="section">
+        <div class="lined-heading"><span>Zdravotný personál</span></div>
+        {% for nurse in nurses %}
+        <a href="{{ url_for('nurse.update_nurse', id=nurse.id) }}" class="small-token" data-id="{{ nurse.id }}"
+            data-meno="{{ nurse.meno }}" data-kod="{{ nurse.kod }}" data-uvazok="{{ nurse.uvazok }}"
+            data-vozidlo="{{ nurse.vozidlo }}" data-ados="{{ nurse.ados }}" data-phone_number="{{ nurse.phone_number }}">
+            {{ nurse.meno }}
+        </a>
+        {% endfor %}
+
+        <a class="text-button" href="{{ url_for('nurse.create_nurse') }}">
+            pridať pracovníka <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+</main-popup>

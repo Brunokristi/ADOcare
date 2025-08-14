@@ -45,10 +45,30 @@
                     <i style="color: #333;" class="bi bi-plus"></i>
                 </a>
         
-                <!-- Settings -->
-                <a class="navbar-button" href="{{ url_for('main.settings') }}" title="Nastavenia">
-                    <i style="color: #333;" class="bi bi-gear"></i>
-                </a>
+                <div class="navbar-dropdown">
+                    <a class="navbar-button navbar-dropdown-trigger" href="{{ url_for('main.settings') }}" aria-haspopup="true"
+                        aria-expanded="false" title="Nastavenia">
+                        <i style="color: #333;" class="bi bi-gear"></i>
+                    </a>
+                
+                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
+                        <a href="{{ url_for('nurse.nurses_settings') }}" class="navbar-popup-item" data-popup
+                            data-popup-title="Zdravotný personál">
+                            <i class="bi bi-person"></i> Zdravotný personál
+                        </a>
+                        <a class="navbar-popup-item" href="{{ url_for('patient.list_patients') }}" role="menuitem"
+                            title="Prejsť na pacientov">
+                            <i class="bi bi-people"></i> Pacienti
+                        </a>
+                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Otvoriť nastavenia">
+                            <i class="bi bi-gear"></i> Nastavenia
+                        </a>
+                        <a class="navbar-popup-item" href="{{ url_for('main.dashboard') }}" target="_blank" role="menuitem"
+                            title="Otvoriť dashboard v novom okne">
+                            <i class="bi bi-plus-square"></i> Nové okno
+                        </a>
+                    </div>
+                </div>
         
                 <!-- Patients -->
                 <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" title="Pacienti" data-popup
@@ -131,7 +151,7 @@
         const settingsUrl = "{{ url_for('main.settings') }}";
         const logoutUrl = "{{ url_for('auth.logout') }}";
 
-        {% if 'nurse' in session %}
+        {% if session.get('nurse') %}
             const nurseUrl = "{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}";
         {% else %}
             const nurseUrl = "";
@@ -147,20 +167,14 @@
     <div id="floating-popup" class="fp is-hidden" role="dialog" aria-modal="false" aria-hidden="true"
         aria-label="Plávajúce okno">
         <div class="fp__header" id="fpDragHandle">
-            <div class="fp__title" id="fpTitle">Testovacie okno</div>
+            <div class="fp__title" id="fpTitle"></div>
             <div class="fp__actions">
-                <button class="fp__btn" type="button" id="fpMinimizeBtn" title="Minimalizovať">
-                    <i class="bi bi-dash"></i>
-                </button>
                 <button class="fp__btn" type="button" id="fpCloseBtn" title="Zavrieť">
-                    <i class="bi bi-x-lg"></i>
+                    <i class="bi bi-x"></i>
                 </button>
             </div>
         </div>
         <div class="fp__body" id="fpBody" tabindex="0">
-            <p>Ahoj! Toto je <strong>ukážkové plávajúce okno</strong>.</p>
-            <p>Môžeš ho ťahať, minimalizovať a zatvoriť.</p>
-            <p>Po potvrdení, že funguje, tu vieme načítať obsah z ľubovoľnej routy.</p>
         </div>
         <div class="fp__resizer" id="fpResizer" title="Zmeniť veľkosť"></div>
     </div>

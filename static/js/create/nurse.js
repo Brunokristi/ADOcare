@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (res.ok) {
                     showMessage("Údaje boli uložené.");
                     setTimeout(() => {
-                        window.location.href = "/nastavenia";
+                        window.location.href = "/nurses/settings" || "/";
                     }, 1000);
                 } else {
                     showMessage("Chyba pri ukladaní údajov.");

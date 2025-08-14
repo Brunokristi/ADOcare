@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (res.ok) {
                     showMessage("Údaje boli uložené.");
                     setTimeout(() => {
-                        const previous = document.referrer || "/";
+                        const previous = "/nurses/settings" || "/";
                         window.location.href = previous;
                     }, 500);
                 } else {

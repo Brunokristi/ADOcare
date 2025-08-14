@@ -65,7 +65,7 @@
 .navbar-popup {
     position: absolute;
     top: 110%;
-    right: 0;
+    left: 0;
     min-width: 180px;
     padding: 8px;
     background: #fff;
@@ -84,7 +84,6 @@
     pointer-events: none;
 }
 
-/* Show on hover or keyboard focus */
 .navbar-dropdown:hover .navbar-popup,
 .navbar-dropdown:focus-within .navbar-popup,
 .navbar-dropdown.open .navbar-popup {
@@ -95,20 +94,16 @@
     pointer-events: auto;
 }
 
-/* Forgiving hover buffer — invisible area between trigger & popup */
 .navbar-dropdown::after {
     content: "";
     position: absolute;
     top: 100%;
     right: 0;
     width: 240px;
-    /* match popup width or slightly larger */
     height: 14px;
-    /* adjust buffer size */
-    /* stays transparent; just keeps hover alive */
+
 }
 
-/* Popup items */
 .navbar-popup-item {
     display: flex;
     align-items: center;
@@ -126,14 +121,15 @@
     background: #f2f4f7;
 }
 
-/* Minimal styles so the window shows and can be toggled */
 .fp {
     position: fixed;
     top: 100px;
     left: 100px;
-    width: 420px;
+    width: 70%;
     max-width: calc(100vw - 32px);
+    min-width: 300px;
     max-height: calc(100vh - 32px);
+    min-height: 100px;
     background: #fff;
     color: #333;
     border: 1px solid rgba(0, 0, 0, .1);
@@ -153,10 +149,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 10px;
+    padding: 2px 10px 2px 20px;
     cursor: move;
-    background: #f7f8fa;
+    background: #333;
     border-bottom: 1px solid rgba(0, 0, 0, .06);
+    color: #fff;
 }
 
 .fp__actions {
@@ -166,20 +163,18 @@
 
 .fp__btn {
     border: none;
-    background: transparent;
-    padding: 6px 8px;
+    padding: 3px 4px;
     border-radius: 8px;
     cursor: pointer;
-}
-
-.fp__btn:hover {
-    background: #eef1f5;
+    color: #fff;
+    font-size: 20px;
+    background: transparent;
 }
 
 .fp__body {
     padding: 10px;
     overflow: auto;
-    height: 240px;
+    height: 100%;
 }
 
 .fp__resizer {

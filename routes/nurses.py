@@ -43,7 +43,7 @@ def update_nurse(id):
         ))
         conn.commit()
         conn.close()
-        return redirect(url_for('main.settings'))
+        return redirect(url_for('nurse.nurses_settings'))
 
     cars = get_cars()
     companies = get_companies()
@@ -90,3 +90,9 @@ def select_nurse():
     }
 
     return jsonify(success=True)
+
+@nurse_bp.route('/nurses/settings')
+@login_required
+def nurses_settings():
+    nurses = get_nurses()
+    return render_template("fragments/nurses.html", nurses=nurses)
