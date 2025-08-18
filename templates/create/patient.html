@@ -47,11 +47,6 @@
             <input type="text" id="mesto" name="mesto" autocomplete="off">
         </div>
 
-        <div class="form-group">
-            <label>Vyber na mape</label>
-            <div id="map" style="height: 300px;">
-        </div>
-
         <input type="hidden" name="sestra" value="{{ session['nurse']['id'] }}">
        
         <div class="form-group">
@@ -85,6 +80,11 @@
         <div class="form-group">
             <label for="cislo_dekurzu">Číslo dekurzu</label>
             <input type="number" name="cislo_dekurzu" value="1">
+        </div>
+
+        <div class="form-group">
+            <label>Adresa na mape</label>
+            <div id="map" style="height: 300px;">
         </div>
 
         <button type="submit" class="btn">Pridať</button>

@@ -10,19 +10,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const mapElement = document.getElementById('map');
     let map, marker;
+    const orsApiKey = '5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d';
 
-    if (mapElement) {
+    if (mapElement && addressInput) {
         map = L.map('map');
         const bounds = L.latLngBounds([
             [48.2717, 19.8236],  // Fiľakovo
             [48.3321, 19.6675],  // Lučenec
-            [48.3840, 20.0225]   // Rimavská Sobota
+            [48.3840, 20.0225],  // Rimavská Sobota
         ]);
         map.fitBounds(bounds);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+
+        // Klik na mapu – reverse geocoding
+        map.on('click', function (e) {
+            if (marker) marker.remove();
+            marker = L.marker(e.latlng).addTo(map);
+
+            fetch(`https://api.openrouteservice.org/geocode/reverse?api_key=${orsApiKey}&point.lat=${e.latlng.lat}&point.lon=${e.latlng.lng}&size=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.features && data.features.length > 0) {
+                        const label = data.features[0].properties.label;
+                        addressInput.value = label;
+                        if (suggestionsContainer) suggestionsContainer.style.display = "none";
+                    }
+                })
+                .catch(err => {
+                    console.error("ORS reverse geocoding error:", err);
+                });
+        });
     }
 
     form.addEventListener("submit", function (e) {
