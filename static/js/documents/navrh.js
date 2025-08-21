@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const rodneCislo = document.getElementById("rodneCislo");
     const zdravotnickeZariadenie = document.getElementById("zdravotnickeZariadenie");
     const soSidlomV = document.getElementById("soSidlomV");
-    const kodPoistovne  = document.getElementById("kodPoistovne");
+    const kodPoistovne = document.getElementById("kodPoistovne");
     const epikriza = document.getElementById("epikriza");
     const sesterskaDiagnoza = document.getElementById("sesterskaDiagnoza");
     const lekarskaDiagnoze = document.getElementById("lekarskaDiagnoze");
@@ -26,15 +26,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     printButton.addEventListener("click", onPrinting);
 
-    function checkInput(input, massage){
-        if (input.value.trim() === ""){
-            showMessage("Prosím vyplňte povinne pole: \"" + massage + "\"")
+    function checkInput(input, message) {
+        if (!input) return true;
+
+        if (input.value.trim() === "") {
+            input.classList.add("error");
             return true;
+        } else {
+            input.classList.remove("error");
+            return false;
         }
-        return false;
     }
 
-    function onPrinting(){
+    function onPrinting() {
         if (checkInput(zdravotnickeZariadenie, "Zdravotnícke zariadenie") ||
             checkInput(soSidlomV, "So sídlom v") ||
             checkInput(patientSearch, "Мeno, priezvisko, titul pacienta/pacientky") ||
@@ -42,9 +46,9 @@ document.addEventListener("DOMContentLoaded", function () {
             checkInput(lekarskaDiagnoze, "Lekárská diagnóza") ||
             checkInput(sesterskaDiagnoza, "Sestrská diagnóza") ||
             checkInput(lekar, "Meno, priezvisko lekára, ktorý ošetrovateĺskú starostlivosť navrhoval" ||
-            checkInput(currentDate, "Dátum"))){
-                return;
-            }
+                checkInput(currentDate, "Dátum"))) {
+            return;
+        }
 
         const formData = new FormData(mainForm);
         const keysToDelete = ['duration', 'zdravotnickeZariadenie', 'soSidlomV', 'patientSearch', 'lekar', 'currentDate'];
@@ -82,21 +86,21 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             return response.json();
         })
-        .then(data => {
-            console.log(data);
-            zdravotnickeZariadenie.value = data.nazov;
-            soSidlomV.value = data.ulica + ", " + data.mesto;
+            .then(data => {
+                console.log(data);
+                zdravotnickeZariadenie.value = data.nazov;
+                soSidlomV.value = data.ulica + ", " + data.mesto;
 
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
 
-            currentDate.value = `${day}.${month}.${year}`;
-        })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-        });
+                currentDate.value = `${day}.${month}.${year}`;
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
     }
 
     function getSelectedRadioIndex() {
@@ -141,9 +145,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             clearPatientDetails();
                             fillPatientDetails(data);
                         })
-                        .catch(error => {
-                            console.error('Fail:', error);
-                        });
+                            .catch(error => {
+                                console.error('Fail:', error);
+                            });
                     });
                     suggestionsContainer.appendChild(item);
                 });
@@ -155,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    function clearPatientDetails(){
+    function clearPatientDetails() {
         lekar.value = "";
         bydliskoPrechodne.value = "";
         epikriza.value = "";
@@ -171,8 +175,8 @@ document.addEventListener("DOMContentLoaded", function () {
         suggestionsContainer.style.display = "none";
     }
 
-    function fillPatientDetails(patient){
-        if ("bydliskoPrechodne" in patient){
+    function fillPatientDetails(patient) {
+        if ("bydliskoPrechodne" in patient) {
             bydliskoPrechodne.value = patient.bydliskoPrechodne;
             epikriza.value = patient.epikriza;
             lekarskaDiagnoze.value = patient.lekarskaDiagnoze;
@@ -187,12 +191,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         patientSearch.value = patient.meno;
         rodneCislo.innerText = patient.rodne_cislo;
-        bydliskoTrvale.innerText = patient.adresa || "-";
+        const address = patient.adresa || "-";
+        bydliskoTrvale.textContent = address.length > 20
+            ? address.substring(0, 50) + "…"
+            : address;
 
         // parsing and substituting poistovna code
-        if (parseInt(patient.poistovnaFirstCode) === 25){
+        if (parseInt(patient.poistovnaFirstCode) === 25) {
             kodPoistovne.innerText = 2521
-        } else if (parseInt(patient.poistovnaFirstCode) === 24){
+        } else if (parseInt(patient.poistovnaFirstCode) === 24) {
             kodPoistovne.innerText = 2400
         } else {
             kodPoistovne.innerText = 2700
@@ -224,8 +231,16 @@ document.addEventListener("DOMContentLoaded", function () {
             suggestionsContainer.style.display = "none";
         }
     }
-    flatpickr(currentDate, {
-        dateFormat: "d.m.Y",
-        locale: "sk"
-    });
+
+    if (currentDate && window.flatpickr) {
+        flatpickr(currentDate, {
+            dateFormat: "d.m.Y",
+            locale: flatpickr.l10ns.sk,
+            allowInput: true,
+            defaultDate: currentDate.value || new Date(),
+            appendTo: currentDate.parentElement,
+            static: true,
+            position: "below"
+        });
+    }
 });

@@ -1,112 +1,258 @@
-@media print {
-    body {
-      background: white;
-      color: black;
-      margin: 0;
-      padding: 0;
-      line-height: 2;
-    }
+:root {
+  --page-w: 210mm;
+  --page-h: 297mm;
+  --margin: 18mm;
+  --leading: 1.35;
+  --font-body: "Times New Roman", Times, serif;
+  --font-size: 11.5pt;
+  --hair: 0.3mm;
+}
 
-    nav, footer, button {
-      display: none;
-    }
+html,
+body {
+  height: 100%
+}
 
-    label, p, input {
-        margin-right: 0;
-        margin-top: 0;
-        margin-bottom: 0;
-        line-height: 1;
-        margin-left: 0;
-        margin: 0;
-        font-size: 12pt;
-        font-family: 'Times New Roman', Times, serif;
-        color: rgb(0, 0, 0);
-    }
+body {
+  margin: 0;
+  background: #f1f1f1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+  line-height: var(--leading);
+}
 
-    h1 {
-      margin: 20px 0;
-      font-size: 13pt;
-      font-family: 'Times New Roman', Times, serif;
-      color: rgb(0, 0, 0);
-      text-align: center;
-      text-transform: none;
-      font-weight: normal;
-    }
+.page {
+  width: var(--page-w);
+  height: var(--page-h);
+  margin: 10mm auto;
+  background: #fff;
+  box-shadow: 0 2mm 8mm rgba(0, 0, 0, .12);
+  position: relative;
+  box-sizing: border-box;
+  padding: var(--margin);
+}
 
-    .no-print {
-      display: none;
-    }
+/* Typography */
+h1 {
+  text-align: center;
+  font-weight: 700;
+  font-size: 14pt;
+  margin: 0 0 7mm 0
+}
 
-    input[type="text"] {
-        border: 1px solid #ffffff;
-        background-color: #fff;
-        color: #000;
-        font-size: 12pt;
-    }
+p {
+  margin: 0 0 3.2mm 0;
+  hyphens: auto
+}
 
-    .inline {
-        white-space: nowrap;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-    }
+.small {
+  font-size: 10.5pt
+}
 
-    .inline-form {
-        white-space: nowrap;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-    }
+/* Layout helpers */
+.block {
+  margin-bottom: 3.5mm
+}
 
-    @page {
-        margin: 0;
-    }
+.inline {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  column-gap: 3mm;
+  align-items: end
+}
 
-    .special-margin {
-        margin-right: 200px
-    }
+.inline-2 {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 3mm;
+  align-items: end
+}
 
-    .special-margin-bottom {
-        margin-bottom: 40px
-    }
+label {
+  white-space: nowrap
+}
 
-    .sign{
-      justify-content: space-between;
-      text-align: center;
-      align-items: flex-start;
-      position: absolute;
-    }
+/* Inputs */
+input[type="text"] {
+  font: inherit;
+  line-height: 1.2;
+  border: none;
+  border-bottom: var(--hair) solid #000;
+  padding: .5mm 0;
+  background: transparent;
+  outline: none
+}
 
-    .footer {
-        position: absolute;
-        bottom: 0;
-        left: 10;
-        right: 10;
-        height: 150px;
-        text-align: center;
-        padding: 10px;
-    }
+textarea.multiline {
+  width: 100%;
+  font: inherit;
+  line-height: 1.35;
+  padding: .8mm 0 .2mm 0;
+  border: none;
+  border-bottom: var(--hair) solid #000;
+  background: transparent;
+  resize: vertical
+}
+
+.underlined {
+  border-bottom: var(--hair) solid #000;
+  min-height: 6mm
+}
+
+.fill {
+  width: 100%
+}
+
+.w-40 {
+  width: 40mm
+}
+
+.w-60 {
+  width: 60mm
+}
+
+.w-80 {
+  width: 80mm
+}
+
+/* Suggestions dropdown */
+.inline-form {
+  position: relative
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #5C9EAD;
+  border-radius: 12px;
+  display: none;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000
+}
+
+.suggestion-item {
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #5C9EAD
+}
+
+.suggestion-item:hover {
+  background: #f0f0f0
+}
+
+.selected-patient {
+  display: none;
+  margin-top: 2mm
+}
+
+/* Checkboxes & radio */
+.checkboxes {
+  margin: 2mm 0 4mm 0;
+  display: grid;
+  row-gap: 1mm
+}
+
+.checkbox-container {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  column-gap: 3mm
+}
+
+.checkbox-container input {
+  transform: translateY(1mm)
+}
+
+.checkbox-container .pct {
+  white-space: nowrap
 }
 
 .radio-group {
-  display: flex;
-  padding: 5px 10px;
-  border-radius: 4px;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  column-gap: 10mm;
+  row-gap: 2mm;
+  margin-top: 2mm
 }
 
 .radio-option {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-family: sans-serif;
-  font-size: 14px;
-  color: #000;
-  white-space: nowrap;
+  gap: 3mm
 }
 
-.radio-option input[type="radio"] {
+/* Signatures/footer */
+.signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20mm;
+  margin-top: 12mm;
+  align-items: end
+}
+
+.sig-line {
+  border-bottom: var(--hair) solid #000;
+  height: 8mm
+}
+
+.sig-caption {
+  text-align: center;
+  margin-top: 1mm
+}
+
+/* Buttons & errors */
+.btn {
+  background: #5C9EAD;
+  color: #fff;
+  padding: 8px 20px;
+  border: 0;
+  border-radius: 20px;
+  font-size: 16px;
   cursor: pointer;
+  margin: 20px 0;
+  min-width: 100px
+}
+
+.btn:hover {
+  background: #3E7C8E
+}
+
+.error {
+  border-bottom: 0.3mm solid red !important;
+  background: #ffecec
+}
+
+/* Flatpickr overlap */
+.flatpickr-calendar {
+  z-index: 10000
+}
+
+/* Print rules */
+@media print {
+  @page {
+    size: A4;
+    margin: 0
+  }
+
+  body {
+    background: transparent
+  }
+
+  .page {
+    margin: 0;
+    box-shadow: none
+  }
+
+  .no-print,
+  nav,
+  footer,
+  button {
+    display: none !important
+  }
 }

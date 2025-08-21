@@ -90,13 +90,46 @@ label {
   white-space: nowrap;
 }
 
-input[type="text"] {
-  font: inherit;
+#patientSearch {
+  background-color: #5c9ead32 !important;
+  padding: 0.5mm 1mm;
+  border: none;
+  border-radius: 20px;
+
+}
+
+input[type="text"],
+.input {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 14px;
   line-height: 1.2;
   border: none;
   padding: 0.5mm 0;
   outline: none;
   background: transparent;
+}
+
+textarea.multiline {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  font-style: italic;
+  width: 100%;
+  line-height: 1.35;
+  border: none;
+  resize: none;
+}
+
+textarea:focus {
+  border: none;
+  outline: none;
+}
+
+.checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .w-40 {
@@ -216,6 +249,311 @@ input[type="text"] {
 .error {
   border-bottom: 0.3mm solid red !important;
   background-color: #ffecec;
+}
+
+.panel {
+  border: 0.35mm solid #000;
+  padding: 3mm;
+}
+
+.section-title {
+  text-align: center;
+  font-weight: 700;
+  margin: -2mm -2mm 2mm;
+  padding: 1mm 0;
+  border-bottom: 0.3mm solid #1b5e9b;
+}
+
+/* Title spacing closer to original */
+.title-paper {
+  margin-top: 2mm;
+  margin-bottom: 3mm;
+}
+
+/* Underlined output blocks (for <p> placeholders) */
+.underlined {
+  border-bottom: var(--hair) solid #000;
+  min-height: 6mm;
+  padding-bottom: 0.5mm;
+  margin: 0 3mm 0 0;
+}
+
+.wrap {
+  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  column-gap: 3mm;
+}
+
+/* Radio columns utility */
+.radio-group {
+  display: grid;
+  column-gap: 8mm;
+  row-gap: 2mm;
+  margin: 2mm 0;
+}
+
+.radio-group.cols-2 {
+  grid-template-columns: repeat(2, auto);
+}
+
+.radio-group.cols-3 {
+  grid-template-columns: repeat(3, auto);
+}
+
+.inline-form>label {
+  margin-right: 3mm;
+}
+
+.inline-form input[type="text"] {
+  min-width: 24mm;
+}
+
+.inline-form p {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+hr {
+  border: none;
+  border-top: 0.35mm solid #1b5e9b;
+  margin: 3mm 0;
+}
+
+/* ==== COMPACT MODE (adds ~15–25% more space) ==== */
+.page.compact {
+  --margin: 14mm;
+  /* was 18mm */
+  --font-size: 10.8pt;
+  /* was 11.5pt */
+  --leading: 1.25;
+  /* was 1.35 */
+}
+
+/* Title tighter */
+.page.compact .title-paper,
+.page.compact h1 {
+  font-size: 13pt;
+  margin: 0 0 4mm 0;
+}
+
+/* Panels & rules tighter */
+.page.compact .panel {
+  padding: 2mm;
+  margin: -0.25mm 0;
+}
+
+.page.compact hr {
+  margin: 2mm 0;
+  border-top-width: 0.25mm;
+}
+
+/* Grids tighter */
+.page.compact .inline,
+.page.compact .inline-2 {
+  column-gap: 2mm;
+}
+
+.page.compact .radio-group {
+  column-gap: 6mm;
+  row-gap: 1mm;
+}
+
+/* Inputs/lines slightly denser */
+.page.compact input[type="text"],
+.page.compact .input {
+  line-height: 1.1;
+}
+
+.page.compact .underlined {
+  min-height: 5mm;
+  padding-bottom: 0.3mm;
+}
+
+/* Chips/checkbox labels smaller */
+.page.compact .tag {
+  padding: .5mm 1.5mm;
+  margin-right: 2mm;
+  margin-bottom: 1.5mm;
+}
+
+/* Textareas shorter & denser */
+.page.compact textarea.multiline {
+  line-height: 1.25;
+  padding: 1mm;
+}
+
+.page.compact #subjektívnyPopisProblémovPacienta {
+  height: 30mm;
+}
+
+/* was ~5 rows */
+
+/* Narrow the fixed-width helpers a bit */
+.page.compact .w-40 {
+  width: 35mm;
+}
+
+.page.compact .w-60 {
+  width: 50mm;
+}
+
+.page.compact .w-80 {
+  width: 70mm;
+}
+
+/* Stamp box a bit smaller */
+.page.compact .stamp-box {
+  top: 6mm;
+  right: 8mm;
+  width: 54mm;
+  height: 16mm;
+}
+
+/* Signature area tighter */
+.page.compact .signatures {
+  column-gap: 14mm;
+  margin-top: 10mm;
+}
+
+.page.compact .sig-line {
+  height: 6mm;
+}
+
+/* ===== SUPER-COMPACT MODE (global) ===== */
+.page.sc {
+  --margin: 12mm;
+  --font-size: 10pt;
+  --leading: 1.18;
+}
+
+/* Title & stamp */
+.page.sc .title-paper {
+  font-size: 12.5pt;
+  margin: 0 0 3mm;
+}
+
+/* Panels & headings */
+.page.sc .panel {
+  padding: 1.6mm;
+  border-width: .28mm;
+}
+
+.page.sc .section-title {
+  margin: -1mm -1mm 1.4mm;
+  padding: .6mm 0;
+  border-bottom-width: .25mm;
+}
+
+/* Grids tighter */
+.page.sc .inline,
+.page.sc .inline-2 {
+  column-gap: 1.6mm;
+}
+
+.page.sc .inline-form.oneline {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 1.6mm;
+  align-items: end;
+}
+
+.page.sc .inline-form.oneline-2 {
+  display: grid;
+  grid-template-columns: max-content 1fr max-content 1fr;
+  column-gap: 1.6mm;
+  align-items: end;
+}
+
+.inline-form.oneline>label,
+.inline-form.oneline-2>label {
+  white-space: nowrap;
+}
+
+.inline-form.oneline>input[type="text"],
+.inline-form.oneline>p,
+.inline-form.oneline-2>input[type="text"],
+.inline-form.oneline-2>p {
+  min-width: 0;
+  width: 100%;
+}
+
+.page.sc input[type="text"],
+.page.sc .input {
+  line-height: 1.08;
+  font-size: 12px;
+}
+
+.page.sc select {
+  font-size: 12px;
+  line-height: 1.08;
+  padding: .4mm 1mm;
+  border: none;
+  border-bottom: var(--hair) solid #000;
+  background: transparent;
+}
+
+.page.sc .w-40 {
+  width: 32mm;
+}
+
+.page.sc .w-60 {
+  width: 46mm;
+}
+
+.page.sc .w-80 {
+  width: 64mm;
+}
+
+/* Textarea heights */
+.page.sc textarea.multiline {
+  line-height: 1.2;
+  padding: .8mm;
+  resize: vertical;
+}
+
+.page.sc .h-28mm {
+  height: 28mm;
+}
+
+/* Tiny radios/checkboxes */
+.page.sc input[type="checkbox"],
+.page.sc input[type="radio"] {
+  transform: scale(0.85);
+  transform-origin: left bottom;
+  margin-right: 1mm;
+  vertical-align: middle;
+}
+
+/* Radio lines */
+.radioline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6mm 8mm;
+  align-items: center;
+}
+
+.radioline .rd {
+  display: inline-flex;
+  align-items: center;
+  gap: 1mm;
+}
+
+/* Suggestions dropdown compact */
+.page.sc .suggestions {
+  border-radius: 10px;
+  max-height: 110px;
+}
+
+/* Misc */
+.page.sc hr {
+  margin: 1.6mm 0;
+  border-top-width: .25mm;
+}
+
+.inline-form p {
+  display: inline-block;
+  vertical-align: bottom;
 }
 
 @media print {

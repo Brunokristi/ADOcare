@@ -6,10 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dohoda </title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/sk.js"></script>
-
 </head>
 <body>
     <div class="page" id="page">
@@ -25,22 +21,22 @@
                 <div class="block inline-2 inline-form">
                     <label>Meno, priezvisko, titul poistenca:</label>
                     <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
-                        placeholder="Zadaj meno alebo rodné číslo..." />
+                        placeholder="Zadaj meno alebo rodné číslo..." autofocus/>
                     <div id="patient-suggestions" class="suggestions"></div>
                 </div>
 
                 <div id="selected-patient" class="selected-patient">
                     <div class="inline">
                         <label>Rodné číslo:</label>
-                        <div id="rodneCislo">&nbsp;
+                        <div id="rodneCislo" class="input">&nbsp;
                         </div>
                         <label>Číselný kód zdravotnej poisťovne:</label>
-                        <div id="kodPoistovne">&nbsp;
+                        <div id="kodPoistovne" class="input">&nbsp;
                         </div>
                     </div>
                     <div class="inline-2" style="margin-top: 2mm;">
                         <label>Miesto trvalého pobytu:</label>
-                        <div id="bydliskoTrvale">&nbsp;
+                        <div id="bydliskoTrvale" class="input">&nbsp;
                         </div>
                     </div>
                 </div>
@@ -101,7 +97,7 @@
                 <label>V/vo</label>
                 <input required type="text" id="mesto" name="mesto" class="w-80" />
                 <label>dňa:</label>
-                <input type="date" id="currentDate" placeholder="DD.MM.YYYY" maxlength="10">
+                <input type="text" id="currentDate" placeholder="DD.MM.YYYY" maxlength="10">
             </div>
 
             <div class="signatures">
@@ -125,8 +121,11 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/documents/dohoda.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 {% endblock %}
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/documents/dohoda.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/sk.js"></script>
 {% endblock %}
