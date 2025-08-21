@@ -204,7 +204,7 @@ class Road_manager:
                             sleep(self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds"))
                             self.tried_keys.clear()
                 else:
-                    return None
+                    raise
 
     def _get_open_route_service_client(self) -> Client:
         return self.clients[self.api_client_index]

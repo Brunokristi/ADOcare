@@ -25,7 +25,7 @@ from easy import Config, Logger
 from utils.roads_manager import Road_manager
 
 
-config = Config("Configs/config.json")
+config = Config(configPath="Configs/config.json", logger=Logger(2))
 Road_manager(config=config, logger=Logger())
 
 app = Flask(__name__)
