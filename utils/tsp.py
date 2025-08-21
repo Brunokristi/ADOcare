@@ -62,23 +62,24 @@ def simulate_schedule(den_id, patients, tsp_path, matrix, current_time, vypis_ti
 
             db_queue.put((den_id, patient["id"], current_time, assigned_vypis_time))
 
-def calculate_optimal_day_route_thread(day, data, start_point, current_time, vypis_time):
+def calculate_optimal_day_route_thread(road_manager:Road_manager, day, data, start_point, current_time, vypis_time):
     patients = data[day]["patients"]
     den_id = data[day]["den_id"]
 
     coords = [start_point] + [(p["longitude"], p["latitude"]) for p in patients]
 
     try:
-        test("tcp: 71")
-        matrix = Road_manager().execute_open_route_request(method_name="distance_matrix",
+        test("tcp: try request")
+        matrix = road_manager.execute_open_route_request(method_name="distance_matrix",
             locations=coords,
             profile='driving-car',
             metrics=['duration'],
             units='m'
         )["durations"]
-        test("finished")
+        success("tsp request finished!")
 
     except Exception as e:
+        failed(f"Error while executing tsp request:\n{e}")
         return
 
     n = len(coords)
@@ -98,8 +99,8 @@ def calculate_optimal_day_route_thread(day, data, start_point, current_time, vyp
     simulate_schedule(den_id, patients, tsp_path, matrix, current_time, vypis_time)
 
 def calculate_optimal_day_route(data, address):
-    long, lat = geocode_address(address)
-    start_point = (long, lat)
+    start_point = geocode_address(address)
+    inform(f"Start point is: {start_point}")
 
     current_time = datetime.strptime(session.get("month", {}).get("start_vysetrenie", "8:00"), "%H:%M")
     vypis_time = datetime.strptime(session.get("month", {}).get("start_vypis", "14:00"), "%H:%M")
@@ -107,9 +108,11 @@ def calculate_optimal_day_route(data, address):
     db_thread = threading.Thread(target=db_worker)
     db_thread.start()
 
+    road_manager = Road_manager()
+
     with ThreadPoolExecutor(max_workers=31) as executor:
         futures = [
-            executor.submit(calculate_optimal_day_route_thread, day, data, start_point, current_time, vypis_time)
+            executor.submit(calculate_optimal_day_route_thread, road_manager, day, data, start_point, current_time, vypis_time)
             for day in data
         ]
         for f in futures:
