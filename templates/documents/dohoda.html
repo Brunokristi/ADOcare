@@ -1,106 +1,355 @@
-{% extends "base.html" %}
+<!doctype html>
+<html lang="sk">
 
-{% block title %}ADOS - Dohoda{% endblock %}
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ADOS – Dohoda (print exact)</title>
+    <style>
+        /* ===== Page setup (A4) ===== */
+        :root {
+            --page-w: 210mm;
+            /* switch to 8.5in for Letter */
+            --page-h: 297mm;
+            /* switch to 11in for Letter  */
+            --margin: 18mm;
+            /* visual margin of the printed page */
+            --leading: 1.35;
+            /* base line-height */
+            --font-body: "Times New Roman", Times, serif;
+            --font-size: 11.5pt;
+            /* tweak to match scan */
+            --accent: #000;
+            --hair: 0.3mm;
+        }
 
-{% block content %}
+        html,
+        body {
+            height: 100%;
+        }
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/documents/dohoda.css') }}">
+        body {
+            margin: 0;
+            background: #f1f1f1;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-family: var(--font-body);
+            font-size: var(--font-size);
+            line-height: var(--leading);
+        }
 
-<h1><b>Dohoda o poskytovaní zdravotnej starostlivosti v rozsahu <br> ošetrovateľskej starostlivosti</b></h1>
+        .page {
+            width: var(--page-w);
+            height: var(--page-h);
+            margin: 10mm auto;
+            /* for on‑screen preview */
+            background: white;
+            box-shadow: 0 2mm 8mm rgba(0, 0, 0, .12);
+            position: relative;
+            box-sizing: border-box;
+            padding: var(--margin);
+        }
 
-<form id="mainForm">
+        /* Optional: drop the scan as a guide while aligning (remove before production) */
+        .page.guide {
+            background-image: url("form-scan.png");
+            /* replace with your scan while aligning */
+            background-repeat: no-repeat;
+            background-origin: content-box;
+            background-position: top left;
+            background-size: calc(var(--page-w) - 2*var(--margin)) calc(var(--page-h) - 2*var(--margin));
+        }
 
-    <div style="width: 600px">
-        <div class="form-group inline-form" style="position: relative;">
-            <label>Meno, priezvisko, titul poistenca:</label>
-            <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
-                placeholder="Zadaj meno alebo rodné číslo...">
-            <div id="patient-suggestions" class="suggestions"></div>
-        </div>
+        /* ===== Typography ===== */
+        h1 {
+            text-align: center;
+            font-weight: 700;
+            font-size: 14pt;
+            margin: 0 0 7mm 0;
+        }
 
-        <div id="selected-patient" class="selected-patient">
-            <div class="inline">
-                <label>Rodné číslo: </label>
-                <p id="rodneCislo" style="margin-right: 100px"></p>
-                <label>Číselný kód zdravotnej poisťovne: </label>
-                <p id="kodPoistovne"></p>
+        p {
+            margin: 0 0 3.2mm 0;
+        }
+
+        .small {
+            font-size: 10.5pt;
+        }
+
+        /* Form layout helpers */
+        .block {
+            margin-bottom: 3.5mm;
+        }
+
+        .inline {
+            display: grid;
+            grid-template-columns: auto 1fr auto 1fr;
+            column-gap: 3mm;
+            align-items: end;
+        }
+
+        .inline-2 {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            column-gap: 3mm;
+            align-items: end;
+        }
+
+        label {
+            white-space: nowrap;
+        }
+
+        input[type="text"] {
+            font: inherit;
+            line-height: 1.2;
+            border: none;
+            border-bottom: var(--hair) solid #000;
+            /* prints as a neat underline */
+            padding: 0.5mm 0;
+            outline: none;
+            background: transparent;
+        }
+
+        /* make inputs visually sized with mm for print exactness */
+        .w-40 {
+            width: 40mm;
+        }
+
+        .w-50 {
+            width: 50mm;
+        }
+
+        .w-60 {
+            width: 60mm;
+        }
+
+        .w-80 {
+            width: 80mm;
+        }
+
+        .w-100 {
+            width: 100mm;
+        }
+
+        .w-120 {
+            width: 120mm;
+        }
+
+        .spacer {
+            height: 2mm;
+        }
+
+        /* Signature lines area */
+        .signatures {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 20mm;
+            margin-top: 14mm;
+            align-items: end;
+        }
+
+        .sig-line {
+            border-bottom: var(--hair) solid #000;
+            height: 8mm;
+        }
+
+        .sig-caption {
+            text-align: center;
+            margin-top: 1mm;
+        }
+
+        /* Bottom place/date row */
+        .place-date {
+            display: grid;
+            grid-template-columns: auto 1fr auto 40mm;
+            align-items: end;
+            column-gap: 3mm;
+            margin-top: 6mm;
+        }
+
+        /* Suggestions dropdown (to match your existing JS expectations) */
+        .suggestions {
+            position: absolute;
+            background: #fff;
+            border: 0.2mm solid #aaa;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+            display: none;
+            z-index: 10;
+            max-height: 60mm;
+            overflow: auto;
+            width: 100%;
+        }
+
+        .suggestion-item {
+            padding: 2mm 3mm;
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+            background: #f5f5f5;
+        }
+
+        .inline-form {
+            position: relative;
+        }
+
+        .selected-patient {
+            display: none;
+            margin-top: 2mm;
+        }
+
+        /* Print rules */
+        @media print {
+            @page {
+                size: A4;
+                margin: var(--margin);
+            }
+
+            body {
+                background: transparent;
+            }
+
+            .page {
+                margin: 0;
+                box-shadow: none;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page" id="page">
+
+        <h1>
+            Dohoda o poskytovaní zdravotnej starostlivosti v rozsahu<br />
+            ošetrovateľskej starostlivosti
+        </h1>
+
+        <form id="mainForm">
+            <!-- Search / autocompletion row -->
+            <div style="width: 160mm">
+                <div class="block inline-2 inline-form">
+                    <label>Meno, priezvisko, titul poistenca:</label>
+                    <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
+                        placeholder="Zadaj meno alebo rodné číslo..." />
+                    <div id="patient-suggestions" class="suggestions"></div>
+                </div>
+
+                <div id="selected-patient" class="selected-patient">
+                    <div class="inline">
+                        <label>Rodné číslo:</label>
+                        <div id="rodneCislo" style="border-bottom: var(--hair) solid #000; min-width: 40mm;">&nbsp;
+                        </div>
+                        <label>Číselný kód zdravotnej poisťovne:</label>
+                        <div id="kodPoistovne" style="border-bottom: var(--hair) solid #000; min-width: 30mm;">&nbsp;
+                        </div>
+                    </div>
+                    <div class="inline-2" style="margin-top: 2mm;">
+                        <label>Miesto trvalého pobytu:</label>
+                        <div id="bydliskoTrvale" style="border-bottom: var(--hair) solid #000; min-height: 6mm;">&nbsp;
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="inline">
-                <label>Miesto trvalého pobytu: </label>
-                <p id="bydliskoTrvale"></p>
+            <div class="block inline-2">
+                <label>Miesto prechodného pobytu:</label>
+                <input required type="text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu"
+                    class="w-120" />
             </div>
-        </div>
+
+            <div class="block inline-2">
+                <label>Kontaktná osoba, zákonný zástupca:</label>
+                <input required type="text" id="kontaktna_osoba" name="kontaktna_osoba" class="w-120" />
+            </div>
+
+            <p>
+                Uzatváram dohodu o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti
+                v zmysle § 12 zákona č. 576/2004 Z. z. o zdravotnej starostlivosti, službách súvisiacich
+                s poskytovaním zdravotnej starostlivosti a o zmene a doplnení niektorých zákonov v znení
+                neskorších predpisov s
+            </p>
+
+            <div class="spacer"></div>
+            <p><strong>Poskytovateľom ošetrovateľskej starostlivosti: ADOS</strong></p>
+
+            <div class="block inline-2">
+                <label>Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti,</label>
+                <input type="text" id="nazovAAdresa" name="nazovAAdresa" class="w-120" />
+            </div>
+
+            <div class="block inline-2">
+                <label>Meno, priezvisko, titul odborného zástupcu:</label>
+                <input type="text" id="nurse" class="w-120" value="{{ session['nurse']['meno'] }}" required />
+            </div>
+
+            <div class="block inline-2">
+                <label>Telefónne číslo:</label>
+                <input type="text" id="phone_number" class="w-60" value="{{ session['nurse']['phone_number'] }}"
+                    required />
+            </div>
+
+            <div class="spacer"></div>
+
+            <p><strong>
+                    Vyhlasujem na svoju česť, že nemám súbežne uzavretú žiadnu dohodu o poskytovaní zdravotnej
+                    starostlivosti v rozsahu ošetrovateľskej starostlivosti s iným poskytovateľom.
+                </strong></p>
+
+            <p><strong>
+                    Svojím podpisom potvrdzujem, že som bol(a) riadne poučený(á) podľa zákona č. 576/2004 Z. z. § 6
+                    a dávam týmto informovaný súhlas na poskytovanie zdravotnej starostlivosti uhrádzanej na základe
+                    verejného zdravotného poistenia v rozsahu ošetrovateľskej starostlivosti v ZSS v súvislosti s
+                    platnou legislatívou.
+                </strong></p>
+
+            <div class="place-date">
+                <label>V/vo</label>
+                <input required type="text" id="mesto" name="mesto" class="w-80" />
+                <label>dňa:</label>
+                <input type="text" name="currentDate" id="currentDate" class="w-40" placeholder="DD.MM.YYYY"
+                    maxlength="10" />
+            </div>
+
+            <div class="signatures">
+                <div>
+                    <div class="sig-line"></div>
+                    <div class="sig-caption small">podpis odborného zástupcu poskytovateľa<br />ošetrovateľskej
+                        starostlivosti a odtlačok pečiatky</div>
+                </div>
+                <div>
+                    <div class="sig-line"></div>
+                    <div class="sig-caption small">podpis poistenca/zákonného zástupcu</div>
+                </div>
+            </div>
+        </form>
     </div>
 
-    <div class="form-group inline-form">
-        <label>Miesto prechodného pobytu: </label>
-        <input required type = "text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu">
-    </div>
-    <div class="form-group inline-form">
-        <label>Kontaktná osoba, zákonný zástupca: </label>
-        <input required type = "text" id="kontaktna_osoba" name="kontaktna_osoba">
+    <div style="text-align:center; margin: 10mm 0;" class="no-print">
+        <button id="printButton">Vytlačiť</button>
+        <label style="margin-left:6mm">
+            <input type="checkbox" id="toggleGuide" /> Zobraziť zarovnávací sken (iba na obrazovke)
+        </label>
     </div>
 
-    <p>
-        Uzatváram dohodu o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti v zmysle § 12 zákona č. 576/2004 Z. z. o zdravotnej starostlivosti, službách súvisiacich s poskytovaním zdravotnej starostlivosti a o zmene a doplnení niektorých zákonov v znení neskorších predpisov s:
-    </p>
+    <script>
+        // Optional overlay toggle for alignment during development
+        const toggle = document.getElementById('toggleGuide');
+        const page = document.getElementById('page');
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                if (e.target.checked) page.classList.add('guide');
+                else page.classList.remove('guide');
+            });
+        }
+    </script>
+</body>
 
-    <p><b>Poskytovateľ ošetrovateľskej starostlivosti: ADOS</b></p>
-
-    <div class="form-group">
-        <label>Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti</label>
-        <input type = "text" id="nazovAAdresa" name="nazovAAdresa">
-    </div>
-
-    <div class="form-group inline-form">
-        <label>Meno, priezvisko, titul odborného zástupcu: </label>
-        <input type = "text" value="{{ session['nurse']['meno'] }}" id="nurse" required>
-    </div>
-    <div class="form-group inline-form">
-        <label>Telefónne číslo: </label>
-        <input type = "text" value="{{ session['nurse']['phone_number'] }}" id="phone_number" required>
-    </div>
-
-    <b>
-        <p>
-            Vyhlasujem na svoju česť, že nemám súbežne uzavretú žiadnu inú dohodu o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti s iným poskytovateľom.
-        </p>
-        <p>
-            Svojím podpisom potvrdzujem, že som bol(a) riadne poučený(á) podľa zákona č. 576/2004 Z. z. § 6 a dávam týmto informovaný súhlas na poskytovanie zdravotnej starostlivosti uhrádzanej na základe verejného zdravotného poistenia v rozsahu ošetrovateľskej starostlivosti v ZSS, v súlade s platnou legislatívou.
-        </p>
-    </b>
-
-    <div class="inline-form">
-        <div class="form-group inline-form">
-            <label>V/vo </label>
-            <input required type = "text" id="mesto" name="mesto">
-        </div>
-
-
-        <div class="form-group inline-form">
-            <label>dňa:</label>
-            <input type="text" name="currentDate", id="currentDate" class="date-input" placeholder="DD.MM.YYYY" maxlength="10">
-        </div>
-    </div>
-
-    <div class="inline-form sign">
-        <div>
-            <label>....................................................................</label>
-            <br>
-            <label>Podpis odborného zástupcu poskytovateľa<br>ošetrovateľskej starostlivosti:</label>
-        </div>
-        <div>
-            <label>...............................................................</label>
-            <br>
-            <label>Podpis poistenca / zákonného zástupcu:</label>
-        </div>
-    </div>
-</form>
-<button id="printButton" class="button no-print">Print document</button>
-
-{% endblock %}
-
+</html>
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/documents/dohoda.js') }}"></script>
 {% endblock %}

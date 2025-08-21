@@ -1,5 +1,4 @@
 (function () {
-    // Reuse the same initializer for popup + full page
     function init(container = document) {
         const form = container.querySelector("#carForm");
         if (!form) return;

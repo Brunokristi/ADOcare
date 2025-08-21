@@ -4,92 +4,75 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedPatientDiv = document.getElementById("selected-patient");
     const bydliskoTrvale = document.getElementById("bydliskoTrvale");
     const rodneCislo = document.getElementById("rodneCislo");
-    const kodPoistovne  = document.getElementById("kodPoistovne");
+    const kodPoistovne = document.getElementById("kodPoistovne");
     const miesto_prechodneho_pobytu = document.getElementById("miesto_prechodneho_pobytu");
-    const currentDate = document.getElementById('currentDate');
-    const mainForm = document.getElementById('mainForm');
+    const currentDate = document.getElementById("currentDate");
+    const mainForm = document.getElementById("mainForm");
     const printButton = document.getElementById("printButton");
     const nazovAAdresa = document.getElementById("nazovAAdresa");
     const mesto = document.getElementById("mesto");
     const kontaktna_osoba = document.getElementById("kontaktna_osoba");
 
+    // ✅ missing in your code:
+    const nurse = document.getElementById("nurse");
+    const phone_number = document.getElementById("phone_number");
+
+    // ✅ define this before use
+    let selectedPatientId = null;
+
     patientSearch?.addEventListener("input", handlePatientSearch);
     document.addEventListener("click", closeSuggestionsOnClickOutside);
+    printButton?.addEventListener("click", onPrinting);
 
-    printButton.addEventListener("click", onPrinting);
-
-    function checkInput(input, massage){
-        if (input.value.trim() === ""){
-            showMessage("Prosím vyplňte povinne pole: \"" + massage + "\"")
+    function checkInput(input, message) {
+        if (!input || input.value.trim() === "") {
+            showMessage('Prosím vyplňte povinné pole: "' + message + '"');
             return true;
         }
         return false;
     }
 
-    function onPrinting(){
+    function onPrinting(e) {
+        e?.preventDefault(); // safe guard
+
         if (checkInput(patientSearch, "Meno, priezvisko, titul poistenca") ||
             checkInput(nazovAAdresa, "Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti") ||
             checkInput(nurse, "Meno, priezvisko, titul odborného zástupcu") ||
             checkInput(phone_number, "Telefónne číslo") ||
             checkInput(mesto, "V/vo (mesto)") ||
-            checkInput(currentDate, "Dátum")){
-                return;
-            }
+            checkInput(currentDate, "Dátum")) {
+            return;
+        }
 
         const formData = new FormData(mainForm);
-        const keysToDelete = ['nazovAAdresa', 'mesto', 'currentDate', "patientSearch"];
-        keysToDelete.forEach(key => {
-            formData.delete(key);
-        });
+        ["nazovAAdresa", "mesto", "currentDate", "patientSearch"].forEach(k => formData.delete(k));
+        formData.append("rodne_cislo", rodneCislo.textContent.trim());
 
-        formData.append("rodne_cislo", rodneCislo.innerText);
-
-        fetch('/documents/storeDataFromDohodaForm', {
-            method: 'POST',
-            body: formData
-        }).then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            throw new Error('Network response was not ok.');
-        }).then(data => {
-            showMessage("The data has been successfully saved.")
-        }).catch(error => {
-            showMessage("An error occurred while trying to save the data.")
-        });
-        window.print();
+        fetch("/documents/storeDataFromDohodaForm", { method: "POST", body: formData })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(() => showMessage("The data has been successfully saved."))
+            .catch(() => showMessage("An error occurred while trying to save the data."))
+            .finally(() => window.print());
     }
 
     function onLoading() {
-        const url = '/documents/getDohodaFormData';
+        fetch("/documents/getDohodaFormData")
+            .then(r => r.ok ? r.json() : Promise.reject("Failed to get last form data from server."))
+            .then(data => {
+                nazovAAdresa.value = `${data.nazov}, ${data.ulica}, ${data.mesto}`;
+                mesto.value = data.mesto;
 
-        fetch(url).then(response => {
-            if (!response.ok) {
-                throw new Error("Failed to get last form data from server.");
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log(data);
-
-            nazovAAdresa.value = data.nazov + ", " + data.ulica + ", " + data.mesto;
-            mesto.value = data.mesto;
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-
-            currentDate.value = `${day}.${month}.${year}`;
-        })
-        .catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-        });
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                currentDate.value = `${day}.${month}.${year}`;
+            })
+            .catch(err => console.error(err));
     }
 
-
     clearPatientDetails();
-    onLoading()
-
+    onLoading();
 
     function handlePatientSearch() {
         const query = patientSearch.value.trim();
@@ -102,11 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(res => res.json())
             .then(data => {
                 suggestionsContainer.innerHTML = "";
-
-                if (!data.length) {
-                    suggestionsContainer.style.display = "none";
-                    return;
-                }
+                if (!data.length) { suggestionsContainer.style.display = "none"; return; }
 
                 data.forEach(p => {
                     const item = document.createElement("div");
@@ -114,51 +93,42 @@ document.addEventListener("DOMContentLoaded", function () {
                     item.textContent = `${p.meno} — ${p.rodne_cislo}`;
                     item.addEventListener("click", () => {
                         selectedPatientId = p.id;
-                        getAdditionDataByRodneCisloForDohoda(p.rodne_cislo).then(addInfo => {
-                            const data = Object.assign({}, p, addInfo);
-                            clearPatientDetails();
-                            fillPatientDetails(data);
-                        })
-                        .catch(error => {
-                            console.error('Fail:', error);
-                        });
+                        getAdditionDataByRodneCisloForDohoda(p.rodne_cislo)
+                            .then(addInfo => {
+                                const merged = Object.assign({}, p, addInfo);
+                                clearPatientDetails();
+                                fillPatientDetails(merged);
+                            })
+                            .catch(console.error);
                     });
                     suggestionsContainer.appendChild(item);
                 });
-
                 suggestionsContainer.style.display = "block";
             })
-            .catch(() => {
-                suggestionsContainer.style.display = "none";
-            });
+            .catch(() => { suggestionsContainer.style.display = "none"; });
     }
 
-    function clearPatientDetails(){
+    function clearPatientDetails() {
         miesto_prechodneho_pobytu.value = "";
         kontaktna_osoba.value = "";
         selectedPatientDiv.style.display = "none";
         suggestionsContainer.style.display = "none";
     }
 
-    function fillPatientDetails(patient){
-        if ("miesto_prechodneho_pobytu" in patient){
-            miesto_prechodneho_pobytu.value = patient.miesto_prechodneho_pobytu;
+    function fillPatientDetails(patient) {
+        if ("miesto_prechodneho_pobytu" in patient) {
+            miesto_prechodneho_pobytu.value = patient.miesto_prechodneho_pobytu || "";
         }
-        if ("kontaktna_osoba" in patient){
-            kontaktna_osoba.value = patient.kontaktna_osoba;
+        if ("kontaktna_osoba" in patient) {
+            kontaktna_osoba.value = patient.kontaktna_osoba || "";
         }
-        patientSearch.value = patient.meno;
-        rodneCislo.innerText = patient.rodne_cislo;
-        bydliskoTrvale.innerText = patient.adresa || "-";
+        patientSearch.value = patient.meno || "";
+        rodneCislo.textContent = patient.rodne_cislo || "";
+        bydliskoTrvale.textContent = patient.adresa || "-";
 
-        // parsing and substituting poistovna code
-        if (parseInt(patient.poistovnaFirstCode) === 25){
-            kodPoistovne.innerText = 2521
-        } else if (parseInt(patient.poistovnaFirstCode) === 24){
-            kodPoistovne.innerText = 2400
-        } else {
-            kodPoistovne.innerText = 2700
-        }
+        // poistovňa code mapping
+        const first = parseInt(patient.poistovnaFirstCode, 10);
+        kodPoistovne.textContent = first === 25 ? "2521" : first === 24 ? "2400" : "2700";
 
         selectedPatientDiv.style.display = "block";
         suggestionsContainer.style.display = "none";
@@ -166,18 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getAdditionDataByRodneCisloForDohoda(rodne_cislo) {
         return fetch(`/documents/getAdditionDataByRodneCisloForDohoda?rodne_cislo=${encodeURIComponent(rodne_cislo)}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to get additional parameters by rodne cislo.');
-                }
-                return response.json();
-            }).then(data => {
-                return data;
-            })
-            .catch(error => {
-                console.error(error);
-                throw error;
-            });
+            .then(r => r.ok ? r.json() : Promise.reject("Failed to get additional parameters by rodne cislo."));
     }
 
     function closeSuggestionsOnClickOutside(e) {
@@ -185,8 +144,11 @@ document.addEventListener("DOMContentLoaded", function () {
             suggestionsContainer.style.display = "none";
         }
     }
-    flatpickr(currentDate, {
-        dateFormat: "d.m.Y",
-        locale: "sk"
-    });
+
+    // flatpickr init (ensure the library is loaded on the page)
+    if (typeof flatpickr === "function") {
+        flatpickr(currentDate, { dateFormat: "d.m.Y", locale: "sk" });
+    }
 });
+
+

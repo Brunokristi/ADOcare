@@ -123,12 +123,27 @@
         bodyEl.addEventListener('submit', (e) => {
             const form = e.target;
             if (!bodyEl.contains(form)) return;
+
+            // NEW: if another handler already handled it, don't do anything
+            if (e.defaultPrevented) return;
+
+            // NEW: opt-out flags to skip popup auto-submit
+            if (form.matches('[data-popup-skip-submit], [data-popup-noajax]')) return;
+
+            // NEW: simple in-flight guard to avoid double submit within popup
+            if (form.dataset.popupSubmitting === '1') return;
+            form.dataset.popupSubmitting = '1';
+
             e.preventDefault();
+
             const method = (form.getAttribute('method') || 'POST').toUpperCase();
             const action = form.getAttribute('action') || hist.stack[hist.index] || window.location.href;
             const fd = new FormData(form);
-            loadIntoPopup(action, { push: true, method, body: fd });
+
+            loadIntoPopup(action, { push: true, method, body: fd })
+                .finally(() => { form.dataset.popupSubmitting = '0'; });
         });
+
 
         win.addEventListener('keydown', (e) => {
             if (e.altKey && e.key === 'ArrowLeft') {

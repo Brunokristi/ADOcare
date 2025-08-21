@@ -24,6 +24,7 @@
     <script src="{{ url_for('static', filename='js/details/diagnoses.js') }}"></script>
     <script src="{{ url_for('static', filename='js/create/macro.js') }}"></script>
     <script src="{{ url_for('static', filename='js/create/car.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bodovanie/bodovanie.js') }}"></script>
 
 </head>
 
@@ -133,7 +134,7 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <a class="navbar-popup-item" href="{{ url_for('main.settings') }}" role="menuitem" title="Otvoriť nastavenia">
+                        <a class="navbar-popup-item" href="{{ url_for('points.list_points') }}" role="menuitem" title="Otvoriť nastavenia">
                             <i class="bi bi-plus-circle"></i> Bodovanie
                         </a>
                         <div class="navbar-popup-item has-submenu" role="menuitem" aria-haspopup="true" aria-expanded="false">

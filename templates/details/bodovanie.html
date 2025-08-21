@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}ADOS - Bodovanie{% endblock %}
+
+{% block content %}
+
+<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
+
+    {% if session.get('nurse') %}
+
+    <div class="section" style="margin-bottom: 200px;">
+        <div class="lined-heading"><span>Bodovanie</span></div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dátum</th>
+                        <th>Rodné Číslo</th>
+                        <th>Meno Pacienta</th>
+                        <th>Diagnóza</th>
+                        <th>Výkon</th>
+                        <th>Počet</th>
+                        <th>PZS Lekára</th>
+                        <th>ZPR Lekára</th>
+                        <th>Dátum Žiadanky</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in points %}
+                    <tr>
+                        <td>{{ p.datum }}</td>
+                        <td>{{ p.rodne_cislo }}</td>
+                        <td>{{ p.meno }}</td>
+                        <td>{{ p.diagnoza }}</td>
+                        <td>{{ p.vykon }}</td>
+                        <td>{{ p.pocet }}</td>
+                        <td>{{ p.pzs }}</td>
+                        <td>{{ p.zpr }}</td>
+                        <td>{{ p.datum_ziadanky }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bottom-section">
+        <div class="half-form-group" style="width: 600px;">
+            <div class="form-group">
+                <label for="invoice_number">Číslo faktúry</label>
+                <input type="text" id="invoice_number" name="invoice_number" required>
+            </div>
+
+            <div class="form-group">
+                <label for="character">Charakter dávky</label>
+                <select name="character" id="character">
+                    <option value="N">Nová dávka</option>
+                    <option value="O">Opravná dávka</option>
+                    <option value="A">Aditívna dávka</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="width: 600px;">
+            <button type="button" class="btn" id="save-btn">Vytvoriť dátové rozhranie pre dopravu</button>
+        </div>
+    </div>
+
+    <a class="floating_button" href="{{ url_for('points.create_points') }}" target="_blank" role="menuitem" data-popup
+        title="Bodovať pacienta">
+        <i class="bi bi-plus"></i>
+    </a>
+
+    {% else %}
+    <p>Nie je prihlásený žiadny používateľ.</p>
+    {% endif %}
+
+</body>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transport/transport.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/details/bodovanie.css') }}">
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transport/transport.js') }}"></script>
+{% endblock %}
