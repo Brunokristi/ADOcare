@@ -1,103 +1,245 @@
-@media print {
-    body {
-      background: white;
-      color: black;
-      margin: 0;
-      padding: 0;
-      line-height: 2;
-    }
-
-    nav, footer, button {
-      display: none;
-    }
-
-    label, p, input {
-        margin-right: 0;
-        margin-top: 0;
-        margin-bottom: 0;
-        margin-left: 0;
-        margin: 0;
-        font-size: 12pt;
-        font-family: 'Times New Roman', Times, serif;
-        color: rgb(0, 0, 0);
-    }
-
-    h1 {
-      margin: 20px 0;
-      font-size: 13pt;
-      font-family: 'Times New Roman', Times, serif;
-      color: rgb(0, 0, 0);
-      text-align: center;
-      text-transform: none;
-      font-weight: normal;
-    }
-
-    .no-print {
-      display: none;
-    }
-
-    input[type="text"] {
-        border: 1px solid #ffffff;
-        background-color: #fff;
-        color: #000;
-        font-size: 12pt;
-    }
-
-    .inline {
-        white-space: nowrap;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .inline-form {
-        white-space: nowrap;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-    }
-
-    @page {
-        margin: 0;
-    }
-
-    .special-margin {
-        margin-right: 80px
-    }
-
-    .sign{
-      justify-content: space-between;
-      text-align: center;
-      align-items: flex-start;
-    }
-
-    #nazovAAdresa {
-      margin-left: 95px;
-    }
-    #mesto {
-      margin-right: 270px
-    }
+:root {
+  --page-w: 210mm;
+  /* switch to 8.5in for Letter */
+  --page-h: 297mm;
+  /* switch to 11in for Letter  */
+  --margin: 18mm;
+  /* visual margin of the printed page */
+  --leading: 1.35;
+  /* base line-height */
+  --font-body: "Times New Roman", Times, serif;
+  --font-size: 11.5pt;
+  /* tweak to match scan */
+  --accent: #000;
+  --hair: 0.3mm;
 }
 
-.radio-group {
+html,
+body {
+  height: 100%;
   display: flex;
-  padding: 5px 10px;
-  border-radius: 4px;
-  gap: 20px;
-}
-
-.radio-option {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  font-family: sans-serif;
-  font-size: 14px;
-  color: #000;
+}
+
+body {
+  margin: 0;
+  background: #f1f1f1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+  line-height: var(--leading);
+}
+
+.page {
+  width: var(--page-w);
+  height: var(--page-h);
+  margin: 10mm auto;
+  background: white;
+  box-shadow: 0 2mm 8mm rgba(0, 0, 0, .12);
+  position: relative;
+  box-sizing: border-box;
+  padding: var(--margin);
+}
+
+.page.guide {
+  background-image: url("form-scan.png");
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  background-position: top left;
+  background-size: calc(var(--page-w) - 2*var(--margin)) calc(var(--page-h) - 2*var(--margin));
+}
+
+/* ===== Typography ===== */
+h1 {
+  text-align: center;
+  font-weight: 700;
+  font-size: 14pt;
+  margin: 0 0 7mm 0;
+}
+
+p {
+  margin: 0 0 3.2mm 0;
+  hyphens: auto;
+}
+
+.small {
+  font-size: 10.5pt;
+}
+
+.block {
+  margin-bottom: 3.5mm;
+}
+
+.inline {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  column-gap: 3mm;
+  align-items: end;
+}
+
+.inline-2 {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 3mm;
+  align-items: end;
+}
+
+label {
   white-space: nowrap;
 }
 
-.radio-option input[type="radio"] {
+input[type="text"] {
+  font: inherit;
+  line-height: 1.2;
+  border: none;
+  padding: 0.5mm 0;
+  outline: none;
+  background: transparent;
+}
+
+.w-40 {
+  width: 40mm;
+}
+
+.w-50 {
+  width: 50mm;
+}
+
+.w-60 {
+  width: 60mm;
+}
+
+.w-80 {
+  width: 80mm;
+}
+
+.w-100 {
+  width: 100mm;
+}
+
+.w-120 {
+  width: 120mm;
+}
+
+.fill {
+  width: 100%;
+}
+
+.spacer {
+  height: 2mm;
+}
+
+.signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20mm;
+  margin-top: 14mm;
+  align-items: end;
+}
+
+.sig-line {
+  border-bottom: var(--hair) solid #000;
+  height: 8mm;
+}
+
+.sig-caption {
+  text-align: center;
+  margin-top: 1mm;
+}
+
+.place-date {
+  display: grid;
+  grid-template-columns: auto 1fr auto 40mm;
+  align-items: end;
+  column-gap: 3mm;
+  margin-top: 6mm;
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: solid 1px #5C9EAD;
+  border-radius: 20px;
+  display: none;
+  z-index: 10;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestion-item {
+  padding: 8px;
   cursor: pointer;
+  border-bottom: 1px solid #5C9EAD;
+}
+
+.suggestion-item:hover {
+  background: #f0f0f0;
+}
+
+.inline-form {
+  position: relative;
+}
+
+.selected-patient {
+  display: none;
+  margin-top: 2mm;
+}
+
+.btn {
+  background-color: #5C9EAD;
+  color: white;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 40px 0px;
+  min-width: 100px;
+  text-decoration: "none";
+}
+
+.btn:hover {
+  background-color: #3E7C8E;
+}
+
+.flatpickr-calendar {
+  z-index: 10000;
+  font-family: "Inter", sans-serif;
+}
+
+.error {
+  border-bottom: 0.3mm solid red !important;
+  background-color: #ffecec;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    background: transparent;
+  }
+
+  .page {
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  nav,
+  footer,
+  button {
+    display: none;
+  }
 }

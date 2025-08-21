@@ -25,15 +25,19 @@ document.addEventListener("DOMContentLoaded", function () {
     printButton?.addEventListener("click", onPrinting);
 
     function checkInput(input, message) {
-        if (!input || input.value.trim() === "") {
-            showMessage('Prosím vyplňte povinné pole: "' + message + '"');
+        if (!input) return true;
+
+        if (input.value.trim() === "") {
+            input.classList.add("error");
             return true;
+        } else {
+            input.classList.remove("error");
+            return false;
         }
-        return false;
     }
 
     function onPrinting(e) {
-        e?.preventDefault(); // safe guard
+        e?.preventDefault();
 
         if (checkInput(patientSearch, "Meno, priezvisko, titul poistenca") ||
             checkInput(nazovAAdresa, "Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti") ||
@@ -66,7 +70,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
                 const day = String(today.getDate()).padStart(2, '0');
-                currentDate.value = `${day}.${month}.${year}`;
             })
             .catch(err => console.error(err));
     }
@@ -124,9 +127,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         patientSearch.value = patient.meno || "";
         rodneCislo.textContent = patient.rodne_cislo || "";
-        bydliskoTrvale.textContent = patient.adresa || "-";
+        const address = patient.adresa || "-";
+        bydliskoTrvale.textContent = address.length > 20
+            ? address.substring(0, 50) + "…"
+            : address;
 
-        // poistovňa code mapping
         const first = parseInt(patient.poistovnaFirstCode, 10);
         kodPoistovne.textContent = first === 25 ? "2521" : first === 24 ? "2400" : "2700";
 
@@ -145,9 +150,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // flatpickr init (ensure the library is loaded on the page)
-    if (typeof flatpickr === "function") {
-        flatpickr(currentDate, { dateFormat: "d.m.Y", locale: "sk" });
+    if (currentDate && window.flatpickr) {
+        flatpickr(currentDate, {
+            dateFormat: "d.m.Y",
+            locale: flatpickr.l10ns.sk,
+            allowInput: true,
+            defaultDate: currentDate.value || new Date(),
+            appendTo: currentDate.parentElement,
+            static: true,
+            position: "below"
+        });
     }
 });
 
