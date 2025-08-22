@@ -96,16 +96,26 @@ function setupSelectHandlers() {
         const redirectTo = redirect || defaultRedirect;
 
         try {
-            const res = await postJSON("/month/select", payload);
+            const res = await postJSON('/month/select', payload);
             if (res?.success) {
                 safeNav(redirectTo);
             } else {
-                showMessage("Nepodarilo sa vybrať mesiac.");
+                showMessage('Nepodarilo sa vybrať mesiac.');
             }
         } catch (err) {
             showMessage("Chyba pri spracovaní výberu mesiaca.");
         }
     });
+}
+
+async function postJSON(url, data) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',          // <-- critical for Flask session cookies
+        body: JSON.stringify(data),
+    });
+    return res.ok ? res.json() : null;
 }
 
 // --- Keyboard shortcuts ---

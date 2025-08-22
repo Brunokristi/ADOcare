@@ -122,5 +122,6 @@ def get_months_by_nurse():
 @login_required
 def select_month():
     month_data = request.json
+    print("Selected month data:", month_data)  # Debugging line
     session['month'] = month_data
     return {'success': True}

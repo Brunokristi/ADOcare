@@ -21,7 +21,7 @@ dekurz_bp = Blueprint("dekurz", __name__)
 def dekurz():
     patients = get_all_patients_info_in_month()
     macros = get_macros()
-
+    print("Month info: ", session.get('month'))
     return render_template("dekurzy/vypis.html", patients=patients, macros=macros)
 
 @dekurz_bp.route("/save", methods=["POST"])

@@ -1,0 +1,44 @@
+<main-popup>
+    <h1>Výkony</h1>
+
+    <table class="table-vykony" id="vykonyTable">
+        <thead>
+            <tr>
+                <th style="width: 80px;">Kód</th>
+                <th style="width: 150px;">Popis</th>
+                <th style="width: 80px;">VŠZP</th>
+                <th style="width: 80px;">Dôvera</th>
+                <th style="width: 80px;">Union</th>
+                <th style="width: 90px;">Akcia</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in vykony %}
+            <tr data-code="{{ v.code }}">
+                <td class="mono">{{ v.code }}</td>
+                <td><input class="cell" name="description" type="text" value="{{ v.description or '' }}" /></td>
+                <td><input class="cell num" name="poistovna25" type="text"
+                        value="{{ '%.2f'|format(v.poistovna25|default(0.0)) if v.poistovna25 is not none else '' }}" /></td>
+                <td><input class="cell num" name="poistovna24" type="text"
+                        value="{{ '%.2f'|format(v.poistovna24|default(0.0)) if v.poistovna24 is not none else '' }}" /></td>
+                <td><input class="cell num" name="poistovna27" type="text"
+                        value="{{ '%.2f'|format(v.poistovna27|default(0.0)) if v.poistovna27 is not none else '' }}" /></td>
+                <td class="actions">
+                    <button class="btn-save">Uložiť</button>
+                    <button class="btn-del" title="Zmazať">Zmazať</button>
+                    <span class="row-status" aria-live="polite"></span>
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</main-popup>
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/details/vykony.css') }}">
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/details/vykony.js') }}"></script
+{% endblock %}

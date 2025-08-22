@@ -1,0 +1,102 @@
+.table-vykony {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 14px;
+}
+
+.table-vykony th,
+.table-vykony td {
+    border-bottom: 1px solid #e5e5e5;
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+.table-vykony thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+
+.table-vykony .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.cell {
+    width: 100%;
+    border: 1px solid transparent;
+    padding: 6px;
+    background: #fff;
+    border-radius: 6px;
+}
+
+.cell:focus {
+    outline: none;
+    border-color: #5C9EAD;
+}
+
+.num {
+    text-align: right;
+}
+
+.btn-save {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 8px;
+    background: #5C9EAD;
+    color: #fff;
+    cursor: pointer;
+}
+
+.btn-save[disabled] {
+    opacity: .6;
+    cursor: default;
+}
+
+tr.saving {
+    opacity: .75;
+}
+
+tr.saved .cell {
+    background: #ecfdf5;
+}
+
+tr.error .cell {
+    background: #fff5f5;
+}
+
+.row-status {
+    margin-left: 6px;
+    font-size: 12px;
+    opacity: .8;
+}
+
+.invalid {
+    border-color: #e11d48 !important;
+    background: #fff1f2;
+}
+
+.table-vykony td.actions {
+    white-space: nowrap;
+}
+
+.btn-del {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 8px;
+    background: #e11d48;
+    color: #fff;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+.btn-del[disabled] {
+    opacity: .6;
+    cursor: default;
+}
+
+tr.removing {
+    transition: opacity .18s ease, height .22s ease, padding .22s ease, border-width .22s ease;
+    opacity: 0;
+}

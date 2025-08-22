@@ -116,7 +116,7 @@ select,
 textarea {
     padding: 8px 12px;
     border: 1px solid #ccc;
-    border-radius: 20px;
+    border-radius: 10px;
     font-size: 14px;
     font-family: Arial, Helvetica, sans-serif;
     width: 100%;
@@ -154,7 +154,7 @@ textarea {
     color: white;
     padding: 8px 20px;
     border: none;
-    border-radius: 20px;
+    border-radius: 10px;
     font-size: 16px;
     cursor: pointer;
     margin-top: 20px;
@@ -238,6 +238,7 @@ textarea {
     align-items: center;
     position: relative;
     width: 100%;
+    padding-right: 10px;
 }
 
 .scroll {
@@ -256,6 +257,7 @@ textarea {
     cursor: pointer;
     padding: 0 10px;
     color: #333;
+
 }
 
 .scroll-arrow:disabled {
@@ -266,7 +268,7 @@ textarea {
 .small-small-token {
     padding: 8px;
     background: #5C9EAD;
-    border-radius: 20px;
+    border-radius: 10px;
     cursor: pointer;
     color: white;
     display: flex;
@@ -277,13 +279,18 @@ textarea {
     min-width: max-content;
     text-decoration: none;
     font-size: 16px;
+    transition: transform 0.15s ease-in-out;
+}
+
+.small-small-token:hover {
+    transform: scale(1.02);
 }
 
 .small-token {
     position: relative;
     padding: 8px;
     background: #5C9EAD;
-    border-radius: 20px;
+    border-radius: 10px;
     cursor: pointer;
     color: white;
     display: flex;
@@ -296,13 +303,18 @@ textarea {
     font-size: 16px;
     width: 600px;
     margin-bottom: 10px;
+    transition: transform 0.15s ease-in-out;
+}
+
+.small-token:hover {
+    transform: scale(1.02);
 }
 
 .small-token-full {
     position: relative;
     padding: 8px;
     background: #5C9EAD;
-    border-radius: 20px;
+    border-radius: 10px;
     cursor: pointer;
     color: white;
     display: flex;
@@ -315,6 +327,11 @@ textarea {
     font-size: 16px;
     margin-bottom: 10px;
     width: 100%;
+    transition: transform 0.15s ease-in-out;
+}
+
+.small-token-full:hover {
+    transform: scale(1.02);
 }
 
 .outlined {
@@ -324,8 +341,9 @@ textarea {
 }
 
 .outlined:hover {
-    background: #5C9EAD;
+    background: #333;
     color: white;
+    transform: scale(1.0);
 }
 
 .active-patient {
@@ -339,10 +357,25 @@ textarea {
 
 ::-webkit-scrollbar-track {
     background: transparent;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-track-piece:start {
+    background: transparent;
+    margin-top: 10px;
+    /* space at the top */
+}
+
+::-webkit-scrollbar-track-piece:end {
+    background: transparent;
+    margin-bottom: 10px;
+    /* space at the bottom */
 }
 
 ::-webkit-scrollbar-thumb {
     background: #333;
+    border-radius: 10px;
+    margin-top: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -456,7 +489,7 @@ textarea {
 .token {
     padding: 8px;
     background: #fff;
-    border-radius: 20px;
+    border-radius: 10px;
     cursor: pointer;
     color: #5C9EAD;
     display: flex;
