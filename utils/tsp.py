@@ -69,8 +69,7 @@ def calculate_optimal_day_route_thread(road_manager:Road_manager, day, data, sta
     coords = [start_point] + [(p["longitude"], p["latitude"]) for p in patients]
 
     try:
-        test("tcp: try request")
-        matrix = road_manager.execute_open_route_request(method_name="distance_matrix",
+        matrix = road_manager.execute_open_route_request(operation="distance_matrix",
             locations=coords,
             profile='driving-car',
             metrics=['duration'],
@@ -79,7 +78,6 @@ def calculate_optimal_day_route_thread(road_manager:Road_manager, day, data, sta
         success("tsp request finished!")
 
     except Exception as e:
-        failed(f"Error while executing tsp request:\n{e}")
         return
 
     n = len(coords)
@@ -100,7 +98,6 @@ def calculate_optimal_day_route_thread(road_manager:Road_manager, day, data, sta
 
 def calculate_optimal_day_route(data, address):
     start_point = geocode_address(address)
-    inform(f"Start point is: {start_point}")
 
     current_time = datetime.strptime(session.get("month", {}).get("start_vysetrenie", "8:00"), "%H:%M")
     vypis_time = datetime.strptime(session.get("month", {}).get("start_vypis", "14:00"), "%H:%M")
