@@ -1,27 +1,58 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const input = document.getElementById("searchInput");
+    const input = document.getElementById("patientSearch");
     const resultsContainer = document.getElementById("results");
 
+    const collator = new Intl.Collator("sk", { sensitivity: "base" });
+    let allPatients = [];
+
+    // Render helper (always alphabetical by meno)
+    function render(list) {
+        resultsContainer.innerHTML = "";
+        if (!list || list.length === 0) {
+            resultsContainer.innerHTML = "<p>Žiadne výsledky.</p>";
+            return;
+        }
+        const sorted = [...list].sort((a, b) => collator.compare(a.meno || "", b.meno || ""));
+        for (const d of sorted) {
+            const a = document.createElement("a");
+            a.className = "small-token";
+            a.textContent = `${d.meno} — ${d.rodne_cislo}`;
+            a.href = `/patient/update/${d.id}`;
+            resultsContainer.appendChild(a);
+        }
+    }
+
+    // Initial load: fetch all (empty query)
+    fetch(`/patient/search?q=`)
+        .then(res => res.json())
+        .then(data => {
+            allPatients = Array.isArray(data) ? data : [];
+            render(allPatients);
+        })
+        .catch(() => {
+            resultsContainer.innerHTML = "<p>Chyba pri načítaní zoznamu pacientov.</p>";
+        });
+
+    // Small debounce so we don't spam requests while typing
+    let t;
     input.addEventListener("input", function () {
-        const query = input.value.trim();
+        clearTimeout(t);
+        t = setTimeout(() => {
+            const query = input.value.trim();
 
-        fetch(`/patient/search?q=${encodeURIComponent(query)}`)
-            .then(res => res.json())
-            .then(data => {
-                resultsContainer.innerHTML = "";
+            // Empty input => show all (cached) alphabetically
+            if (query === "") {
+                render(allPatients);
+                return;
+            }
 
-                if (data.length === 0) {
-                    resultsContainer.innerHTML = "<p>Žiadne výsledky.</p>";
-                    return;
-                }
-
-                data.forEach(d => {
-                    const div = document.createElement("a");
-                    div.className = "small-token";
-                    div.innerHTML = `${d.meno} — ${d.rodne_cislo}`;
-                    div.href = `/patient/update/${d.id}`;
-                    resultsContainer.appendChild(div);
+            // Non-empty => query server
+            fetch(`/patient/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => render(data))
+                .catch(() => {
+                    resultsContainer.innerHTML = "<p>Chyba pri vyhľadávaní.</p>";
                 });
-            });
+        }, 200);
     });
 });

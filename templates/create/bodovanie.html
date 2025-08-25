@@ -5,32 +5,7 @@
             <input type="text" id="patientSearch" name="patientSearch" autocomplete="off"
                 placeholder="Zadaj meno alebo rodné číslo...">
             <div id="patient-suggestions" class="suggestions"></div>
-            <input type="hidden" id="pacient_id" name="pacient_id">
-        </div>
-
-        <div id="selected-patient" class="selected-patient" style="display: none; margin-top: 20px;">
-            <table class="table">
-                <tbody>
-                    <tr>
-                        <td>
-                            <span class="accent">Meno</span>
-                        </td>
-                        <td id="patient-meno"></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <span class="accent">Rodné číslo</span>
-                        </td>
-                        <td id="patient-rc"></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <span class="accent">Poisťovňa</span>
-                        </td>
-                        <td id="patient-poistovna"></td>
-                    </tr>
-                </tbody>
-            </table>
+            <input type="hidden" id="pacient-id" name="pacient-id">
         </div>
 
         <div class="form-group">
@@ -41,21 +16,15 @@
         <div class="form-group" style="position: relative;">
             <label for="diagnoza">Diagnóza</label>
             <input type="text" id="diagnoza" name="diagnoza_display" autocomplete="off">
-            <input type="hidden" id="diagnoza_id" name="diagnoza">
+            <input type="hidden" id="diagnoza-id" name="diagnoza">
             <div id="diagnoza-suggestions" class="suggestions"></div>
         </div>
 
-        <div class="half-form-group">
-            <div class="form-group" style="position: relative;">
-                <label for="vykon">Výkon</label>
-                <input type="text" id="vykon" name="vykon-display" autocomplete="off">
-                <div id="vykon-suggestions" class="suggestions"></div>
-            </div>
-
-            <div class="form-group">
-                <label for="body">Počet bodov</label>
-                <input type="number" id="body" name="body" readonly>
-            </div>
+        <div class="form-group" style="position: relative;">
+            <label for="vykon">Výkon</label>
+            <input type="text" id="vykon" name="vykon-display" autocomplete="off">
+            <input type="hidden" id="vykon-id" name="vykon">
+            <div id="vykon-suggestions" class="suggestions"></div>    
         </div>
 
         <div class="form-group">

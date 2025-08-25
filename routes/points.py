@@ -7,6 +7,8 @@ from routes.doctors import get_doctors
 from flask_login import login_required
 from routes.doctors import get_doctors
 from routes.doctors import get_doctor
+from routes.vykony import get_vykon
+from routes.insurances import get_insurance
 
 points_bp = Blueprint('points', __name__)
 
@@ -31,51 +33,91 @@ def save_points():
         except Exception:
             return None
 
-    # --- inputs ---
-    pacient_id   = (payload.get("pacient_id") or "").strip()
-    date_iso     = (payload.get("date") or "").strip()
-    diagnoza_id  = (payload.get("diagnoza") or "").strip()
-    vykon        = (payload.get("vykon") or "").strip()
-    pocet        = (payload.get("pocet") or "1").strip()
-    _body        = (payload.get("body") or "0").strip()
-    odosielatel  = (payload.get("odosielatel") or "").strip()
-    odpor_iso    = (payload.get("odporucenie") or "").strip()
+    # accept both hyphen and underscore just in case
+    pacient_id  = (payload.get("pacient-id") or payload.get("pacient_id") or "").strip()
+    date_iso    = (payload.get("date") or "").strip()
+    diagnoza_id = (payload.get("diagnoza-id") or payload.get("diagnoza") or "").strip()
+    vykon_id    = (payload.get("vykon-id") or payload.get("vykon") or "").strip()
+    pocet_raw   = (payload.get("pocet") or "1").strip()
+    odosielatel = (payload.get("odosielatel") or "").strip()
+    odpor_iso   = (payload.get("odporucenie") or "").strip()
+
+    # coerce numbers/dates
+    try:
+        pocet = max(1, int(pocet_raw))
+    except Exception:
+        pocet = 1
 
     datum = parse_date(date_iso)
     datum_ziadanky = parse_date(odpor_iso)
 
     conn = get_db_connection()
     cur = conn.cursor()
-
     try:
-        cur.execute(
-            f"SELECT meno, rodne_cislo FROM pacienti WHERE id = ?",
-            (pacient_id,)
-        )
+        # 1) select order and unpacking must match
+        cur.execute("SELECT meno, rodne_cislo, poistovna FROM pacienti WHERE id = ?", (pacient_id,))
         row = cur.fetchone()
         if not row:
             return jsonify({"ok": False, "error": "Pacient neexistuje"}), 404
-        meno, rodne_cislo = row
+        meno, rodne_cislo, poistovna = row  # <-- correct order
 
+        # diagnoza code
+        diag = None
         try:
             if diagnoza_id:
                 d = get_diagnosis(diagnoza_id)
-                diag = d.kod
+                diag = getattr(d, "kod", None)
         except Exception:
             diag = None
 
-        pzs, zpr = None, None
+        try:
+            p = get_insurance(poistovna)
+            poistovna = getattr(p, "kod", None)
+
+        except Exception:
+            poistovna = None
+
+        # cena podľa poistovne
+        cena = None
+        try:
+            if vykon_id:
+                v = get_vykon(vykon_id)
+                raw = (
+                    v.poistovna25 if poistovna == "25"
+                    else v.poistovna24 if poistovna == "24"
+                    else v.poistovna27
+                )
+                if raw is not None:
+                    raw_str = str(raw).replace(" ", "").replace(",", ".")
+                    cena = float(raw_str) * pocet
+        except Exception:
+            cena = None
+
+        pzs = zpr = None
         if odosielatel:
             try:
                 l = get_doctor(odosielatel)
                 if l:
-                    pzs = l.pzs
-                    zpr = l.zpr
+                    pzs, zpr = l.pzs, l.zpr
             except Exception:
-                pzs, zpr = None, None
+                pzs = zpr = None
 
+        print(
+            "Inserting point:",
+            f"datum={datum}, rodne_cislo={rodne_cislo}, meno={meno}, diag={diag}, "
+            f"vykon={vykon_id}, pocet={pocet}, pzs={pzs}, zpr={zpr}, "
+            f"datum_ziadanky={datum_ziadanky}, cena={cena}, poistovna={poistovna}"
+        )
 
-        cur.execute(""" INSERT INTO bodovanie (datum, rodne_cislo, meno, diagnoza, vykon, pocet, pzs, zpr, datum_ziadanky) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (datum, rodne_cislo, meno, diag, vykon, pocet, pzs, zpr, datum_ziadanky))
+        # 3) 11 columns => 11 placeholders
+        cur.execute(
+            """
+            INSERT INTO bodovanie
+                (datum, rodne_cislo, meno, diagnoza, vykon, pocet, pzs, zpr, datum_ziadanky, cena, poistovna)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (datum, rodne_cislo, meno, diag, vykon_id, pocet, pzs, zpr, datum_ziadanky, cena, poistovna),
+        )
 
         conn.commit()
         return jsonify({"ok": True})
@@ -85,6 +127,11 @@ def save_points():
         print("ERROR /points/save:", repr(e))
         return jsonify({"ok": False, "error": "Uloženie zlyhalo"}), 500
     finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
         try: cur.close()
         except Exception: pass
         try: conn.close()

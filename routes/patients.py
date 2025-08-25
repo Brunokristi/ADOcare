@@ -105,6 +105,7 @@ def search_patients():
         SELECT * FROM pacienti
         WHERE sestra = ?
         AND (LOWER(meno) LIKE ? OR LOWER(rodne_cislo) LIKE ?)
+        ORDER BY meno COLLATE NOCASE;
     """, (nurse_id, f"%{query}%", f"%{query}%")).fetchall()
     conn.close()
 

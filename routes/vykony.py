@@ -20,7 +20,7 @@ def search_vykony():
     conn = get_db_connection()
     rows = conn.execute("""
         SELECT * FROM vykony
-        WHERE LOWER(vykon) LIKE ?
+        WHERE code LIKE ?
     """, (f"%{query.lower()}%",)).fetchall()
     conn.close()
 
@@ -29,7 +29,7 @@ def search_vykony():
 
 def get_vykon(vykon):
     conn = get_db_connection()
-    row = conn.execute("SELECT * FROM vykony WHERE vykon = ?", (vykon,)).fetchone()
+    row = conn.execute("SELECT * FROM vykony WHERE code = ?", (vykon,)).fetchone()
     conn.close()
     return Vykon(row) if row else None
 

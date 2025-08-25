@@ -7,3 +7,18 @@
 #results {
     width: 100%;
 }
+
+#add-patient-btn {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    transform: translateX(-50%);
+    width: min(720px, calc(100% - 32px));
+    z-index: 1000;
+    justify-content: center;
+    background: #333;
+    border: 1px solid rgba(0, 0, 0, .1);
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .15);
+    padding: 10px 12px;
+}

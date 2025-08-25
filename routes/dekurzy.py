@@ -144,6 +144,7 @@ def generate(patient_id, month_id):
         schedule.append([d, vysetrenie, vypis, text])
 
     schedule.sort(key=lambda x: x[0])
+    print("Final schedule:", schedule)
 
     generate_pdf(
         editable_schedule=schedule,

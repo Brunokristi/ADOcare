@@ -6,12 +6,12 @@
 
 <body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
 
-    <h1>
-        {% if session.get('month') %}
-        Mesiac: {{ "%02d" | format(session['month']['mesiac'] | int) }}/{{ session['month']['rok'] }}
-        {% else %}
-        Mesiac
-        {% endif %}
+    <h1> 
+        {% if session.get('month') %} 
+            Mesiac: {{ "%02d" | format(session['month']['mesiac'] | int) }}/{{ session['month']['rok'] }} 
+        {% else %} 
+            Mesiac 
+        {% endif %} 
     </h1>
 
     {% if session.get('nurse') %}

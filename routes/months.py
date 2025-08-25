@@ -14,8 +14,8 @@ def create_month():
     if request.method == "POST":
         data = request.form
 
-        mesiac = int(data["mesiac"])
-        rok = int(data["rok"])
+        mesiac = session.get("month", {}).get("mesiac", mesiac)
+        rok = session.get("month", {}).get("rok", rok)
         sestra_id = session.get("nurse", {}).get("id")
 
         first_day = date(rok, mesiac, 1)
@@ -54,7 +54,6 @@ def create_month():
 
         mesiac_id = cur.lastrowid
 
-        # ⏱️ Create daily records
         current_day = first_day
         while current_day <= last_day:
             cur.execute("INSERT INTO dni (datum, mesiac) VALUES (?, ?)", (current_day, mesiac_id))

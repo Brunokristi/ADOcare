@@ -7,11 +7,11 @@
 
 <div class="section">
     <div class="form-group">
-        <input type="text" id="searchInput" placeholder="Vyhľadaj pacienta podľa mena alebo rodného číslo..." />
+        <input type="text" id="patientSearch" placeholder="Vyhľadaj pacienta podľa mena alebo rodného číslo..." />
     </div>
 
-    <a href="{{ url_for('patient.create_patient') }}"" class="small-token outlined">
-        Pridať pacienta
+    <a href="{{ url_for('patient.create_patient') }}"" class="small-token outlined" id="add-patient-btn">
+        Pridať pacienta +
     </a>
     <div id="results">
         {% for patient in patients %}
@@ -20,10 +20,6 @@
         </a>
         {% endfor %}
     </div>
-
-    <a href="{{ url_for('patient.create_patient') }}"" class=" small-token outlined">
-        Pridať pacienta
-    </a>
 
 </div>
 {% endblock %}

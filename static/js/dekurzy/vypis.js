@@ -6,14 +6,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // vyber pacienta a zobraz jeho udaje
     function initializePatientSelection() {
-        const patientLinks = document.querySelectorAll(".month-select");
+        const patientLinks = document.querySelectorAll(".patient-select");
         const selectedSection = document.getElementById("selected-patient");
 
         patientLinks.forEach(link => {
             link.addEventListener("click", function (e) {
                 e.preventDefault();
 
-                document.querySelectorAll(".month-select.active-patient").forEach(el => el.classList.remove("active-patient"));
+                document.querySelectorAll(".patient-select.active-patient").forEach(el => el.classList.remove("active-patient"));
                 this.classList.add("active-patient");
 
                 selectedPatient = {
@@ -83,47 +83,34 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // zoznam datumov v mesiaci pre pacienta
-    function getAllExpectedDates(start, end) {
-        const dates = [];
-        let current = new Date(start);
-
-        while (current <= new Date(end)) {
-            const iso = current.toISOString().split("T")[0];
-            dates.push(iso);
-            current.setDate(current.getDate() + 1);
-        }
-
-        return dates;
-    }
-
-    // inicializacia flatpickr
     function initializeFlatpickers() {
         if (!selectedPatient || !selectedPatient.dates_all) return;
 
         try {
-            let raw = selectedPatient.dates_all;
+            // Parse dates_all robustly (handles double-encoded JSON)
+            let parsed = selectedPatient.dates_all;
+            while (typeof parsed === "string") parsed = JSON.parse(parsed);
+            if (!Array.isArray(parsed) || parsed.length === 0) return;
 
-            // Recursively parse stringified arrays
-            let parsed = raw;
-            while (typeof parsed === "string") {
-                parsed = JSON.parse(parsed);
-            }
+            // Normalize to YYYY-MM-DD strings and build a Set for O(1) lookups
+            const allowedISO = parsed
+                .filter(Boolean)
+                .map(s => String(s).slice(0, 10)); // ensure 'YYYY-MM-DD'
+            const allowedSet = new Set(allowedISO);
 
-            if (!Array.isArray(parsed)) {
-                throw new Error("Očakávalo sa pole dátumov.");
-            }
+            // Determine month bounds from the earliest allowed date
+            const firstISO = allowedISO.slice().sort()[0];
+            const [yy, mm, dd] = firstISO.split("-").map(n => +n);
+            const startOfMonth = new Date(yy, mm - 1, 1);
+            const endOfMonth = new Date(yy, mm, 0); // last day of that month
 
-            // Convert to Date objects for Flatpickr and formatted strings for UI
-            const defaultDates = parsed.map(iso => {
-                const [year, month, day] = iso.split("-");
-                return new Date(year, month - 1, day); // Month is zero-based
-            });
-
-            const formattedDates = parsed.map(iso => {
-                const [year, month, day] = iso.split("-");
-                return `${day}-${month}-${year}`;
-            });
+            // Helper to format Date -> YYYY-MM-DD (local, no TZ surprises)
+            const toISO = (d) => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, "0");
+                const day = String(d.getDate()).padStart(2, "0");
+                return `${y}-${m}-${day}`;
+            };
 
             flatpickr.localize(flatpickr.l10ns.sk);
 
@@ -131,28 +118,42 @@ document.addEventListener("DOMContentLoaded", function () {
                 const hiddenInput = document.getElementById(`dates_list_${index + 1}`);
                 const copyPasteArea = document.getElementById(`copy_paste_dates_${index + 1}`);
 
-                if (inputElem._flatpickr) {
-                    inputElem._flatpickr.destroy();
-                }
+                if (inputElem._flatpickr) inputElem._flatpickr.destroy();
 
-
-                flatpickr(inputElem, {
+                const fp = flatpickr(inputElem, {
                     mode: "multiple",
                     dateFormat: "d-m-Y",
-                    enable: defaultDates,
-                    allowInput: true,
+                    allowInput: false,          // prevent typing arbitrary dates
                     enableTime: false,
                     locale: { firstDayOfWeek: 1 },
-                    onChange: function (selectedDates) {
-                        const selectedValues = selectedDates.map(date => {
-                            return flatpickr.formatDate(date, "Y-m-d");
-                        });
 
-                        hiddenInput.value = selectedValues.join(",");
-                        copyPasteArea.value = selectedValues.map(d => {
-                            const [y, m, d2] = d.split("-");
-                            return `${d2}-${m}-${y}`;
-                        }).join(", ");
+                    // Restrict navigation to the month:
+                    minDate: startOfMonth,
+                    maxDate: endOfMonth,
+
+                    // Only allow clicks on your allowed dates:
+                    enable: [
+                        function (date) {
+                            return allowedSet.has(toISO(date));
+                        }
+                    ],
+
+                    onReady(selectedDates, dateStr, instance) {
+                        instance.jumpToDate(new Date(yy, mm - 1, 1));
+                    },
+
+                    onChange(selectedDates) {
+                        const ymd = selectedDates.map(d => toISO(d));
+
+                        if (hiddenInput) hiddenInput.value = ymd.join(",");
+                        if (copyPasteArea) {
+                            copyPasteArea.value = ymd
+                                .map(d => {
+                                    const [y, m, dd] = d.split("-");
+                                    return `${dd}-${m}-${y}`;
+                                })
+                                .join(", ");
+                        }
 
                         inputElem.value = "";
                         updatePatientDataAttributes();
@@ -165,13 +166,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-
     // aktualizacia dat pacienta
     // pri zmene textu v textarea alebo zmeny datumu
     function updatePatientDataAttributes() {
         if (!selectedPatient) return;
 
-        const patientLink = document.querySelector(`.month-select[data-id="${selectedPatient.id}"]`);
+        const patientLink = document.querySelector(`.patient-select[data-id="${selectedPatient.id}"]`);
         if (!patientLink) return;
 
         for (let i = 0; i < 8; i++) {
