@@ -94,7 +94,7 @@ function setupSelectHandlers() {
             ? "/transport/menu"
             : "/patients/menu";
         const redirectTo = redirect || defaultRedirect;
-
+        debugger; // problem je tu
         try {
             const res = await postJSON('/month/select', payload);
             if (res?.success) {
