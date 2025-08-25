@@ -1,9 +1,7 @@
-from typing import Any, List, Tuple
+from typing import Any, Tuple
+from utils.ORS_connection_manager import ORS_connection_manager
 from utils.database import get_db_connection
-from openrouteservice import Client
 from easy import Config, Logger
-from time import sleep
-import time
 import threading
 import math
 
@@ -26,16 +24,9 @@ class Road_manager:
 
             self.config: Config = config
             self.logger: Logger = logger if logger else config.logger
-            self._set_api_clients()
+
             self._lock = threading.Lock()
-            self.tried_keys = set()
-
-    def _set_api_clients(self) -> None:
-            self.api_client_index: int = 0
-            self.clients: List[Client] = []
-
-            for api_key in self.config.getValue("open route", "API keys"):
-                self.clients.append(Client(key=api_key, retry_over_query_limit=False))
+            self.ors_connection_manager: ORS_connection_manager = ORS_connection_manager(config)
 
     def addClient(self, client_coordinate: Tuple[float, float]) -> None:
         """In the absence of such parameters as latitude and longitude for the client,
@@ -120,7 +111,7 @@ class Road_manager:
         @return: A tuple where the first element is the distance in meters and the second element is the time in seconds.
         Returns (None, None) if an error occurs while fetching the path time.
         """
-        routes = self.execute_open_route_request(method_name="directions",
+        routes = self.execute_open_route_request(operation="directions",
             coordinates=[[start[1], start[0]], [end[1], end[0]]],
             profile='driving-car',
             format='json'
@@ -132,9 +123,6 @@ class Road_manager:
             self._cache_road(start=start, end=end, data=data)
 
         return data
-
-    def _toggle_clients_index(self) -> None:
-        self.api_client_index = (self.api_client_index + 1) % len(self.clients)
 
     def _calculate_bounds(self, coordinate: Tuple[float, float]) -> Tuple[float, float, float, float]:
         """Calculates the bounding coordinates based on a given latitude and longitude as coordinate tuple.
@@ -174,37 +162,12 @@ class Road_manager:
 
         return self._calculate_travel_time_and_distance(start, end)
 
-    def execute_open_route_request(self, method_name: str, *args, **kwargs) -> Any:
-        method = getattr(self._get_open_route_service_client(), method_name)
-
-        if not callable(method):
-            raise ValueError(f"Function '{method_name}' does not exist.")
-
+    def execute_open_route_request(self, operation: str, *args, **kwargs) -> Any:
         while True:
-            current_tried_index = self.api_client_index
-            timestamp = int(time.time())
+            with self._lock:
+                method = self.ors_connection_manager.get_operation_method(operation)
+
             try:
                 return method(*args, **kwargs)
-
             except Exception as e:
-                if e.message["error"] == "Rate Limit Exceeded":
-                    with self._lock:
-                        if timestamp + self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds") > int(time.time()):
-                            self.tried_keys.add(current_tried_index)
-
-                        if current_tried_index == self.api_client_index:
-                            prev_api_index: int = self.api_client_index
-                            self._toggle_clients_index()
-                            self.logger.inform(f"The request limit for API key number {prev_api_index} has been reached, switching to number {self.api_client_index}...")
-
-                        method = getattr(self._get_open_route_service_client(), method_name)
-
-                        if len(self.tried_keys) == len(self.clients):
-                            self.logger.inform(f"we created a cycle, slipping for {self.config.getValue('open route', 'sleep time after unsuccessful polling of all API keys, in seconds')} seconds...")
-                            sleep(self.config.getValue("open route", "sleep time after unsuccessful polling of all API keys, in seconds"))
-                            self.tried_keys.clear()
-                else:
-                    raise
-
-    def _get_open_route_service_client(self) -> Client:
-        return self.clients[self.api_client_index]
+                continue # hear cen be some callback but this realization do it implicitly
