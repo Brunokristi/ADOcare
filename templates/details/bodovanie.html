@@ -60,10 +60,27 @@
                     <option value="A">Aditívna dávka</option>
                 </select>
             </div>
+
+            <div class="form-group">
+                <label for="poistovna">Poisťovňa</label>
+                <select name="poistovna" id="poistovna">
+                    {% for poistovna in poistovne %}
+                        <option value="{{ poistovna.kod }}">{{ poistovna.nazov }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="range">Obdobie</label>
+                <input class="dates" type="text" id="range" placeholder="Vyberte dátumy" autocomplete="off">
+                <input type="hidden" id="start_date">
+                <input type="hidden" id="end_date">
+            </div>
+
         </div>
 
         <div style="width: 600px;">
-            <button type="button" class="btn" id="save-btn">Vytvoriť dátové rozhranie pre dopravu</button>
+            <button type="button" class="btn" id="save-btn">Vytvoriť dávku pre poisťovňu</button>
         </div>
     </div>
 
@@ -87,4 +104,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/transport/transport.js') }}"></script>
+<script src="{{ url_for('static', filename='js/details/bodovanie.js') }}"></script>
 {% endblock %}

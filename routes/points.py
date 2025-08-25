@@ -8,7 +8,11 @@ from flask_login import login_required
 from routes.doctors import get_doctors
 from routes.doctors import get_doctor
 from routes.vykony import get_vykon
-from routes.insurances import get_insurance
+from routes.insurances import get_insurance, get_insurances
+from routes.companies import get_company
+from routes.nurses import get_nurse
+import os
+import re
 
 points_bp = Blueprint('points', __name__)
 
@@ -33,7 +37,6 @@ def save_points():
         except Exception:
             return None
 
-    # accept both hyphen and underscore just in case
     pacient_id  = (payload.get("pacient-id") or payload.get("pacient_id") or "").strip()
     date_iso    = (payload.get("date") or "").strip()
     diagnoza_id = (payload.get("diagnoza-id") or payload.get("diagnoza") or "").strip()
@@ -42,7 +45,6 @@ def save_points():
     odosielatel = (payload.get("odosielatel") or "").strip()
     odpor_iso   = (payload.get("odporucenie") or "").strip()
 
-    # coerce numbers/dates
     try:
         pocet = max(1, int(pocet_raw))
     except Exception:
@@ -61,7 +63,6 @@ def save_points():
             return jsonify({"ok": False, "error": "Pacient neexistuje"}), 404
         meno, rodne_cislo, poistovna = row  # <-- correct order
 
-        # diagnoza code
         diag = None
         try:
             if diagnoza_id:
@@ -77,15 +78,14 @@ def save_points():
         except Exception:
             poistovna = None
 
-        # cena podľa poistovne
         cena = None
         try:
             if vykon_id:
                 v = get_vykon(vykon_id)
                 raw = (
-                    v.poistovna25 if poistovna == "25"
-                    else v.poistovna24 if poistovna == "24"
-                    else v.poistovna27
+                    v.cena25 if poistovna == "25"
+                    else v.cena24 if poistovna == "24"
+                    else v.cena27
                 )
                 if raw is not None:
                     raw_str = str(raw).replace(" ", "").replace(",", ".")
@@ -102,14 +102,6 @@ def save_points():
             except Exception:
                 pzs = zpr = None
 
-        print(
-            "Inserting point:",
-            f"datum={datum}, rodne_cislo={rodne_cislo}, meno={meno}, diag={diag}, "
-            f"vykon={vykon_id}, pocet={pocet}, pzs={pzs}, zpr={zpr}, "
-            f"datum_ziadanky={datum_ziadanky}, cena={cena}, poistovna={poistovna}"
-        )
-
-        # 3) 11 columns => 11 placeholders
         cur.execute(
             """
             INSERT INTO bodovanie
@@ -159,4 +151,131 @@ def list_points():
             "zpr": row[7],
             "datum_ziadanky": row[8]
         })
-    return render_template('details/bodovanie.html', points=points_list)
+
+    poistovne = get_insurances()
+    return render_template('details/bodovanie.html', points=points_list, poistovne=poistovne)
+
+@points_bp.route("/points/generate", methods=["POST"])
+@login_required
+def generate_points():
+    payload = request.get_json(silent=True) or request.form    
+    
+    cislo_faktury = payload.get("invoice_number")
+    charakter_davky = payload.get("character")
+    start_date = payload.get("start_date")
+    end_date = payload.get("end_date")
+    insurance = payload.get("poistovna")
+    
+    sestra = session.get("nurse" )
+    sestra_id = sestra["id"]
+    ados_id = sestra["ados"]
+    sestra = get_nurse(sestra_id)
+    ados = get_company(ados_id)
+
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT
+        datum,
+        rodne_cislo,
+        meno,
+        diagnoza,
+        vykon,
+        pocet,
+        pzs,
+        zpr,
+        datum_ziadanky,
+        cena,
+        poistovna
+        FROM bodovanie
+        WHERE poistovna = ?
+        AND DATE(datum) >= DATE(?)
+        AND DATE(datum) <= DATE(?)
+        ORDER BY datum ASC
+        """,
+        (insurance, start_date, end_date)
+    )
+    rows = cur.fetchall()
+
+
+    
+
+    typ_davky = "753b"
+    ico_odosielatela = ados["ico"]
+    datum_odoslania = datetime.now().strftime('%Y%m%d')
+    cislo_davky = "001"
+    pocet_dokladov = len(rows)
+    pocet_medii = "1"
+    cislo_media = "1"
+    if insurance == "25": pobocka = "2521"
+    elif insurance == "27": pobocka = "2700"
+    elif insurance == "24": pobocka = "2400"
+
+
+
+    
+    
+
+    identifikator_pzs = ados["identifikator"]
+    kod_pzs = ados["kod"]
+    kod_zp = sestra["kod"]
+    uvazok = sestra["uvazok"]
+    obdobie = f"{start_date[:7].replace('-', '')}"
+    typ_starostlivosti = "850"
+    cislo_faktury = cislo_faktury
+    mena = "EUR"
+
+
+    poradie = 0
+
+ 
+    
+    total_cost = sum((r["cena"])  for r in rows)
+    print("cena celkom:", total_cost)
+
+
+
+    filename = f"davka.{cislo_faktury}.txt"
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    folder = os.path.join(desktop, "ADOS_davky")
+    os.makedirs(folder, exist_ok=True)
+    full_path = os.path.join(folder, filename)
+
+    try:
+        with open(full_path, "w", encoding="utf-8") as file:
+            file.write(
+                f"{charakter_davky}|{typ_davky}|{ico_odosielatela}|{datum_odoslania}|"
+                f"{cislo_davky}|{pocet_dokladov}|{pocet_medii}|{cislo_media}|"
+                f"{pobocka}|\n"
+            )
+            file.write(
+                f"{identifikator_pzs}|{kod_pzs}|{kod_zp}|{uvazok}|"
+                f"{obdobie}|{cislo_faktury}|{mena}|\n"
+            )
+
+            for row in rows:
+                den = row["datum"][-2:] 
+                diagnoza = re.sub(r'\W', '', row["diagnoza"]) if row["diagnoza"] else ''
+
+                file.write(
+                    f"{poradie}|{den}|{row['rodne_cislo']}|{row['pacient_meno']}|{'diagnoza'}|"
+                    f"{row['vykon']}|{row['pocet']}|||"
+                    f"|||0.00|"
+                    f"0.00||||"
+                    f"O|{row['pzs']}|{row['zpr']}||"
+                    f"{row['id_poistenca']}|{row['pohlavie']}|\n"
+                )
+                poradie += 1
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        try:
+            os.remove(f"/tmp/transport_data_{file_id}.json")
+        except Exception as e:
+            print(f"Chyba pri mazaní dočasného súboru: {e}")
+
+    return jsonify({"ok": True, "message": "Points generation initiated."})
