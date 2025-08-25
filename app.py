@@ -26,7 +26,7 @@ from utils.roads_manager import Road_manager
 
 
 config = Config(configPath="Configs/config.json", logger=Logger(2))
-Road_manager(config=config, logger=Logger())
+Road_manager(config=config, logger=Logger(2))
 
 app = Flask(__name__)
 app.secret_key = config.getValue("app secret key")

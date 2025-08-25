@@ -9,6 +9,7 @@
             "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
             "5b3ce3597851110001cf624834beac90e22b4e7aae5bb2e22e93aa5d"
         ],
+        "count of fails for one request": 5,
         "methods": [
             "directions", "isochrones", "distance_matrix", "elevation_line",
             "elevation_point", "pelias_autocomplete", "pelias_reverse", "pelias_search",

@@ -163,11 +163,25 @@ class Road_manager:
         return self._calculate_travel_time_and_distance(start, end)
 
     def execute_open_route_request(self, operation: str, *args, **kwargs) -> Any:
+        fail_counter: int = 0
+
         while True:
             with self._lock:
                 method = self.ors_connection_manager.get_operation_method(operation)
 
             try:
-                return method(*args, **kwargs)
+                self.logger.inform(f"executing \"{operation}\" request...")
+                data = method(*args, **kwargs)
+                self.logger.success(", ".join(f"{k}={v}" for k, v in kwargs.items()))
+                return data
             except Exception as e:
+                fail_counter += 1
+
+                self.logger.failed(f"failed to execute \"{operation}\" request, \n{e}")
+                self.logger.inform(", ".join(f"{k}={v}" for k, v in kwargs.items()))
+
+                if fail_counter >= self.config.getValue("open route", "count of fails for one request"):
+                    self.logger.failed("error limit executed")
+                    raise
+
                 continue # hear cen be some callback but this realization do it implicitly
