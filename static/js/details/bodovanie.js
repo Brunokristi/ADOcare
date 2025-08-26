@@ -1,5 +1,6 @@
+
 document.addEventListener("DOMContentLoaded", () => {
-    // --- Flatpickr init ---
+    window.scrollTo(0, document.body.scrollHeight);
     flatpickr("#range", {
         mode: "range",
         dateFormat: "Y-m-d",
@@ -16,8 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+
+    // Generate form submission
     const btn = document.getElementById("save-btn");
-    btn.addEventListener("click", handleSubmit);
+    if (btn) btn.addEventListener("click", handleSubmit);
 
     async function handleSubmit() {
         clearInvalid();
@@ -37,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
             end_date: endEl.value
         };
 
-        // --- Validation ---
         let valid = true;
         if (!payload.invoice_number) { invoiceEl.classList.add("invalid"); valid = false; }
         if (!payload.character) { charEl.classList.add("invalid"); valid = false; }
@@ -49,28 +51,27 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // --- Submit to backend ---
         try {
             btn.disabled = true;
+            const originalText = btn.textContent;
             btn.textContent = "Ukladám…";
 
             const res = await fetch("/points/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "same-origin",
                 body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
             const data = await res.json().catch(() => ({}));
-            alert("Dátové rozhranie bolo vytvorené.");
-            // napr: window.location.href = data.redirect_url;
 
+            showMessage("Dávka bola vytvorená.", false);
         } catch (err) {
-            alert("Nepodarilo sa odoslať formulár.");
+            showMessage("Nepodarilo sa odoslať formulár.", true);
         } finally {
             btn.disabled = false;
-            btn.textContent = "Vytvoriť dátové rozhranie pre dopravu";
+            btn.textContent = "Vytvoriť dávku pre poisťovňu";
         }
     }
 
@@ -78,4 +79,57 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll("input.invalid, select.invalid")
             .forEach(el => el.classList.remove("invalid"));
     }
+
+    // ---------------------------
+    // Optional: inline table actions (save/delete) if #pointsTable exists
+    // ---------------------------
+    const pointsTable = document.getElementById("pointsTable");
+    if (!pointsTable) return;
+
+    pointsTable.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".btn-del");
+        if (!btn) return;
+
+        const tr = btn.closest("tr");
+        const id = tr?.dataset?.id;
+        const status = tr.querySelector(".row-status");
+
+        if (!id) return;
+
+        if (!confirm("Naozaj zmazať tento záznam?")) return;
+
+        try {
+            showStatus(status, "Mažem…");
+            const res = await fetch(`/points/delete/${id}`, { method: "DELETE" });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            tr.remove();
+        } catch (err) {
+            showStatus(status, "Mazanie zlyhalo", true);
+        }
+    });
+
+    function showStatus(el, msg, isErr = false) {
+        if (!el) return;
+        el.textContent = msg;
+        el.style.color = isErr ? "#b00020" : "inherit";
+        if (!isErr) setTimeout(() => { if (el.textContent === msg) el.textContent = ""; }, 2000);
+    }
 });
+
+
+function showMessage(text, isError = false) {
+    let box = document.getElementById("flash-msg");
+    if (!box) {
+        box = document.createElement("div");
+        box.id = "flash-msg";
+        box.style.cssText = "position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:9999;font-size:14px;background:#333;color:#fff;opacity:.95";
+        document.body.appendChild(box);
+    }
+    box.textContent = text;
+    box.style.background = isError ? "#b00020" : "#333";
+    setTimeout(() => {
+        if (box) box.remove();
+    }, 2500);
+}
+

@@ -59,10 +59,19 @@
 
         // flatpickr hookup (optional)
         if (window.flatpickr) {
-            if (dateEl && !dateEl._flatpickr)
-                flatpickr(dateEl, { dateFormat: "d-m-Y", locale: "sk" });
-            if (odporucenieEl && !odporucenieEl._flatpickr)
-                flatpickr(odporucenieEl, { dateFormat: "d-m-Y", locale: "sk" });
+            if (dateEl && !dateEl._flatpickr) {
+                flatpickr(dateEl, {
+                    dateFormat: "d-m-Y",
+                    locale: "sk",
+                    defaultDate: new Date()
+                });
+            }
+            if (odporucenieEl && !odporucenieEl._flatpickr) {
+                flatpickr(odporucenieEl, {
+                    dateFormat: "d-m-Y",
+                    locale: "sk"
+                });
+            }
         }
 
         // ---------- PATIENT AUTOCOMPLETE ----------

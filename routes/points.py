@@ -61,7 +61,7 @@ def save_points():
         row = cur.fetchone()
         if not row:
             return jsonify({"ok": False, "error": "Pacient neexistuje"}), 404
-        meno, rodne_cislo, poistovna = row  # <-- correct order
+        meno, rodne_cislo, poistovna = row
 
         diag = None
         try:
@@ -129,6 +129,25 @@ def save_points():
         try: conn.close()
         except Exception: pass
 
+@points_bp.route("/points/delete/<int:row_id>", methods=["DELETE"])
+@login_required
+def delete_point(row_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM bodovanie WHERE rowid = ?", (row_id,))
+        conn.commit()
+        if cur.rowcount == 0:
+            return jsonify({"ok": False, "error": "Záznam neexistuje"}), 404
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"ok": False, "error": "Mazanie zlyhalo"}), 500
+    finally:
+        try: cur.close()
+        except: pass
+        try: conn.close()
+        except: pass
 
 @points_bp.route("/points/list", methods=["GET"])
 @login_required
@@ -141,15 +160,16 @@ def list_points():
     points_list = []
     for row in rows:
         points_list.append({
-            "datum": row[0],
-            "rodne_cislo": row[1],
-            "meno": row[2],
-            "diagnoza": row[3],
-            "vykon": row[4],
-            "pocet": row[5],
-            "pzs": row[6],
-            "zpr": row[7],
-            "datum_ziadanky": row[8]
+            "id": row[0],
+            "datum": row[1],
+            "rodne_cislo": row[2],
+            "meno": row[3],
+            "diagnoza": row[4],
+            "vykon": row[5],
+            "pocet": row[6],
+            "pzs": row[7],
+            "zpr": row[8],
+            "datum_ziadanky": row[9]
         })
 
     poistovne = get_insurances()
@@ -158,124 +178,163 @@ def list_points():
 @points_bp.route("/points/generate", methods=["POST"])
 @login_required
 def generate_points():
-    payload = request.get_json(silent=True) or request.form    
-    
-    cislo_faktury = payload.get("invoice_number")
+    payload = request.get_json(silent=True) or request.form
+
+    # --- Inputs from payload / session ---
+    cislo_faktury   = payload.get("invoice_number")
     charakter_davky = payload.get("character")
-    start_date = payload.get("start_date")
-    end_date = payload.get("end_date")
-    insurance = payload.get("poistovna")
-    
-    sestra = session.get("nurse" )
-    sestra_id = sestra["id"]
-    ados_id = sestra["ados"]
+    start_date      = payload.get("start_date")
+    end_date        = payload.get("end_date")
+    insurance       = payload.get("poistovna")
+
+    sestra_session = session.get("nurse")
+    sestra_id = sestra_session["id"]
+    ados_id   = sestra_session["ados"]
+
+    # Your accessors:
     sestra = get_nurse(sestra_id)
-    ados = get_company(ados_id)
-
-
+    ados   = get_company(ados_id)
+    # --- DB query ---
+    import sqlite3
     conn = get_db_connection()
+    conn.row_factory = sqlite3.Row  # ensure dict-like rows
     cur = conn.cursor()
     cur.execute(
         """
         SELECT
-        datum,
-        rodne_cislo,
-        meno,
-        diagnoza,
-        vykon,
-        pocet,
-        pzs,
-        zpr,
-        datum_ziadanky,
-        cena,
-        poistovna
-        FROM bodovanie
-        WHERE poistovna = ?
-        AND DATE(datum) >= DATE(?)
-        AND DATE(datum) <= DATE(?)
-        ORDER BY datum ASC
+          b.datum,
+          b.rodne_cislo,
+          p.pohlavie AS pohlavie,
+          b.meno,
+          b.diagnoza,
+          b.vykon,
+          b.pocet,
+          b.pzs,
+          b.zpr,
+          b.datum_ziadanky,
+          b.cena,
+          b.poistovna
+        FROM bodovanie AS b
+        JOIN pacienti AS p
+          ON b.rodne_cislo = p.rodne_cislo
+        WHERE b.poistovna = ?
+          AND DATE(b.datum) >= DATE(?)
+          AND DATE(b.datum) <= DATE(?)
+        ORDER BY b.datum ASC
         """,
         (insurance, start_date, end_date)
     )
     rows = cur.fetchall()
 
+    # --- Header values ---
+    typ_davky         = "753b"
+    ico_odosielatela  = ados.ico
+    datum_odoslania   = datetime.now().strftime("%Y%m%d")
+    cislo_davky       = "001"
+    pocet_dokladov    = len(rows)
+    pocet_medii       = "1"
+    cislo_media       = "1"
 
-    
-
-    typ_davky = "753b"
-    ico_odosielatela = ados["ico"]
-    datum_odoslania = datetime.now().strftime('%Y%m%d')
-    cislo_davky = "001"
-    pocet_dokladov = len(rows)
-    pocet_medii = "1"
-    cislo_media = "1"
+    # poisťovňa -> pobočka
     if insurance == "25": pobocka = "2521"
     elif insurance == "27": pobocka = "2700"
     elif insurance == "24": pobocka = "2400"
+    else: pobocka = str(insurance)
 
+    identifikator_pzs = ados.identifikator
+    kod_pzs           = ados.kod
+    kod_zp            = sestra.kod
+    uvazok            = sestra.uvazok
+    obdobie           = f"{start_date[:7].replace('-', '')}"
+    typ_starostlivosti= "850"
+    mena              = "EUR"
 
-
-    
-    
-
-    identifikator_pzs = ados["identifikator"]
-    kod_pzs = ados["kod"]
-    kod_zp = sestra["kod"]
-    uvazok = sestra["uvazok"]
-    obdobie = f"{start_date[:7].replace('-', '')}"
-    typ_starostlivosti = "850"
-    cislo_faktury = cislo_faktury
-    mena = "EUR"
-
-
-    poradie = 0
-
- 
-    
-    total_cost = sum((r["cena"])  for r in rows)
+    # --- Totals ---
+    # If 'cena' is unit price, multiply by 'pocet'
+    total_cost = sum(float(r["cena"] or 0) for r in rows)
     print("cena celkom:", total_cost)
 
-
-
+    # --- File path ---
     filename = f"davka.{cislo_faktury}.txt"
-    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-    folder = os.path.join(desktop, "ADOS_davky")
+    desktop  = os.path.join(os.path.expanduser("~"), "Desktop")
+    folder   = os.path.join(desktop, "ADOS_davky")
     os.makedirs(folder, exist_ok=True)
     full_path = os.path.join(folder, filename)
 
+    # --- Write file ---
     try:
         with open(full_path, "w", encoding="utf-8") as file:
+            # Header line
             file.write(
                 f"{charakter_davky}|{typ_davky}|{ico_odosielatela}|{datum_odoslania}|"
-                f"{cislo_davky}|{pocet_dokladov}|{pocet_medii}|{cislo_media}|"
-                f"{pobocka}|\n"
+                f"{cislo_davky}|{pocet_dokladov}|{pocet_medii}|{cislo_media}|{pobocka}|\n"
             )
+            # Nurse/company line
             file.write(
                 f"{identifikator_pzs}|{kod_pzs}|{kod_zp}|{uvazok}|"
-                f"{obdobie}|{cislo_faktury}|{mena}|\n"
+                f"{obdobie}|{typ_starostlivosti}|{cislo_faktury}|{mena}|\n"
             )
 
+            # Detail lines
+            poradie = 1
             for row in rows:
-                den = row["datum"][-2:] 
-                diagnoza = re.sub(r'\W', '', row["diagnoza"]) if row["diagnoza"] else ''
+                # Day (last 2 digits). If stored as "YYYY-MM-DD", take tail; otherwise format.
+                d = row["datum"]
+                if isinstance(d, str):
+                    den = d[-2:]
+                else:
+                    # handle date/datetime objects just in case
+                    try:
+                        den = f"{d.day:02d}"
+                    except Exception:
+                        den = ""
 
-                file.write(
-                    f"{poradie}|{den}|{row['rodne_cislo']}|{row['pacient_meno']}|{'diagnoza'}|"
-                    f"{row['vykon']}|{row['pocet']}|||"
-                    f"|||0.00|"
-                    f"0.00||||"
-                    f"O|{row['pzs']}|{row['zpr']}||"
-                    f"{row['id_poistenca']}|{row['pohlavie']}|\n"
-                )
+                # As requested, keep the same field content/order; just make it readable
+                line_parts = [
+                    str(poradie),
+                    den,
+                    row["rodne_cislo"],
+                    row["meno"],
+                    re.sub(r"\W", "", row["diagnoza"]) if row["diagnoza"] else "",
+                    row["vykon"],
+                    str(row["pocet"]),
+                    "", "", "",                               # three empties
+                    "", "", "",                               # three empties (you had six total before the 0.00s)
+                    "0.00",
+                    "0.00",
+                    "", "", "", "",                           # four empties
+                    "O",
+                    row["pzs"],
+                    row["zpr"],
+                    "",
+                    "",                                        # id_poistenca not present in query -> left empty
+                    row["pohlavie"],
+                    row["datum_ziadanky"].replace("-", "") if row["datum_ziadanky"] else "",
+                    "",
+                    "",
+                    "",
+                    "0.00",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                ]
+                file.write("|".join(line_parts) + "\n")
                 poradie += 1
 
-        return jsonify({"success": True})
+        return jsonify({
+            "success": True,
+            "file": full_path,
+            "row_count": pocet_dokladov,
+            "total_cost": round(total_cost, 2)
+        }), 200
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-    finally:
-        try:
-            os.remove(f"/tmp/transport_data_{file_id}.json")
-        except Exception as e:
-            print(f"Chyba pri mazaní dočasného súboru: {e}")
-
-    return jsonify({"ok": True, "message": "Points generation initiated."})

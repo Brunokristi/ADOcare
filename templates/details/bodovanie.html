@@ -4,46 +4,45 @@
 
 {% block content %}
 
-<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}">
+<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}" style = "padding-top: 48px; margin-top: 0;">
 
     {% if session.get('nurse') %}
-
-    <div class="section" style="margin-bottom: 200px;">
-        <div class="lined-heading"><span>Bodovanie</span></div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Dátum</th>
-                        <th>Rodné Číslo</th>
-                        <th>Meno Pacienta</th>
-                        <th>Diagnóza</th>
-                        <th>Výkon</th>
-                        <th>Počet</th>
-                        <th>PZS Lekára</th>
-                        <th>ZPR Lekára</th>
-                        <th>Dátum Žiadanky</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in points %}
-                    <tr>
-                        <td>{{ p.datum }}</td>
-                        <td>{{ p.rodne_cislo }}</td>
-                        <td>{{ p.meno }}</td>
-                        <td>{{ p.diagnoza }}</td>
-                        <td>{{ p.vykon }}</td>
-                        <td>{{ p.pocet }}</td>
-                        <td>{{ p.pzs }}</td>
-                        <td>{{ p.zpr }}</td>
-                        <td>{{ p.datum_ziadanky }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    
+    <table class="table-vykony" id="pointsTable" style="padding-top: 30px;">
+        <thead>
+            <tr>
+                <th style="width:110px; top: 48px;">Dátum</th>
+                <th style="width:120px; top: 48px;">Rodné Číslo</th>
+                <th style="width:200px; top: 48px;">Meno Pacienta</th>
+                <th style="width:120px; top: 48px;">Diagnóza</th>
+                <th style="width:90px; top: 48px;">Výkon</th>
+                <th style="width:70px; top: 48px;">Počet</th>
+                <th style="width:110px; top: 48px;">PZS Lekára</th>
+                <th style="width:110px; top: 48px;">ZPR Lekára</th>
+                <th style="width:130px; top: 48px;">Dátum Žiadanky</th>
+                <th style="width:90px; top: 48px;">Akcia</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in points %}
+            <tr data-id="{{ p.id }}">
+                <td>{{ p.datum }}</td>
+                <td class="mono">{{ p.rodne_cislo }}</td>
+                <td>{{ p.meno }}</td>
+                <td>{{ p.diagnoza }}</td>
+                <td class="mono">{{ p.vykon }}</td>
+                <td class="num">{{ p.pocet }}</td>
+                <td>{{ p.pzs }}</td>
+                <td>{{ p.zpr }}</td>
+                <td>{{ p.datum_ziadanky }}</td>
+                <td class="actions">
+                    <button class="btn-del" title="Zmazať">Zmazať</button>
+                    <span class="row-status" aria-live="polite"></span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
     <div class="bottom-section">
         <div class="half-form-group" style="width: 600px;">
@@ -97,12 +96,11 @@
 {% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/transport/transport.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/details/bodovanie.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/details/vykony.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/details/bodovanie.css') }}">
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/transport/transport.js') }}"></script>
-<script src="{{ url_for('static', filename='js/details/bodovanie.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/transport/transport.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/details/bodovanie.js') }}"></script>
 {% endblock %}

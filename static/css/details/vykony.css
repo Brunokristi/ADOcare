@@ -7,7 +7,7 @@
 
 .table-vykony th,
 .table-vykony td {
-    border-bottom: 1px solid #e5e5e5;
+    border: 1px solid #e5e5e5;
     padding: 6px 8px;
     vertical-align: middle;
 }
@@ -15,8 +15,11 @@
 .table-vykony thead th {
     position: sticky;
     top: 0;
-    background: #fff;
+    background: #333;
+    color: #fff;
     z-index: 1;
+    text-align: left;
+    font-weight: 400;
 }
 
 .table-vykony .mono {
