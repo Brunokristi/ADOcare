@@ -12,25 +12,32 @@ month_bp = Blueprint("month", __name__)
 @login_required
 def create_month():
     if request.method == "POST":
-        data = request.form
+        data = request.form if request.form else (request.get_json(silent=True) or {})
 
-        mesiac = session.get("month", {}).get("mesiac", mesiac)
-        rok = session.get("month", {}).get("rok", rok)
-        sestra_id = session.get("nurse", {}).get("id")
+        try:
+            mesiac = int(data.get("mesiac"))
+            rok = int(data.get("rok"))
+        except (TypeError, ValueError):
+            return "Neplatný rok alebo mesiac.", 400
+
+        if not (1 <= mesiac <= 12):
+            return "Mesiac musí byť v rozsahu 1–12.", 400
 
         first_day = date(rok, mesiac, 1)
         last_day = date(rok, mesiac, calendar.monthrange(rok, mesiac)[1])
 
+        sestra_id = session.get("nurse", {}).get("id")
+        if not sestra_id:
+            return "Chýba identifikácia sestry.", 400
+
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # 🔍 Check if this month already exists for this sestra
         cur.execute("""
             SELECT id FROM mesiac
             WHERE mesiac = ? AND rok = ? AND sestra_id = ?
         """, (mesiac, rok, sestra_id))
         existing = cur.fetchone()
-
         if existing:
             conn.close()
             return "Tento mesiac už existuje.", 409
@@ -43,10 +50,10 @@ def create_month():
         """, (
             mesiac,
             rok,
-            data["vysetrenie_start"],
-            data["vysetrenie_koniec"],
-            data["vypis_start"],
-            data["vypis_koniec"],
+            data.get("vysetrenie_start"),
+            data.get("vysetrenie_koniec"),
+            data.get("vypis_start"),
+            data.get("vypis_koniec"),
             sestra_id,
             first_day,
             last_day,
@@ -61,10 +68,10 @@ def create_month():
 
         conn.commit()
         conn.close()
-
         return "OK", 200
 
     return render_template("create/month.html")
+
 
 @month_bp.route("/month/update/<int:id>", methods=["GET", "POST"])
 @login_required

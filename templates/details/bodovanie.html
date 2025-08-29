@@ -3,9 +3,6 @@
 {% block title %}ADOS - Bodovanie{% endblock %}
 
 {% block content %}
-
-<body data-first-day="{{ session['month']['prvy_den'] }}" data-last-day="{{ session['month']['posledny_den'] }}" style = "padding-top: 48px; margin-top: 0;">
-
     {% if session.get('nurse') %}
     
     <table class="table-vykony" id="pointsTable" style="padding-top: 30px;">
