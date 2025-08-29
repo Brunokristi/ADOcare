@@ -13,6 +13,9 @@ from routes.companies import get_company
 from routes.nurses import get_nurse
 import os
 import re
+from pathlib import Path
+import sqlite3
+
 
 points_bp = Blueprint('points', __name__)
 
@@ -175,12 +178,25 @@ def list_points():
     poistovne = get_insurances()
     return render_template('details/bodovanie.html', points=points_list, poistovne=poistovne)
 
+def _safe_filename(s: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]", "_", s or "")
+
+def _get_output_folder() -> Path:
+    home = Path.home()
+    desktop = home / "Desktop"
+    if desktop.exists():
+        out = desktop / "ADOS_davky"
+    else:
+        docs = home / "Documents"
+        out = (docs if docs.exists() else Path.cwd()) / "ADOS_davky"
+    out.mkdir(parents=True, exist_ok=True)
+    return out
+
 @points_bp.route("/points/generate", methods=["POST"])
 @login_required
 def generate_points():
     payload = request.get_json(silent=True) or request.form
 
-    # --- Inputs from payload / session ---
     cislo_faktury   = payload.get("invoice_number")
     charakter_davky = payload.get("character")
     start_date      = payload.get("start_date")
@@ -191,13 +207,11 @@ def generate_points():
     sestra_id = sestra_session["id"]
     ados_id   = sestra_session["ados"]
 
-    # Your accessors:
     sestra = get_nurse(sestra_id)
     ados   = get_company(ados_id)
-    # --- DB query ---
-    import sqlite3
+
     conn = get_db_connection()
-    conn.row_factory = sqlite3.Row  # ensure dict-like rows
+    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute(
         """
@@ -230,7 +244,7 @@ def generate_points():
     typ_davky         = "753b"
     ico_odosielatela  = ados.ico
     datum_odoslania   = datetime.now().strftime("%Y%m%d")
-    cislo_davky       = "001"
+    cislo_davky       = "1"
     pocet_dokladov    = len(rows)
     pocet_medii       = "1"
     cislo_media       = "1"
@@ -249,21 +263,15 @@ def generate_points():
     typ_starostlivosti= "850"
     mena              = "EUR"
 
-    # --- Totals ---
-    # If 'cena' is unit price, multiply by 'pocet'
-    total_cost = sum(float(r["cena"] or 0) for r in rows)
-    print("cena celkom:", total_cost)
+    total_cost = sum((float(r["cena"] or 0) for r in rows))
 
-    # --- File path ---
-    filename = f"davka.{cislo_faktury}.txt"
-    desktop  = os.path.join(os.path.expanduser("~"), "Desktop")
-    folder   = os.path.join(desktop, "ADOS_davky")
-    os.makedirs(folder, exist_ok=True)
-    full_path = os.path.join(folder, filename)
 
-    # --- Write file ---
+    folder = _get_output_folder()
+    filename = f"davka.{_safe_filename(cislo_faktury)}.txt"
+    full_path = folder / filename
+
     try:
-        with open(full_path, "w", encoding="utf-8") as file:
+        with full_path.open("w", encoding="utf-8") as file:
             # Header line
             file.write(
                 f"{charakter_davky}|{typ_davky}|{ico_odosielatela}|{datum_odoslania}|"
@@ -278,18 +286,16 @@ def generate_points():
             # Detail lines
             poradie = 1
             for row in rows:
-                # Day (last 2 digits). If stored as "YYYY-MM-DD", take tail; otherwise format.
+                # Day (last 2 digits)
                 d = row["datum"]
                 if isinstance(d, str):
                     den = d[-2:]
                 else:
-                    # handle date/datetime objects just in case
                     try:
                         den = f"{d.day:02d}"
                     except Exception:
                         den = ""
 
-                # As requested, keep the same field content/order; just make it readable
                 line_parts = [
                     str(poradie),
                     den,
@@ -298,16 +304,16 @@ def generate_points():
                     re.sub(r"\W", "", row["diagnoza"]) if row["diagnoza"] else "",
                     row["vykon"],
                     str(row["pocet"]),
-                    "", "", "",                               # three empties
-                    "", "", "",                               # three empties (you had six total before the 0.00s)
+                    "", "", "",
+                    "", "", "",
                     "0.00",
                     "0.00",
-                    "", "", "", "",                           # four empties
+                    "",
                     "O",
                     row["pzs"],
                     row["zpr"],
                     "",
-                    "",                                        # id_poistenca not present in query -> left empty
+                    "",  # id_poistenca not present
                     row["pohlavie"],
                     row["datum_ziadanky"].replace("-", "") if row["datum_ziadanky"] else "",
                     "",
@@ -331,10 +337,19 @@ def generate_points():
 
         return jsonify({
             "success": True,
-            "file": full_path,
+            "file": str(full_path),
             "row_count": pocet_dokladov,
             "total_cost": round(total_cost, 2)
         }), 200
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass

@@ -8,6 +8,7 @@ from datetime import datetime
 import os
 import uuid
 import json
+import tempfile
 import re
 from flask_login import login_required
 
@@ -115,7 +116,8 @@ def transport():
 
     start_lat, start_lon = None, None
     if rows:
-        result = Road_manager().execute_open_route_request("pelias_search",
+        result = Road_manager().execute_open_route_request(
+            "pelias_search",
             f"{rows[0]['start_ulica']}, {rows[0]['start_obec']}",
             size=1
         )
@@ -155,12 +157,14 @@ def transport():
     """, (nurse_id,))
     row = cursor.fetchone()
 
-    sestra = {"identifikator_pzs": row["identifikator"],
-                "kod_pzs": row["kod_pzs"],
-                "kod_zp": row["kod_zp"],
-                "uvazok": f'{row["uvazok"]:.2f}',
-                "obdobie": f'{year_number}{int(month_number):02d}',
-                "mena": "EUR"}
+    sestra = {
+        "identifikator_pzs": row["identifikator"],
+        "kod_pzs": row["kod_pzs"],
+        "kod_zp": row["kod_zp"],
+        "uvazok": f'{row["uvazok"]:.2f}',
+        "obdobie": f'{year_number}{int(month_number):02d}',
+        "mena": "EUR"
+    }
 
     cursor.execute("""
         SELECT a.ico AS ico_adosu, po.kod AS kod_poistovne
@@ -185,27 +189,34 @@ def transport():
         "cena": 0.35 * sum_km,
     }
 
+    # --- PORTABLE TEMP FILE (Windows/Linux/macOS) ---
     file_id = str(uuid.uuid4())
-    temp_path = f"/tmp/transport_data_{file_id}.json"
+    temp_dir = tempfile.gettempdir()
+    temp_path = os.path.join(temp_dir, f"transport_data_{file_id}.json")
+
     with open(temp_path, "w", encoding="utf-8") as f:
         json.dump({
             "data": final_rows,
             "sestra": sestra,
             "poistovna": poistovna
-        }, f)
+        }, f, ensure_ascii=False)
 
-    return render_template("transport/transport.html", data=final_rows, sestra=sestra, poistovna=poistovna, file_id=file_id)
+    return render_template("transport/transport.html",
+                           data=final_rows, sestra=sestra, poistovna=poistovna, file_id=file_id)
 
 @transport_bp.route('/transport/generate', methods=['POST'])
-@login_required
 def transport_generate():
     data = request.get_json()
     cislo_faktury = data.get("cislo_faktury")
     charakter_davky = data.get("charakter_davky")
     file_id = data.get("file_id")
 
+    # --- PORTABLE TEMP FILE PATH RESOLVE ---
+    temp_dir = tempfile.gettempdir()
+    temp_path = os.path.join(temp_dir, f"transport_data_{file_id}.json")
+
     try:
-        with open(f"/tmp/transport_data_{file_id}.json", "r", encoding="utf-8") as f:
+        with open(temp_path, "r", encoding="utf-8") as f:
             saved_data = json.load(f)
         final_rows = saved_data["data"]
         sestra = saved_data["sestra"]
@@ -214,6 +225,8 @@ def transport_generate():
         return jsonify({"success": False, "error": f"Chyba pri čítaní dát: {e}"}), 500
 
     filename = f"davka.{cislo_faktury}.txt"
+
+    # Desktop priečinok (funguje na všetkých OS; na niektorých systémoch môže byť presmerovaný do OneDrive)
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
     folder = os.path.join(desktop, "ADOS_davky")
     os.makedirs(folder, exist_ok=True)
@@ -245,23 +258,7 @@ def transport_generate():
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
         try:
-            os.remove(f"/tmp/transport_data_{file_id}.json")
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
         except Exception as e:
             print(f"Chyba pri mazaní dočasného súboru: {e}")
-
-def extract_city_from_address(address: str) -> str:
-    if not address:
-        return ''
-
-    parts = [p.strip() for p in address.split(',') if p.strip()]
-    slovensko_index = next((i for i, p in enumerate(parts) if 'slovensko' in p.lower()), len(parts))
-
-    for i in reversed(range(slovensko_index)):
-        part = parts[i]
-        if any(kw in part.lower() for kw in ['okres', 'kraj', 'slovensko', 'stredné', 'severné', 'západné', 'východné', 'južné', 'bc', 'banskobystrický']):
-            continue
-        if part.strip().isdigit() or re.match(r'^\d{3}\s?\d{2}$', part):
-            continue
-        return part
-
-    return ''

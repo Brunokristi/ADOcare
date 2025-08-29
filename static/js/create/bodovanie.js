@@ -5,7 +5,14 @@
         root.querySelector('input[name="csrfmiddlewaretoken"]')?.value ||
         null;
 
-    function showMessage(msg) { (window.showMessage || alert)(msg); }
+    function showMessage(msg) {
+        if (messageEl) {
+            messageEl.textContent = msg;
+            setTimeout(() => {
+                messageEl.textContent = "";
+            }, 3000);
+        }
+    }
 
     function bindOnce(el, type, handler, options) {
         if (!el) return;

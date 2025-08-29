@@ -66,7 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json().catch(() => ({}));
 
-            showMessage("Dávka bola vytvorená.", false);
+            if (data.success) {
+                showMessage(`Dávka bola vytvorená. Celková cena: ${data.total_cost} €`, false);
+            } else {
+                showMessage("Nepodarilo sa vytvoriť dávku.", true);
+            }
         } catch (err) {
             showMessage("Nepodarilo sa odoslať formulár.", true);
         } finally {
@@ -118,18 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-function showMessage(text, isError = false) {
-    let box = document.getElementById("flash-msg");
-    if (!box) {
-        box = document.createElement("div");
-        box.id = "flash-msg";
-        box.style.cssText = "position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:9999;font-size:14px;background:#333;color:#fff;opacity:.95";
-        document.body.appendChild(box);
+function showMessage(msg) {
+    if (messageEl) {
+        messageEl.textContent = msg;
     }
-    box.textContent = text;
-    box.style.background = isError ? "#b00020" : "#333";
-    setTimeout(() => {
-        if (box) box.remove();
-    }, 2500);
 }
-

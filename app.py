@@ -1,7 +1,15 @@
+import threading
+import time
+import webbrowser
+import sys
+import os
+import json
+
 from flask import Flask, session
 from flask_cors import CORS
 from flask_login import LoginManager
 
+# Import your routes and utilities here
 from routes.main_routes import main
 from routes.macros import macro_bp
 from routes.cars import car_bp
@@ -25,7 +33,23 @@ from easy import Config, Logger
 from utils.roads_manager import Road_manager
 
 
-config = Config(configPath="Configs/config.json", logger=Logger(2))
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and PyInstaller """
+    try:
+        base_path = sys._MEIPASS  # PyInstaller temp folder
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+# Load config JSON file using absolute path (works in dev and PyInstaller)
+config_path = resource_path("Configs/config.json")
+
+with open(config_path, 'r') as f:
+    config_data = json.load(f)
+
+# Create your Config object with the correct path (pass absolute path)
+config = Config(configPath=config_path, logger=Logger(2))
 Road_manager(config=config, logger=Logger(2))
 
 app = Flask(__name__)
@@ -46,6 +70,7 @@ def inject_months_dekurz():
         return dict(months_dekurz=[])
     return dict(months_dekurz=months_dekurz)
 
+
 # Register blueprints
 app.register_blueprint(main)
 app.register_blueprint(macro_bp)
@@ -65,10 +90,17 @@ app.register_blueprint(documents_bp)
 app.register_blueprint(points_bp)
 app.register_blueprint(vykon_bp)
 
-
 check_db()
 
+
+def open_browser():
+    time.sleep(1)
+    url = f"http://{config.getValue('host')}:{config.getValue('port')}"
+    webbrowser.open_new(url)
+
+
 if __name__ == "__main__":
+    threading.Thread(target=open_browser).start()
     app.run(
         host=config.getValue("host"),
         port=config.getValue("port"),
