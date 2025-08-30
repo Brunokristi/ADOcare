@@ -128,8 +128,8 @@ document.addEventListener("DOMContentLoaded", function () {
         patientSearch.value = patient.meno || "";
         rodneCislo.textContent = patient.rodne_cislo || "";
         const address = patient.adresa || "-";
-        bydliskoTrvale.textContent = address.length > 20
-            ? address.substring(0, 50) + "…"
+        bydliskoTrvale.textContent = address.length > 60
+            ? address.substring(0, 60) + "…"
             : address;
 
         const first = parseInt(patient.poistovnaFirstCode, 10);
@@ -162,5 +162,4 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
 

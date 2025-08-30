@@ -35,33 +35,60 @@ def getDohodaFormData():
 
     return jsonify(results)
 
+import sqlite3
+from flask import request, jsonify
+
 @documents_bp.route('/documents/getAdditionDataByRodneCisloForNavrh', methods=['GET'])
 @login_required
 def getAdditionDataByRodneCisloForNavrh():
-    rodneCislo = request.args.get('rodne_cislo', '')
-    conn = get_db_connection()
-    oldFormData = conn.execute("SELECT * FROM documents_navrh WHERE rodne_cislo = ?", (rodneCislo,)).fetchall()
-    rows = conn.execute("""
-        SELECT
-            dok.meno,
-            poist.kod
-        FROM
-            pacienti pac
-        JOIN
-            poistovne poist ON pac.poistovna = poist.id
-        JOIN
-            doktori dok ON pac.odosielatel = dok.id
-        WHERE
-            pac.rodne_cislo = ?
-    """, (rodneCislo,)).fetchall()
-    conn.close()
+    rodneCislo = (request.args.get('rodne_cislo') or '').replace('/', '').strip()
+    if not rodneCislo:
+        return jsonify({"error": "Chýba rodné číslo."}), 400
 
-    results = [dict(row) for row in rows][0]
-    if (oldFormData):
-        results = results | [dict(row) for row in oldFormData][0]
-    results['poistovnaFirstCode'] = results.pop('kod')
-    results['doctorName'] = results.pop('meno')
-    return jsonify(results)
+    conn = get_db_connection()
+    try:
+        conn.row_factory = sqlite3.Row
+
+        # base patient + joins (LEFT JOIN so missing links don’t drop the row)
+        base_row = conn.execute("""
+            SELECT
+                dok.meno,         -- doctor name
+                poist.kod         -- insurance code
+            FROM pacienti AS pac
+            LEFT JOIN poistovne AS poist ON pac.poistovna  = poist.id
+            LEFT JOIN doktori   AS dok   ON pac.odosielatel = dok.id
+            WHERE pac.rodne_cislo = ?
+            LIMIT 1
+        """, (rodneCislo,)).fetchone()
+
+        if not base_row:
+            return jsonify({"error": "Pacient s daným rodným číslom nebol nájdený."}), 404
+
+        results = dict(base_row)
+
+        # old form data (may be missing)
+        old_row = conn.execute("""
+            SELECT * FROM documents_navrh
+            WHERE rodne_cislo = ?
+            LIMIT 1
+        """, (rodneCislo,)).fetchone()
+
+        if old_row:
+            # merge without crashing
+            results.update(dict(old_row))
+
+        # rename keys safely (don’t crash if missing)
+        kod = results.pop('kod', None)
+        if kod is not None:
+            results['poistovnaFirstCode'] = kod
+
+        meno = results.pop('meno', None)
+        if meno is not None:
+            results['doctorName'] = meno
+
+        return jsonify(results)
+    finally:
+        conn.close()
 
 @documents_bp.route('/documents/storeDataFromNavrhForm', methods=['POST'])
 @login_required
@@ -107,6 +134,9 @@ def storeDataFromNavrhForm():
         conn.close()
 
     return jsonify({'message': 'The data has been successfully retrieved!'}), 200
+
+import sqlite3
+from flask import request, jsonify
 
 @documents_bp.route('/documents/getAdditionDataByRodneCisloForDohoda', methods=['GET'])
 @login_required
@@ -166,45 +196,57 @@ def storeDataFromDohodaForm():
 @documents_bp.route('/documents/storeDataFromZaznamForm', methods=['POST'])
 @login_required
 def storeDataFromZaznamForm():
-    data = request.form.to_dict()
+    # normalize RC (remove slash + trim)
+    rc = (request.form.get('rodne_cislo') or '').replace('/', '').strip()
+    if not rc:
+        return jsonify({'ok': False, 'error': 'rodne_cislo missing'}), 400
+
+    # flatten form -> dict (keep simple values; for multi you can adjust)
+    payload = {}
+    for k in request.form.keys():
+        payload[k] = request.form.get(k)
+
+    # force normalized RC into the payload
+    payload['rodne_cislo'] = rc
+    json_str = json.dumps(payload, ensure_ascii=False)
 
     conn = get_db_connection()
-
     try:
         conn.execute("""
-            INSERT INTO documents_zaznam (
-                form_data,
-                rodne_cislo
-            ) VALUES (?, ?)
-            ON CONFLICT(rodne_cislo) DO UPDATE SET
-                form_data = excluded.form_data
-        """, (
-            json.dumps(data),
-            data["rodne_cislo"]
-            ))
+          INSERT INTO documents_zaznam (rodne_cislo, form_data)
+          VALUES (?, ?)
+          ON CONFLICT(rodne_cislo) DO UPDATE SET
+            form_data = excluded.form_data
+        """, (rc, json_str))
         conn.commit()
-
+        return jsonify({'ok': True})
     except Exception as e:
-        print(e)
-        return jsonify({'message': 'Failed to save data!'}), 400
-
+        print('storeDataFromZaznamForm error:', e)
+        return jsonify({'ok': False, 'error': 'save_failed'}), 400
     finally:
         conn.close()
-
-    return jsonify({'message': 'The data has been successfully retrieved!'}), 200
 
 @documents_bp.route('/documents/getDataFromZaznamForm', methods=['GET'])
 @login_required
 def getDataFromZaznamForm():
-    rodne_cislo = request.args.get('rodne_cislo')
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT form_data FROM documents_zaznam WHERE rodne_cislo = ?', (rodne_cislo,))
-    row = cur.fetchone()
-    conn.close()
+    rc = (request.args.get('rodne_cislo') or '').replace('/', '').strip()
+    if not rc:
+        return jsonify({})  # keep 200; frontend treats ok=true as success
 
-    if row:
-        form_dict = json.loads(row[0])
-        return jsonify(form_dict)
-    else:
-        return jsonify({'error': 'No data found'}), 404
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            'SELECT form_data FROM documents_zaznam WHERE rodne_cislo = ?',
+            (rc,)
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not row or not row[0]:
+        return jsonify({})  # nothing yet for this patient
+
+    try:
+        return jsonify(json.loads(row[0]))
+    except Exception as _:
+        # corrupt / unexpected payload – fail softly
+        return jsonify({})

@@ -17,16 +17,16 @@
 
         <form id="mainForm">
             <!-- Search / autocompletion row -->
-            <div style="width: 160mm">
-                <div class="block inline-2 inline-form">
+            <div>
+                <div class="block inline">
                     <label>Meno, priezvisko, titul poistenca:</label>
-                    <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
-                        placeholder="Zadaj meno alebo rodné číslo..." autofocus/>
+                    <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off" class=" highlight"
+                        placeholder="Zadaj meno alebo rodné číslo..." autofocus />
                     <div id="patient-suggestions" class="suggestions"></div>
                 </div>
 
                 <div id="selected-patient" class="selected-patient">
-                    <div class="inline">
+                    <div class="inline inline-2 block">
                         <label>Rodné číslo:</label>
                         <div id="rodneCislo" class="input">&nbsp;
                         </div>
@@ -34,7 +34,7 @@
                         <div id="kodPoistovne" class="input">&nbsp;
                         </div>
                     </div>
-                    <div class="inline-2" style="margin-top: 2mm;">
+                    <div class="inline block">
                         <label>Miesto trvalého pobytu:</label>
                         <div id="bydliskoTrvale" class="input">&nbsp;
                         </div>
@@ -42,16 +42,18 @@
                 </div>
             </div>
 
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>Miesto prechodného pobytu:</label>
-                <input required type="text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu"
-                    class="fill" />
+                <input type="text" id="miesto_prechodneho_pobytu" name="miesto_prechodneho_pobytu" 
+                    class="" />
             </div>
 
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>Kontaktná osoba, zákonný zástupca:</label>
-                <input required type="text" id="kontaktna_osoba" name="kontaktna_osoba" class="fill" />
+                <input type="text" id="kontaktna_osoba" name="kontaktna_osoba" class="" />
             </div>
+
+            <div class="spacer"></div>
 
             <p>
                 Uzatváram dohodu o poskytovaní zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti
@@ -61,21 +63,23 @@
             </p>
 
             <div class="spacer"></div>
-            <p><strong>Poskytovateľom ošetrovateľskej starostlivosti: ADOS</strong></p>
+            <p>Poskytovateľom ošetrovateľskej starostlivosti:</p>
+                
+            <p class="input">Agentúra domácej ošetrovateľskej starostlivosti</p>
 
-            <div class="block inline-2">
-                <label>Názov a adresa: Agentúra domácej ošetrovateľskej starostlivosti,</label>
-                <input type="text" id="nazovAAdresa" name="nazovAAdresa" class="fill" />
+            <div class="block inline">
+                <label>Názov a adresa: </label>
+                <input type="text" id="nazovAAdresa" name="nazovAAdresa" class="" />
             </div>
 
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>Meno, priezvisko, titul odborného zástupcu:</label>
-                <input type="text" id="nurse" class="fill" value="{{ session['nurse']['meno'] }}" required />
+                <input type="text" id="nurse" class="" value="{{ session['nurse']['meno'] }}" required />
             </div>
 
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>Telefónne číslo:</label>
-                <input type="text" id="phone_number" class="w-60" value="{{ session['nurse']['phone_number'] }}"
+                <input type="text" id="phone_number" class="" value="{{ session['nurse']['phone_number'] }}"
                     required />
             </div>
 
@@ -93,11 +97,11 @@
                     platnou legislatívou.
                 </strong></p>
 
-            <div class="place-date">
+            <div class="inline inline-2">
                 <label>V/vo</label>
                 <input required type="text" id="mesto" name="mesto" class="w-80" />
                 <label>dňa:</label>
-                <input type="text" id="currentDate" placeholder="DD.MM.YYYY" maxlength="10">
+                <input type="text" id="currentDate">
             </div>
 
             <div class="signatures">

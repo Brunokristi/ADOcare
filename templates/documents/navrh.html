@@ -18,76 +18,76 @@
         <h1><b>Návrh na poskytovanie ošetrovateľskej starostlivosti</b></h1>
 
         <form id="mainForm">
-            <!-- Zariadenie + sídlo -->
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>Zdravotnícke zariadenie:</label>
-                <input type="text" id="zdravotnickeZariadenie" name="zdravotnickeZariadenie" class="fill">
+                <input type="text" id="zdravotnickeZariadenie" name="zdravotnickeZariadenie" class="">
             </div>
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>so sídlom v:</label>
-                <input type="text" id="soSidlomV" name="soSidlomV" class="fill">
+                <input type="text" id="soSidlomV" name="soSidlomV" class="">
             </div>
 
-            <!-- Pacient – vyhľadávanie -->
-            <div style="width:160mm">
-                <div class="block inline-2 inline-form">
+            <div class="spacer"></div>
+
+            <div>
+                <div class="block inline">
                     <label>Meno, priezvisko, titul pacienta/pacientky:</label>
                     <input required type="text" id="patientSearch" name="patientSearch" autocomplete="off"
-                        placeholder="Zadaj meno alebo rodné číslo…" class="fill" autofocus>
+                        placeholder="Zadaj meno alebo rodné číslo…" class="highlight" autofocus>
                     <div id="patient-suggestions" class="suggestions"></div>
                 </div>
 
                 <div id="selected-patient" class="selected-patient">
-                    <div class="inline">
+                    <div class="block inline inline-2">
                         <label>Rodné číslo:</label>
-                        <div id="rodneCislo" class="input w-60">&nbsp;</div>
+                        <div id="rodneCislo" class="input">&nbsp;</div>
                         <label>Číselný kód zdravotnej poisťovne:</label>
-                        <div id="kodPoistovne" class="input w-40">&nbsp;</div>
+                        <div id="kodPoistovne" class="input">&nbsp;</div>
                     </div>
-                    <div class="inline-2" style="margin-top:2mm">
+                    <div class="block inline">
                         <label>Bydlisko trvalé:</label>
                         <div id="bydliskoTrvale" class="input">&nbsp;</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Prechodné bydlisko -->
-            <div class="block inline-2">
+            <div class="block inline">
                 <label>Bydlisko prechodné:</label>
-                <input required type="text" id="bydliskoPrechodne" name="bydliskoPrechodne" class="fill">
+                <input required type="text" id="bydliskoPrechodne" name="bydliskoPrechodne" class="">
             </div>
+
+            <div class="spacer"></div>
 
             <!-- Veľké textové bloky -->
             <div class="block">
                 <label>Epikríza a zdôvodnenie pre poskytovanie ošetrovateľskej starostlivosti:</label>
-                <textarea id="epikriza" name="epikriza" class="multiline" rows="3"></textarea>
+                <textarea id="epikriza" name="epikriza" class="highlight" rows="4"></textarea>
             </div>
 
-            <div class="block inline-2 form-group" style="position:relative">
+            <div class="block inline" style="position:relative">
                 <label for="lekarskaDiagnoze">Lekárska diagnóza (slovom alebo číslom podľa MKCH):</label>
-                <input type="text" id="lekarskaDiagnoze" name="lekarskaDiagnoze" autocomplete="off" class="fill">
+                <input type="text" id="lekarskaDiagnoze" name="lekarskaDiagnoze" autocomplete="off" class="highlight">
                 <input type="hidden" id="diagnoza_id">
                 <div id="diagnoza-suggestions" class="suggestions"></div>
             </div>
 
             <div class="block">
                 <label>Sesterská diagnóza (slovom alebo číslom podľa Zoznamu sesterských diagnóz):</label>
-                <textarea id="sesterskaDiagnoza" name="sesterskaDiagnoza" class="multiline" rows="2"></textarea>
+                <textarea id="sesterskaDiagnoza" name="sesterskaDiagnoza" class="highlight" rows="2"></textarea>
             </div>
 
-            <!-- Checkboxes H/I/F -->
             <div class="checkboxes">
-                <label class="checkbox-container navrh-checkbox-container">
+                <label class="checkbox-container">
                     <input type="checkbox" id="HCheckBox">
                     <span>H – pacient/pacientka s obmedzenou pohyblivosťou</span>
                     <span class="pct">(50%)</span>
                 </label>
-                <label class="checkbox-container navrh-checkbox-container">
+                <label class="checkbox-container ">
                     <input type="checkbox" id="ICheckBox">
                     <span>I – imobilný pacient/pacientka</span>
                     <span class="pct">(75%)</span>
                 </label>
-                <label class="checkbox-container navrh-checkbox-container">
+                <label class="checkbox-container">
                     <input type="checkbox" id="FCheckBox">
                     <span>F – pacient/pacientka s psychiatrickou diagnózou, mentálne retardovaný pacient/pacientka</span>
                     <span class="pct">(75%)</span>
@@ -96,8 +96,8 @@
 
             <!-- Plán + výkony (viac riadkov) -->
             <div class="block">
-                <label><b>Plán ošetrovateľskej starostlivosti:</b></label>
-                <textarea id="PlanOsStarostlivosty" name="PlanOsStarostlivosty" class="multiline" rows="3"></textarea>
+                <label>Plán ošetrovateľskej starostlivosti:</label>
+                <textarea id="PlanOsStarostlivosty" name="PlanOsStarostlivosty" class="multiline" rows="4"></textarea>
             </div>
 
             <div class="block">
@@ -107,7 +107,7 @@
 
             <!-- Predpokladaná dĺžka -->
             <div class="block">
-                <label><b>Predpokladaná dĺžka ošetrovateľskej starostlivosti:</b></label>
+                <label>Predpokladaná dĺžka ošetrovateľskej starostlivosti:</label>
                 <div class="radio-group">
                     <label class="radio-option"><input type="radio" name="duration" value="1"> do 1 mesiaca</label>
                     <label class="radio-option"><input type="radio" name="duration" value="3"> do 3 mesiacov</label>
@@ -116,16 +116,15 @@
                 </div>
             </div>
 
-            <!-- Lekár, dátum, podpisy -->
-            <div class="block">
-                <label><b>Meno, priezvisko lekára, ktorý ošetrovateľskú starostlivosť navrhoval:</b></label>
-                <input required type="text" id="lekar" name="lekar" class="fill">
+            <div class="block inline">
+                <label>Meno, priezvisko lekára, ktorý ošetrovateľskú starostlivosť navrhoval:</label>
+                <input required type="text" id="lekar" name="lekar" class="">
             </div>
 
             <div class="footer">
-                <div class="inline-2">
+                <div class="inline">
                     <label>Dátum:</label>
-                    <input type="text" name="currentDate" id="currentDate" class="w-40" placeholder="DD.MM.YYYY"
+                    <input type="text" name="currentDate" id="currentDate" class="" placeholder="DD.MM.YYYY"
                         maxlength="10">
                 </div>
 
