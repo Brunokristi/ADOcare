@@ -1,27 +1,33 @@
-{% extends "base.html" %}
 
-{% block title %}ADOS - prihlásenie{% endblock %}
+{% extends "base.html" %}
+{% block title %}Prihlásenie{% endblock %}
+{% import "components/inputs.html" as f %}
 
 {% block content %}
-<h1>Prihlásenie</h1>
-<div class="section">
-    <div class="lined-heading"><span>Výber používateľa</span></div>
-    {% for nurse in nurses %}
-    <button type="button" class="small-token select-nurse" data-id="{{ nurse.id }}" data-meno="{{ nurse.meno }}"
-        data-kod="{{ nurse.kod }}" data-uvazok="{{ nurse.uvazok }}" data-vozidlo="{{ nurse.vozidlo }}"
-        data-ados="{{ nurse.ados }}" data-phone_number="{{ nurse.phone_number }}">
-        {{ nurse.meno }}
-    </button>
-    {% endfor %}
-</div>
+    <h1 class="text-heading-accent text-center">Vitajte 👋<br>
+    Prihláste sa do svojho účtu.</h1>
 
-{% endblock %}
+    {% call f.FieldGroup("Prihlásenie", width="500px", bg="var(--c-white)") %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
-{% endblock %}
+        {% call f.Row(cols=1) %}
+        {{ f.Input(
+        "prihlasovaci_kod",
+        label="Prihlasovací kód",
+        type="text",
+        required=True,
+        icons=[{'label':'Povinné pole','icon':'bi-asterisk'}],
+        ) }}
 
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+        {{ f.Password(
+        "pin",
+        label="PIN",
+        required=True,
+        icons=[
+        {'label': 'Skryté', 'icon': 'bi-eye-slash-fill'},
+        {'label':'Povinné pole','icon':'bi-asterisk'}],
+        ) }}
+
+        {% endcall %}
+
+    {% endcall %}
 {% endblock %}

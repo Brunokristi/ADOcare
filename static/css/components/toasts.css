@@ -1,0 +1,119 @@
+.c-toast-stack {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: end;
+    gap: var(--space-3);
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.c-toast {
+    min-width: 400px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    color: var(--c-white);
+    background: var(--toast-bg, #333);
+    position: relative;
+    pointer-events: auto;
+}
+
+.c-toast__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 28px;
+    font-size: (var(--ts-heading-size));
+}
+
+.c-toast__content {
+    font-size: (var(--ts-heading-size));
+    font-weight: var(--ts-heading-weight);
+    font-family: var(--ts-heading-font);
+    line-height: var(--ts-heading-line);
+}
+
+.c-toast__progress {
+    position: absolute;
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: var(--space-2);
+    height: 1px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.c-toast__progress::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--c-white);
+    transform-origin: left;
+    animation: toast-countdown var(--toast-timeout) linear forwards;
+    border-radius: inherit;
+}
+
+.c-toast--success {
+    background-color: var(--c-success);
+}
+
+.c-toast--error {
+    background-color: var(--c-warning);
+}
+
+@keyframes toast-countdown {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
+}
+
+.c-toast[data-state="enter"] {
+    will-change: transform, opacity;
+    animation: toast-in 260ms cubic-bezier(.2, .9, .2, 1) both;
+}
+
+@keyframes toast-in {
+    from {
+        transform: translateY(14px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.c-toast[data-state="leave"] {
+    will-change: transform, opacity;
+    animation: toast-out 280ms cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+@keyframes toast-out {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+}
+
+.c-toast-stack {
+    transition: transform 240ms ease;
+}

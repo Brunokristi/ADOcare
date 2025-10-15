@@ -1,0 +1,219 @@
+{% macro Input(
+name, label="", type="text", value="", placeholder="", required=False,
+variant="bordered", error=None,
+border_color=None, bg_color=None, focus_color=None, error_color=None,
+icons=[], extra_wrapper="", extra_control=""
+) %}
+{% set style_vars = [] %}
+{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
+{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
+{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
+{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
+{% set inline_style = ';'.join(style_vars) %}
+
+<div class="c-field {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}" {% if inline_style
+    %}style="{{ inline_style }}" {% endif %}>
+    {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
+
+    <input id="{{ name }}" name="{{ name }}" type="{{ type }}" class="c-control {{ extra_control }}"
+        value="{{ value|e }}" placeholder="{{ placeholder }}" {% if required %}aria-required="true" required{% endif
+        %} />
+
+    {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
+
+    {% if icons and icons|length %}
+    <div class="c-icons">
+        {% for ic in icons %}
+        <span class="c-icon" data-kind="{{ ic.kind or 'type' }}" data-tooltip="{{ ic.label or '' }}"
+            aria-label="{{ ic.label or '' }}">
+            <i class="bi {{ ic.icon or 'bi-question-circle' }}"></i>
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+
+{% macro Select(
+name, label="", options=[], value="", required=False,
+variant="bordered", error=None,
+border_color=None, bg_color=None, focus_color=None, error_color=None,
+icons=[], extra_wrapper="", extra_control=""
+) %}
+{% set style_vars = [] %}
+{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
+{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
+{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
+{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
+{% set inline_style = ';'.join(style_vars) %}
+
+<div class="c-field select {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}" {% if
+    inline_style %}style="{{ inline_style }}" {% endif %}>
+    {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
+
+    <select id="{{ name }}" name="{{ name }}" class="c-control {{ extra_control }}" {% if required
+        %}aria-required="true" required{% endif %}>
+        {% for opt in options %}
+        {% set val = opt.value if opt is mapping else opt[0] %}
+        {% set txt = opt.label if opt is mapping else opt[1] %}
+        <option value="{{ val }}" {% if value|string==val|string %}selected{% endif %}>{{ txt }}</option>
+        {% endfor %}
+    </select>
+
+    <span class="c-caret" aria-hidden="true"><i class="bi bi-caret-down-fill"></i></span>
+
+    {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
+
+    {% if icons and icons|length %}
+    <div class="c-icons">
+        {% for ic in icons %}
+        <span class="c-icon" data-kind="{{ ic.kind or 'type' }}" data-tooltip="{{ ic.label or '' }}">
+            <i class="bi {{ ic.icon or 'bi-caret-down' }}"></i>
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro Textarea(
+name, label="", value="", placeholder="", required=False,
+variant="bordered", error=None, rows=5,
+border_color=None, bg_color=None, focus_color=None, error_color=None,
+icons=[], extra_wrapper="", extra_control=""
+) %}
+{% set style_vars = [] %}
+{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
+{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
+{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
+{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
+{% set inline_style = ';'.join(style_vars) %}
+
+<div class="c-field {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}" {% if inline_style
+    %}style="{{ inline_style }}" {% endif %}>
+    {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
+
+    <textarea id="{{ name }}" name="{{ name }}" rows="{{ rows }}"
+        class="c-control c-control--textarea {{ extra_control }}" placeholder="{{ placeholder }}" {% if required
+        %}aria-required="true" required{% endif %}>{{ value|e }}</textarea>
+
+    {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
+
+    {% if icons and icons|length %}
+    <div class="c-icons">
+        {% for ic in icons %}
+        <span class="c-icon" data-kind="{{ ic.kind or 'type' }}" data-tooltip="{{ ic.label or '' }}">
+            <i class="bi {{ ic.icon or 'bi-text-paragraph' }}"></i>
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+
+
+{% macro Password(
+name, label="", placeholder="", required=False,
+variant="", error=None,
+border_color=None, bg_color=None, focus_color=None, error_color=None,
+icons=[], extra_wrapper="", extra_control=""
+) %}
+{% set style_vars = [] %}
+{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
+{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
+{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
+{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
+{% set inline_style = ';'.join(style_vars) %}
+
+<div class="c-field password {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}"
+    data-component="password" {% if inline_style %}style="{{ inline_style }}" {% endif %}>
+    {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
+
+    <input id="{{ name }}" name="{{ name }}" type="password" class="c-control {{ extra_control }}"
+        placeholder="{{ placeholder }}" data-role="input" {% if required %}aria-required="true" required{% endif %} />
+
+    {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
+
+    {% if icons and icons|length %}
+    <div class="c-icons">
+        {% for ic in icons %}
+        <span class="c-icon" data-kind="{{ ic.kind or 'type' }}" data-tooltip="{{ ic.label or '' }}">
+            <i class="bi {{ ic.icon or 'bi-shield-lock' }}"></i>
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+
+{% macro Date(
+name, label="Dátum", value="", placeholder="", required=False,
+mode="date",
+variant="bordered", error=None,
+border_color=None, bg_color=None, focus_color=None, error_color=None,
+icons=[], extra_wrapper="", extra_control=""
+) %}
+{% set style_vars = [] %}
+{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
+{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
+{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
+{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
+{% set inline_style = ';'.join(style_vars) %}
+{% set input_type = mode %}
+
+<div class="c-field {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}" {% if inline_style
+    %}style="{{ inline_style }}" {% endif %}>
+    {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
+
+    <input id="{{ name }}" name="{{ name }}" type="{{ input_type }}" class="c-control {{ extra_control }}"
+        value="{{ value|e }}" placeholder="{{ placeholder }}" {% if required %}aria-required="true" required{% endif
+        %} />
+
+    {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
+
+    <div class="c-icons">
+        {% set icon_list = icons if icons and icons|length else [{'kind':'type','label':'Dátum',
+        'icon':'bi-calendar-event'}] %}
+        {% for ic in icon_list %}
+        <span class="c-icon" data-kind="{{ ic.kind or 'type' }}" data-tooltip="{{ ic.label or '' }}">
+            <i class="bi {{ ic.icon }}"></i>
+        </span>
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro FieldGroup(title=None, width="1100px", bg="var(--c-tag-3)", extra="") %}
+{% set style_vars = [] %}
+{% if width %}{% set _ = style_vars.append('--section-width:' ~ width) %}{% endif %}
+{% if bg %}{% set _ = style_vars.append('--section-bg:' ~ bg) %}{% endif %}
+{% set inline_style = ';'.join(style_vars) %}
+
+<section class="c-form-section {{ extra }}" {% if inline_style %}style="{{ inline_style }}" {% endif %}>
+    {% if title %}<header class="c-superlabel">{{ title }}</header>{% endif %}
+    {{ caller() }}
+</section>
+{% endmacro %}
+
+{% macro Row(cols=2, extra="", style="") %}
+<div class="c-row cols-{{ cols }} {{ extra }}" {% if style %}style="{{ style }}" {% endif %}>
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro Col(span=None, extra="") %}
+{% set cls = '' %}
+{% if span in [1,2,3,4] %}{% set cls = 'col-span-' ~ span %}{% endif %}
+{% if span == 'all' %}{% set cls = 'col-span-all' %}{% endif %}
+<div class="{{ cls }} {{ extra }}">
+    {{ caller() }}
+</div>
+{% endmacro %}

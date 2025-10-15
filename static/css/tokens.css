@@ -1,0 +1,57 @@
+:root {
+    --c-dark-grey: #333333;
+    --c-white: #fff;
+    --c-almost-white: #F1F1F1;
+    --c-light-grey: #CCCCCC;
+    --c-accent: #5C9EAD;
+    --c-warning: #F72585;
+    --c-success: #47905D;
+    --c-tag-1: #D9D9D9;
+    --c-tag-2: #575252;
+    --c-tag-3: #DEECEF;
+
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-accent: 'Istok Web', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --ts-heading-accent-font: var(--font-accent);
+    --ts-heading-accent-size: 24px;
+    --ts-heading-accent-weight: 300;
+    --ts-heading-accent-line: 1.3;
+    --ts-heading-font: var(--font-sans);
+    --ts-heading-size: 16px;
+    --ts-heading-weight: 300;
+    --ts-heading-line: 1.4;
+    --ts-normal-font: var(--font-sans);
+    --ts-normal-size: 14px;
+    --ts-normal-weight: 400;
+    --ts-normal-line: 1.5;
+    --ts-mini-font: var(--font-sans);
+    --ts-mini-size: 12px;
+    --ts-mini-weight: 400;
+    --ts-mini-line: 1.4;
+    --ts-mini-mini-size: 8px;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+
+    --border-basic: 1px solid var(--c-dark-grey);
+    --border-accent: 1px solid var(--c-accent);
+    --border-warning: 1px solid var(--c-warning);
+
+    --shadow: 0 2px 20px rgba(0, 0, 0, 0.25);
+
+    --width-page: 1200px;
+    --width-full: 100%;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+
+    --z-dropdown: 1000;
+    --z-sticky: 1100;
+    --z-modal: 2000;
+    --z-tooltip: 3000;
+}

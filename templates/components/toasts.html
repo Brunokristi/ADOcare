@@ -1,0 +1,9 @@
+{% set flashed = get_flashed_messages(with_categories=true) %}
+<div id="toast-stack" class="c-toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+    window.__flashed_toasts__ = "{{ flashed | tojson | safe }}";
+</script>
+
+<script defer src="{{ url_for('static', filename='js/components/toasts.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/toasts.css') }}">
