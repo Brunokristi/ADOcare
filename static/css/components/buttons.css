@@ -1,0 +1,95 @@
+.c-btn-wrap {
+    width: var(--btn-width, 100%);
+}
+
+.c-btn-wrap.align-right {
+    width: max-content;
+    margin-left: auto;
+}
+
+.c-btn {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--c-accent);
+    color: var(--c-white);
+    text-decoration: none;
+    border: none;
+    transition: background-color 200ms ease, color 200ms ease
+}
+
+.c-btn:hover {
+    background: var(--c-dark-grey);
+    color: var(--btn-fg-hover, var(--c-white));
+    cursor: pointer;
+}
+
+.c-btn:hover .c-btn__icon {
+    color: var(--c-dark-grey);
+}
+
+.c-btn .c-btn__text {
+    justify-self: center;
+    text-align: center;
+    font-family: var(--ts-heading-font);
+    font-size: var(--ts-heading-size);
+    line-height: var(--ts-heading-line);
+    font-weight: var(--ts-heading-weight);
+}
+
+.c-btn .c-btn__icon {
+    justify-self: end;
+    font-size: var(--ts-normal-size);
+    color: var(--c-accent);
+    background-color: var(--c-white);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.c-btn__icon:hover {
+    color: var(--c-dark-grey);
+}
+
+.c-btn .c-btn__tag {
+    justify-self: end;
+    margin-inline: 8px 6px;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--ts-mini-size);
+    line-height: var(--ts-mini-line);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, .2);
+    color: var(--btn-fg);
+}
+
+.c-btn.is-disabled,
+.c-btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.c-btn--dark {
+    --btn-bg: var(--c-dark-grey);
+    --btn-fg: var(--c-white);
+    --btn-bg-hover: var(--c-);
+    --btn-fg-hover: #ffffff;
+}
+
+.c-btn--ghost {
+    --btn-bg: #e9f1f4;
+    --btn-fg: #3b6977;
+    --btn-border: #d6e5ea;
+    --btn-bg-hover: #dbe9ee;
+    --btn-fg-hover: #365f6c;
+    box-shadow: none;
+}
+
+.c-btn.c-btn--sm {
+    --btn-height: 36px;
+    --btn-pad-y: 8px;
+    --btn-radius: 10px;
+    font-size: 0.95rem;
+}

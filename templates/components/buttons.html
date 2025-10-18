@@ -1,0 +1,71 @@
+{# components/button.html #}
+{% macro Button(
+    id=None,
+    text="",
+    href=None,
+    type="button", 
+    icon="bi-arrow-right",
+    tag=None,
+    variant="primary",
+    align="full",
+    width=None,
+    disabled=False,
+    extra_wrapper="",
+    extra_control="",
+    aria_label=None,
+    tooltip=None,
+    bg_color=None,
+    fg_color=None,
+    hover_bg=None,
+    hover_fg=None,
+    border_color=None
+) %}
+
+            {% set style_vars = [] %}
+            {% if bg_color %}{% set _ = style_vars.append('--btn-bg:' ~ bg_color) %}{% endif %}
+            {% if fg_color %}{% set _ = style_vars.append('--btn-fg:' ~ fg_color) %}{% endif %}
+            {% if hover_bg %}{% set _ = style_vars.append('--btn-bg-hover:' ~ hover_bg) %}{% endif %}
+            {% if hover_fg %}{% set _ = style_vars.append('--btn-fg-hover:' ~ hover_fg) %}{% endif %}
+            {% if border_color %}{% set _ = style_vars.append('--btn-border:' ~ border_color) %}{% endif %}
+            {% if width %}{% set _ = style_vars.append('--btn-width:' ~ width) %}{% endif %}
+            {% set inline_style = ';'.join(style_vars) %}
+
+            {% set has_tag = tag is not none and (tag is string and tag|length or tag.text|default('')|length) %}
+
+            {% set classes = [
+            'c-btn',
+            'c-btn--' ~ variant,
+            'is-disabled' if disabled,
+            extra_control
+            ] | select | join(' ') %}
+
+            {% set wrap_classes = [
+            'c-btn-wrap',
+            'align-' ~ align,
+            extra_wrapper
+            ] | select | join(' ') %}
+
+            <div class="{{ wrap_classes }}" {% if inline_style %}style="{{ inline_style }}" {% endif %}>
+                {# Anchor vs Button #}
+                {% if href %}
+                <a id="{{ id or '' }}" class="{{ classes }}" href="{{ href if not disabled else 'javascript:void(0)' }}"
+                    aria-label="{{ aria_label or text }}" aria-disabled="{{ 'true' if disabled else 'false' }}"
+                    title="{{ tooltip or '' }}" role="button" tabindex="{{ '0' if not disabled else '-1' }}">
+                    <span class="c-btn__text">{{ text }}</span>
+                    {% if has_tag %}
+                    <span class="c-btn__tag">{{ tag if tag is string else tag.text }}</span>
+                    {% endif %}
+                    <i class="bi {{ icon }} c-btn__icon" aria-hidden="true"></i>
+                </a>
+                {% else %}
+                <button id="{{ id or '' }}" class="{{ classes }}" type="{{ type }}" {{ 'disabled' if disabled }}
+                    aria-label="{{ aria_label or text }}" title="{{ tooltip or '' }}">
+                    <span class="c-btn__text">{{ text }}</span>
+                    {% if has_tag %}
+                    <span class="c-btn__tag">{{ tag if tag is string else tag.text }}</span>
+                    {% endif %}
+                    <i class="bi {{ icon }} c-btn__icon" aria-hidden="true"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endmacro %}

@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    margin-bottom: var(--space-5);
 }
 
 .c-label {
@@ -101,7 +102,7 @@
 
 .c-row {
     display: grid;
-    gap: var(--row-gap, var(--space-4));
+    gap: var(var(--space-1));
 }
 
 .c-row.cols-1 {

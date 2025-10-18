@@ -1,14 +1,21 @@
 
+<!-- Base layout -->
 {% extends "base.html" %}
-{% block title %}Prihlásenie{% endblock %}
-{% import "components/inputs.html" as f %}
 
+<!-- Page title -->
+{% block title %}Prihlásenie{% endblock %}
+
+<!-- imports  -->
+{% import "components/inputs.html" as f %}
+{% import "components/buttons.html" as b %}
+
+
+<!-- HTML code -->
 {% block content %}
     <h1 class="text-heading-accent text-center">Vitajte 👋<br>
     Prihláste sa do svojho účtu.</h1>
 
     {% call f.FieldGroup("Prihlásenie", width="500px", bg="var(--c-white)") %}
-
         {% call f.Row(cols=1) %}
         {{ f.Input(
         "prihlasovaci_kod",
@@ -26,8 +33,16 @@
         {'label': 'Skryté', 'icon': 'bi-eye-slash-fill'},
         {'label':'Povinné pole','icon':'bi-asterisk'}],
         ) }}
-
         {% endcall %}
 
+        {{ b.Button(
+        id="btn-login",
+        text="Prihlásiť sa",
+        icon="bi-arrow-right",
+        variant="primary",
+        align="full"
+        ) }}
     {% endcall %}
+
+    
 {% endblock %}
