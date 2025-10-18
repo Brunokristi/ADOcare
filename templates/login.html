@@ -15,34 +15,37 @@
     <h1 class="text-heading-accent text-center">Vitajte 👋<br>
     Prihláste sa do svojho účtu.</h1>
 
-    {% call f.FieldGroup("", width="500px", bg="var(--c-white)") %}
-        {% call f.Row(cols=1) %}
-        {{ f.Input(
-        "prihlasovaci_kod",
-        label="Prihlasovací kód",
-        type="text",
-        required=True,
-        icons=[{'label':'Povinné pole','icon':'bi-asterisk'}],
-        ) }}
+    <form method="POST" action="{{ url_for('auth.login') }}" class="form-center" novalidate>
+        {% call f.FieldGroup("", width="500px", bg="var(--c-white)") %}
+            {% call f.Row(cols=1) %}
+            {{ f.Input(
+            "prihlasovaci_kod",
+            label="Prihlasovací kód",
+            type="text",
+            required=True,
+            icons=[{'label':'Povinné pole','icon':'bi-asterisk'}],
+            autocomplete="username"
+            ) }}
 
-        {{ f.Password(
-        "pin",
-        label="PIN",
-        required=True,
-        icons=[
-        {'label': 'Skryté', 'icon': 'bi-eye-slash-fill'},
-        {'label':'Povinné pole','icon':'bi-asterisk'}],
-        ) }}
+            {{ f.Password(
+            "pin",
+            label="PIN",
+            required=True,
+            icons=[
+            {'label': 'Skryté', 'icon': 'bi-eye-slash-fill'},
+            {'label':'Povinné pole','icon':'bi-asterisk'}],
+            ) }}
+            {% endcall %}
+
+            {{ b.Button(
+            id="btn-login",
+            text="Prihlásiť sa",
+            icon="bi-arrow-right",
+            variant="primary",
+            align="full"
+            ) }}
         {% endcall %}
-
-        {{ b.Button(
-        id="btn-login",
-        text="Prihlásiť sa",
-        icon="bi-arrow-right",
-        variant="primary",
-        align="full"
-        ) }}
-    {% endcall %}
+    </form>
 
     
 {% endblock %}

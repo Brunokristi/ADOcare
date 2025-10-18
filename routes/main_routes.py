@@ -15,9 +15,7 @@ main = Blueprint("main", __name__)
 @main.route("/")
 @login_required
 def index():
-    session.pop('nurse', None)
-    nurses = get_nurses()
-    return render_template("login.html", nurses=nurses)
+    return render_template("login.html")
 
 @main.route('/nastavenia')
 @login_required

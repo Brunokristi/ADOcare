@@ -2,22 +2,20 @@
 name, label="", type="text", value="", placeholder="", required=False,
 variant="bordered", error=None,
 border_color=None, bg_color=None, focus_color=None, error_color=None,
-icons=[], extra_wrapper="", extra_control=""
-) %}
-{% set style_vars = [] %}
-{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
-{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
-{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
-{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
-{% set inline_style = ';'.join(style_vars) %}
-
-<div class="c-field {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}" {% if inline_style
+icons=[], extra_wrapper="", extra_control="",
+autocomplete=None 
+) %} {% set style_vars=[] %} {% if border_color %}{% set
+    _=style_vars.append('--_border-color:' ~ border_color) %}{% endif %} {% if bg_color %}{% set
+    _=style_vars.append('--_bg:' ~ bg_color) %}{% endif %} {% if focus_color %}{% set
+    _=style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %} {% if error_color %}{% set
+    _=style_vars.append('--_error-color:' ~ error_color) %}{% endif %} {% set inline_style=';' .join(style_vars) %} <div
+    class="c-field {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}" {% if inline_style
     %}style="{{ inline_style }}" {% endif %}>
     {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
 
     <input id="{{ name }}" name="{{ name }}" type="{{ type }}" class="c-control {{ extra_control }}"
-        value="{{ value|e }}" placeholder="{{ placeholder }}" {% if required %}aria-required="true" required{% endif
-        %} />
+        value="{{ value|e }}" placeholder="{{ placeholder }}" {% if autocomplete %}autocomplete="{{ autocomplete }}" {%
+        endif %} {% if required %}aria-required="true" required{% endif %} />
 
     {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
 
@@ -31,8 +29,9 @@ icons=[], extra_wrapper="", extra_control=""
         {% endfor %}
     </div>
     {% endif %}
-</div>
-{% endmacro %}
+    </div>
+    {% endmacro %}
+
 
 
 
@@ -118,24 +117,25 @@ icons=[], extra_wrapper="", extra_control=""
 
 
 {% macro Password(
-name, label="", placeholder="", required=False,
-variant="", error=None,
-border_color=None, bg_color=None, focus_color=None, error_color=None,
-icons=[], extra_wrapper="", extra_control=""
-) %}
-{% set style_vars = [] %}
-{% if border_color %}{% set _ = style_vars.append('--_border-color:' ~ border_color) %}{% endif %}
-{% if bg_color %}{% set _ = style_vars.append('--_bg:' ~ bg_color) %}{% endif %}
-{% if focus_color %}{% set _ = style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %}
-{% if error_color %}{% set _ = style_vars.append('--_error-color:' ~ error_color) %}{% endif %}
-{% set inline_style = ';'.join(style_vars) %}
-
-<div class="c-field password {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}"
+    name, label="", placeholder="", required=False,
+    variant="", error=None,
+    border_color=None, bg_color=None, focus_color=None, error_color=None,
+    icons=[], extra_wrapper="", extra_control="",
+    autocomplete="current-password" ) 
+%} 
+{% set style_vars=[] %} {% if border_color
+    %}{% set _=style_vars.append('--_border-color:' ~ border_color) %}{% endif %} {% if bg_color %}{% set
+    _=style_vars.append('--_bg:' ~ bg_color) %}{% endif %} {% if focus_color %}{% set
+    _=style_vars.append('--_focus-color:' ~ focus_color) %}{% endif %} {% if error_color %}{% set
+    _=style_vars.append('--_error-color:' ~ error_color) %}{% endif %} {% set inline_style=';' .join(style_vars) 
+%} <div
+    class="c-field password {{ 'is-error' if error }} {{ extra_wrapper }}" data-variant="{{ variant }}"
     data-component="password" {% if inline_style %}style="{{ inline_style }}" {% endif %}>
     {% if label %}<label class="c-label" for="{{ name }}">{{ label }}</label>{% endif %}
 
     <input id="{{ name }}" name="{{ name }}" type="password" class="c-control {{ extra_control }}"
-        placeholder="{{ placeholder }}" data-role="input" {% if required %}aria-required="true" required{% endif %} />
+        placeholder="{{ placeholder }}" data-role="input" autocomplete="{{ autocomplete }}" autocapitalize="off"
+        spellcheck="false" {% if required %}aria-required="true" required{% endif %} />
 
     {% if error %}<div class="c-error">{{ error }}</div>{% endif %}
 
@@ -148,7 +148,7 @@ icons=[], extra_wrapper="", extra_control=""
         {% endfor %}
     </div>
     {% endif %}
-</div>
+    </div>
 {% endmacro %}
 
 

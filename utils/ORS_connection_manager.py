@@ -7,7 +7,8 @@ class ORS_connection_manager:
     def __init__(self, config: Config):
         self.ors_connections: List[ORS_connection] = []
 
-        for i in range(len(config.getValue("open route", "API keys"))):
+        data = config._raw
+        for i in range(len(data["open route"]["API keys"])):
             self.ors_connections.append(ORS_connection(config=config, api_index=i))
 
     def get_operation_method(self, operation: str) -> Callable[..., object]:
