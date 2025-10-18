@@ -1,16 +1,16 @@
-.navbar {
-    position: fixed;
-    top: 0;
-    z-index: 1000;
-    background-color: #333;
-    color: white;
-    padding: 10px;
-    max-height: 50px;
+.p-navbar {
+    background-color: var(--c-dark-grey);
+    padding: var(--space-3) var(--space-6);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-sizing: border-box;
-    width: 100%;
+    width: var(--width-full);
+}
+
+.p-navbar-section {
+    display: flex;
+    gap: 10px;
+    justify-content: start;
 }
 
 .navbar-button {
@@ -28,12 +28,7 @@
     display: inline-flex;
 }
 
-.navbar-section {
-    width: 33%;
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-}
+
 
 .navbar-section:last-child {
     justify-content: flex-end;

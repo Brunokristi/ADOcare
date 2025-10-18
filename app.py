@@ -28,7 +28,7 @@ from routes.vykony import vykon_bp
 from routes.auth import auth_bp, setup_login_manager
 from routes.documents import documents_bp
 
-from utils.database import DATABASE_FILE, check_db
+from utils.database import DATABASE_FILE
 from easy import Config, Logger
 from utils.roads_manager import Road_manager
 
@@ -90,17 +90,8 @@ app.register_blueprint(documents_bp)
 app.register_blueprint(points_bp)
 app.register_blueprint(vykon_bp)
 
-check_db()
-
-
-def open_browser():
-    time.sleep(1)
-    url = f"http://{config.getValue('host')}:{config.getValue('port')}"
-    webbrowser.open_new(url)
-
 
 if __name__ == "__main__":
-    threading.Thread(target=open_browser).start()
     app.run(
         host=config.getValue("host"),
         port=config.getValue("port"),

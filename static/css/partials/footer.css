@@ -1,0 +1,29 @@
+.p-footer {
+    background: var(--c-dark-grey);
+    padding: var(--space-1) var(--space-6);
+    margin-top: auto;
+    text-align: start;
+    color: var(--c-accent);
+    width: var(--width-full);
+    font-family: var(--ts-mini-font);
+    font-size: var(--ts-mini-size);
+    line-height: var(--ts-mini-line);
+    font-weight: var(--ts-mini-weight);
+}
+
+.p-footer p {
+    margin: 0px;
+}
+
+
+.p-footer__content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.p-footer__nav a {
+    color: var(--c-accent);
+    margin: 0 0.5rem;
+}

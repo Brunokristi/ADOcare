@@ -3,7 +3,6 @@
     "host": "127.0.0.1",
     "port": 5000,
     "debug mode": true,
-
     "open route": {
         "API keys": [
             "5b3ce3597851110001cf62483e8009ec48d3457d8800432392507809",
@@ -11,66 +10,63 @@
         ],
         "count of fails for one request": 5,
         "methods": [
-            "directions", "isochrones", "distance_matrix", "elevation_line",
-            "elevation_point", "pelias_autocomplete", "pelias_reverse", "pelias_search",
-            "optimization", "places"
+            "directions",
+            "isochrones",
+            "distance_matrix",
+            "elevation_line",
+            "elevation_point",
+            "pelias_autocomplete",
+            "pelias_reverse",
+            "pelias_search",
+            "optimization",
+            "places"
         ],
-
         "access limits": {
             "directions": {
                 "per day": 2000,
                 "per minute": 40,
                 "request time": 1
             },
-
             "isochrones": {
                 "per day": 500,
                 "per minute": 20,
                 "request time": 1
             },
-
             "distance_matrix": {
                 "per day": 500,
                 "per minute": 20,
                 "request time": 1
             },
-
             "elevation_line": {
                 "per day": 200,
                 "per minute": 40,
                 "request time": 1
             },
-
             "elevation_point": {
                 "per day": 2000,
                 "per minute": 100,
                 "request time": 1
             },
-
             "pelias_autocomplete": {
                 "per day": 1000,
                 "per minute": 100,
                 "request time": 1
             },
-
             "pelias_reverse": {
                 "per day": 1000,
                 "per minute": 100,
                 "request time": 1
             },
-
             "pelias_search": {
                 "per day": 1000,
                 "per minute": 100,
                 "request time": 1
             },
-
             "optimization": {
                 "per day": 500,
                 "per minute": 40,
                 "request time": 1
             },
-
             "places": {
                 "per day": 500,
                 "per minute": 60,
@@ -78,9 +74,10 @@
             }
         },
         "sleep time after unsuccessful polling of all API keys, in seconds": 60,
-
         "delta distance between coordinates for searching hashed paths, in meters": 10,
-
         "cache all data from open route": true
+    },
+    "database": {
+        "name": "ados_database.db"
     }
 }

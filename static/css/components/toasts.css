@@ -1,8 +1,8 @@
 .c-toast-stack {
     position: fixed;
     inset-inline: 0;
-    bottom: 24px;
-    right: 24px;
+    bottom: 30px;
+    right: var(--space-6);
     display: flex;
     flex-direction: column-reverse;
     align-items: end;

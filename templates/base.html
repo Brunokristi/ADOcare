@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}ADOcare{% endblock %}</title>
+    <title>{% block title %}ADOcare{% endblock %} | ADOcare</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     
     <!-- EXTERNAL -->
@@ -40,6 +40,10 @@
     <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/index.js') }}" type="module"></script>
 
+
+    <!-- PAGE SCRITPS -->
+    {% block scripts %}{% endblock %}
+
     
     <!-- GLOBAL COMPONENTS -->
     {% include "components/toasts.html" %}
@@ -48,212 +52,13 @@
 </head>
 
 <body>
-    <!-- <header>
-        <div class="navbar no-print">
-            <div class="navbar-section">
-        
-                <a href="{{ url_for('auth.logout') }}" class="navbar-button"
-                    style="background-color: #5C9EAD; margin-right: 20px;" title="Domov">
-                    <i style="color: #fff;" class="bi bi-flower2"></i>
-                </a>
-        
-                <a href="#" class="navbar-button" id="backBtn" title="Späť">
-                    <i style="color: #333;" class="bi bi-arrow-left"></i>
-                </a>
-        
-                {% if current_user.is_authenticated %}
-                {% if session.get('nurse')%}
-
-                <a href="{{ url_for('main.dashboard') }}" class="navbar-button" title="Prejsť na domovskú stránku">
-                    <i style="color: #333;" class="bi bi-house"></i>
-                </a>
-
-                <a href="{{ url_for('main.dashboard') }}" class="navbar-button" target="_blank" id="newTab"
-                    title="Nové okno">
-                    <i style="color: #333;" class="bi bi-plus"></i>
-                </a>
-
-                <div class="navbar-dropdown">
-                    <a class="navbar-button navbar-dropdown-trigger" href="#" aria-haspopup="true" aria-expanded="false"
-                        title="Nastavenia">
-                        <i style="color: #333;" class="bi bi-gear"></i>
-                    </a>
-                
-                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <a href="{{ url_for('doctor.doctor_settings') }}" class="navbar-popup-item" data-popup>
-                            <i class="bi bi-person"></i> Doktori
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('vykon.list_vykony') }}" target="_blank" role="menuitem" data-popup
-                            title="Upraviť ceny">
-                            <i class="bi bi-coin"></i> Ceny výkonov
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('diagnosis.list_diagnoses') }}" role="menuitem" data-popup
-                            title="Prehľadávať diagnózy">
-                            <i class="bi bi-file-medical"></i> Diagnózy
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('macro.macros_settings') }}" role="menuitem"
-                            title="Vytvotiť makrá" data-popup>
-                            <i class="bi-pencil-square"></i> Makrá
-                        </a>
-                        <a class="navbar-popup-item" href="{{ url_for('car.cars_settings') }}" target="_blank" role="menuitem"
-                            data-popup title="Upraviť autá">
-                            <i class="bi bi-speedometer"></i> Autá
-                        </a>
-                    </div>
-                </div>
-
-                
-                <a class="navbar-button" href="{{ url_for('patient.list_patients') }}" target="_blank" title="Pacienti">
-                    <i style="color: #333;" class="bi bi-people"></i>
-                </a>
-
-                
-
-                <div class="navbar-dropdown">
-                    <a class="navbar-button navbar-dropdown-trigger" href="#" aria-haspopup="true"
-                        aria-expanded="false" title="Dashboard - rýchle odkazy">
-                        <i style="color: #333;" class="bi bi-grid-3x3-gap"></i>
-                    </a>
-                
-                    <div class="navbar-popup" role="menu" aria-label="Dashboard odkazy">
-                        <div class="navbar-popup-item has-submenu">
-                            <i class="bi bi-journal-text"></i> Dekurzy
-                            <div class="navbar-submenu" role="menu">
-                                <a class="navbar-submenu-item" href="{{ url_for('month.create_month') }}"><i class="bi bi-plus"></i> Nový dekurz</a>
-                                {% if months_dekurz %}
-                                {% for month_dekurz in months_dekurz %}
-                                <a href="#" class="navbar-submenu-item month-select" data-id="{{ month_dekurz.id }}"
-                                    data-mesiac="{{ month_dekurz.mesiac }}" data-rok="{{ month_dekurz.rok }}"
-                                    data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie="{{ month_dekurz.vysetrenie_start }}"
-                                    data-vypisanie="{{ month_dekurz.vypis_start }}" data-posledny-den="{{ month_dekurz.posledny_den }}">
-                                    {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
-                                </a>
-                                {% endfor %}
-                                {% else %}
-                                <div class="navbar-submenu-item" style="opacity:.6;cursor:default">
-                                    Žiadne dekurzy
-                                </div>
-                                {% endif %}
-                            </div>                    
-                        </div>
-                        <div class="navbar-popup-item has-submenu">
-                            <i class="bi bi-cursor"></i> Cesty
-                            <div class="navbar-submenu" role="menu">
-                                {% if months_dekurz %}
-                                {% for month_dekurz in months_dekurz %}
-                                <a href="#" class="navbar-submenu-item transport-select" data-id="{{ month_dekurz.id }}"
-                                    data-mesiac="{{ month_dekurz.mesiac }}" data-rok="{{ month_dekurz.rok }}"
-                                    data-prvy-den="{{ month_dekurz.prvy_den }}" data-vysetrenie="{{ month_dekurz.vysetrenie_start }}"
-                                    data-vypisanie="{{ month_dekurz.vypis_start }}" data-posledny-den="{{ month_dekurz.posledny_den }}">
-                                    {{ "%02d" | format(month_dekurz.mesiac) }}/{{ month_dekurz.rok }}
-                                </a>
-                                {% endfor %}
-                                {% else %}
-                                <div class="navbar-submenu-item" style="opacity:.6;cursor:default">
-                                    Žiadne dekurzy
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <a class="navbar-popup-item" href="{{ url_for('points.list_points') }}" role="menuitem" title="Otvoriť nastavenia">
-                            <i class="bi bi-plus-circle"></i> Bodovanie
-                        </a>
-                        <div class="navbar-popup-item has-submenu" role="menuitem" aria-haspopup="true" aria-expanded="false">
-                            <i class="bi bi-file-earmark"></i> Dokumenty
-                        
-                            <div class="navbar-submenu" role="menu" aria-label="Dokumenty odkazy">
-                                <a href="{{ url_for('documents.showNavrh') }}" class="navbar-submenu-item" role="menuitem" target="_blank">
-                                    Návrh
-                                </a>
-                                <a href="{{ url_for('documents.showDohoda') }}" class="navbar-submenu-item" role="menuitem" target="_blank">
-                                    Dohoda
-                                </a>
-                                <a href="{{ url_for('documents.showZaznam') }}" class="navbar-submenu-item" role="menuitem" target="_blank">
-                                    Ošetrovateľský záznam
-                                </a>
-                            </div>         
-                        </div>
-                    </div>
-                </div>
-
-                {% endif %}
-                {% endif %}
-        
-            </div>
-        
-            <div class="navbar-section">
-                <p id="message"></p>
-            </div>
-        
-            <div class="navbar-section">
-                {% if current_user.is_authenticated %}
-                {% if session.get('nurse')%}
-                <a href="{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}" class="logo" title="Profil sestry" data-popup
-                data-popup-title="Zdravotný personál">
-                    <h3 style="margin-right: 20px">{{ session['nurse']['meno'] }}</h3>
-                </a>
-        
-                <a href="{{ url_for('main.index') }}" class="navbar-button" id="switch" title="Prepnúť používateľa">
-                    <i style="color: #333;" class="bi bi-arrow-repeat"></i>
-                </a>
-                {% endif %}
-        
-                <a class="navbar-button" href="{{ url_for('auth.logout') }}" title="Odhlásiť sa">
-                    <i style="color: #333;" class="bi bi-box-arrow-right"></i>
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </header> -->
-
-    <!-- <script>
-        const dashboardUrl = "{{ url_for('main.dashboard') }}";
-        const adosUrl = "{{ url_for('main.index') }}";
-        const patientUrl = "{{ url_for('patient.list_patients') }}";
-        const settingsUrl = "{{ url_for('main.settings') }}";
-        const logoutUrl = "{{ url_for('auth.logout') }}";
-
-        {% if session.get('nurse') %}
-            const nurseUrl = "{{ url_for('nurse.update_nurse', id=session['nurse']['id']) }}";
-        {% else %}
-            const nurseUrl = "";
-        {% endif %}
-    </script> -->
+    {% include "partials/navbar.html" %}
 
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    {% block scripts %}{% endblock %}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                toast.success("Údaje boli úspešne uložené");
-            }, 500);
-        });
-    </script>
-
-
-    <!-- <div id="floating-popup" class="fp is-hidden" role="dialog" aria-modal="false" aria-hidden="true"
-        aria-label="Plávajúce okno">
-        <div class="fp__header" id="fpDragHandle">
-            <div class="fp__title" id="fpTitle"></div>
-            <div class="fp__actions">
-                <button class="fp__btn" type="button" id="fpCloseBtn" title="Zavrieť">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-        </div>
-        <div class="fp__body" id="fpBody" tabindex="0">
-        </div>
-        <div class="fp__resizer" id="fpResizer" title="Zmeniť veľkosť"></div>
-    </div> -->
-    <footer>
-        <div class="footer no-print">
-            <p>© 2024 ADOcare - Všetky práva vyhradené.</p>
-        </div>
-    </footer>
+    {% include "partials/footer.html" %}
 </body>
 
 </html>

@@ -1,0 +1,43 @@
+<nav class="p-navbar" role="banner" aria-label="Primary">
+    <div class="p-navbar-section">
+        <a href="{{ url_for('main.dashboard') }}" title="ADOcare" class="logo">
+            <i class="bi bi-flower2"></i>
+        </a>
+    </div>
+
+    <div class="p-navbar-section">
+        {% if session.get('user') %}
+        <button class="p-navbar-button" id="backBtn" type="button" title="Späť">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+
+        <a href="{{ url_for('main.dashboard') }}" class="p-navbar-button" title="Dashboard">
+            <i class="bi bi-house"></i>
+        </a>
+
+        <button class="p-navbar-button" id="appsBtn" type="button" title="Aplikácie">
+            <i class="bi bi-gear"></i>
+        </button>
+
+        <span class="p-tag" id="activeUser">
+            {{ session['user']['name'] }}
+        </span>
+
+        <button class="p-tag" id="role" type="button">
+            {{ session['user']['branch'] }}
+        </button>
+
+        <span class="p-tag" id="company">
+            {{ session['user']['company'] }}
+        </span>
+
+        <a class="p-navbar-button" href="{{ url_for('auth.logout') }}" title="Odhlásenie">
+            <i class="bi bi-box-arrow-right"></i>
+        </a>
+        {% endif %}
+    </div>
+</nav>
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/partials/navbar.css') }}">
+{% endblock %}

@@ -1,0 +1,11 @@
+<footer class="p-footer">
+    <div class="p-footer_content">
+        <p>&copy; {{ current_year }} ADOcare</p>
+        <nav class="p-footer__nav">
+        </nav>
+    </div>
+</footer>
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/partials/footer.css') }}">
+{% endblock %}

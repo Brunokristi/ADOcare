@@ -46,7 +46,7 @@
     color: var(--c-accent);
     background-color: var(--c-white);
     padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
 }
 
 .c-btn__icon:hover {
