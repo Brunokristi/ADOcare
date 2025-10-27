@@ -16,7 +16,7 @@ def register_blueprints(app):
     from routes.vykony import vykon_bp
     from routes.auth import auth_bp, setup_login_manager
     from routes.documents import documents_bp
-
+    from routes.dev import dev as dev_bp
     from core.extensions import login_manager
 
     app.register_blueprint(main_bp)
@@ -36,6 +36,6 @@ def register_blueprints(app):
     app.register_blueprint(documents_bp)
     app.register_blueprint(points_bp)
     app.register_blueprint(vykon_bp)
+    app.register_blueprint(dev_bp)
 
-    # finalize login callbacks once
     setup_login_manager(login_manager)

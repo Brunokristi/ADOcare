@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "components/buttons.html" import Button %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}">
+<style>
+  .wall {
+    display: grid;
+    grid-template-columns: 500px;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .slot {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 14px;
+    width: 500px
+  }
+</style>
+
+<div class="wall">
+  <div class="slot">
+    {{ Button(text="Prihlásiť sa", style="Normal", intent="primary", icon="bi-arrow-right") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Dekurzy", style="Accent", intent="primary", icon="bi-arrow-right") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Dekurzy", style="MenuBig", intent="primary") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Dekurzy", style="MenuSmallTag", intent="primary", tag_text="030420/4714") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Dekurzy", style="MenuSmallTag", intent="primary") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Dekurzy", style="MenuTag", intent="primary") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Dekurzy", style="NavbarTag", intent="primary") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="Ano", style="BasicSmall", intent="primary") }}
+    {{ Button(text="Nie", style="BasicSmall", intent="danger") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(style="Icon", intent="primary", icon="bi-download") }}
+    {{ Button(style="Icon", intent="danger", icon="bi-eraser") }}
+  </div>
+
+  <div class="slot" style="background-color: var(--c-dark-grey);">
+    {{ Button(style="NavbarIcon", intent="primary", tooltip="dashboard", icon="bi-grid-3x3-gap") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="výkony", style="Simple", intent="primary") }}
+    {{ Button(text="výkony", style="Simple", intent="disabled") }}
+  </div>
+
+  <div class="slot">
+    {{ Button(text="výkony", style="SimpleTiny", intent="primary") }}
+    {{ Button(text="výkony", style="SimpleTiny", intent="disabled") }}
+  </div>
+</div>
+{% endblock %}

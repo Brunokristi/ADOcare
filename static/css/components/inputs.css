@@ -74,27 +74,6 @@
     color: var(--c-warning);
 }
 
-.c-icon[data-tooltip] {
-    position: relative;
-}
-
-.c-icon[data-tooltip]::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(100% + 6px);
-    background: var(--c-warning);
-    color: var(--c-white);
-    font-size: var(--ts-mini-size);
-    padding: 4px 6px;
-    border-radius: var(--radius-sm);
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .12s;
-}
-
 .c-icon:hover::after {
     opacity: 1;
 }

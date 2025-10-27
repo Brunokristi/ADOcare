@@ -1,0 +1,42 @@
+.c-icon[data-tooltip] {
+    position: relative;
+}
+
+.c-icon[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 6px);
+    background: color-mix(in srgb, var(--c-warning) 60%, transparent);
+    color: var(--c-white);
+    font-size: var(--ts-mini-size);
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease, background-color .2s ease;
+    z-index: var(--z-tooltip);
+    backdrop-filter: blur(6px);
+}
+
+.c-icon[data-tooltip]::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 100%;
+    border: 6px solid transparent;
+    border-top-color: color-mix(in srgb, var(--c-warning) 85%, transparent);
+    opacity: 0;
+    transition: opacity .15s ease;
+    z-index: var(--z-tooltip);
+}
+
+.c-icon[data-tooltip]:hover::after,
+.c-icon[data-tooltip]:hover::before,
+.c-icon[data-tooltip]:focus-visible::after,
+.c-icon[data-tooltip]:focus-visible::before {
+    opacity: 1;
+}
