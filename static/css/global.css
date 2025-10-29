@@ -36,6 +36,10 @@ main {
     background-color: var(--c-white);
 }
 
+content {
+    width: var(--width-page);
+}
+
 .cols-1 {
     grid-template-columns: 1fr;
 }
@@ -160,12 +164,24 @@ select {
     background-image: none;
 }
 
+input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
 
 
 /* scroll bar */
 ::-webkit-scrollbar {
-    width: 2px;
-    height: 2px;
+    margin-left: 2px;
+    background: transparent;
+    width: 3px;
+    height: 3px;
 }
 
 ::-webkit-scrollbar-track {

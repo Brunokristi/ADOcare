@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/inputs.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tooltips.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tables.css') }}">
 
 
     <!-- PAGE STYLES -->
@@ -56,7 +57,9 @@
     {% include "partials/navbar.html" %}
 
     <main>
+        <content>
         {% block content %}{% endblock %}
+        </content>
     </main>
 
     {% include "partials/footer.html" %}

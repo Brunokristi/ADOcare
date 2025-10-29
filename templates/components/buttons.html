@@ -1,4 +1,3 @@
-{# components/button/button.html #}
 {% macro Button(
 id=None,
 text="",
@@ -12,11 +11,9 @@ tooltip=None,
 class_=""
 ) %}
 
-{# Decide tag and state #}
 {% set Tag = 'a' if href else 'button' %}
 {% set is_disabled = (intent == 'disabled') %}
 
-{# Build classes #}
 {% set classes = [
 'c-btn',
 'is-' ~ intent if intent,
@@ -25,7 +22,6 @@ class_=""
 class_
 ] | reject('equalto','') | list | join(' ') %}
 
-{# Common attributes #}
 {% set attrs = {
 'id': id,
 'class': classes,
@@ -34,7 +30,6 @@ class_
 'aria-label': (text if text else tooltip) if (style in ['Icon','NavbarIcon'] and tooltip or not text) else None
 } %}
 
-{# Render #}
 {% if Tag == 'a' %}
 <a {{ 'id="%s"' % attrs['id'] if attrs['id'] }} class="{{ attrs['class'] }}" {% if not is_disabled %} href="{{ href }}"
     {% endif %} role="button" {% if is_disabled %} aria-disabled="true" tabindex="-1" data-prevent-click="true" {% endif

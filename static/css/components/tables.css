@@ -1,0 +1,155 @@
+.c-table {
+    background: transparent;
+    width: 100%;
+}
+
+.c-table__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+}
+
+.c-table__search {
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-md);
+    border: var(--border-basic);
+    font-family: var(--ts-normal-font);
+    font-size: var(--ts-normal-size);
+    font-weight: var(--ts-normal-size);
+    line-height: var(--ts-normal-line);
+    color: var(--c-dark-grey);
+}
+
+.c-table__search .c-input--search {
+    background: transparent;
+    border: 0;
+    outline: none;
+    width: 100%;
+    font: inherit;
+}
+
+.c-table__search .c-btn {
+    font-size: var(--ts-normal-size);
+    padding: var(--space-2) var(--space-3);
+    background-color: transparent;
+}
+
+.c-table__wrap {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+}
+
+.c-table__el {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.c-table__el--head .c-table__head th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--c-dark-grey);
+    color: var(--c-white);
+    text-align: left;
+    font: var(--ts-heading-font);
+    font-size: var(--ts-heading-size);
+    font-weight: var(--ts-heading-weight);
+    padding: 10px 12px;
+    border-right: 1px solid var(--c-white);
+    vertical-align: middle;
+}
+
+.c-th--control {
+    width: 48px;
+    text-align: center;
+}
+
+.c-table__bodywrap {
+    max-height: 60vh;
+    overflow: auto;
+    background: var(--c-white);
+}
+
+.c-table__head th,
+.c-table__body td {
+    border-right: 1px solid var(--c-white);
+}
+
+.c-table__head th:last-child,
+.c-table__body td:last-child {
+    border-right: none;
+}
+
+.c-table__body tr:nth-child(even) {
+    background: var(--c-almost-white);
+}
+
+.c-table__body tr.is-selected {
+    background-color: var(--c-tag-3);
+}
+
+.c-table__body tr:hover {
+    background-color: var(--c-light-grey)
+}
+
+.c-table__body tr:hover .c-td.is-disabled {
+    color: var(--c-almost-white)
+}
+
+.c-td,
+.c-th {
+    padding: var(--space-2) var(--space-3);
+}
+
+.c-td--control {
+    text-align: center;
+}
+
+.c-td__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1, 6px);
+}
+
+.c-td.is-disabled {
+    color: var(--c-light-grey);
+}
+
+.c-td--empty {
+    text-align: center;
+    padding: var(--space-6) var(--space-3);
+    color: var(--c-dark-grey);
+}
+
+.c-iconbtn {
+    width: 24px;
+    height: 24px;
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    cursor: pointer;
+    background: transparent;
+    color: var(--c-dark-grey);
+}
+
+.c-th--control .c-iconbtn {
+    color: var(--c-white);
+}
+
+.u-sr-only {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
