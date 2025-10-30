@@ -10,10 +10,10 @@ delete=False,
 create=False,
 download=False,
 print=False,
-id_key="id"
+id_key="id",
+database=None
 ) -%}
 
-{# ---------- helpers ---------- #}
 {% macro _val(row, key) -%}
 {% if row is mapping -%}
 {{ row.get(key, "") }}
@@ -51,7 +51,13 @@ id_key="id"
 {% set hasEdit = type|lower in ["edit"] %}
 {% set hasSelectEdit = type|lower in ["select-edit","selectedit","select_edit"] %}
 
-<div class="c-table" {% if id %}id="{{ id }}" {% endif %} data-component="table" data-table>
+<div 
+    class="c-table" 
+    {% if id %}id="{{ id }}" {% endif %} 
+    data-component="table" 
+    data-table
+    {% if database %}data-database="{{ database }}"{% endif %}
+    >
 
     {# ---------- Toolbar ---------- #}
     <div class="c-table__toolbar">

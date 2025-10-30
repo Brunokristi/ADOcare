@@ -25,7 +25,7 @@
 {"id": 11, "title": "MUDr.", "name": "Richard", "surname": "Mlynár", "pzs": "PZS-011", "zpr": "ZPR-370"},
 {"id": 12, "title": "MUDr.", "name": "Mária", "surname": "Tóthová", "pzs": "PZS-012", "zpr": "ZPR-380"},
 {"id": 13, "title": "MUDr.", "name": "Jozef", "surname": "Baláž", "pzs": "PZS-013", "zpr": "ZPR-390"},
-{"id": 14, "title": "MUDr.", "name": "Iveta", "surname": "Cibulková", "pzs": "PZS-014", "zpr": "ZPR-400"},
+{"id": 14, "title": "MUDr.", "name": "Iveta", "surname": "Cibulková", "pzs": "PZS-014", "zpr": "ZPR-400", "favourite": True},
 {"id": 15, "title": "MUDr.", "name": "Ľuboš", "surname": "Kmeť", "pzs": "PZS-015", "zpr": "ZPR-410"},
 {"id": 16, "title": "MUDr.", "name": "Gabriela", "surname": "Novotná", "pzs": "PZS-016", "zpr": "ZPR-420"},
 {"id": 17, "title": "MUDr.", "name": "Viktor", "surname": "Urban", "pzs": "PZS-017", "zpr": "ZPR-430"},
@@ -45,6 +45,7 @@ type="Favourites",
 columns=columns,
 data=doctors,
 search=True,
+database="doctors"
 ) }}
 
 <!-- {{ Table(
@@ -53,13 +54,13 @@ type="Select-Edit",
 columns=columns,
 data=doctors,
 search=True,
-download=True,
-print=True,
+download=False,
+print=False,
 delete=True,
 create=True
-) }}
+) }} -->
 
-{{ Table(
+<!-- {{ Table(
 id="table-select",
 type="Select",
 columns=columns,
@@ -83,4 +84,13 @@ delete=True,
 create=True
 ) }} -->
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('table:fav-toggle', (e) => {
+        const { id, fav, database } = e.detail;
+        console.log('Favourite toggled:', { id, fav, database });
+    });
+</script>
 {% endblock %}
