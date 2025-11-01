@@ -25,25 +25,24 @@ class_
 {% set attrs = {
 'id': id,
 'class': classes,
-'title': tooltip if not tooltip else None,
 'data-tooltip': tooltip if tooltip else None,
 'aria-label': (text if text else tooltip) if (style in ['Icon','NavbarIcon'] and tooltip or not text) else None
 } %}
 
 {% if Tag == 'a' %}
-<a {{ 'id="%s"' % attrs['id'] if attrs['id'] }} class="{{ attrs['class'] }}" {% if not is_disabled %} href="{{ href }}"
+<a {% if attrs['id'] %} id="{{ attrs['id'] }}" {% endif %} class="{{ attrs['class'] }}" {% if not is_disabled %} href="{{ href }}"
     {% endif %} role="button" {% if is_disabled %} aria-disabled="true" tabindex="-1" data-prevent-click="true" {% endif
-    %} {% if attrs['data-tooltip'] %} data-tooltip="{{ attrs['data-tooltip'] }}" {% endif %} {% if attrs['title'] %}
-    title="{{ attrs['title'] }}" {% endif %} {% if attrs['aria-label'] %} aria-label="{{ attrs['aria-label'] }}" {%
+    %} {% if attrs['data-tooltip'] %} data-tooltip="{{ attrs['data-tooltip'] }}" {% endif %}
+    {% if attrs['aria-label'] %} aria-label="{{ attrs['aria-label'] }}" {%
     endif %}>
     {% if text %}<span class="c-btn__text">{{ text }}</span>{% endif %}
     {% if icon %}<i class="bi {{ icon }} c-btn__icon" aria-hidden="true"></i>{% endif %}
     {% if tag_text %}<span class="c-btn__tag">{{ tag_text }}</span>{% endif %}
 </a>
 {% else %}
-<button {{ 'id="%s"' % attrs['id'] if attrs['id'] }} class="{{ attrs['class'] }}" type="{{ type }}" {% if is_disabled %}
+<button {% if attrs['id'] %} id="{{ attrs['id'] }}" {% endif %} class="{{ attrs['class'] }}" type="{{ type }}" {% if is_disabled %}
     disabled aria-disabled="true" {% endif %} {% if attrs['data-tooltip'] %} data-tooltip="{{ attrs['data-tooltip'] }}"
-    {% endif %} {% if attrs['title'] %} title="{{ attrs['title'] }}" {% endif %} {% if attrs['aria-label'] %}
+    {% endif %} {% if attrs['aria-label'] %}
     aria-label="{{ attrs['aria-label'] }}" {% endif %}>
     {% if text %}<span class="c-btn__text">{{ text }}</span>{% endif %}
     {% if icon %}<i class="bi {{ icon }} c-btn__icon" aria-hidden="true"></i>{% endif %}
