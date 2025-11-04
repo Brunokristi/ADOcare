@@ -39,14 +39,14 @@
 {"id": 25, "title": "MUDr.", "name": "Lukáš", "surname": "Varga", "pzs": "PZS-025", "zpr": "ZPR-510"}
 ] %}
 
-<!-- {{ Table(
+{{ Table(
 id="table-favourites",
 type="Favourites",
 columns=columns,
 data=doctors,
 search=True,
-database="doctors"
-) }} -->
+database="A"
+) }}
 
 {{ Table(
 id="table-select-edit",
@@ -54,22 +54,20 @@ type="Select-Edit",
 columns=columns,
 data=doctors,
 search=True,
-download=False,
-print=False,
 delete=True,
-create=True
+create=True,
+database="B"
 ) }}
 
-<!-- {{ Table(
+{{ Table(
 id="table-select",
 type="Select",
 columns=columns,
 data=doctors,
 search=True,
-download=True,
-print=True,
 delete=True,
-create=True
+create=True,
+database="C"
 ) }}
 
 {{ Table(
@@ -78,11 +76,10 @@ type="Edit",
 columns=columns,
 data=doctors,
 search=True,
-download=True,
-print=True,
 delete=True,
-create=True
-) }} -->
+create=True,
+database="D"
+) }}
 
 {% endblock %}
 
@@ -92,5 +89,20 @@ create=True
         const { id, fav, database } = e.detail;
         console.log('Favourite toggled:', { id, fav, database });
     });
+
+    document.addEventListener('table:delete', (e) => {
+        const { ids, database } = e.detail;
+        console.log('Delete requested:', { ids, database });
+    });
+
+    document.addEventListener('table:create', (e) => {
+        const { database } = e.detail;
+        console.log('Create clicked for database:', database);
+    });
+
+    document.addEventListener('table:edit', (e) => {
+            const { id, database } = e.detail;
+            console.log('Edit clicked:', { id, database });
+        });
 </script>
 {% endblock %}

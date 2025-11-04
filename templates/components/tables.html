@@ -8,8 +8,6 @@ data=[],
 search=False,
 delete=False,
 create=False,
-download=False,
-print=False,
 id_key="id",
 database=None
 ) -%}
@@ -72,8 +70,6 @@ database=None
 
         {% if create %} {{ Button(id="create", style="Icon", intent="primary", icon="bi-plus-lg") }} {% endif %}
         {% if delete %} {{ Button(id="delete", style="Icon", intent="danger", icon="bi-eraser") }} {% endif %}
-        {% if download %} {{ Button(id="download", style="Icon", intent="primary", icon="bi-download") }} {% endif %}
-        {% if print %} {{ Button(id="print", style="Icon", intent="primary", icon="bi-printer") }} {% endif %}
         {% if hasFav %} {{ Button(id="filter",style="Icon",intent="primary",icon="bi-heart",tooltip="Filtrovať obľúbených") }}{% endif %}    
     </div>
 
