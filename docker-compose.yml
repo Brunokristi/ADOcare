@@ -3,26 +3,29 @@ services:
     image: postgres:15
     restart: unless-stopped
     environment:
-      POSTGRES_USER: histomap
-      POSTGRES_PASSWORD: histomap_password
-      POSTGRES_DB: histomap_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - ./data-db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
   adminer:
     image: adminer
     restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_DB_DRIVER: pgsql
     ports:
       - "8080:8080"
+    depends_on:
+      - postgres
 
   ors:
     image: openrouteservice/openrouteservice:v8.0.0
     ports:
-      - "8080:8082"
+      - "8082:8082"
     volumes:
-      - ./data/ors:/home/ors
+      - ./data-ors:/home/ors
     environment:
       REBUILD_GRAPHS: True
       XMS: 1g
@@ -30,3 +33,6 @@ services:
       ors.engine.source_file: /home/ors/files/slovakia-251030.osm.pbf
       ors.engine.profiles.car.enabled: true
 
+volumes:
+  data-db:
+  data-ors:
