@@ -1,15 +1,12 @@
 /.phpunit.cache
-/bootstrap/ssr
 /node_modules
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
-/resources/js/actions
-/resources/js/routes
-/resources/js/wayfinder
 /vendor
+/data
 .DS_Store
 .env
 .env.backup
