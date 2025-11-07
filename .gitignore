@@ -6,7 +6,8 @@
 /storage/*.key
 /storage/pail
 /vendor
-/data
+/data-db
+/data-ors
 .DS_Store
 .env
 .env.backup
@@ -23,3 +24,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/.junie
