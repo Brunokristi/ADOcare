@@ -1,5 +1,3 @@
-import { AppPageProps } from '@/types/index';
-
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
     interface ImportMetaEnv {
@@ -11,10 +9,6 @@ declare module 'vite/client' {
         readonly env: ImportMetaEnv;
         readonly glob: <T>(pattern: string) => Record<string, () => Promise<T>>;
     }
-}
-
-declare module '@inertiajs/core' {
-    interface PageProps extends InertiaPageProps, AppPageProps {}
 }
 
 declare module 'vue' {
