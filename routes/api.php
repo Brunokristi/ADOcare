@@ -17,7 +17,7 @@ Route::prefix('auth')->group(function () {
 
     // Protected auth routes (require Bearer token)
     Route::middleware([ApiTokenAuth::class])->group(function () {
-        Route::post('logout', action: [AuthController::class, 'logout']);
+        Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
     });
 });
