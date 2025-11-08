@@ -6,13 +6,6 @@
       0 => 'Laravel\\Boost\\BoostServiceProvider',
     ),
   ),
-  'laravel/fortify' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Fortify\\FortifyServiceProvider',
-    ),
-  ),
   'laravel/mcp' => 
   array (
     'aliases' => 
