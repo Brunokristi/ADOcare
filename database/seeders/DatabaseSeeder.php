@@ -18,17 +18,14 @@ class DatabaseSeeder extends Seeder
             'first_name' => 'Admin',
             'last_name' => 'User',
             'code' => 'admin',
-            'email' => 'admin@example.sk'
+            'email' => 'admin@example.sk',
         ]);
-
 
         $this->call(CompanySeeder::class);
         $this->call(DoctorSeeder::class);
         $this->call(PatientSeeder::class);
         $this->call(UserSeeder::class);
         $this->call(CarSeeder::class);
-
-
 
     }
 }
