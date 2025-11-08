@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * The current pin being used by the factory.
      */
-    protected static ?string $password;
+    protected static ?string $pin;
 
     /**
      * Define the model's default state.
@@ -26,8 +26,8 @@ class UserFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
-            'password' => static::$password ??= 'password',
-            'initials' => strtoupper(substr($this->faker->firstName, 0, 1).substr($this->faker->lastName, 0, 1)),
+            'pin' => static::$pin ??= '1234',
+            'initials' => strtoupper(substr($this->faker->firstName, 0, 1) . substr($this->faker->lastName, 0, 1)),
             'title' => null,
             'code' => null,
             'phone_number' => fake()->phoneNumber(),

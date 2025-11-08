@@ -35,7 +35,7 @@ class AuthController extends Controller
         $data = $request->validated();
 
         $user = User::where('code', $data['code'])->first();
-        if (! $user || ! Hash::check($data['pin'], $user->pin)) {
+        if (!$user || !Hash::check($data['pin'], $user->pin)) {
             return $this->error('Unauthorized', 401);
         }
 

@@ -21,7 +21,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
+        'pin',
         'code',
         'pin',
     ];
@@ -32,10 +32,9 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
+        'pin',
         'remember_token',
+        'api_token',
     ];
 
     /**
@@ -46,10 +45,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
             'pin' => 'hashed',
-            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 }
