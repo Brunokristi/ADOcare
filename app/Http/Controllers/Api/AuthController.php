@@ -13,7 +13,19 @@ class AuthController extends Controller
 {
     use \App\Http\Responses\ApiResponse;
 
-    // User Registration API
+
+    /**
+     * Create a new token for the user.
+     * @param \App\Models\User $user
+     * @param \DateTimeInterface|null $expiresAt // Default in 1 day
+     * @return string
+     */
+    private function createToken(User $user, $expiresAt = new \DateTime('+1 day'))
+    {
+        return $user->createToken('AuthToken', [], $expiresAt)->plainTextToken;
+    }
+
+    // User Registration API - Only admin can register users
     public function register(CodeRegisterRequest $request)
     {
         $data = $request->validated();
@@ -24,9 +36,7 @@ class AuthController extends Controller
             'pin' => Hash::make($data['pin']),
         ]);
 
-        $token = $user->createToken('MyAppToken')->plainTextToken;
-
-        return $this->success(['token' => $token, 'user' => $user], 'User registered successfully.', 201);
+        return $this->success($user, 'User registered successfully.', 201);
     }
 
     // User Login API
@@ -39,7 +49,7 @@ class AuthController extends Controller
             return $this->error('Unauthorized', 401);
         }
 
-        $token = $user->createToken('MyAppToken')->plainTextToken;
+        $token = $this->createToken($user);
 
         return $this->success(['token' => $token, 'user' => $user], 'Login successful.');
     }
