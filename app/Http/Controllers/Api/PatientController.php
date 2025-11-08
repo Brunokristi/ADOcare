@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\PatientResource;
+use App\Http\Filters\ApiQuery;
 use App\Http\Responses\ApiResponse;
 use App\Models\Patient;
 use Illuminate\Http\Request;
@@ -15,9 +16,11 @@ class PatientController extends Controller
 
     public function index()
     {
-        $patients = Patient::query()->get();
+        $query = Patient::query();
 
-        return $this->success(new PatientCollection($patients), 'Patients retrieved');
+        $results = ApiQuery::apply(request(), $query, searchable: ['first_name', 'last_name', 'personal_number'], allowedFilters: ['sex']);
+
+        return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
 
     public function store(Request $request)
@@ -37,7 +40,7 @@ class PatientController extends Controller
     public function show($id)
     {
         $patient = Patient::find($id);
-        if (! $patient) {
+        if (!$patient) {
             return $this->error('Not found', 404);
         }
 
@@ -54,7 +57,7 @@ class PatientController extends Controller
         ]);
 
         $patient = Patient::find($id);
-        if (! $patient) {
+        if (!$patient) {
             return $this->error('Not found', 404);
         }
 
@@ -67,7 +70,7 @@ class PatientController extends Controller
     public function destroy($id)
     {
         $patient = Patient::find($id);
-        if (! $patient) {
+        if (!$patient) {
             return $this->error('Not found', 404);
         }
 

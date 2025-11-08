@@ -25,14 +25,30 @@ class BaseCollection extends ResourceCollection
 
     public function toArray($request): array
     {
-        $items = ($this->resourceClass) ?
-            $this->collection->map(fn($item) => (new $this->resourceClass($item))->toArray($request))
-            :
+        if ($this->resourceClass) {
+            $items = $this->collection->map(fn($item) => (new $this->resourceClass($item))->toArray($request));
+        } else {
             $items = $this->collection->toArray();
+        }
 
-        return [
+        $result = [
             'items' => $items,
             'count' => $this->collection->count(),
         ];
+
+        // If the underlying resource is a paginator, include pagination metadata
+        if (isset($this->resource) && $this->resource instanceof \Illuminate\Pagination\AbstractPaginator) {
+            $p = $this->resource;
+            $result['meta'] = [
+                'current_page' => $p->currentPage(),
+                'per_page' => $p->perPage(),
+                'total' => $p->total(),
+                'last_page' => $p->lastPage(),
+                'next_page_url' => $p->nextPageUrl(),
+                'prev_page_url' => $p->previousPageUrl(),
+            ];
+        }
+
+        return $result;
     }
 }

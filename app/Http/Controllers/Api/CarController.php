@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\CarCollection;
 use App\Http\Resources\CarResource;
+use App\Http\Filters\ApiQuery;
 use App\Http\Responses\ApiResponse;
 use App\Models\Car;
 use Illuminate\Http\Request;
@@ -15,9 +16,11 @@ class CarController extends Controller
 
     public function index()
     {
-        $cars = Car::query()->get();
+        $query = Car::query();
 
-        return $this->success(new CarCollection($cars), 'Cars retrieved');
+        $results = ApiQuery::apply(request(), $query, searchable: ['evc'], allowedFilters: ['company_id', 'user_id']);
+
+        return $this->success(new CarCollection($results), 'Cars retrieved');
     }
 
     public function store(Request $request)
@@ -36,7 +39,7 @@ class CarController extends Controller
     public function show($id)
     {
         $car = Car::find($id);
-        if (! $car) {
+        if (!$car) {
             return $this->error('Not found', 404);
         }
 
@@ -52,7 +55,7 @@ class CarController extends Controller
         ]);
 
         $car = Car::find($id);
-        if (! $car) {
+        if (!$car) {
             return $this->error('Not found', 404);
         }
 
@@ -65,7 +68,7 @@ class CarController extends Controller
     public function destroy($id)
     {
         $car = Car::find($id);
-        if (! $car) {
+        if (!$car) {
             return $this->error('Not found', 404);
         }
 
