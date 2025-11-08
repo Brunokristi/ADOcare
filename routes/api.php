@@ -1,10 +1,17 @@
 <?php
 
+use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\Api\CarController;
 use App\Http\Controllers\Api\PatientController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Middleware\ApiTokenAuth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+// API routes: wrap all routes with the ForceJsonResponse alias via Kernel
+// and use shorthand middleware aliases (see App\Http\Kernel.php)
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
@@ -13,10 +20,10 @@ Route::get('/health', function () {
 // Authentication
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('register', [AuthController::class, 'register']);
 
     // Protected auth routes (require Bearer token)
-    Route::middleware([ApiTokenAuth::class])->group(function () {
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('register', [AuthController::class, 'register'])->middleware('role:admin');
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
     });
