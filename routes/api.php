@@ -29,8 +29,12 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Cars CRUD
-Route::apiResource('cars', CarController::class);
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
-// Patients CRUD
-Route::apiResource('patients', PatientController::class);
+    // Cars CRUD
+    Route::apiResource('cars', CarController::class);
+
+    // Patients CRUD
+    Route::apiResource('patients', PatientController::class);
+
+});
