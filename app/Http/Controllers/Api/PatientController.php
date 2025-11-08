@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\PatientCollection;
+use App\Http\Resources\PatientResource;
+use App\Http\Responses\ApiResponse;
+use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
+    use ApiResponse;
+
     public function index()
     {
-        $patients = DB::table('patients')->get();
+        $patients = Patient::query()->get();
 
-        return response()->json($patients);
+        return $this->success(new PatientCollection($patients), 'Patients retrieved');
     }
 
     public function store(Request $request)
@@ -24,19 +29,19 @@ class PatientController extends Controller
             'sex' => 'nullable|in:M,F',
         ]);
 
-        $id = DB::table('patients')->insertGetId($data + ['created_at' => now(), 'updated_at' => now()]);
+        $patient = Patient::create($data);
 
-        return response()->json(['id' => $id], 201);
+        return $this->success(new PatientResource($patient), 'Created', 201);
     }
 
     public function show($id)
     {
-        $patient = DB::table('patients')->where('id', $id)->first();
+        $patient = Patient::find($id);
         if (! $patient) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->error('Not found', 404);
         }
 
-        return response()->json($patient);
+        return $this->success(new PatientResource($patient), 'Patient retrieved');
     }
 
     public function update(Request $request, $id)
@@ -48,21 +53,26 @@ class PatientController extends Controller
             'sex' => 'nullable|in:M,F',
         ]);
 
-        $updated = DB::table('patients')->where('id', $id)->update($data + ['updated_at' => now()]);
-        if (! $updated) {
-            return response()->json(['message' => 'Not found or no changes'], 404);
+        $patient = Patient::find($id);
+        if (! $patient) {
+            return $this->error('Not found', 404);
         }
 
-        return response()->json(['message' => 'Updated']);
+        $patient->fill($data);
+        $patient->save();
+
+        return $this->success(new PatientResource($patient), 'Updated');
     }
 
     public function destroy($id)
     {
-        $deleted = DB::table('patients')->where('id', $id)->delete();
-        if (! $deleted) {
-            return response()->json(['message' => 'Not found'], 404);
+        $patient = Patient::find($id);
+        if (! $patient) {
+            return $this->error('Not found', 404);
         }
 
-        return response()->json(['message' => 'Deleted']);
+        $patient->delete();
+
+        return $this->success(null, 'Deleted');
     }
 }

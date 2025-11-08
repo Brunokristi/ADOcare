@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\CarCollection;
+use App\Http\Resources\CarResource;
+use App\Http\Responses\ApiResponse;
+use App\Models\Car;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 
 class CarController extends Controller
 {
+    use ApiResponse;
+
     public function index()
     {
-        $cars = DB::table('cars')->get();
+        $cars = Car::query()->get();
 
-        return response()->json($cars);
+        return $this->success(new CarCollection($cars), 'Cars retrieved');
     }
 
     public function store(Request $request)
@@ -23,19 +28,19 @@ class CarController extends Controller
             'user_id' => 'nullable|integer',
         ]);
 
-        $id = DB::table('cars')->insertGetId($data + ['created_at' => now(), 'updated_at' => now()]);
+        $car = Car::create($data);
 
-        return response()->json(['id' => $id], 201);
+        return $this->success(new CarResource($car), 'Created', 201);
     }
 
     public function show($id)
     {
-        $car = DB::table('cars')->where('id', $id)->first();
+        $car = Car::find($id);
         if (! $car) {
-            return response()->json(['message' => 'Not found'], 404);
+            return $this->error('Not found', 404);
         }
 
-        return response()->json($car);
+        return $this->success(new CarResource($car), 'Car retrieved');
     }
 
     public function update(Request $request, $id)
@@ -46,21 +51,26 @@ class CarController extends Controller
             'user_id' => 'nullable|integer',
         ]);
 
-        $updated = DB::table('cars')->where('id', $id)->update($data + ['updated_at' => now()]);
-        if (! $updated) {
-            return response()->json(['message' => 'Not found or no changes'], 404);
+        $car = Car::find($id);
+        if (! $car) {
+            return $this->error('Not found', 404);
         }
 
-        return response()->json(['message' => 'Updated']);
+        $car->fill($data);
+        $car->save();
+
+        return $this->success(new CarResource($car), 'Updated');
     }
 
     public function destroy($id)
     {
-        $deleted = DB::table('cars')->where('id', $id)->delete();
-        if (! $deleted) {
-            return response()->json(['message' => 'Not found'], 404);
+        $car = Car::find($id);
+        if (! $car) {
+            return $this->error('Not found', 404);
         }
 
-        return response()->json(['message' => 'Deleted']);
+        $car->delete();
+
+        return $this->success(null, 'Deleted');
     }
 }
