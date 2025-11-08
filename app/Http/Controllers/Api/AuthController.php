@@ -1,71 +1,60 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\CodeLoginRequest;
+use App\Http\Requests\Api\CodeRegisterRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    use \App\Http\Responses\ApiResponse;
+
+    // User Registration API
+    public function register(CodeRegisterRequest $request)
     {
-        $data = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
-
-        if (! Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        $user = Auth::user();
-        $plain = Str::random(60);
-        $user->api_token = hash('sha256', $plain);
-        $user->save();
-
-        return response()->json(['token' => $plain, 'user' => $user]);
-    }
-
-    public function register(Request $request)
-    {
-        $data = $request->validate([
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-        ]);
+        $data = $request->validated();
 
         $user = User::create([
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
+            'name' => $data['name'],
+            'code' => $data['code'],
+            'pin' => Hash::make($data['pin']),
         ]);
 
-        $plain = Str::random(60);
-        $user->api_token = hash('sha256', $plain);
-        $user->save();
+        $token = $user->createToken('MyAppToken')->plainTextToken;
 
-        return response()->json(['token' => $plain, 'user' => $user], 201);
+        return $this->success(['token' => $token, 'user' => $user], 'User registered successfully.', 201);
     }
 
-    public function logout(Request $request)
+    // User Login API
+    public function login(CodeLoginRequest $request)
     {
-        $user = $request->user();
-        if ($user) {
-            $user->api_token = null;
-            $user->save();
+        $data = $request->validated();
+
+        $user = User::where('code', $data['code'])->first();
+        if (! $user || ! Hash::check($data['pin'], $user->pin)) {
+            return $this->error('Unauthorized', 401);
         }
 
-        return response()->json(['message' => 'Logged out']);
+        $token = $user->createToken('MyAppToken')->plainTextToken;
+
+        return $this->success(['token' => $token, 'user' => $user], 'Login successful.');
     }
 
-    public function me(Request $request)
+    // User Profile API (Protected)
+    public function profile(Request $request)
     {
-        return response()->json(['user' => $request->user()]);
+        return $this->success($request->user(), 'Profile retrieved');
+    }
+
+    // User Logout API
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return $this->success(null, 'Logout successful');
     }
 }
