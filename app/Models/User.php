@@ -23,11 +23,11 @@ class User extends Authenticatable
         'last_name',
         'email',
         'title',
-        'code',
         'phone_number',
-        'login',
-        'pin',
         'initials',
+        'login',
+        'code',
+        'pin',
     ];
 
     /**
@@ -72,6 +72,11 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
+    }
+
+    public function rolesStringList()
+    {
+        return $this->roles()->pluck('position')->toArray();
     }
 
     public function reportMonths()

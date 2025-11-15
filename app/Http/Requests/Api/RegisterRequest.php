@@ -4,7 +4,7 @@ namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CodeRegisterRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,6 +16,7 @@ class CodeRegisterRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:users,code',
+            'login' => 'required|string|max:255|unique:users,login',
             'pin' => 'required|string|min:4|confirmed',
         ];
     }

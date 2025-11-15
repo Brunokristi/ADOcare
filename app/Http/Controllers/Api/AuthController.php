@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\CodeLoginRequest;
-use App\Http\Requests\Api\CodeRegisterRequest;
+use App\Http\Requests\Api\LoginRequest;
+use App\Http\Requests\Api\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,13 +26,14 @@ class AuthController extends Controller
     }
 
     // User Registration API - Only admin can register users
-    public function register(CodeRegisterRequest $request)
+    public function register(RegisterRequest $request)
     {
         $data = $request->validated();
 
         $user = User::create([
             'name' => $data['name'],
             'code' => $data['code'],
+            'login' => $data['login'],
             'pin' => Hash::make($data['pin']),
         ]);
 
@@ -40,14 +41,14 @@ class AuthController extends Controller
     }
 
     // User Login API
-    public function login(CodeLoginRequest $request)
+    public function login(LoginRequest $request)
     {
         $data = $request->validated();
 
-        $user = User::where('code', $data['code'])->first();
+        $user = User::where('code', $data['login'])->orWhere('login', $data['login'])->first();
 
         if (!$user || !Hash::check($data['pin'], $user->pin)) {
-            return $this->error('Invalid code or pin.', 401);
+            return $this->error('Invalid login/code or pin.', 401);
         }
 
         $token = $this->createToken($user);
@@ -59,7 +60,8 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         $userId = auth()->id();
-        $user = User::query()->where('id', $userId)->with(['branches', 'company', 'roles'])->first();
+        $user = User::query()->where('id', $userId)->with(['branches', 'company'])->first();
+        $user->roles_list = $user->rolesStringList();
         return $this->success($user, 'Profile retrieved');
 
     }
