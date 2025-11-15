@@ -27,11 +27,24 @@ class RoleSeeder extends Seeder
         // Attach random roles to some users (idempotent)
         $users = User::where('code', '!=', 'admin')->inRandomOrder()->take(40)->get();
         foreach ($users as $u) {
-            // randomly pick 0-1 roles to attach
-            if (random_int(0, 1) === 1) {
-                $pick = $roles[array_rand($roles)];
-                $pick->users()->syncWithoutDetaching([$u->id]);
+            // First 10 should have both
+            if ($u->id < 10) {
+                $roles['manager']->users()->syncWithoutDetaching([$u->id]);
+                $roles['nurse']->users()->syncWithoutDetaching([$u->id]);
+                continue;
             }
+            $pick = $roles[array_rand($roles)];
+            $pick->users()->syncWithoutDetaching([$u->id]);
         }
+
+        // Ensure every user has at least one role: if a user has no role, assign 'nurse' by default.
+        $default = $roles['nurse'];
+        \App\Models\User::chunk(100, function ($chunk) use ($default) {
+            foreach ($chunk as $user) {
+                if (!$user->roles()->exists()) {
+                    $default->users()->syncWithoutDetaching([$user->id]);
+                }
+            }
+        });
     }
 }

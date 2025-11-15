@@ -16,13 +16,13 @@ class UserSeeder extends Seeder
             // no branches to attach users to
             return;
         }
-
+        $usersCreated = 0;
         // Create 2 users per branch
         foreach ($branches as $branchId) {
             for ($i = 0; $i < 2; $i++) {
                 $first = 'User' . substr((string) Str::random(6), 0, 4);
                 $last = 'Demo';
-                $login = strtolower($first) . '.' . strtolower($last) . rand(1, 99);
+                $login = 'user' . $usersCreated++;
                 $email = $login . '@example.test';
 
                 $code = $branchId . '-' . $i;
@@ -51,6 +51,30 @@ class UserSeeder extends Seeder
                     'branch_id' => $branchId,
                     'working_time' => 8.0,
                 ]);
+
+                // If this is an early user (id < 10), ensure they are assigned to at least two branches
+                if ($user->id < 10) {
+                    // find a different branch to attach
+                    $otherBranchId = DB::table('branches')
+                        ->where('id', '!=', $branchId)
+                        ->inRandomOrder()
+                        ->value('id');
+
+                    if ($otherBranchId) {
+                        $exists = DB::table('user_branches')
+                            ->where('user_id', $user->id)
+                            ->where('branch_id', $otherBranchId)
+                            ->exists();
+
+                        if (!$exists) {
+                            DB::table('user_branches')->insert([
+                                'user_id' => $user->id,
+                                'branch_id' => $otherBranchId,
+                                'working_time' => 8.0,
+                            ]);
+                        }
+                    }
+                }
             }
         }
     }

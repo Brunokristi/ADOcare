@@ -12,7 +12,7 @@ class CompanySeeder extends Seeder
     {
         Company::factory(5)->create()->each(function ($company) {
             // create 1-3 branches per company
-            $branches = Branch::factory(rand(1, 3))->make()->toArray();
+            $branches = Branch::factory(rand(2, 3))->make()->toArray();
             foreach ($branches as $b) {
                 $company->branches()->create($b);
             }

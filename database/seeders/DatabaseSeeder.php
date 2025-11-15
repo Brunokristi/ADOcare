@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
                 'first_name' => 'Admin',
                 'last_name' => 'User',
                 'email' => 'admin@example.sk',
+                'code' => 'admin',
                 'login' => 'admin',
                 'pin' => '0000',
                 'initials' => 'AU',

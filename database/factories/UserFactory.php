@@ -30,7 +30,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'login' => fake()->unique()->userName(),
             'pin' => static::$pin ??= '1234',
-            'initials' => strtoupper(substr($this->faker->firstName, 0, 1) . substr($this->faker->lastName, 0, 1)),
+            'initials' => strtoupper(string: substr($this->faker->firstName, 0, 1) . substr($this->faker->lastName, 0, 1)),
             'title' => null,
             'code' => null,
             'phone_number' => fake()->phoneNumber(),
