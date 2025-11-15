@@ -12,7 +12,20 @@ class Company extends Model
     protected $table = 'company';
 
     protected $fillable = [
-        'name', 'ico', 'dic', 'ic_dph', 'iban', 'bic', 'register', 'address', 'city', 'psc', 'phone', 'email', 'latitude', 'longitude',
+        'name',
+        'ico',
+        'dic',
+        'ic_dph',
+        'iban',
+        'bic',
+        'register',
+        'address',
+        'city',
+        'psc',
+        'phone',
+        'email',
+        'latitude',
+        'longitude',
     ];
 
     public function branches()
@@ -23,5 +36,11 @@ class Company extends Model
     public function cars()
     {
         return $this->hasMany(Car::class);
+    }
+
+    public function users()
+    {
+        // users related to this company via branches -> user_branches pivot
+        return $this->hasManyThrough(User::class, Branch::class, 'company_id', 'id', 'id', 'id');
     }
 }

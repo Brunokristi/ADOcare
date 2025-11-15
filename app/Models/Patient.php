@@ -17,4 +17,14 @@ class Patient extends Model
     {
         return $this->belongsTo(Doctor::class);
     }
+
+    public function visits()
+    {
+        return $this->hasMany(Visit::class);
+    }
+
+    public function insuranceCompany()
+    {
+        return $this->belongsTo(InsuranceCompany::class, 'insurance_company_id');
+    }
 }

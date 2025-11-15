@@ -69,4 +69,24 @@ class User extends Authenticatable
         return $this->hasOneThrough(Company::class, Branch::class, 'id', 'id', 'id', 'company_id');
     }
 
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
+    }
+
+    public function reportMonths()
+    {
+        return $this->hasMany(ReportMonth::class);
+    }
+
+    public function assignRole($role)
+    {
+        if ($role instanceof Role) {
+            $roleId = $role->id;
+        } else {
+            $roleId = (int) $role;
+        }
+        $this->roles()->syncWithoutDetaching([$roleId]);
+    }
+
 }

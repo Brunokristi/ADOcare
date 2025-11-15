@@ -12,11 +12,35 @@ class Branch extends Model
     protected $table = 'branches';
 
     protected $fillable = [
-        'company_id', 'code', 'identificator', 'address', 'city', 'psc', 'phone', 'email', 'latitude', 'longitude',
+        'company_id',
+        'code',
+        'identificator',
+        'address',
+        'city',
+        'psc',
+        'phone',
+        'email',
+        'latitude',
+        'longitude',
     ];
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_branches', 'branch_id', 'user_id');
+    }
+
+    public function reportMonths()
+    {
+        return $this->hasMany(ReportMonth::class, 'branch_id');
+    }
+
+    public function cars()
+    {
+        return $this->hasMany(Car::class, 'company_id');
     }
 }

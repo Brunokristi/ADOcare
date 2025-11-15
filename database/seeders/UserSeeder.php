@@ -25,13 +25,20 @@ class UserSeeder extends Seeder
                 $login = strtolower($first) . '.' . strtolower($last) . rand(1, 99);
                 $email = $login . '@example.test';
 
+                $code = $branchId . '-' . $i;
+
+                // skip if a user with this code already exists (make seeder idempotent)
+                if (\App\Models\User::where('code', $code)->exists()) {
+                    continue;
+                }
+
                 $user = \App\Models\User::factory()->create([
                     'email' => $email,
                     'login' => $login,
                     'first_name' => $first,
                     'last_name' => $last,
                     'title' => null,
-                    'code' => $branchId . '-' . $i,
+                    'code' => $code,
                     'phone_number' => null,
                     'initials' => strtoupper(substr($first, 0, 1) . substr($last, 0, 1)),
                     'created_at' => now(),
