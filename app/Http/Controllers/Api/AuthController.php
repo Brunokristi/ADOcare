@@ -45,8 +45,9 @@ class AuthController extends Controller
         $data = $request->validated();
 
         $user = User::where('code', $data['code'])->first();
+
         if (!$user || !Hash::check($data['pin'], $user->pin)) {
-            return $this->error('Unauthorized', 401);
+            return $this->error('Invalid code or pin.', 401);
         }
 
         $token = $this->createToken($user);
@@ -57,7 +58,10 @@ class AuthController extends Controller
     // User Profile API (Protected)
     public function profile(Request $request)
     {
-        return $this->success($request->user(), 'Profile retrieved');
+        $userId = auth()->id();
+        $user = User::query()->where('id', $userId)->with(['branches', 'company'])->first();
+        return $this->success($user, 'Profile retrieved');
+
     }
 
     // User Logout API

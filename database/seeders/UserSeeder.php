@@ -27,12 +27,11 @@ class UserSeeder extends Seeder
 
                 $user = \App\Models\User::factory()->create([
                     'email' => $email,
-                    'pin' => Hash::make('pin'),
-                    'username' => $login,
+                    'login' => $login,
                     'first_name' => $first,
                     'last_name' => $last,
                     'title' => null,
-                    'code' => null,
+                    'code' => $branchId . '-' . $i,
                     'phone_number' => null,
                     'initials' => strtoupper(substr($first, 0, 1) . substr($last, 0, 1)),
                     'created_at' => now(),

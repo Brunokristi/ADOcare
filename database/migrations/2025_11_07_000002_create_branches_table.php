@@ -24,11 +24,6 @@ class CreateBranchesTable extends Migration
             $table->foreign('company_id')->references('id')->on('company')->onDelete('set null');
         });
 
-        // update user table to add last_branch foreign key
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('last_branch')->nullable();
-            $table->foreign('last_branch')->references('id')->on('branches')->onDelete('set null');
-        });
     }
 
     public function down()

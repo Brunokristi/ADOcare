@@ -19,11 +19,15 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
-        'pin',
+        'title',
         'code',
+        'phone_number',
+        'login',
         'pin',
+        'initials',
     ];
 
     /**
@@ -38,14 +42,31 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string,string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'pin' => 'hashed',
+    ];
+
+
+
+    // Relations
+    public function cars()
     {
-        return [
-            'pin' => 'hashed',
-        ];
+        return $this->hasMany(Car::class);
     }
+
+    public function branches()
+    {
+        return $this->belongsToMany(Branch::class, 'user_branches', 'user_id', 'branch_id');
+    }
+
+    // One company through branches that all need to be the same company
+    public function company()
+    {
+        return $this->hasOneThrough(Company::class, Branch::class, 'id', 'id', 'id', 'company_id');
+    }
+
 }

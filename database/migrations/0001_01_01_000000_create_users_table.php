@@ -12,18 +12,16 @@ return new class extends Migration {
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('email')->unique();
-            $table->string('pin');
-            $table->string('username')->nullable();
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('initials')->nullable();
             $table->string('title')->nullable();
-            $table->string('code')->nullable();
+            $table->string('code')->nullable()->unique();
             $table->string('phone_number')->nullable();
-            $table->rememberToken();
+            $table->string('email')->unique();
+            $table->string('login')->unique();
+            $table->string('pin');
+            $table->string('initials')->nullable();
             $table->timestamps();
-
         });
 
         Schema::create('pin_reset_tokens', function (Blueprint $table) {
