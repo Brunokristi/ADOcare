@@ -8,7 +8,7 @@ import AdoButton from '@/components/ado/AdoButton.vue';
 const router = useRouter();
 const route = useRoute();
 
-const code = ref('');
+const login = ref('');
 const pin = ref('');
 const loading = ref(false);
 const error = ref('');
@@ -17,7 +17,7 @@ async function submit() {
     loading.value = true;
     error.value = '';
     try {
-        await auth.login({ code: code.value, pin: pin.value });
+        await auth.login({ login: login.value, pin: pin.value });
         const redirect = (route.query.redirect as string) || '/';
         router.push(redirect);
     } catch (e: any) {
@@ -32,16 +32,16 @@ async function submit() {
     <div class="min-h-screen flex items-center justify-center">
         <div class="w-full max-w-md p-6 bg-white rounded shadow">
             <h1 class="text-heading-accent text-center mb-4">Vitajte 👋<br>Prihláste sa do svojho účtu.</h1>
-            <div class="space-y-3">
-                <label class="block text-sm font-medium">Prihlasovací kód</label>
-                <AdoInput class="w-100" v-model="code" placeholder="Prihlasovací kód" />
+            <form @submit.prevent="submit" class="space-y-3">
+                <label for="login" class="block text-sm font-medium">Prihlasovacie meno/kód</label>
+                <AdoInput id="login" class="w-100" v-model="login" placeholder="Prihlasovacie meno/kód" />
 
-                <label class="block text-sm font-medium">PIN</label>
-                <AdoInput class="w-100" v-model="pin" type="password" placeholder="PIN" />
+                <label for="pin" class="block text-sm font-medium">PIN</label>
+                <AdoInput id="pin" class="w-100" v-model="pin" type="password" placeholder="PIN" />
 
-                <AdoButton @click="submit" :disabled="loading" class="w-full justify-center">Prihlásiť</AdoButton>
+                <AdoButton type="submit" :disabled="loading" class="w-full justify-center">Prihlásiť</AdoButton>
                 <div v-if="error" class="text-red-600">{{ error }}</div>
-            </div>
+            </form>
         </div>
     </div>
 </template>

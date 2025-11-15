@@ -1,52 +1,76 @@
+import router from '@/router';
+import api from '@/services/api';
 import { defineStore } from 'pinia';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         token: (localStorage.getItem('api_token') as string | null) || null,
-        company: (localStorage.getItem('company_name') as string | null) || [],
-        branches: (localStorage.getItem('branch_name') as string | null) || [],
-        roles: (localStorage.getItem('role_name') as string | null) || [],
+        user: null as null | IUser,
+        currentRole: null as null | string,
+        currentBranch: null as null | IBranch,
     }),
     getters: {
         isAuthenticated: (state) => !!state.token,
     },
     actions: {
 
-        setAuth(payload: { token?: string | null; company?: string; branches?: string; roles?: string }) {
-            this.token = payload.token ?? null;
-            if (payload.token) localStorage.setItem('api_token', payload.token);
-            else localStorage.removeItem('api_token');
-
-            if (payload.company !== undefined) {
-                this.company = payload.company || '';
-                if (payload.company) localStorage.setItem('company_name', payload.company);
-                else localStorage.removeItem('company_name');
+        async init() {
+            if (!this.token) return;
+            try {
+                this.user = await this.fetchUserProfile();
+            } catch (error) {
+                // this.clearAuth();
+                router.push({ name: 'login' });
             }
 
-            if (payload.branches !== undefined) {
-                this.branches = payload.branches || '';
-                if (payload.branches) localStorage.setItem('branch_name', payload.branches);
-                else localStorage.removeItem('branch_name');
+            const savedRole = localStorage.getItem('current_role');
+            if (savedRole && this.user?.roles_list.includes(savedRole)) {
+                this.currentRole = savedRole;
+            } else if (this.user?.roles_list.length) {
+                this.currentRole = this.user.roles_list[0] ?? null;
             }
 
-            if (payload.roles !== undefined) {
-                this.roles = payload.roles || '';
-                if (payload.roles) localStorage.setItem('role_name', payload.roles);
-                else localStorage.removeItem('role_name');
+            const savedBranchId = localStorage.getItem('current_branch_id');
+            if (savedBranchId) {
+                const branch = this.user?.branches.find(b => b.id === parseInt(savedBranchId));
+                if (branch) {
+                    this.currentBranch = branch;
+                }
+            } else if (this.user?.branches.length) {
+                this.currentBranch = this.user.branches[0] ?? null;
             }
         },
+
+        async fetchUserProfile() {
+            const user = await api.get('/auth/profile');
+            return user.data?.data;
+        },
+
+        async setAuth(token: string) {
+            if (!token) return;
+            this.token = token;
+            localStorage.setItem('api_token', token);
+            this.init();
+        },
+
+
+
+        setCurrentRole(role: string) {
+            this.currentRole = role;
+            localStorage.setItem('current_role', role);
+        },
+
+        setCurrentBranch(branchId: number) {
+            const branch = this.user?.branches.find(b => b.id === branchId);
+            if (!branch) return;
+            this.currentBranch = branch;
+            localStorage.setItem('current_branch_id', branchId.toString());
+
+        },
+
         clearAuth() {
             this.token = null;
             localStorage.removeItem('api_token');
-
-            this.company = '';
-            localStorage.removeItem('company_name');
-
-            this.branches = '';
-            localStorage.removeItem('branch_name');
-
-            this.roles = '';
-            localStorage.removeItem('role_name');
         },
     },
 });

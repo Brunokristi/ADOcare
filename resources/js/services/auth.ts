@@ -2,25 +2,24 @@ import api from './api';
 import { useAuthStore } from '@/stores/auth';
 
 export interface LoginPayload {
-    code?: string;
+    login?: string;
     pin?: string;
 }
 
 export async function login(payload: LoginPayload) {
     const res = await api.post('/auth/login', payload);
     const token = res.data?.data?.token
-    const company = res.data?.data?.company ?? null
-    const branch = res.data?.data?.branch ?? null
-    const role = res.data?.data?.role ?? null
 
     const store = useAuthStore();
-    store.setAuth({ token: token ?? null, company: company ?? undefined, branch: branch ?? undefined, role: role ?? undefined });
+    if (!token) throw new Error('No token received');
+    store.setAuth(token);
 
     return res;
 }
 
-export function logout() {
+export async function logout() {
     const store = useAuthStore();
+    await api.post('/auth/logout')
     store.clearAuth();
 }
 
