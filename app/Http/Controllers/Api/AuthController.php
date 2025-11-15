@@ -59,7 +59,7 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         $userId = auth()->id();
-        $user = User::query()->where('id', $userId)->with(['branches', 'company'])->first();
+        $user = User::query()->where('id', $userId)->with(['branches', 'company', 'roles'])->first();
         return $this->success($user, 'Profile retrieved');
 
     }
