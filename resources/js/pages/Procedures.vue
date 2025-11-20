@@ -209,36 +209,19 @@ const deleteshowRows = () => {
             }"
         >
             <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
-            <Column :exportable="false" style="width: 3rem">
-                <template #body="slotProps">
-                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" />
-                </template>
-            </Column>
-
-            <Column :exportable="false" style="width: 3rem">
-                <template #body="slotProps">
-                    <Button icon="bi bi-pin-angle" @click="editProduct(slotProps.data)" />
-                </template>
-            </Column>
-
-            <Column :exportable="false" style="width: 3rem">
-                <template #body="slotProps">
-                    <Button icon="bi bi-list-ul" @click="editProduct(slotProps.data)" />
-                </template>
-            </Column>
-
-            <Column :exportable="false" style="width: 3rem">
-                <template #body="slotProps">
-                    <Button icon="bi bi-eye" @click="editProduct(slotProps.data)" />
-                </template>
-            </Column>
+            
 
             <Column field="code" header="Kód" sortable />
             <Column field="price25" header="Cena poisťovňa 25" sortable />
             <Column field="price24" header="Cena poisťovňa 24" sortable disabled />
             <Column field="price27" header="Cena poisťovňa 27" sortable />
-            <!-- fixed extra quote here -->
             <Column field="description" header="Popis" />
+            <Column :exportable="false" style="width: 3rem">
+                <template #body="slotProps">
+                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="!text-darkgrey hover:!bg-transparent " />
+                </template>
+            </Column>
+
         </DataTable>
 
         <Dialog v-model:visible="productDialog" :style="{ width: '450px' }" header="Product Details" :modal="true">

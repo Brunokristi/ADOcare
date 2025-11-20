@@ -19,6 +19,38 @@ export default {
                 sans: "var(--font-sans)",
                 accent: "var(--font-accent)",
             },
+            fontSize: {
+                'heading-accent': [
+                    'var(--ts-heading-accent-size)',
+                    {
+                        lineHeight: 'var(--ts-heading-accent-line)',
+                        fontWeight: 'var(--ts-heading-accent-weight)',
+                        fontFamily: 'var(--ts-heading-accent-font)',
+                    },
+                ],
+                'heading': [
+                    'var(--ts-heading-size)',
+                    {
+                        lineHeight: 'var(--ts-heading-line)',
+                        fontWeight: 'var(--ts-heading-weight)',
+                        fontFamily: 'var(--ts-heading-font)',
+                    },
+                ],
+                'normal': [
+                    'var(--ts-normal-size)',
+                    {
+                        lineHeight: 'var(--ts-normal-line)',
+                        fontWeight: 'var(--ts-normal-weight)',
+                    },
+                ],
+                'mini': [
+                    'var(--ts-mini-size)',
+                    {
+                        lineHeight: 'var(--ts-mini-line)',
+                        fontWeight: 'var(--ts-mini-weight)',
+                    },
+                ],
+            },
             borderRadius: {
                 sm: "var(--radius-sm)",
                 md: "var(--radius-md)",

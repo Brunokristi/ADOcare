@@ -82,3 +82,8 @@ body {
     --z-modal: 2000;
     --z-tooltip: 3000;
 }
+
+.p-checkbox-checked .custom-checkbox-fill {
+    background-color: var(--c-dark-grey) !important;
+    border-color: var(--c-dark-grey) !important;
+}

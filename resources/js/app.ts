@@ -9,6 +9,7 @@ import Aura from '@primeuix/themes/aura';
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
 import 'bootstrap-icons/font/bootstrap-icons.css';
+import Checkbox from 'primevue/checkbox';
 
 
 const app = createApp(App);
@@ -28,20 +29,31 @@ app.use(PrimeVue, {
         datatable: {
             root: { class: 'rounded-2xl overflow-hidden' },
             table: { class: 'w-full border-collapse !border-0' },
-            header: { class: '!bg-black' },
-            headerrow: { class: '!bg-black' },
-            rowgroupheadercell: { class: '!bg-black' },
-            headercell: { class: '!bg-black !text-white' },
-            bodyrow: { class: 'text-darkgrey text-xs' },
-            bodycell: { class: 'px-4 py-2 border-t border-almostwhite' }
         },
 
         column: {
-            headercell: { class: '!bg-darkgrey !text-white !text-xs !font-medium px-4 py-2' },
-            bodycell: { class: 'px-4 py-2 border-t border-almostwhite' }
+            headercell: { class: '!bg-darkgrey !text-white !text-heading px-4 py-2 !border-r !border-r-white' },
+            sortIcon: { class: '!text-white !flex !items-center !justify-center' },
+            pcheadercheckbox: {
+                box: { class: '!border-white !bg-darkgrey' },
+            },
+            pcrowcheckbox: {
+                box: {
+                    class: '!border-darkgrey custom-checkbox-fill'
+                },
+            },
+            bodycell: {
+                class: '!text-normal !text-darkgrey !p-0 !px-4 !border-0 !border-r !border-r-white',
+            },
+        },
+        pcbutton: {
+            root: {
+                class: '!color-darkgrey'
+            }
         }
     }
 });
+
 
 app.use(pinia);
 app.use(router);
