@@ -21,7 +21,7 @@ const showNavbar = computed(() => {
 <template>
     <div class="h-screen flex flex-col bg-darkgrey">
         <Navbar v-if="showNavbar" class="flex-none" />
-        <main class="flex-1 overflow-auto bg-white p-4">
+        <main class="flex-1 overflow-auto bg-white p-8">
             <router-view />
         </main>
         <Footer class="flex-none" />

@@ -27,15 +27,16 @@ app.use(PrimeVue, {
     },
     pt: {
         datatable: {
-            root: { class: 'rounded-2xl overflow-hidden' },
+            root: { class: 'rounded-md overflow-hidden' },
             table: { class: 'w-full border-collapse !border-0' },
+            bodyrow: { class: '[&.p-row-odd]:!bg-almostwhite [&.p-row-odd:hover]:!bg-lightgrey hover:!bg-lightgrey' },
         },
 
         column: {
-            headercell: { class: '!bg-darkgrey !text-white !text-heading px-4 py-2 !border-r !border-r-white' },
+            headercell: { class: '!bg-darkgrey !text-white !text-heading px-4 py-2 !border-r !border-r-white last:!border-r-0' },
             sortIcon: { class: '!text-white !flex !items-center !justify-center' },
             pcheadercheckbox: {
-                box: { class: '!border-white !bg-darkgrey' },
+                box: { class: ' !bg-darkgrey !border-white' },
             },
             pcrowcheckbox: {
                 box: {
@@ -43,14 +44,13 @@ app.use(PrimeVue, {
                 },
             },
             bodycell: {
-                class: '!text-normal !text-darkgrey !p-0 !px-4 !border-0 !border-r !border-r-white',
+                class: '!text-normal !text-darkgrey !p-0 !px-4 !border-0 !border-r !border-r-white last:!border-r-0',
             },
+
         },
-        pcbutton: {
-            root: {
-                class: '!color-darkgrey'
-            }
-        }
+        inputtext: {
+            root: { class: ' !border-darkgrey !text-darkgrey' }
+        },
     }
 });
 

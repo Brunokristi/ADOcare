@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
 
@@ -142,10 +142,6 @@ const createId = () => {
     return id;
 };
 
-const exportCSV = () => {
-    dt.value?.exportCSV();
-};
-
 const confirmDeleteSelected = () => {
     deleteProductsDialog.value = true;
 };
@@ -161,6 +157,19 @@ const deleteshowRows = () => {
         life: 3000,
     });
 };
+
+const recordsInfo = computed(() => {
+    if (!dt.value) return '';
+
+    const total = products.value.length;
+    const filtered = dt.value.processedData?.length;
+
+    if (filtered == null) {
+        return `${total} z ${total} záznamov`;
+    }
+    return `${filtered} z ${total} záznamov`;
+});
+
 </script>
 
 <template>
@@ -170,22 +179,21 @@ const deleteshowRows = () => {
 
         <Toolbar class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between">
             <template #end>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 ">
                     <IconField>
-                        <InputText v-model="filters['global'].value" />
+                        <InputText v-model="filters['global'].value"  />
                         <InputIcon>
-                            <i class="bi bi-search" />
+                            <i class="bi bi-search text-darkgrey" />
                         </InputIcon>
                     </IconField>
 
-                    <Button icon="bi bi-plus" @click="openNew" />
+                    <Button icon="bi bi-plus" @click="openNew" class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey"/>
 
                     <Button
                         icon="bi bi-eraser"
-                        severity="danger"
-                        variant="outlined"
                         @click="confirmDeleteSelected"
                         :disabled="!showRows || !showRows.length"
+                        class="!bg-warning !border-warning"
                     />
                 </div>
             </template>
@@ -199,18 +207,9 @@ const deleteshowRows = () => {
             :filters="filters"
             stripedRows
             removableSort
-            :pt="{
-                root: { class: 'rounded-2xl overflow-hidden ' },
-                table: { class: 'w-full border-collapse !border-0' },
-                thead: { class: '!bg-darkgrey !text-white' },
-                headerCell: { class: '!bg-darkgrey !text-white !text-xs !font-medium px-4 py-2' },
-                bodyRow: { class: 'text-darkgrey text-xs ' },
-                bodyCell: { class: 'px-4 py-2 border-t border-almostwhite' }
-            }"
         >
             <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
             
-
             <Column field="code" header="Kód" sortable />
             <Column field="price25" header="Cena poisťovňa 25" sortable />
             <Column field="price24" header="Cena poisťovňa 24" sortable disabled />
@@ -221,8 +220,11 @@ const deleteshowRows = () => {
                     <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="!text-darkgrey hover:!bg-transparent " />
                 </template>
             </Column>
-
         </DataTable>
+
+        <div class="text-mini text-accent flex justify-end w-full py-2">
+            {{ recordsInfo }}
+        </div>
 
         <Dialog v-model:visible="productDialog" :style="{ width: '450px' }" header="Product Details" :modal="true">
             <div class="flex flex-col gap-6">
