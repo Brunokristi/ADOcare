@@ -19,9 +19,9 @@ const showNavbar = computed(() => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100">
+    <div class="min-h-screen bg-darkgrey">
         <Navbar v-if="showNavbar" />
-        <main>
+        <main class="p-4 bg-white h-quote-screen">
             <router-view />
         </main>
     </div>

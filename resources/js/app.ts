@@ -3,44 +3,52 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from '@/router';
 import api from '@/services/api';
+import useAuthStore from './stores/auth';
+import Aura from '@primeuix/themes/aura';
 
 import PrimeVue from 'primevue/config';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Checkbox from 'primevue/checkbox';
-import Aura from '@primevue/themes/aura';
-
+import ToastService from 'primevue/toastservice';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-import AdoTable from '@/components/ado/AdoTable.vue';
 
 const app = createApp(App);
 const pinia = createPinia();
 
-// Provide axios globally
-app.config.globalProperties.$api = api;
 
-// Core plugins
-app.use(pinia);
-app.use(router);
-
-// PrimeVue with new theme config (REQUIRED for v4)
 app.use(PrimeVue, {
     theme: {
         preset: Aura,
         options: {
-            darkModeSelector: '.dark-mode' // optional
+            prefix: 'p',
+            darkModeSelector: '.my-app-dark',
+            cssLayer: false
+        },
+    },
+    pt: {
+        datatable: {
+            root: { class: 'rounded-2xl overflow-hidden' },
+            table: { class: 'w-full border-collapse !border-0' },
+            header: { class: '!bg-black' },
+            headerrow: { class: '!bg-black' },
+            rowgroupheadercell: { class: '!bg-black' },
+            headercell: { class: '!bg-black !text-white' },
+            bodyrow: { class: 'text-darkgrey text-xs' },
+            bodycell: { class: 'px-4 py-2 border-t border-almostwhite' }
+        },
+
+        column: {
+            headercell: { class: '!bg-darkgrey !text-white !text-xs !font-medium px-4 py-2' },
+            bodycell: { class: 'px-4 py-2 border-t border-almostwhite' }
         }
     }
 });
 
-// Global PrimeVue components
-app.component('DataTable', DataTable);
-app.component('Column', Column);
-app.component('Checkbox', Checkbox);
+app.use(pinia);
+app.use(router);
+app.use(ToastService);
 
-// Your global Ado components
-app.component('AdoTable', AdoTable);
+app.config.globalProperties.$api = api;
 
-// Mount
+useAuthStore().init();
+
 app.mount('#app');
