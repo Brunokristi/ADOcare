@@ -4,12 +4,14 @@ import Dashboard from '@/pages/Dashboard.vue';
 import Login from '@/pages/Login.vue';
 import Patients from '@/pages/Patients.vue';
 import Cars from '@/pages/Cars.vue';
+import Procedures from '@/pages/Procedures.vue';
 
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
     { path: '/login', name: 'login', component: Login, meta: { hideNavbar: true } },
     { path: '/patients', name: 'patients', component: Patients, meta: { requiresAuth: true } },
     { path: '/cars', name: 'cars', component: Cars, meta: { requiresAuth: true } },
+    { path: '/procedures', name: 'procedures', component: Procedures, meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({

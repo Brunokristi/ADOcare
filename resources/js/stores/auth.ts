@@ -11,6 +11,13 @@ export const useAuthStore = defineStore('auth', {
         isAuthenticated: (state) => !!state.token,
     },
     actions: {
+        init() {
+            // Restore auth state from localStorage on app initialization
+            this.token = (localStorage.getItem('api_token') as string | null) || null;
+            this.company = (localStorage.getItem('company_name') as string | null) || '';
+            this.branches = (localStorage.getItem('branch_name') as string | null) || '';
+            this.roles = (localStorage.getItem('role_name') as string | null) || '';
+        },
 
         setAuth(payload: { token?: string | null; company?: string; branches?: string; roles?: string }) {
             this.token = payload.token ?? null;
@@ -35,6 +42,7 @@ export const useAuthStore = defineStore('auth', {
                 else localStorage.removeItem('role_name');
             }
         },
+
         clearAuth() {
             this.token = null;
             localStorage.removeItem('api_token');
