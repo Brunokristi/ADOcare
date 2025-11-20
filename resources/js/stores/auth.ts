@@ -13,7 +13,6 @@ export const useAuthStore = defineStore('auth', {
         isAuthenticated: (state) => !!state.token,
     },
     actions: {
-
         async init() {
             if (!this.token) return;
             try {

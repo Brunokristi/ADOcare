@@ -2,6 +2,7 @@
 import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Navbar from '@/components/Navbar.vue';
+import Footer from '@/components/Footer.vue';
 
 // listen for global unauthenticated events from axios and redirect to login
 const router = useRouter();
@@ -13,17 +14,17 @@ onMounted(() => {
 });
 
 const showNavbar = computed(() => {
-    // hide navbar on routes that declare `meta.hideNavbar = true` (e.g. login)
     return !(route.meta && (route.meta as any).hideNavbar === true);
 });
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100">
-        <Navbar v-if="showNavbar" />
-        <main>
+    <div class="h-screen flex flex-col bg-darkgrey">
+        <Navbar v-if="showNavbar" class="flex-none" />
+        <main class="flex-1 overflow-auto bg-white p-8">
             <router-view />
         </main>
+        <Footer class="flex-none" />
     </div>
 </template>
 
