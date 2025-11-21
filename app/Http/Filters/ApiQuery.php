@@ -48,9 +48,9 @@ class ApiQuery
             $query->where(function (Builder $b) use ($searchable, $q) {
                 foreach ($searchable as $i => $col) {
                     if ($i === 0) {
-                        $b->where($col, 'like', "%{$q}%");
+                        $b->where($col, 'ILIKE', "%{$q}%");
                     } else {
-                        $b->orWhere($col, 'like', "%{$q}%");
+                        $b->orWhere($col, 'ILIKE', "%{$q}%");
                     }
                 }
             });
@@ -75,10 +75,16 @@ class ApiQuery
         $paginate = $request->input('paginate', '1');
         $perPage = (int) $request->input('per_page', 15);
 
+        $sql = $query->toRawSql();
+
+
         if ($paginate === '0' || $paginate === 0 || $request->boolean('paginate') === false) {
-            return $query->get();
+            $result = $query->get();
+        } else {
+            $result = $query->paginate($perPage)->withQueryString();
         }
 
-        return $query->paginate($perPage)->withQueryString();
+        $result->sql = $sql;
+        return $result;
     }
 }
