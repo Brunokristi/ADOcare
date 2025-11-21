@@ -1,4 +1,11 @@
 <?php return array (
+  'fumeapp/modeltyper' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'FumeApp\\ModelTyper\\ModelTyperServiceProvider',
+    ),
+  ),
   'laravel/boost' => 
   array (
     'providers' => 
