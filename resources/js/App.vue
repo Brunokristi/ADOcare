@@ -3,6 +3,7 @@ import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
+import Sidebar from '@/components/Sidebar.vue';
 
 // listen for global unauthenticated events from axios and redirect to login
 const router = useRouter();
@@ -21,10 +22,19 @@ const showNavbar = computed(() => {
 <template>
     <div class="h-screen flex flex-col bg-darkgrey">
         <Navbar v-if="showNavbar" class="flex-none" />
-        <main class="flex-1 overflow-auto bg-white p-8">
-            <router-view />
-        </main>
+
+        <div class="flex h-screen">
+            <Sidebar v-if="showNavbar" />
+            <div class="main-content h-full flex-1 overflow-auto bg-white p-8">
+                <router-view />
+            </div>
+        </div>
+
         <Footer class="flex-none" />
+
+
+
+        <Toast />
     </div>
 </template>
 

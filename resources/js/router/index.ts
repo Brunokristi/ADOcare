@@ -4,14 +4,28 @@ import Dashboard from '@/pages/Dashboard.vue';
 import Login from '@/pages/Login.vue';
 import Patients from '@/pages/Patients.vue';
 import Cars from '@/pages/Cars.vue';
-import Procedures from '@/pages/Procedures.vue';
+import Settings from '@/pages/Settings.vue';
+import ProceduresPage from '@/pages/Procedures.vue';
+import Procedures from '@/partials/Settings/Procedures.vue';
 
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
     { path: '/login', name: 'login', component: Login, meta: { hideNavbar: true } },
     { path: '/patients', name: 'patients', component: Patients, meta: { requiresAuth: true } },
     { path: '/cars', name: 'cars', component: Cars, meta: { requiresAuth: true } },
-    { path: '/procedures', name: 'procedures', component: Procedures, meta: { requiresAuth: true } },
+    { path: '/procedures', name: 'procedures', component: ProceduresPage, meta: { requiresAuth: true } },
+    {
+        path: '/settings', name: 'settings', component: Settings, meta: { requiresAuth: true },
+
+        children: [
+            {
+                path: '/procedures',
+                name: 'procedures',
+                component: Settings,
+                meta: { requiresAuth: true, component: Procedures },
+            },
+        ],
+    },
 ];
 
 const router = createRouter({
