@@ -1,9 +1,7 @@
-<script lang="ts" setup>
+<template>
+  <div class="settings-page">
+    <!-- settings navbar / layout here -->
 
-
-// get props
-
-
-</script>
-
-<template></template>
+    <router-view />  <!-- ✅ child pages render here -->
+  </div>
+</template>

@@ -1,7 +1,8 @@
-@config "../../tailwind.config.js";
-
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Istok+Web:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tailwindcss-primeui";
+
+@config "../../tailwind.config.js";
 
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -9,7 +10,6 @@
 @source '../**/*.ts';
 @source '../**/*.vue';
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Istok+Web:wght@400;700&display=swap');
 
 /* layout basics */
 html,

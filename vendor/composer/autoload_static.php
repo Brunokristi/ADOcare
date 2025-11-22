@@ -160,6 +160,7 @@ class ComposerStaticInitddbd26749cb43e1c6a8e8fc6e6c5dca0
         ),
         'F' => 
         array (
+            'FumeApp\\ModelTyper\\' => 19,
             'Fruitcake\\Cors\\' => 15,
             'Faker\\' => 6,
         ),
@@ -180,6 +181,8 @@ class ComposerStaticInitddbd26749cb43e1c6a8e8fc6e6c5dca0
         'C' => 
         array (
             'Cron\\' => 5,
+            'Composer\\Pcre\\' => 14,
+            'Composer\\ClassMapGenerator\\' => 27,
             'Carbon\\Doctrine\\' => 16,
             'Carbon\\' => 7,
         ),
@@ -341,8 +344,8 @@ class ComposerStaticInitddbd26749cb43e1c6a8e8fc6e6c5dca0
         ),
         'Spatie\\Ignition\\' => 
         array (
-            0 => __DIR__ . '/..' . '/spatie/ignition/src',
-            1 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
+            0 => __DIR__ . '/..' . '/spatie/error-solutions/legacy/ignition',
+            1 => __DIR__ . '/..' . '/spatie/ignition/src',
         ),
         'Spatie\\FlareClient\\' => 
         array (
@@ -424,8 +427,8 @@ class ComposerStaticInitddbd26749cb43e1c6a8e8fc6e6c5dca0
         ),
         'League\\Uri\\' => 
         array (
-            0 => __DIR__ . '/..' . '/league/uri-interfaces',
-            1 => __DIR__ . '/..' . '/league/uri',
+            0 => __DIR__ . '/..' . '/league/uri',
+            1 => __DIR__ . '/..' . '/league/uri-interfaces',
         ),
         'League\\MimeTypeDetection\\' => 
         array (
@@ -517,6 +520,10 @@ class ComposerStaticInitddbd26749cb43e1c6a8e8fc6e6c5dca0
         array (
             0 => __DIR__ . '/..' . '/graham-campbell/result-type/src',
         ),
+        'FumeApp\\ModelTyper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/fumeapp/modeltyper/src',
+        ),
         'Fruitcake\\Cors\\' => 
         array (
             0 => __DIR__ . '/..' . '/fruitcake/php-cors/src',
@@ -562,6 +569,14 @@ class ComposerStaticInitddbd26749cb43e1c6a8e8fc6e6c5dca0
         'Cron\\' => 
         array (
             0 => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron',
+        ),
+        'Composer\\Pcre\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/pcre/src',
+        ),
+        'Composer\\ClassMapGenerator\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/class-map-generator/src',
         ),
         'Carbon\\Doctrine\\' => 
         array (
