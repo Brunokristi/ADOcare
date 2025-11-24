@@ -30,9 +30,6 @@ export default {
     },
 
     pt: {
-        selectbutton: {
-
-        },
         datatable: {
             root: { class: 'rounded-md overflow-hidden' },
             table: { class: 'w-full border-collapse !border-0' },
@@ -42,12 +39,19 @@ export default {
         column: {
             headercell: { class: '!bg-darkgrey !text-white !text-heading px-4 py-2 !border-r !border-r-white last:!border-r-0' },
             sortIcon: { class: '!text-white !flex !items-center !justify-center' },
+            columnTitle: { class: '!text-white !text-heading' },
             pcheadercheckbox: {
                 box: { class: ' !bg-darkgrey !border-white' },
+                root: {
+                    class: '!shadow-none hover:!shadow-none'
+                },
             },
             pcrowcheckbox: {
                 box: {
-                    class: '!border-darkgrey custom-checkbox-fill'
+                    class: '!border-darkgrey !bg-transparent',
+                },
+                root: {
+                    class: '!shadow-none hover:!shadow-none'
                 },
             },
             bodycell: {
@@ -56,7 +60,15 @@ export default {
 
         },
         inputtext: {
-            root: { class: ' !border-darkgrey !text-darkgrey' }
+            root: { class: '!border-darkgrey !text-darkgrey !outline-0 !p-xs !rounded-md' }
         },
+
+        button: {
+            root: { class: '!p-xs !rounded-md' }
+        },
+
+        menubar: {
+            root: { class: '!border-0 !px-0' },
+        }
     }
 } as PrimeVueConfiguration;

@@ -17,19 +17,24 @@ const routes = [
         path: '/settings',
         name: 'settings',
         component: Settings,
-        meta: { requiresAuth: true },
+        meta: {
+            requiresAuth: true,
+            title: 'Nastavenia',
+            sectionRoot: 'settings'
+        },
         children: [
             {
-                path: 'procedures',           // ✅ NO leading slash => /settings/procedures
-                name: 'settings-procedures',  // ✅ unique name
-                component: Procedures,        // ✅ render your Procedures partial
-                meta: { requiresAuth: true },
+                path: 'procedures',
+                name: 'procedures',
+                component: Procedures,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Výkony',
+                    link: 'výkony'
+                },
             },
         ],
     },
-
-    // optional: if you still want /procedures to work, redirect it
-    { path: '/procedures', redirect: { name: 'settings-procedures' } },
 ]
 
 const router = createRouter({

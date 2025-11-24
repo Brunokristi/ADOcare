@@ -1,7 +1,8 @@
-<template>
-  <div class="settings-page">
-    <!-- settings navbar / layout here -->
+<script setup>
+import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
+</script>
 
-    <router-view />  <!-- ✅ child pages render here -->
-  </div>
+<template>
+  <SecondaryNavbar />
+  <router-view />
 </template>

@@ -5,7 +5,6 @@ import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
 import Sidebar from '@/components/Sidebar.vue';
 
-// listen for global unauthenticated events from axios and redirect to login
 const router = useRouter();
 const route = useRoute();
 onMounted(() => {

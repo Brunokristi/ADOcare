@@ -1424,3 +1424,315 @@ If this is a native custom element, make sure to exclude it from component resol
 [2025-11-22 19:40:46] local.WARNING: [Vue Router warn]: No match found for location with path "/help" {"url":"http://127.0.0.1:8000/settings","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","timestamp":"2025-11-22T19:40:46.396Z"} 
 [2025-11-22 19:40:48] local.WARNING: [Vue Router warn]: No match found for location with path "/logout" {"url":"http://127.0.0.1:8000/help","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","timestamp":"2025-11-22T19:40:48.303Z"} 
 [2025-11-22 19:40:50] local.WARNING: [Vue Router warn]: No match found for location with path "/logout" {"url":"http://127.0.0.1:8000/logout","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","timestamp":"2025-11-22T19:40:50.597Z"} 
+[2025-11-22 19:42:53] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36","timestamp":"2025-11-22T19:42:53.019Z"} 
+[2025-11-23 20:11:23] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:11:23.714Z"} 
+[2025-11-23 20:14:41] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:14:40.911Z"} 
+[2025-11-23 20:14:52] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:14:52.076Z"} 
+[2025-11-23 20:15:36] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:15:36.153Z"} 
+[2025-11-23 20:16:04] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:16:04.523Z"} 
+[2025-11-23 20:16:58] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:16:57.881Z"} 
+[2025-11-23 20:17:02] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:17:01.993Z"} 
+[2025-11-23 20:17:20] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:17:20.335Z"} 
+[2025-11-23 20:17:46] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:17:45.999Z"} 
+[2025-11-23 20:17:58] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:17:58.077Z"} 
+[2025-11-23 20:18:11] local.WARNING: [Vue warn]: Property "items" was accessed during render but is not defined on instance. null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref<  > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:18:11.389Z"} 
+[2025-11-23 20:40:22] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-23T20:40:21.930Z"} 
+[2025-11-24 05:51:13] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:51:12.784Z"} 
+[2025-11-24 05:51:13] local.WARNING: [Vue warn]: Unhandled error during execution of scheduler flush null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:51:12.784Z"} 
+[2025-11-24 05:51:13] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:51:12.787Z"} 
+[2025-11-24 05:51:17] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:51:17.041Z"} 
+[2025-11-24 05:51:17] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:51:17.042Z"} 
+[2025-11-24 05:51:17] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:51:17.049Z"} 
+[2025-11-24 05:53:16] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:53:16.422Z"} 
+[2025-11-24 05:53:16] local.ERROR: Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:53:16.423Z"} 
+[2025-11-24 05:53:16] local.WARNING: [HMR] Something went wrong during Vue component hot-reload. Full reload required. {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:53:16.423Z"} 
+[2025-11-24 05:53:20] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:53:19.722Z"} 
+[2025-11-24 05:53:20] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:53:19.722Z"} 
+[2025-11-24 05:53:20] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T05:53:19.730Z"} 
+[2025-11-24 06:02:03] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:02.781Z"} 
+[2025-11-24 06:02:03] local.ERROR: Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:02.781Z"} 
+[2025-11-24 06:02:03] local.WARNING: [HMR] Something went wrong during Vue component hot-reload. Full reload required. {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:02.782Z"} 
+[2025-11-24 06:02:49] local.WARNING: [Vue warn]: Unhandled error during execution of scheduler flush null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:49.044Z"} 
+[2025-11-24 06:02:49] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'parentNode') TypeError: Cannot read properties of null (reading 'parentNode')
+    at parentNode (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10687:30)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:7616:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:505:19)
+    at http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2627:27
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:33)
+    at flushJobs (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2504:9) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:49.044Z"} 
+[2025-11-24 06:02:52] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:51.953Z"} 
+[2025-11-24 06:02:52] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:51.953Z"} 
+[2025-11-24 06:02:52] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:02:51.962Z"} 
+[2025-11-24 06:04:00] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:04:00.382Z"} 
+[2025-11-24 06:04:00] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:04:00.382Z"} 
+[2025-11-24 06:04:00] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:04:00.390Z"} 
+[2025-11-24 06:07:47] local.WARNING: [Vue warn]: Unhandled error during execution of scheduler flush null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:07:47.008Z"} 
+[2025-11-24 06:07:47] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'parentNode') TypeError: Cannot read properties of null (reading 'parentNode')
+    at parentNode (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10687:30)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:7616:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:505:19)
+    at http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2627:27
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:33)
+    at flushJobs (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2504:9) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:07:47.008Z"} 
+[2025-11-24 06:08:00] local.WARNING: [Vue warn]: Unhandled error during execution of scheduler flush null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:07:59.763Z"} 
+[2025-11-24 06:08:00] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'parentNode') TypeError: Cannot read properties of null (reading 'parentNode')
+    at parentNode (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10687:30)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:7616:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:505:19)
+    at http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2627:27
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:33)
+    at flushJobs (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2504:9) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:07:59.763Z"} 
+[2025-11-24 06:08:05] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:05.612Z"} 
+[2025-11-24 06:08:05] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:05.612Z"} 
+[2025-11-24 06:08:05] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:05.619Z"} 
+[2025-11-24 06:08:37] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:37.276Z"} 
+[2025-11-24 06:08:37] local.ERROR: Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:37.277Z"} 
+[2025-11-24 06:08:37] local.WARNING: [HMR] Something went wrong during Vue component hot-reload. Full reload required. {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:37.277Z"} 
+[2025-11-24 06:08:41] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:41.838Z"} 
+[2025-11-24 06:08:41] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:41.839Z"} 
+[2025-11-24 06:08:41] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:41.846Z"} 
+[2025-11-24 06:08:56] local.WARNING: [Vue warn]: Unhandled error during execution of scheduler flush null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:55.510Z"} 
+[2025-11-24 06:08:56] local.ERROR: Unhandled Promise Rejection TypeError Cannot read properties of null (reading 'parentNode') TypeError: Cannot read properties of null (reading 'parentNode')
+    at parentNode (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10687:30)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:7616:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:505:19)
+    at http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2627:27
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:33)
+    at flushJobs (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2504:9) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:08:55.511Z"} 
+[2025-11-24 06:09:14] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:09:13.687Z"} 
+[2025-11-24 06:09:14] local.ERROR: Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:09:13.688Z"} 
+[2025-11-24 06:09:14] local.WARNING: [HMR] Something went wrong during Vue component hot-reload. Full reload required. {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:09:13.688Z"} 
+[2025-11-24 06:09:18] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="procedures" to= procedures class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:09:18.329Z"} 
+[2025-11-24 06:09:18] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:09:18.329Z"} 
+[2025-11-24 06:09:18] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"procedures","params":{}} Error: No match for
+ {"name":"procedures","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:09:18.336Z"} 
+[2025-11-24 06:13:41] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="doctors" to= doctors class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:13:40.937Z"} 
+[2025-11-24 06:13:41] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:13:40.938Z"} 
+[2025-11-24 06:13:41] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"doctors","params":{}} Error: No match for
+ {"name":"doctors","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:13:40.947Z"} 
+[2025-11-24 06:14:20] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="doctors" to= doctors class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:14:19.883Z"} 
+[2025-11-24 06:14:20] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:14:19.883Z"} 
+[2025-11-24 06:14:20] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"doctors","params":{}} Error: No match for
+ {"name":"doctors","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:14:19.891Z"} 
+[2025-11-24 06:15:01] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="doctors" to= doctors class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:01.120Z"} 
+[2025-11-24 06:15:01] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:01.120Z"} 
+[2025-11-24 06:15:01] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"doctors","params":{}} Error: No match for
+ {"name":"doctors","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:01.137Z"} 
+[2025-11-24 06:15:16] local.WARNING: [Vue Router warn]: No match found for location with path "/settings/procedure" {"url":"http://127.0.0.1:8000/settings/procedure","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:16.559Z"} 
+[2025-11-24 06:15:19] local.WARNING: [Vue warn]: Unhandled error during execution of setup function null at <RouterLink key="doctors" to= doctors class="!text-mini !underline !px-sm transition-colors !text-darkgrey hover:!text-accent" > null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:19.265Z"} 
+[2025-11-24 06:15:19] local.WARNING: [Vue warn]: Unhandled error during execution of component update null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:19.265Z"} 
+[2025-11-24 06:15:19] local.ERROR: Unhandled Promise Rejection Error No match for
+ {"name":"doctors","params":{}} Error: No match for
+ {"name":"doctors","params":{}}
+    at createRouterError (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:453:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1623:27)
+    at Object.resolve (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:2058:34)
+    at ComputedRefImpl.fn (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1774:19)
+    at refreshComputed (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:659:29)
+    at get value (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:1861:5)
+    at useLink (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1801:22)
+    at setup (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=65335364:1847:27)
+    at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:2296:19)
+    at setupStatefulComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:10131:25) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:15:19.272Z"} 
+[2025-11-24 06:16:22] local.ERROR: TypeError Cannot read properties of null (reading 'type') TypeError: Cannot read properties of null (reading 'type')
+    at unmountComponent (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8150:18)
+    at unmount (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8057:7)
+    at unmountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8176:7)
+    at unmount (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8089:9)
+    at unmountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8176:7)
+    at unmount (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8081:9)
+    at unmountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8176:7)
+    at unmount (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8081:9)
+    at unmountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8176:7)
+    at unmount (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=65335364:8081:9) {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:16:21.971Z"} 
+[2025-11-24 06:16:22] local.WARNING: [HMR] Something went wrong during Vue component hot-reload. Full reload required. {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:16:21.972Z"} 
+[2025-11-24 06:26:29] local.WARNING: [Vue warn]: Property "title" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:29.352Z"} 
+[2025-11-24 06:26:29] local.WARNING: [Vue warn]: Property "activeKey" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:29.352Z"} 
+[2025-11-24 06:26:29] local.WARNING: [Vue warn]: Property "h2Text" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:29.352Z"} 
+[2025-11-24 06:26:29] local.WARNING: [Vue warn]: Property "defaultLinks" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:29.353Z"} 
+[2025-11-24 06:26:38] local.WARNING: [Vue warn]: Property "title" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:37.434Z"} 
+[2025-11-24 06:26:38] local.WARNING: [Vue warn]: Property "activeKey" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:37.435Z"} 
+[2025-11-24 06:26:38] local.WARNING: [Vue warn]: Property "h2Text" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:37.435Z"} 
+[2025-11-24 06:26:38] local.WARNING: [Vue warn]: Property "defaultLinks" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:37.435Z"} 
+[2025-11-24 06:26:50] local.WARNING: [Vue warn]: Property "title" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:50.105Z"} 
+[2025-11-24 06:26:50] local.WARNING: [Vue warn]: Property "h2Text" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:50.106Z"} 
+[2025-11-24 06:26:50] local.WARNING: [Vue warn]: Property "defaultLinks" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:50.106Z"} 
+[2025-11-24 06:26:59] local.WARNING: [Vue warn]: Property "title" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:59.226Z"} 
+[2025-11-24 06:26:59] local.WARNING: [Vue warn]: Property "h2Text" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:59.227Z"} 
+[2025-11-24 06:26:59] local.WARNING: [Vue warn]: Property "defaultLinks" was accessed during render but is not defined on instance. null at <Menubar> null at <Settings onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > > null at <RouterView> null at <App> {"url":"http://127.0.0.1:8000/settings/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-24T06:26:59.227Z"} 
