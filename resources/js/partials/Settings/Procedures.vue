@@ -5,10 +5,8 @@ import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
 const dt = ref(null);
+const isEditing = computed(() => !!product.value.id)
 
-/**
- * Initial data
- */
 const rows = ref([
     {
         id: 1,
@@ -34,7 +32,144 @@ const rows = ref([
         price27: '963258',
         description: 'Este dalsi bla bla bla',
     },
+    {
+        id: 4,
+        code: '174829',
+        price25: '174829',
+        price24: '174829',
+        price27: '174829',
+        description: 'Random description 4',
+    },
+    {
+        id: 5,
+        code: '285736',
+        price25: '285736',
+        price24: '285736',
+        price27: '285736',
+        description: 'Random description 5',
+    },
+    {
+        id: 6,
+        code: '396154',
+        price25: '396154',
+        price24: '396154',
+        price27: '396154',
+        description: 'Random description 6',
+    },
+    {
+        id: 7,
+        code: '417263',
+        price25: '417263',
+        price24: '417263',
+        price27: '417263',
+        description: 'Random description 7',
+    },
+    {
+        id: 8,
+        code: '528971',
+        price25: '528971',
+        price24: '528971',
+        price27: '528971',
+        description: 'Random description 8',
+    },
+    {
+        id: 9,
+        code: '639845',
+        price25: '639845',
+        price24: '639845',
+        price27: '639845',
+        description: 'Random description 9',
+    },
+    {
+        id: 10,
+        code: '741236',
+        price25: '741236',
+        price24: '741236',
+        price27: '741236',
+        description: 'Random description 10',
+    },
+    {
+        id: 11,
+        code: '852147',
+        price25: '852147',
+        price24: '852147',
+        price27: '852147',
+        description: 'Random description 11',
+    },
+    {
+        id: 12,
+        code: '963741',
+        price25: '963741',
+        price24: '963741',
+        price27: '963741',
+        description: 'Random description 12',
+    },
+    {
+        id: 13,
+        code: '184957',
+        price25: '184957',
+        price24: '184957',
+        price27: '184957',
+        description: 'Random description 13',
+    },
+    {
+        id: 14,
+        code: '295864',
+        price25: '295864',
+        price24: '295864',
+        price27: '295864',
+        description: 'Random description 14',
+    },
+    {
+        id: 15,
+        code: '316479',
+        price25: '316479',
+        price24: '316479',
+        price27: '316479',
+        description: 'Random description 15',
+    },
+    {
+        id: 16,
+        code: '427158',
+        price25: '427158',
+        price24: '427158',
+        price27: '427158',
+        description: 'Random description 16',
+    },
+    {
+        id: 17,
+        code: '538296',
+        price25: '538296',
+        price24: '538296',
+        price27: '538296',
+        description: 'Random description 17',
+    },
+    {
+        id: 18,
+        code: '649713',
+        price25: '649713',
+        price24: '649713',
+        price27: '649713',
+        description: 'Random description 18',
+    },
+    {
+        id: 19,
+        code: '751894',
+        price25: '751894',
+        price24: '751894',
+        price27: '751894',
+        description: 'Random description 19',
+    },
+    {
+        id: 20,
+        code: '862531',
+        price25: '862531',
+        price24: '862531',
+        price27: '862531',
+        description: 'Random description 20',
+    },
 ]);
+
 
 const products = ref([...rows.value]);
 
@@ -69,6 +204,15 @@ const hideDialog = () => {
 
 const saveProduct = () => {
     submitted.value = true;
+
+    const isValid =
+    product.value.code &&
+    product.value.price25 !== null &&
+    product.value.price24 !== null &&
+    product.value.price27 !== null &&
+    product.value.description?.trim()
+
+    if (!isValid) return
 
     if (product?.value.code?.toString().trim()) {
         if (product.value.id) {
@@ -207,9 +351,10 @@ const recordsInfo = computed(() => {
             :filters="filters"
             stripedRows
             removableSort
+            scrollable
+            scrollHeight="600px"
         >
             <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
-
             <Column field="code" header="Kód" sortable />
             <Column field="price25" header="Cena poisťovňa 25" sortable />
             <Column field="price24" header="Cena poisťovňa 24" sortable disabled />
@@ -226,115 +371,126 @@ const recordsInfo = computed(() => {
             {{ recordsInfo }}
         </div>
 
-        <Dialog v-model:visible="productDialog" :style="{ width: '450px' }" header="Product Details" :modal="true">
+        <Dialog v-model:visible="productDialog" :style="{ width: '600px' }" header="Výkon" :modal="true">
             <div class="flex flex-col gap-6">
+
+                <!-- Kód -->
                 <div>
-                    <label for="code" class="block font-bold mb-3">Code</label>
+                    <label :class="['block text-normal mb-1', isEditing ? '!text-lightgrey' : '']">Kód</label>
                     <InputText
-                        id="code"
                         v-model.trim="product.code"
-                        required="true"
-                        autofocus
+                        fluid
                         :invalid="submitted && !product.code"
-                        fluid
+                        :disabled="isEditing"
+                        class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
+
                     />
-                    <small v-if="submitted && !product.code" class="text-red-500">Code is required.</small>
+                    <small v-if="submitted && !product.code" class="text-warning">
+                        Kód je povinný.
+                    </small>
                 </div>
 
-                <div>
-                    <label for="description" class="block font-bold mb-3">Description</label>
-                    <Textarea
-                        id="description"
-                        v-model="product.description"
-                        rows="3"
-                        cols="20"
-                        fluid
-                    />
-                </div>
-
+                <!-- Prices -->
                 <div class="grid grid-cols-12 gap-4">
+
                     <div class="col-span-4">
-                        <label for="price25" class="block font-bold mb-3">Price 25</label>
+                        <label class="block text-normal mb-1">Cena poisťovňa 25</label>
                         <InputNumber
-                            id="price25"
                             v-model="product.price25"
+                            mode="decimal"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
                             :useGrouping="false"
-                            integeronly
                             fluid
+                            :invalid="submitted && product.price25 == null"
                         />
+                        <small v-if="submitted && product.price25 === null" class="text-warning">
+                            Povinné pole.
+                        </small>
                     </div>
+
                     <div class="col-span-4">
-                        <label for="price24" class="block font-bold mb-3">Price 24</label>
+                        <label class="block text-normal mb-1">Cena poisťovňa 24</label>
                         <InputNumber
-                            id="price24"
                             v-model="product.price24"
+                            mode="decimal"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
                             :useGrouping="false"
-                            integeronly
                             fluid
+                            :invalid="submitted && product.price25 == null"
                         />
+                        <small v-if="submitted && product.price24 === null" class="text-warning">
+                            Povinné pole.
+                        </small>
                     </div>
+
                     <div class="col-span-4">
-                        <label for="price27" class="block font-bold mb-3">Price 27</label>
+                        <label class="block text-normal mb-1">Cena poisťovňa 27</label>
                         <InputNumber
-                            id="price27"
                             v-model="product.price27"
+                            mode="decimal"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
                             :useGrouping="false"
-                            integeronly
                             fluid
+                            :invalid="submitted && product.price25 == null"
                         />
+                        <small v-if="submitted && product.price27 === null" class="text-warning">
+                            Povinné pole.
+                        </small>
                     </div>
+
                 </div>
+
+                <!-- Description -->
+                <div>
+                    <label :class="['block text-normal mb-1', isEditing ? '!text-lightgrey' : '']">Popis</label>
+                    <Textarea
+                        v-model.trim="product.description"
+                        rows="3"
+                        fluid
+                        :invalid="submitted && !product.description"
+                        :disabled="isEditing"
+                        class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
+
+                    />
+                    <small v-if="submitted && !product.description" class="text-warning">
+                        Popis je povinný.
+                    </small>
+                </div>
+
             </div>
 
-            <template #footer>
-                <Button label="Cancel" icon="pi pi-times" text @click="hideDialog" />
-                <Button label="Save" icon="pi pi-check" @click="saveProduct" />
-            </template>
-        </Dialog>
-
-        <Dialog v-model:visible="deleteProductDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
-            <div class="flex items-center gap-4">
-                <i class="pi pi-exclamation-triangle text-3xl!" />
-                <span v-if="product">
-                    Are you sure you want to delete
-                    <b>{{ product.code }}</b>?
-                </span>
-            </div>
             <template #footer>
                 <Button
-                    label="No"
-                    icon="pi pi-times"
-                    text
-                    @click="deleteProductDialog = false"
-                    severity="secondary"
-                    variant="text"
+                    label="Uložiť"
+                    class="!bg-accent !px-md !text-white hover:!bg-darkgrey"
+                    @click="saveProduct"
                 />
-                <Button label="Yes" icon="pi pi-check" @click="deleteProduct" severity="danger" />
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
-            <div class="flex items-center gap-4">
-                <i class="pi pi-exclamation-triangle text-3xl!" />
-                <span>Are you sure you want to delete the selected products?</span>
-            </div>
-            <template #footer>
+
+        <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '600px'}" :modal="true" :closable="false" header="Upozornenie">
+            <div class="flex items-center justify-between w-full">
+                <span class="text-heading">Naozaj si prajete vymazať záznamy?</span>
+
+                <div class="flex items-center gap-2">
                 <Button
-                    label="No"
-                    icon="pi pi-times"
+                    label="Nie"
                     text
                     @click="deleteProductsDialog = false"
-                    severity="secondary"
-                    variant="text"
+                    class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
                 />
                 <Button
-                    label="Yes"
-                    icon="pi pi-check"
+                    label="Áno"
                     text
                     @click="deleteshowRows"
-                    severity="danger"
+                    class="!bg-warning !px-md !text-white"
                 />
-            </template>
+                </div>
+            </div>
         </Dialog>
     </div>
 </template>

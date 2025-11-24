@@ -23,6 +23,41 @@ body {
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
+/* 1) Make the ACTUAL scroll container transparent */
+.p-datatable-wrapper,
+.p-datatable-table-container {
+    background: transparent !important;
+}
+
+/* 2) WebKit browsers (Chrome, Edge, Safari) */
+.p-datatable-wrapper::-webkit-scrollbar,
+.p-datatable-table-container::-webkit-scrollbar {
+    width: 2px !important;
+    height: 2px !important;
+}
+
+.p-datatable-wrapper::-webkit-scrollbar-track,
+.p-datatable-table-container::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.p-datatable-wrapper::-webkit-scrollbar-thumb,
+.p-datatable-table-container::-webkit-scrollbar-thumb {
+    background-color: var(--c-accent) !important;
+    border-radius: 9999px;
+}
+
+.p-datatable-wrapper::-webkit-scrollbar-thumb:hover,
+.p-datatable-table-container::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--c-accent) 80%, black) !important;
+}
+
+.p-datatable-wrapper,
+.p-datatable-table-container {
+    scrollbar-width: 2px !important;
+    scrollbar-color: var(--c-accent) transparent;
+}
+
 :root {
     --c-dark-grey: #333333;
     --c-white: #fff;
@@ -81,9 +116,13 @@ body {
     --z-sticky: 1100;
     --z-modal: 2000;
     --z-tooltip: 3000;
+
 }
 
-.p-checkbox-checked .custom-checkbox-fill {
-    background-color: var(--c-dark-grey) !important;
-    border-color: var(--c-dark-grey) !important;
+.p-datatable {
+    --p-checkbox-background: transparent;
+    --p-checkbox-checked-background: var(--c-dark-grey);
+    --p-checkbox-checked-border-color: var(--c-dark-grey);
+    --p-checkbox-checked-hover-background: var(--c-dark-grey);
+    --p-checkbox-icon-color: white;
 }

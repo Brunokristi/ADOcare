@@ -22,7 +22,7 @@ const showNavbar = computed(() => {
     <div class="h-screen flex flex-col bg-darkgrey">
         <Navbar v-if="showNavbar" class="flex-none" />
 
-        <div class="flex h-screen">
+        <div class="flex h-screen flex-row-reverse">
             <Sidebar v-if="showNavbar" />
             <div class="main-content h-full flex-1 overflow-auto bg-white p-8">
                 <router-view />
@@ -30,8 +30,6 @@ const showNavbar = computed(() => {
         </div>
 
         <Footer class="flex-none" />
-
-
 
         <Toast />
     </div>

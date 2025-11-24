@@ -48,7 +48,7 @@ export default {
             },
             pcrowcheckbox: {
                 box: {
-                    class: '!border-darkgrey !bg-transparent',
+                    class: '!border-darkgrey ',
                 },
                 root: {
                     class: '!shadow-none hover:!shadow-none'
@@ -59,8 +59,13 @@ export default {
             },
 
         },
+
         inputtext: {
-            root: { class: '!border-darkgrey !text-darkgrey !outline-0 !p-xs !rounded-md' }
+            root: { class: '!border-darkgrey !text-darkgrey !outline-0 !p-xs !rounded-md' },
+        },
+
+        textarea: {
+            root: { class: '!border-darkgrey !text-darkgrey !outline-0 !p-xs !rounded-md' },
         },
 
         button: {
@@ -69,6 +74,15 @@ export default {
 
         menubar: {
             root: { class: '!border-0 !px-0' },
+        },
+
+        menu: {
+            root: { class: '!border-0 !rounded-none' },
+        },
+
+        dialog: {
+            header: { class: '!text-darkgrey !text-heading-accent' },
+            root: { class: '!rounded-md' },
         }
     }
 } as PrimeVueConfiguration;

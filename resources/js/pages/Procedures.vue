@@ -39,7 +39,6 @@ const rows = ref([
 const products = ref([...rows.value]);
 
 const productDialog = ref(false);
-const deleteProductDialog = ref(false);
 const deleteProductsDialog = ref(false);
 const product = ref({});
 const showRows = ref([]);
@@ -226,10 +225,10 @@ const recordsInfo = computed(() => {
             {{ recordsInfo }}
         </div>
 
-        <Dialog v-model:visible="productDialog" :style="{ width: '450px' }" header="Product Details" :modal="true">
+        <Dialog v-model:visible="productDialog" :style="{ width: '450px' }" header="Výkon | Upraviť" :modal="true">
             <div class="flex flex-col gap-6">
                 <div>
-                    <label for="code" class="block font-bold mb-3">Code</label>
+                    <label for="code" class="block text-normal mb-3">Code</label>
                     <InputText
                         id="code"
                         v-model.trim="product.code"
@@ -309,27 +308,25 @@ const recordsInfo = computed(() => {
                     severity="secondary"
                     variant="text"
                 />
-                <Button label="Yes" icon="pi pi-check" @click="deleteProduct" severity="danger" />
+                <Button label="ńo" icon="pi pi-check" @click="deleteProduct" severity="danger" />
             </template>
         </Dialog>
 
         <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
             <div class="flex items-center gap-4">
                 <i class="pi pi-exclamation-triangle !text-3xl" />
-                <span>Are you sure you want to delete the selected products?</span>
+                <span>Naozaj vymazať záznamy?</span>
             </div>
             <template #footer>
                 <Button
-                    label="No"
-                    icon="pi pi-times"
+                    label="Nie"
                     text
                     @click="deleteProductsDialog = false"
                     severity="secondary"
                     variant="text"
                 />
                 <Button
-                    label="Yes"
-                    icon="pi pi-check"
+                    label="Áno"
                     text
                     @click="deleteshowRows"
                     severity="danger"
