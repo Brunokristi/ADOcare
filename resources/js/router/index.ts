@@ -20,6 +20,7 @@ const routes = [
         path: '/settings',
         name: 'settings',
         component: Settings,
+        redirect: { name: 'doctors' },
         meta: {
             requiresAuth: true,
             title: 'Nastavenia',

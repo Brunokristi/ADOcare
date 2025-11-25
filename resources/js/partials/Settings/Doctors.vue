@@ -114,7 +114,7 @@ const toggleFavourite = (row) => {
             :icon="data.favourite ? 'bi bi-heart-fill' : 'bi bi-heart'"
             @click="toggleFavourite(data)"
             variant="text"
-            class="!text-accent hover:!bg-transparent p-0"
+            class="!text-darkgrey hover:!bg-transparent p-0"
           />
         </template>
       </Column>

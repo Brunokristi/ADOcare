@@ -73,7 +73,7 @@ export default {
         },
 
         menubar: {
-            root: { class: '!border-0 !px-0' },
+            root: { class: '!border-0 !px-0 !rounded-none !content-center' },
         },
 
         menu: {

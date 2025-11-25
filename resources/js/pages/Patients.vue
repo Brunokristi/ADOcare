@@ -1,292 +1,385 @@
-<script setup lang="ts">
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
-import api from '@/services/api';
+<script setup>
+import { ref, computed } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
+import { usePatientStore } from '@/stores/patientStore';
 
+const patientStore = usePatientStore();
 const toast = useToast();
-const dt = ref<any>(null);
+const dt = ref(null);
+const isEditing = computed(() => !!product.value.id)
 
-const patients = ref([] as any[]);
-const loading = ref(false);
+const rows = ref([
+    {
+        id: 1,
+        firstname: 'Bruno',
+        lastname: 'Kristián',
+        personalnumber: '713482/2025',
+        address: 'Modré zeme 21',
+        city: 'Lučenec',
+        doctor: 'MUDr. Viliam Džurbala',
+    },
 
-// Dialog state
-const patientDialog = ref(false);
-const deletePatientDialog = ref(false);
-const deletePatientsDialog = ref(false);
-const patient = ref<any>({});
-const selectedPatients = ref<any[]>([]);
+    { id: 2, firstname: 'Laura', lastname: 'Šimková', personalnumber: '825374/2019', address: 'Javorová 12', city: 'Zvolen', doctor: 'MUDr. Peter Horváth' },
+    { id: 3, firstname: 'Samuel', lastname: 'Pavlík', personalnumber: '940215/3021', address: 'Slnečná 44', city: 'Banská Bystrica', doctor: 'MUDr. Lucia Mareková' },
+    { id: 4, firstname: 'Nina', lastname: 'Kováčiková', personalnumber: '013125/1045', address: 'Lipová 3', city: 'Detva', doctor: 'MUDr. Jana Kováčová' },
+    { id: 5, firstname: 'Tobias', lastname: 'Urban', personalnumber: '752639/0954', address: 'Borovicová 18', city: 'Rimavská Sobota', doctor: 'MUDr. Andrej Bielik' },
+    { id: 6, firstname: 'Ela', lastname: 'Farkašová', personalnumber: '561204/6032', address: 'Lúčna 9', city: 'Krupina', doctor: 'MUDr. Mária Zelená' },
+    { id: 7, firstname: 'Matúš', lastname: 'Zajac', personalnumber: '381127/4521', address: 'Hviezdna 7', city: 'Lučenec', doctor: 'MUDr. Tomáš Novotný' },
+    { id: 8, firstname: 'Viktória', lastname: 'Petrušová', personalnumber: '452398/7832', address: 'Čerešňová 5', city: 'Fiľakovo', doctor: 'MUDr. Simona Krajčíková' },
+    { id: 9, firstname: 'Oliver', lastname: 'Moravčík', personalnumber: '624319/1187', address: 'Družstevná 22', city: 'Banská Bystrica', doctor: 'MUDr. Rastislav Urban' },
+    { id: 10, firstname: 'Sofia', lastname: 'Hrivnáková', personalnumber: '270563/9903', address: 'Tichá 4', city: 'Zvolen', doctor: 'MUDr. Veronika Foltínová' },
+    { id: 11, firstname: 'Leo', lastname: 'Švantner', personalnumber: '735902/6623', address: 'Topoľová 15', city: 'Detva', doctor: 'MUDr. Patrik Holub' },
+    { id: 12, firstname: 'Karin', lastname: 'Hrdličková', personalnumber: '844213/5531', address: 'Ružová 2', city: 'Krupina', doctor: 'MUDr. Barbora Kalinová' },
+    { id: 13, firstname: 'Alex', lastname: 'Mikula', personalnumber: '513478/2249', address: 'Strieborná 11', city: 'Rimavská Sobota', doctor: 'MUDr. Marek Škoda' },
+    { id: 14, firstname: 'Tamara', lastname: 'Benčíková', personalnumber: '912475/7724', address: 'Orechová 8', city: 'Lučenec', doctor: 'MUDr. Nikola Veselá' },
+    { id: 15, firstname: 'Jakub', lastname: 'Holienčin', personalnumber: '064321/3350', address: 'Brezy 19', city: 'Zvolen', doctor: 'MUDr. Adam Krajčír' },
+    { id: 16, firstname: 'Rebeka', lastname: 'Dianišková', personalnumber: '154298/4123', address: 'Mostová 6', city: 'Banská Bystrica', doctor: 'MUDr. Eva Malíková' },
+    { id: 17, firstname: 'Filip', lastname: 'Korec', personalnumber: '310982/9902', address: 'Parková 33', city: 'Detva', doctor: 'MUDr. Filip Konečný' },
+    { id: 18, firstname: 'Stella', lastname: 'Krištofová', personalnumber: '485312/2876', address: 'Jarná 1', city: 'Fiľakovo', doctor: 'MUDr. Daniela Hrivnáková' },
+    { id: 19, firstname: 'Dávid', lastname: 'Pavlus', personalnumber: '920314/6342', address: 'Gaštanová 17', city: 'Krupina', doctor: 'MUDr. Roman Bartoš' },
+    { id: 20, firstname: 'Mia', lastname: 'Krajčová', personalnumber: '752630/8831', address: 'Záhradná 29', city: 'Lučenec', doctor: 'MUDr. Viliam Džurbala' },
+    { id: 21, firstname: 'Erik', lastname: 'Salay', personalnumber: '190624/5501', address: 'Panenská 10', city: 'Rimavská Sobota', doctor: 'MUDr. Peter Horváth' },
+]);
+
+
+
+const products = ref([...rows.value]);
+
+const productDialog = ref(false);
+const deleteProductDialog = ref(false);
+const deleteProductsDialog = ref(false);
+const product = ref({});
+const showRows = ref([]);
 const submitted = ref(false);
 
-const filters = ref<{ global: { value: string | null; matchMode: any } }>({
+const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-// pagination
-const rowsPerPage = ref(10);
-const rowsPerPageOptions = [10, 25, 50, 100];
-
-const onPage = (e: any) => {
-    if (!e) return;
-    if (typeof e.rows === 'number') rowsPerPage.value = e.rows;
-    // calculate 1-based page number
-    let page = 1;
-    if (typeof e.page === 'number') page = e.page + 1;
-    else if (typeof e.first === 'number' && typeof e.rows === 'number') page = Math.floor(e.first / e.rows) + 1;
-    loadPage(page);
-};
-
-const onSort = (e: any) => {
-    // PrimeVue sends e.sortField and e.sortOrder (1 for asc, -1 for desc)
-    sortField.value = e.sortField ?? null;
-    sortOrder.value = e.sortOrder ?? null;
-    loadPage(1);
-};
-
-// debounced search input
-const searchInput = ref<string>(filters.value.global.value ?? '');
-let searchTimer: number | null = null;
-const totalRecords = ref<number>(0);
-const sortField = ref<string | null>(null);
-const sortOrder = ref<number | null>(null);
-
-const loadPage = async (page = 1) => {
-    loading.value = true;
-    try {
-        const params: any = { paginate: true, page, per_page: rowsPerPage.value };
-        if (filters.value.global.value) params.q = filters.value.global.value;
-        if (sortField.value) {
-            const prefix = sortOrder.value === -1 ? '-' : '';
-            params.sort = `${prefix}${sortField.value}`;
-        }
-        const res = await api.get('/v1/patients', { params });
-        const data = res.data?.data ?? {};
-        const items = data.items ?? [];
-        patients.value = Array.isArray(items) ? items : [];
-        totalRecords.value = data.meta?.total ?? data.total ?? patients.value.length;
-    } catch (e) {
-        console.error(e);
-        patients.value = [];
-        totalRecords.value = 0;
-    } finally {
-        loading.value = false;
-    }
-};
-
-watch(searchInput, (val) => {
-    if (searchTimer) clearTimeout(searchTimer);
-    searchTimer = window.setTimeout(() => {
-        filters.value.global.value = val;
-        loadPage(1);
-    }, 300);
-});
-
-onBeforeUnmount(() => {
-    if (searchTimer) clearTimeout(searchTimer);
-});
-
-onMounted(() => loadPage(1));
-
 const openNew = () => {
-    patient.value = {
+    product.value = {
         id: null,
-        first_name: '',
-        last_name: '',
-        personal_number: '',
-        sex: '',
-        contact: '',
-        address: '',
-        city: '',
-        zip: '',
+        code: '',
+        price25: null,
+        price24: null,
+        price27: null,
+        description: '',
     };
     submitted.value = false;
-    patientDialog.value = true;
+    productDialog.value = true;
 };
 
 const hideDialog = () => {
-    patientDialog.value = false;
+    productDialog.value = false;
     submitted.value = false;
 };
 
-const savePatient = () => {
+const saveProduct = () => {
     submitted.value = true;
-    if (patient.value.first_name?.toString().trim()) {
-        if (patient.value.id) {
-            const idx = findIndexById(patient.value.id);
-            if (idx !== -1) {
-                patients.value[idx] = { ...patient.value };
-                toast.add({ severity: 'success', summary: 'Updated', detail: 'Patient updated', life: 3000 });
+
+    const isValid =
+    product.value.code &&
+    product.value.price25 !== null &&
+    product.value.price24 !== null &&
+    product.value.price27 !== null &&
+    product.value.description?.trim()
+
+    if (!isValid) return
+
+    if (product?.value.code?.toString().trim()) {
+        if (product.value.id) {
+            // update existing
+            const index = findIndexById(product.value.id);
+            if (index !== -1) {
+                products.value[index] = { ...product.value };
+                toast.add({
+                    severity: 'success',
+                    summary: 'Successful',
+                    detail: 'Product Updated',
+                    life: 3000,
+                });
             }
         } else {
-            patient.value.id = createId();
-            patients.value.push({ ...patient.value });
-            toast.add({ severity: 'success', summary: 'Created', detail: 'Patient created', life: 3000 });
+            // create new
+            product.value.id = createId();
+            products.value.push({ ...product.value });
+            toast.add({
+                severity: 'success',
+                summary: 'Successful',
+                detail: 'Product Created',
+                life: 3000,
+            });
         }
-        patientDialog.value = false;
-        patient.value = {};
+
+        productDialog.value = false;
+        product.value = {};
     }
 };
 
-const editPatient = (p: any) => {
-    patient.value = { ...p };
-    patientDialog.value = true;
+const editProduct = (prod) => {
+    product.value = { ...prod };
+    productDialog.value = true;
 };
 
-
-const deletePatient = () => {
-    patients.value = patients.value.filter((v) => v.id !== patient.value.id);
-    deletePatientDialog.value = false;
-    patient.value = {};
-    toast.add({ severity: 'success', summary: 'Deleted', detail: 'Patient deleted', life: 3000 });
+const confirmDeleteProduct = (prod) => {
+    product.value = prod;
+    deleteProductDialog.value = true;
 };
 
-const confirmDeleteSelected = () => {
-    deletePatientsDialog.value = true;
+const deleteProduct = () => {
+    products.value = products.value.filter((val) => val.id !== product.value.id);
+    deleteProductDialog.value = false;
+    product.value = {};
+    toast.add({
+        severity: 'success',
+        summary: 'Successful',
+        detail: 'Product Deleted',
+        life: 3000,
+    });
 };
 
-const deleteSelected = () => {
-    patients.value = patients.value.filter((v) => !selectedPatients.value.includes(v));
-    deletePatientsDialog.value = false;
-    selectedPatients.value = [];
-    toast.add({ severity: 'success', summary: 'Deleted', detail: 'Selected patients deleted', life: 3000 });
-};
-
-const findIndexById = (id: any) => {
-    return patients.value.findIndex((p) => p.id === id);
+const findIndexById = (id) => {
+    let index = -1;
+    for (let i = 0; i < products.value.length; i++) {
+        if (products.value[i].id === id) {
+            index = i;
+            break;
+        }
+    }
+    return index;
 };
 
 const createId = () => {
-    return Math.floor(Math.random() * 1000000);
+    let id = '';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 5; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
+};
+
+const confirmDeleteSelected = () => {
+    deleteProductsDialog.value = true;
+};
+
+const deleteshowRows = () => {
+    products.value = products.value.filter((val) => !showRows.value?.includes(val));
+    deleteProductsDialog.value = false;
+    showRows.value = null;
+    toast.add({
+        severity: 'success',
+        summary: 'Successful',
+        detail: 'Products Deleted',
+        life: 3000,
+    });
 };
 
 const recordsInfo = computed(() => {
     if (!dt.value) return '';
-    const filtered = dt.value.processedData?.length ?? patients.value.length;
-    const total = totalRecords.value ?? patients.value.length;
+
+    const total = products.value.length;
+    const filtered = dt.value.processedData?.length;
+
+    if (filtered == null) {
+        return `${total} z ${total} záznamov`;
+    }
     return `${filtered} z ${total} záznamov`;
 });
+
+const selectPatient = (row) => {
+  patientStore.setPatient(row);
+};
+
 </script>
 
 <template>
-    <div class="p-6">
+    <div>
         <!-- Toast must be rendered somewhere for useToast() to work -->
         <Toast />
 
-        <h2 class="text-lg font-bold mb-4">Patients</h2>
-
-        <Toolbar class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between">
+        <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
             <template #end>
                 <div class="flex items-center gap-2 ">
-                    <div class="flex items-center bg-white rounded px-2 py-1">
-                        <i class="bi bi-search text-darkgrey mr-2" />
-                        <InputText v-model="searchInput" placeholder="Search…" />
-                    </div>
+                    <IconField>
+                        <InputText v-model="filters['global'].value"  />
+                        <InputIcon>
+                            <i class="bi bi-search text-darkgrey" />
+                        </InputIcon>
+                    </IconField>
 
-                    <Button icon="bi bi-plus" @click="openNew" class="!bg-accent !border-accent" />
+                    <Button icon="bi bi-plus" @click="openNew" class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey!"/>
 
-                    <Button icon="bi bi-eraser" @click="confirmDeleteSelected"
-                        :disabled="!selectedPatients || !selectedPatients.length" class="!bg-warning !border-warning" />
+                    <Button
+                        icon="bi bi-eraser"
+                        @click="confirmDeleteSelected"
+                        :disabled="!showRows || !showRows.length"
+                        class="bg-warning! border-warning!"
+                    />
                 </div>
             </template>
         </Toolbar>
 
-        <DataTable ref="dt" v-model:selection="selectedPatients" :value="patients" dataKey="id" :filters="filters"
-            stripedRows removableSort class="mt-4" paginator :rows="rowsPerPage"
-            :rowsPerPageOptions="rowsPerPageOptions"
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-            currentPageReportTemplate="{first} - {last} z {totalRecords}" @page="onPage" @sort="onSort"
-            :sortField="sortField ?? undefined" :sortOrder="sortOrder ?? undefined" :totalRecords="totalRecords"
-            :lazy="true" :loading="loading">
+        <DataTable
+            ref="dt"
+            v-model:selection="showRows"
+            :value="products"
+            dataKey="id"
+            :filters="filters"
+            stripedRows
+            removableSort
+            scrollable
+            scrollHeight="600px"
+        >
             <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
-            <Column field="first_name" header="First name" sortable />
-            <Column field="last_name" header="Last name" sortable />
-            <Column field="personal_number" header="Personal No." />
-            <Column field="sex" header="Sex" />
-            <Column field="city" header="City" />
+            <Column field="firstname" header="Meno" sortable />
+            <Column field="lastname" header="Priezvisko" sortable />
+            <Column field="personalnumber" header="Rodné číslo" sortable disabled />
+            <Column field="address" header="Adresa" sortable />
+            <Column field="city" header="Mesto" sortable/>
+            <Column field="doctor" header="Ošetrujúci lekár" sortable/>
             <Column :exportable="false" style="width: 3rem">
                 <template #body="slotProps">
-                    <Button icon="bi bi-pencil" @click="editPatient(slotProps.data)"
-                        class="!text-darkgrey hover:!bg-transparent" />
+                    <Button
+                    :icon="patientStore.current?.id === slotProps.data.id ? 'bi bi-pin-fill' : 'bi bi-pin-angle'"
+                    @click="selectPatient(slotProps.data)"
+                    variant="text"
+                    class="text-darkgrey! hover:bg-transparent! p-0!"
+                    />
                 </template>
             </Column>
+            <Column :exportable="false" style="width: 3rem">
+                <template #body="slotProps">
+                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="text-darkgrey! hover:bg-transparent! p-0!" />
+                </template>
+            </Column>
+            
         </DataTable>
 
-        <div class="text-mini text-accent flex justify-end w-full py-2">{{ recordsInfo }}</div>
+        <div class="text-mini text-accent flex justify-end w-full py-2">
+            {{ recordsInfo }}
+        </div>
 
-        <Dialog v-model:visible="patientDialog" :style="{ width: '600px' }" header="Patient Details" :modal="true">
-            <div class="flex flex-col gap-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-bold mb-2">First name</label>
-                        <InputText v-model="patient.first_name" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Last name</label>
-                        <InputText v-model="patient.last_name" />
-                    </div>
-                </div>
+        <Dialog v-model:visible="productDialog" :style="{ width: '600px' }" header="Výkon" :modal="true">
+            <div class="flex flex-col gap-6">
 
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label class="block font-bold mb-2">Personal No.</label>
-                        <InputText v-model="patient.personal_number" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Sex</label>
-                        <InputText v-model="patient.sex" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Contact</label>
-                        <InputText v-model="patient.contact" />
-                    </div>
-                </div>
-
+                <!-- Kód -->
                 <div>
-                    <label class="block font-bold mb-2">Address</label>
-                    <InputText v-model="patient.address" />
+                    <label :class="['block text-normal mb-1', isEditing ? '!text-lightgrey' : '']">Kód</label>
+                    <InputText
+                        v-model.trim="product.code"
+                        fluid
+                        :invalid="submitted && !product.code"
+                        :disabled="isEditing"
+                        class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
+
+                    />
+                    <small v-if="submitted && !product.code" class="text-warning">
+                        Kód je povinný.
+                    </small>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label class="block font-bold mb-2">City</label>
-                        <InputText v-model="patient.city" />
+                <!-- Prices -->
+                <div class="grid grid-cols-12 gap-4">
+
+                    <div class="col-span-4">
+                        <label class="block text-normal mb-1">Cena poisťovňa 25</label>
+                        <InputNumber
+                            v-model="product.price25"
+                            mode="decimal"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
+                            :useGrouping="false"
+                            fluid
+                            :invalid="submitted && product.price25 == null"
+                        />
+                        <small v-if="submitted && product.price25 === null" class="text-warning">
+                            Povinné pole.
+                        </small>
                     </div>
-                    <div>
-                        <label class="block font-bold mb-2">ZIP</label>
-                        <InputText v-model="patient.zip" />
+
+                    <div class="col-span-4">
+                        <label class="block text-normal mb-1">Cena poisťovňa 24</label>
+                        <InputNumber
+                            v-model="product.price24"
+                            mode="decimal"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
+                            :useGrouping="false"
+                            fluid
+                            :invalid="submitted && product.price25 == null"
+                        />
+                        <small v-if="submitted && product.price24 === null" class="text-warning">
+                            Povinné pole.
+                        </small>
                     </div>
+
+                    <div class="col-span-4">
+                        <label class="block text-normal mb-1">Cena poisťovňa 27</label>
+                        <InputNumber
+                            v-model="product.price27"
+                            mode="decimal"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
+                            :useGrouping="false"
+                            fluid
+                            :invalid="submitted && product.price25 == null"
+                        />
+                        <small v-if="submitted && product.price27 === null" class="text-warning">
+                            Povinné pole.
+                        </small>
+                    </div>
+
                 </div>
+
+                <!-- Description -->
+                <div>
+                    <label :class="['block text-normal mb-1', isEditing ? '!text-lightgrey' : '']">Popis</label>
+                    <Textarea
+                        v-model.trim="product.description"
+                        rows="3"
+                        fluid
+                        :invalid="submitted && !product.description"
+                        :disabled="isEditing"
+                        class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
+
+                    />
+                    <small v-if="submitted && !product.description" class="text-warning">
+                        Popis je povinný.
+                    </small>
+                </div>
+
             </div>
 
             <template #footer>
-                <Button label="Cancel" icon="pi pi-times" text @click="hideDialog" />
-                <Button label="Save" icon="pi pi-check" @click="savePatient" />
+                <Button
+                    label="Uložiť"
+                    class="!bg-accent !px-md !text-white hover:!bg-darkgrey"
+                    @click="saveProduct"
+                />
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="deletePatientDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
-            <div class="flex items-center gap-4">
-                <i class="pi pi-exclamation-triangle !text-3xl" />
-                <span v-if="patient">Are you sure you want to delete <b>{{ patient.first_name }} {{ patient.last_name
-                        }}</b>?</span>
-            </div>
-            <template #footer>
-                <Button label="No" icon="pi pi-times" text @click="deletePatientDialog = false" />
-                <Button label="Yes" icon="pi pi-check" @click="deletePatient" />
-            </template>
-        </Dialog>
 
-        <Dialog v-model:visible="deletePatientsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
-            <div class="flex items-center gap-4">
-                <i class="pi pi-exclamation-triangle !text-3xl" />
-                <span>Are you sure you want to delete the selected patients?</span>
+        <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '600px'}" :modal="true" :closable="false" header="Upozornenie">
+            <div class="flex items-center justify-between w-full">
+                <span class="text-heading">Naozaj si prajete vymazať záznamy?</span>
+
+                <div class="flex items-center gap-2">
+                <Button
+                    label="Nie"
+                    text
+                    @click="deleteProductsDialog = false"
+                    class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+                />
+                <Button
+                    label="Áno"
+                    text
+                    @click="deleteshowRows"
+                    class="!bg-warning !px-md !text-white"
+                />
+                </div>
             </div>
-            <template #footer>
-                <Button label="No" icon="pi pi-times" text @click="deletePatientsDialog = false" />
-                <Button label="Yes" icon="pi pi-check" text @click="deleteSelected" />
-            </template>
         </Dialog>
     </div>
 </template>
-
-<style scoped></style>
