@@ -6,6 +6,9 @@ import Patients from '@/pages/Patients.vue'
 import Cars from '@/pages/Cars.vue'
 import Settings from '@/pages/Settings.vue'
 import Procedures from '@/partials/Settings/Procedures.vue'
+import Diagnoses from '@/partials/Settings/Diagnoses.vue'
+import Doctors from '@/partials/Settings/Doctors.vue'
+import Macros from '@/partials/Settings/Macros.vue'
 
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
@@ -24,6 +27,16 @@ const routes = [
         },
         children: [
             {
+                path: 'doctors',
+                name: 'doctors',
+                component: Doctors,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Lekári',
+                    link: 'lekári'
+                },
+            },
+            {
                 path: 'procedures',
                 name: 'procedures',
                 component: Procedures,
@@ -31,6 +44,26 @@ const routes = [
                     requiresAuth: true,
                     title: 'Výkony',
                     link: 'výkony'
+                },
+            },
+            {
+                path: 'diagnoses',
+                name: 'diagnoses',
+                component: Diagnoses,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Diagnózy',
+                    link: 'diagnózy'
+                },
+            },
+            {
+                path: 'macros',
+                name: 'macros',
+                component: Macros,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Makrá',
+                    link: 'makrá'
                 },
             },
         ],

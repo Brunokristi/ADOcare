@@ -55,7 +55,7 @@ export default {
                 },
             },
             bodycell: {
-                class: '!text-normal !text-darkgrey !p-0 !px-4 !border-0 !border-r !border-r-white last:!border-r-0',
+                class: '!text-normal/5 !text-darkgrey !px-4 !border-0 !border-r !border-r-white last:!border-r-0',
             },
 
         },
