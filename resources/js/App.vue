@@ -21,24 +21,31 @@ const showNavbar = computed(() => {
 const showPatient = computed(() => {
     return route.name !== 'home' && route.name !== 'settings';
 });
+
 </script>
 
 <template>
-    <div class="h-screen flex flex-col bg-darkgrey">
-        <Navbar v-if="showNavbar" class="flex-none" />
-        <TercialNavbar v-if="showPatient" class="flex-none" />
+  <div class="h-screen flex flex-col bg-darkgrey">
+    
+    <Navbar v-if="showNavbar" class="flex-none" />
+    <TercialNavbar v-if="showPatient" class="flex-none" />
 
-        <div class="flex h-screen flex-row-reverse">
-            <Sidebar v-if="showNavbar" />
-            <div class="main-content h-full flex-1 overflow-auto bg-white p-8">
-                <router-view />
-            </div>
-        </div>
+    <div class="flex flex-1 overflow-hidden">
+      
+      <div class="flex-1 overflow-auto bg-white p-8">
+        <router-view />
+      </div>
 
-        <Footer class="flex-none" />
+      <Sidebar v-if="showNavbar" class="flex-none" />
 
-        <Toast />
     </div>
+
+    <!-- Footer at the bottom -->
+    <Footer class="flex-none" />
+
+    <Toast />
+  </div>
 </template>
+
 
 <style scoped></style>

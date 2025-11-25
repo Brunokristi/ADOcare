@@ -58,12 +58,14 @@ function linkClass(key: string) {
 <template>
   <Menubar>
     <template #start>
-      <h1 class="!text-heading-accent !border-r-2 !border-darkgrey !px-sm">
-        {{ h1Title }}
-      </h1>
-      <h2 class="!text-normal !px-sm !text-darkgrey">
-        {{ h2Title }}
-      </h2>
+      <div class="flex items-end">
+        <h1 class="!text-heading-accent !border-r-2 !border-accent !px-sm">
+          {{ h1Title }}
+        </h1>
+        <h1 class="!text-heading-accent !text-darkgrey !px-sm !font-light">
+          {{ h2Title }}
+        </h1>
+      </div>
     </template>
 
     <template #end>
@@ -78,3 +80,4 @@ function linkClass(key: string) {
     </template>
   </Menubar>
 </template>
+

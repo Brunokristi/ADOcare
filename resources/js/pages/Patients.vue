@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
 import { usePatientStore } from '@/stores/patientStore';
+import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
+
 
 const patientStore = usePatientStore();
 const toast = useToast();
@@ -194,6 +196,8 @@ const selectPatient = (row) => {
 </script>
 
 <template>
+    <SecondaryNavbar />
+
     <div>
         <!-- Toast must be rendered somewhere for useToast() to work -->
         <Toast />

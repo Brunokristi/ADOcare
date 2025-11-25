@@ -39,21 +39,23 @@ const items = [
 </script>
 
 <template>
-    <Menu :model="items" class="!bg-tag3 !p-lg">
+    <Menu :model="items" class="!bg-tag3 !p-lg !h-full !flex !flex-col !gap-2">
         <template #item="{ item, props }">
             <a
                 v-ripple
                 v-bind="props.action"
                 class="
-                    flex items-center
-                    !px-3 py-2
+                    block w-full overflow-hidden
+                    !py-1
                     !rounded-md
-
-                    bg-tag3 text-white
-                    hover:bg-accent hover:text-white
-                    focus:bg-accent focus:text-white
-                    transition-colors
-                "
+                    !text-darkgrey
+                    hover:!bg-almostwhite
+                    hover:!text-accent
+                    focus:!bg-almostwhite
+                    focus:!text-accent
+                    focus:!rounded-md
+                    !mb-2"
+                    
             >
                 <span>{{ item.label }}</span>
             </a>

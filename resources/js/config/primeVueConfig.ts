@@ -78,6 +78,8 @@ export default {
 
         menu: {
             root: { class: '!border-0 !rounded-none' },
+            item: { class: 'hover:!bg-transparent focus:!bg-transparent !rounded-md !bg-transparent' },
+            itemContent: { class: 'hover:!bg-transparent focus:!bg-transparent !rounded-md !bg-transparent' },
         },
 
         dialog: {

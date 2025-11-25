@@ -18,38 +18,44 @@ const closePatient = () => {
 </script>
 
 <template>
-  <!-- Show only when a patient is selected -->
   <Menubar
     v-if="patient"
-    class="!bg-tag2 !px-3"
-  >
+    class="!bg-tag2 !px-3 flex items-center">
     <template #start>
-      <h2 class="!text-normal !px-sm !text-almostwhite border-r !border-almostwhite">
-        {{ patient.firstname }} {{ patient.lastname }}
-      </h2>
+      <div class="flex items-center">
+        <h2 class="!text-normal !px-sm !text-almostwhite border-r !border-almostwhite">
+          {{ patient.firstname }} {{ patient.lastname }}
+        </h2>
 
-      <h2 class="!text-normal !px-sm !text-almostwhite">
-        {{ patient.personalnumber }}
-      </h2>
+        <h2 class="!text-normal !px-sm !text-almostwhite">
+          {{ patient.personalnumber }}
+        </h2>
+      </div>
     </template>
 
+    <!-- RIGHT -->
     <template #end>
-      <RouterLink
-        :to="{ name: 'doctors' }"
-        class="!text-mini !underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
-      >
-        bodovanie
-      </RouterLink>
-
-      <button
-          @click="closePatient"
-          class="text-almostwhite pl-6 cursor-pointer" 
+      <div class="flex items-center gap-4">
+        <RouterLink
+          :to="{ name: 'doctors' }"
+          class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
         >
-          <i :class="isHovered ? 'bi bi-pin-angle' : 'bi bi-pin-fill'"
+          bodovanie
+        </RouterLink>
+
+        <button
+          @click="closePatient"
+          class="text-almostwhite cursor-pointer flex items-center"
+        >
+          <i
+            :class="isHovered ? 'bi bi-pin-angle' : 'bi bi-pin-fill'"
             @mouseenter="isHovered = true"
-            @mouseleave="isHovered = false">
-        </i>
+            @mouseleave="isHovered = false"
+            class="text-lg leading-none"
+          ></i>
         </button>
+      </div>
     </template>
   </Menubar>
 </template>
+

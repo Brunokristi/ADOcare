@@ -13,8 +13,30 @@ import Macros from '@/partials/Settings/Macros.vue'
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
     { path: '/login', name: 'login', component: Login, meta: { hideNavbar: true } },
-    { path: '/patients', name: 'patients', component: Patients, meta: { requiresAuth: true } },
     { path: '/cars', name: 'cars', component: Cars, meta: { requiresAuth: true } },
+
+    {
+        path: '/pac',
+        name: 'pac',
+        component: Patients,
+        meta: {
+            requiresAuth: true,
+            title: 'Pacienti',
+            sectionRoot: 'pac'
+        },
+        children: [
+            {
+                path: '/patients',
+                name: 'patients',
+                component: Patients,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Prehľad pacientov',
+                    link: 'patients'
+                },
+            },
+        ]
+    },
 
     {
         path: '/settings',

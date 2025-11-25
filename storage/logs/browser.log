@@ -1880,3 +1880,306 @@ If this is a native custom element, make sure to exclude it from component resol
     at http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:2625:28
     at callWithErrorHandling (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:2296:33)
     at flushJobs (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:2504:9) {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T11:20:04.168Z"} 
+[2025-11-25 11:55:36] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T11:55:35.704Z"} 
+[2025-11-25 15:32:01] local.WARNING: [Vue warn]: Property "patient" was accessed during render but is not defined on instance. null at <TercialNavbar key=1 class="flex-none" > null at <App> {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:32:01.144Z"} 
+[2025-11-25 15:40:18] local.ERROR: InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7057:7)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7) {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:40:17.732Z"} 
+[2025-11-25 15:40:18] local.WARNING: [HMR] Something went wrong during Vue component hot-reload. Full reload required. {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:40:17.732Z"} 
+[2025-11-25 15:40:22] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7057:7)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7) {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:40:22.195Z"} 
+[2025-11-25 15:40:22] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7057:7)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7) {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:40:22.195Z"} 
+[2025-11-25 15:40:27] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7057:7)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7) {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:40:27.078Z"} 
+[2025-11-25 15:40:27] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '<!--' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7057:7)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7) {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:40:27.079Z"} 
+[2025-11-25 15:57:17] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T15:57:16.254Z"} 
+[2025-11-25 19:17:47] local.WARNING: [Vue Router warn]: No match found for location with path "/patients/5" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T19:17:47.260Z"} 
+[2025-11-25 20:11:04] local.WARNING: [Vue Router warn]: No match found for location with path "/dose-kilometers" {"url":"http://127.0.0.1:8000/settings/macros","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:11:03.946Z"} 
+[2025-11-25 20:20:42] local.ERROR: Uncaught Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1729 117 Error A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor.
+    at checkSameNameAsAncestor (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1729:117)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1574:21)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1581:51)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102041810:92:16 {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:20:42.151Z"} 
+[2025-11-25 20:20:42] local.ERROR: Uncaught Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1729 117 Error A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor.
+    at checkSameNameAsAncestor (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1729:117)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1574:21)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1581:51)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102041810:92:16 {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:20:42.151Z"} 
+[2025-11-25 20:20:47] local.ERROR: Uncaught Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1729 117 Error A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor.
+    at checkSameNameAsAncestor (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1729:117)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1574:21)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1581:51)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102047180:92:16 {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:20:47.403Z"} 
+[2025-11-25 20:20:47] local.ERROR: Uncaught Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1729 117 Error A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor. Error: A route named "patients" has been added as a child of a route with the same name. Route names must be unique and a nested route cannot use the same name as an ancestor.
+    at checkSameNameAsAncestor (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1729:117)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1574:21)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1581:51)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102047180:92:16 {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:20:47.403Z"} 
+[2025-11-25 20:22:49] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:22:49.711Z"} 
+[2025-11-25 20:22:49] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:22:49.711Z"} 
+[2025-11-25 20:22:53] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:22:52.898Z"} 
+[2025-11-25 20:22:53] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:22:52.898Z"} 
+[2025-11-25 20:22:56] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:22:55.969Z"} 
+[2025-11-25 20:22:56] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:22:55.969Z"} 
+[2025-11-25 20:23:07] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/settings/procedure","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:23:06.923Z"} 
+[2025-11-25 20:23:07] local.ERROR: Uncaught Error: Route paths should start with a "/": "pac" should be "/pac". http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10 1275 36 Error Route paths should start with a "/": "pac" should be "/pac". Error: Route paths should start with a "/": "pac" should be "/pac".
+    at tokenizePath (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1275:36)
+    at createRouteRecordMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1514:33)
+    at addRoute (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1565:17)
+    at http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:29
+    at Array.forEach (<anonymous>)
+    at createRouterMatcher (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1663:10)
+    at createRouter (http://[::1]:5173/node_modules/.vite/deps/vue-router.js?v=185bbe10:1991:19)
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764102169480:92:16 {"url":"http://127.0.0.1:8000/settings/procedure","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:23:06.923Z"} 
+[2025-11-25 20:23:12] local.WARNING: [Vue Router warn]: No match found for location with path "/settings/procedure" {"url":"http://127.0.0.1:8000/settings/procedure","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:23:12.842Z"} 
+[2025-11-25 20:23:24] local.WARNING: [Vue Router warn]: No match found for location with path "/procedures" {"url":"http://127.0.0.1:8000/procedures","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:23:23.915Z"} 
+[2025-11-25 20:23:34] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:23:34.133Z"} 
+[2025-11-25 20:24:05] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:05.744Z"} 
+[2025-11-25 20:24:05] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:05.744Z"} 
+[2025-11-25 20:24:06] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:06.490Z"} 
+[2025-11-25 20:24:06] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:06.491Z"} 
+[2025-11-25 20:24:11] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:11.243Z"} 
+[2025-11-25 20:24:11] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:11.243Z"} 
+[2025-11-25 20:24:13] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:13.792Z"} 
+[2025-11-25 20:24:13] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:13.792Z"} 
+[2025-11-25 20:24:22] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:22.117Z"} 
+[2025-11-25 20:24:22] local.ERROR: Uncaught http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10 11251 10 InvalidCharacterError Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name. InvalidCharacterError: Failed to execute 'setAttribute' on 'Element': '"' is not a valid attribute name.
+    at patchAttr (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11251:10)
+    at patchProp (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:11421:5)
+    at mountElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7075:11)
+    at processElement (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7012:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6878:11)
+    at mountChildren (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7134:7)
+    at processFragment (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7316:7)
+    at patch (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:6864:9)
+    at ReactiveEffect.componentUpdateFn [as fn] (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:7532:11)
+    at ReactiveEffect.run (http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js?v=185bbe10:505:19) {"url":"http://127.0.0.1:8000/settings","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:24:22.117Z"} 
+[2025-11-25 20:32:36] local.WARNING: [Vue Router warn]: No match found for location with path "/travel-order" {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:32:36.371Z"} 
+[2025-11-25 20:33:41] local.WARNING: [Vue Router warn]: No match found for location with path "/travel-order" {"url":"http://127.0.0.1:8000/travel-order","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:33:40.901Z"} 
+[2025-11-25 20:33:41] local.WARNING: [Vue Router warn]: No match found for location with path "/dose-scoring" {"url":"http://127.0.0.1:8000/travel-order","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:33:41.632Z"} 
+[2025-11-25 20:34:15] local.WARNING: [Vue Router warn]: No match found for location with path "/dose-scoring" {"url":"http://127.0.0.1:8000/dose-scoring","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:34:14.618Z"} 
+[2025-11-25 20:34:16] local.WARNING: [Vue Router warn]: No match found for location with path "/travel-order" {"url":"http://127.0.0.1:8000/dose-scoring","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:34:15.985Z"} 
+[2025-11-25 20:35:09] local.WARNING: [Vue Router warn]: No match found for location with path "/travel-order" {"url":"http://127.0.0.1:8000/travel-order","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:35:09.308Z"} 
+[2025-11-25 20:35:10] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/travel-order","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:35:10.187Z"} 
+[2025-11-25 20:35:25] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:35:25.613Z"} 
+[2025-11-25 20:36:12] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:36:12.229Z"} 
+[2025-11-25 20:36:42] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:36:41.887Z"} 
+[2025-11-25 20:36:43] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:36:43.540Z"} 
+[2025-11-25 20:36:51] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:36:51.001Z"} 
+[2025-11-25 20:36:54] local.WARNING: [Vue Router warn]: No match found for location with path "/dose-kilometers" {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:36:54.486Z"} 
+[2025-11-25 20:36:54] local.WARNING: [Vue Router warn]: No match found for location with path "/travel-order" {"url":"http://127.0.0.1:8000/dose-kilometers","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:36:54.857Z"} 
+[2025-11-25 20:37:19] local.WARNING: [Vue Router warn]: No match found for location with path "/travel-order" {"url":"http://127.0.0.1:8000/travel-order","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:19.184Z"} 
+[2025-11-25 20:37:20] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/travel-order","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:20.058Z"} 
+[2025-11-25 20:37:21] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:21.457Z"} 
+[2025-11-25 20:37:23] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:23.318Z"} 
+[2025-11-25 20:37:27] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/settings/doctors","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:27.398Z"} 
+[2025-11-25 20:37:40] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:40.843Z"} 
+[2025-11-25 20:37:57] local.WARNING: [Vue Router warn]: No match found for location with path "/patients" {"url":"http://127.0.0.1:8000/patients","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-11-25T20:37:57.684Z"} 
