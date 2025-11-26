@@ -13,6 +13,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import primeVueConfig from './config/primeVueConfig';
 import "primeicons/primeicons.css"
 
+import 'leaflet/dist/leaflet.css';
+
 const app = createApp(App);
 const pinia = createPinia();
 

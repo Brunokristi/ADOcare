@@ -85,6 +85,23 @@ export default {
         dialog: {
             header: { class: '!text-darkgrey !text-heading-accent' },
             root: { class: '!rounded-md' },
+        },
+
+        dropdown: {
+            root: { class: '!rounded-md !border-darkgrey !outline-0' },
+            dropDownIcon: { class: '!fill-darkgrey' },
+            overlay: { class: '!rounded-md' },
+            header: { class: '!p-2' },
+            listContainer: { class: '!p-2 !gap-2' },
+            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' }
+        },
+
+        select: {
+            option: { class: 'focus:!bg-transparent' }
+
         }
+
+
+
     }
 } as PrimeVueConfiguration;

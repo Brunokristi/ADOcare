@@ -1,199 +1,225 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
 import { usePatientStore } from '@/stores/patientStore';
-import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
+import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css'
 
-const patientStore = usePatientStore();
+// OpenRouteService API key
+const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
+
 const toast = useToast();
+const patientStore = usePatientStore();
+
+// -------------------- TABLE DATA --------------------
+
 const dt = ref(null);
-const isEditing = computed(() => !!product.value.id)
-
-const rows = ref([
-    {
-        id: 1,
-        firstname: 'Bruno',
-        lastname: 'Kristián',
-        personalnumber: '713482/2025',
-        address: 'Modré zeme 21',
-        city: 'Lučenec',
-        doctor: 'MUDr. Viliam Džurbala',
-    },
-
-    { id: 2, firstname: 'Laura', lastname: 'Šimková', personalnumber: '825374/2019', address: 'Javorová 12', city: 'Zvolen', doctor: 'MUDr. Peter Horváth' },
-    { id: 3, firstname: 'Samuel', lastname: 'Pavlík', personalnumber: '940215/3021', address: 'Slnečná 44', city: 'Banská Bystrica', doctor: 'MUDr. Lucia Mareková' },
-    { id: 4, firstname: 'Nina', lastname: 'Kováčiková', personalnumber: '013125/1045', address: 'Lipová 3', city: 'Detva', doctor: 'MUDr. Jana Kováčová' },
-    { id: 5, firstname: 'Tobias', lastname: 'Urban', personalnumber: '752639/0954', address: 'Borovicová 18', city: 'Rimavská Sobota', doctor: 'MUDr. Andrej Bielik' },
-    { id: 6, firstname: 'Ela', lastname: 'Farkašová', personalnumber: '561204/6032', address: 'Lúčna 9', city: 'Krupina', doctor: 'MUDr. Mária Zelená' },
-    { id: 7, firstname: 'Matúš', lastname: 'Zajac', personalnumber: '381127/4521', address: 'Hviezdna 7', city: 'Lučenec', doctor: 'MUDr. Tomáš Novotný' },
-    { id: 8, firstname: 'Viktória', lastname: 'Petrušová', personalnumber: '452398/7832', address: 'Čerešňová 5', city: 'Fiľakovo', doctor: 'MUDr. Simona Krajčíková' },
-    { id: 9, firstname: 'Oliver', lastname: 'Moravčík', personalnumber: '624319/1187', address: 'Družstevná 22', city: 'Banská Bystrica', doctor: 'MUDr. Rastislav Urban' },
-    { id: 10, firstname: 'Sofia', lastname: 'Hrivnáková', personalnumber: '270563/9903', address: 'Tichá 4', city: 'Zvolen', doctor: 'MUDr. Veronika Foltínová' },
-    { id: 11, firstname: 'Leo', lastname: 'Švantner', personalnumber: '735902/6623', address: 'Topoľová 15', city: 'Detva', doctor: 'MUDr. Patrik Holub' },
-    { id: 12, firstname: 'Karin', lastname: 'Hrdličková', personalnumber: '844213/5531', address: 'Ružová 2', city: 'Krupina', doctor: 'MUDr. Barbora Kalinová' },
-    { id: 13, firstname: 'Alex', lastname: 'Mikula', personalnumber: '513478/2249', address: 'Strieborná 11', city: 'Rimavská Sobota', doctor: 'MUDr. Marek Škoda' },
-    { id: 14, firstname: 'Tamara', lastname: 'Benčíková', personalnumber: '912475/7724', address: 'Orechová 8', city: 'Lučenec', doctor: 'MUDr. Nikola Veselá' },
-    { id: 15, firstname: 'Jakub', lastname: 'Holienčin', personalnumber: '064321/3350', address: 'Brezy 19', city: 'Zvolen', doctor: 'MUDr. Adam Krajčír' },
-    { id: 16, firstname: 'Rebeka', lastname: 'Dianišková', personalnumber: '154298/4123', address: 'Mostová 6', city: 'Banská Bystrica', doctor: 'MUDr. Eva Malíková' },
-    { id: 17, firstname: 'Filip', lastname: 'Korec', personalnumber: '310982/9902', address: 'Parková 33', city: 'Detva', doctor: 'MUDr. Filip Konečný' },
-    { id: 18, firstname: 'Stella', lastname: 'Krištofová', personalnumber: '485312/2876', address: 'Jarná 1', city: 'Fiľakovo', doctor: 'MUDr. Daniela Hrivnáková' },
-    { id: 19, firstname: 'Dávid', lastname: 'Pavlus', personalnumber: '920314/6342', address: 'Gaštanová 17', city: 'Krupina', doctor: 'MUDr. Roman Bartoš' },
-    { id: 20, firstname: 'Mia', lastname: 'Krajčová', personalnumber: '752630/8831', address: 'Záhradná 29', city: 'Lučenec', doctor: 'MUDr. Viliam Džurbala' },
-    { id: 21, firstname: 'Erik', lastname: 'Salay', personalnumber: '190624/5501', address: 'Panenská 10', city: 'Rimavská Sobota', doctor: 'MUDr. Peter Horváth' },
-]);
-
-
-
-const products = ref([...rows.value]);
-
-const productDialog = ref(false);
-const deleteProductDialog = ref(false);
-const deleteProductsDialog = ref(false);
-const product = ref({});
 const showRows = ref([]);
 const submitted = ref(false);
 
+const rows = ref([
+    { id: 1, firstname: 'Bruno', lastname: 'Kristián', personalnumber: '713482/2025', address: 'Modré zeme 21', city: 'Lučenec', doctorId: 1 },
+    { id: 2, firstname: 'Laura', lastname: 'Šimková', personalnumber: '825374/2019', address: 'Javorová 12', city: 'Zvolen', doctorId: 2 },
+    { id: 3, firstname: 'Samuel', lastname: 'Pavlík', personalnumber: '940215/3021', address: 'Slnečná 44', city: 'Banská Bystrica', doctorId: 3 },
+    // ... keep the rest unchanged
+]);
+
+const products = ref([...rows.value]);
+
+// -------------------- FILTER --------------------
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
+// -------------------- PATIENT MODEL --------------------
+
+const productDialog = ref(false);
+
+const product = ref({
+    id: null,
+    firstName: '',
+    lastName: '',
+    title: '',
+    birthNumber: '',
+    gender: null,
+    contact: '',
+    doctorId: null,
+    insuranceCode: null,
+    street: '',
+    city: '',
+    zip: '',
+});
+
+// -------------------- SELECT OPTIONS --------------------
+
+const genderOptions = [
+    { label: 'Muž', value: 'M' },
+    { label: 'Žena', value: 'F' }
+];
+
+const doctorOptions = [
+    { id: 1, name: 'MUDr. Viliam Džurbala' },
+    { id: 2, name: 'MUDr. Jana Kováčová' },
+    { id: 3, name: 'MUDr. Peter Horváth' },
+    { id: 4, name: 'MUDr. Lucia Mareková' },
+];
+
+const insuranceOptions = [
+    { code: '25', name: 'VšZP' },
+    { code: '24', name: 'Dôvera' },
+    { code: '27', name: 'Union' },
+];
+
+// -------------------- MAP --------------------
+
+const map = ref(null);
+const routeLayer = ref(null);
+
+function initMap() {
+    if (map.value) return;
+
+    const el = document.getElementById('patient-map');
+    if (!el) return;
+
+    map.value = L.map('patient-map').setView([48.1486, 17.1077], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map.value);
+}
+
+async function loadRoute() {
+    if (!ORS_API_KEY || !map.value) return;
+
+    const body = {
+        coordinates: [
+            [17.1077, 48.1486],
+            [17.12, 48.16]
+        ]
+    };
+
+    const res = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
+        method: "POST",
+        headers: {
+            "Authorization": ORS_API_KEY,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (routeLayer.value) routeLayer.value.remove();
+
+    routeLayer.value = L.geoJSON(data, {
+        style: {
+            color: "#5C9EAD",
+            weight: 4,
+        }
+    }).addTo(map.value);
+
+    map.value.fitBounds(routeLayer.value.getBounds(), { padding: [20, 20] });
+}
+
+onMounted(() => {
+    initMap();
+    loadRoute();
+});
+
+// -------------------- CRUD --------------------
+
 const openNew = () => {
     product.value = {
         id: null,
-        code: '',
-        price25: null,
-        price24: null,
-        price27: null,
-        description: '',
+        firstName: '',
+        lastName: '',
+        title: '',
+        birthNumber: '',
+        gender: null,
+        contact: '',
+        doctorId: null,
+        insuranceCode: null,
+        street: '',
+        city: '',
+        zip: '',
     };
+
     submitted.value = false;
     productDialog.value = true;
+
+    setTimeout(() => {
+        initMap();
+        loadRoute();
+    }, 50);
 };
 
-const hideDialog = () => {
-    productDialog.value = false;
-    submitted.value = false;
+const editProduct = (row) => {
+    product.value = { ...row };
+    productDialog.value = true;
+
+    setTimeout(() => {
+        initMap();
+        loadRoute();
+    }, 50);
 };
 
 const saveProduct = () => {
     submitted.value = true;
 
-    const isValid =
-    product.value.code &&
-    product.value.price25 !== null &&
-    product.value.price24 !== null &&
-    product.value.price27 !== null &&
-    product.value.description?.trim()
+    if (!product.value.firstName || !product.value.lastName) return;
 
-    if (!isValid) return
-
-    if (product?.value.code?.toString().trim()) {
-        if (product.value.id) {
-            // update existing
-            const index = findIndexById(product.value.id);
-            if (index !== -1) {
-                products.value[index] = { ...product.value };
-                toast.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Updated',
-                    life: 3000,
-                });
-            }
-        } else {
-            // create new
-            product.value.id = createId();
-            products.value.push({ ...product.value });
-            toast.add({
-                severity: 'success',
-                summary: 'Successful',
-                detail: 'Product Created',
-                life: 3000,
-            });
-        }
-
-        productDialog.value = false;
-        product.value = {};
+    if (product.value.id) {
+        const index = products.value.findIndex(p => p.id === product.value.id);
+        products.value[index] = { ...product.value };
+    } else {
+        product.value.id = Date.now();
+        products.value.push({ ...product.value });
     }
+
+    productDialog.value = false;
 };
 
-const editProduct = (prod) => {
-    product.value = { ...prod };
-    productDialog.value = true;
-};
-
-const confirmDeleteProduct = (prod) => {
-    product.value = prod;
-    deleteProductDialog.value = true;
-};
-
-const deleteProduct = () => {
-    products.value = products.value.filter((val) => val.id !== product.value.id);
-    deleteProductDialog.value = false;
-    product.value = {};
-    toast.add({
-        severity: 'success',
-        summary: 'Successful',
-        detail: 'Product Deleted',
-        life: 3000,
-    });
-};
-
-const findIndexById = (id) => {
-    let index = -1;
-    for (let i = 0; i < products.value.length; i++) {
-        if (products.value[i].id === id) {
-            index = i;
-            break;
-        }
-    }
-    return index;
-};
-
-const createId = () => {
-    let id = '';
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < 5; i++) {
-        id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
-};
-
-const confirmDeleteSelected = () => {
-    deleteProductsDialog.value = true;
-};
+const deleteProductsDialog = ref(false);
 
 const deleteshowRows = () => {
-    products.value = products.value.filter((val) => !showRows.value?.includes(val));
+    products.value = products.value.filter(val => !showRows.value.includes(val));
     deleteProductsDialog.value = false;
-    showRows.value = null;
-    toast.add({
-        severity: 'success',
-        summary: 'Successful',
-        detail: 'Products Deleted',
-        life: 3000,
-    });
+    showRows.value = [];
 };
 
-const recordsInfo = computed(() => {
-    if (!dt.value) return '';
-
-    const total = products.value.length;
-    const filtered = dt.value.processedData?.length;
-
-    if (filtered == null) {
-        return `${total} z ${total} záznamov`;
-    }
-    return `${filtered} z ${total} záznamov`;
-});
+// -------------------- PATIENT PIN --------------------
 
 const selectPatient = (row) => {
-  patientStore.setPatient(row);
+    patientStore.setPatient(row);
 };
 
+// -------------------- INFO LINE --------------------
+
+const recordsInfo = computed(() => {
+    if (!dt.value) return "";
+    const total = products.value.length;
+    const filtered = dt.value.processedData?.length;
+    return `${filtered ?? total} z ${total} záznamov`;
+});
+
+function formatBirthNumber(value) {
+    let digits = value.replace(/\D/g, '');
+
+    const first = digits.slice(0, 6);
+    const last = digits.slice(6, 10);
+
+    if (last.length > 0) {
+        return `${first}/${last}`;
+    }
+
+    return first;
+}
+
 </script>
+
 
 <template>
     <SecondaryNavbar />
@@ -264,105 +290,149 @@ const selectPatient = (row) => {
             {{ recordsInfo }}
         </div>
 
-        <Dialog v-model:visible="productDialog" :style="{ width: '600px' }" header="Výkon" :modal="true">
-            <div class="flex flex-col gap-6">
+        <Dialog v-model:visible="productDialog" :style="{ width: '90%' }" header="Pacient" :modal="true">
+        <div class="flex flex-col gap-6">
 
-                <!-- Kód -->
-                <div>
-                    <label :class="['block text-normal mb-1', isEditing ? '!text-lightgrey' : '']">Kód</label>
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12">
+                    <label class="block text-normal text-accent">Osobné údaje</label>
+                </div>
+                <div class="col-span-4">
+                    <label class="block text-normal mb-1">Meno</label>
                     <InputText
-                        v-model.trim="product.code"
-                        fluid
-                        :invalid="submitted && !product.code"
-                        :disabled="isEditing"
-                        class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
-
+                    v-model.trim="product.firstName"
+                    fluid
+                    :invalid="submitted && !product.firstName"
                     />
-                    <small v-if="submitted && !product.code" class="text-warning">
-                        Kód je povinný.
+                    <small v-if="submitted && !product.firstName" class="text-warning">
+                    Meno je povinné.
                     </small>
                 </div>
 
-                <!-- Prices -->
-                <div class="grid grid-cols-12 gap-4">
-
-                    <div class="col-span-4">
-                        <label class="block text-normal mb-1">Cena poisťovňa 25</label>
-                        <InputNumber
-                            v-model="product.price25"
-                            mode="decimal"
-                            :minFractionDigits="2"
-                            :maxFractionDigits="2"
-                            :useGrouping="false"
-                            fluid
-                            :invalid="submitted && product.price25 == null"
-                        />
-                        <small v-if="submitted && product.price25 === null" class="text-warning">
-                            Povinné pole.
-                        </small>
-                    </div>
-
-                    <div class="col-span-4">
-                        <label class="block text-normal mb-1">Cena poisťovňa 24</label>
-                        <InputNumber
-                            v-model="product.price24"
-                            mode="decimal"
-                            :minFractionDigits="2"
-                            :maxFractionDigits="2"
-                            :useGrouping="false"
-                            fluid
-                            :invalid="submitted && product.price25 == null"
-                        />
-                        <small v-if="submitted && product.price24 === null" class="text-warning">
-                            Povinné pole.
-                        </small>
-                    </div>
-
-                    <div class="col-span-4">
-                        <label class="block text-normal mb-1">Cena poisťovňa 27</label>
-                        <InputNumber
-                            v-model="product.price27"
-                            mode="decimal"
-                            :minFractionDigits="2"
-                            :maxFractionDigits="2"
-                            :useGrouping="false"
-                            fluid
-                            :invalid="submitted && product.price25 == null"
-                        />
-                        <small v-if="submitted && product.price27 === null" class="text-warning">
-                            Povinné pole.
-                        </small>
-                    </div>
-
-                </div>
-
-                <!-- Description -->
-                <div>
-                    <label :class="['block text-normal mb-1', isEditing ? '!text-lightgrey' : '']">Popis</label>
-                    <Textarea
-                        v-model.trim="product.description"
-                        rows="3"
-                        fluid
-                        :invalid="submitted && !product.description"
-                        :disabled="isEditing"
-                        class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
-
+                <div class="col-span-4">
+                    <label class="block text-normal mb-1">Priezvisko</label>
+                    <InputText
+                    v-model.trim="product.lastName"
+                    fluid
+                    :invalid="submitted && !product.lastName"
                     />
-                    <small v-if="submitted && !product.description" class="text-warning">
-                        Popis je povinný.
+                    <small v-if="submitted && !product.lastName" class="text-warning">
+                    Priezvisko je povinné.
                     </small>
                 </div>
 
+                <div class="col-span-4">
+                    <label class="block text-normal mb-1">Titul</label>
+                    <InputText v-model.trim="product.title" fluid />
+                </div>
+
+                <div class="col-span-4">
+                    <label class="block text-normal mb-1">Rodné číslo</label>
+                    <InputText 
+                        v-model.trim="product.birthNumber"
+                        @input="product.birthNumber = formatBirthNumber($event.target.value)"
+                        maxlength="11"
+                        fluid 
+                    />
+                </div>
+
+                <div class="col-span-4">
+                    <label class="block text-normal mb-1">Pohlavie</label>
+                    <Dropdown
+                    v-model="product.gender"
+                    :options="genderOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    fluid
+                    />
+                </div>
+
+                <div class="col-span-4">
+                    <label class="block text-normal mb-1">Kontakt</label>
+                    <InputText v-model.trim="product.contact" fluid />
+                </div>
             </div>
 
-            <template #footer>
-                <Button
-                    label="Uložiť"
-                    class="!bg-accent !px-md !text-white hover:!bg-darkgrey"
-                    @click="saveProduct"
-                />
-            </template>
+
+
+
+
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12">
+                    <label class="block text-normal text-accent">Zdravotné detaily</label>
+                </div>
+                <div class="col-span-6">
+                    <label class="block text-normal mb-1">Lekár</label>
+                    <Dropdown
+                    v-model="product.doctorId"
+                    :options="doctorOptions"
+                    optionLabel="name"
+                    optionValue="id"
+                    fluid
+                    filter
+                    >
+                    <template #footer>
+                        <div class="p-2">
+                            <Button label="Pridať" fluid variant="text" size="small" icon="bi bi-plus" class="!text-accent !bg-tag3 hover:!bg-accent hover:!text-white" />
+                        </div>
+                    </template>
+                    </Dropdown>
+                    
+                </div>
+
+                <div class="col-span-6">
+                    <label class="block text-normal mb-1">Poisťovňa</label>
+                    <Dropdown
+                    v-model="product.insuranceCode"
+                    :options="insuranceOptions"
+                    optionLabel="name"
+                    optionValue="code"
+                    fluid
+                    />
+                </div>
+            </div>
+
+
+
+
+
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12">
+                    <label class="block text-normal text-accent">Adresa</label>
+                </div>
+                <div class="col-span-4 flex flex-col gap-4">
+                    <div>
+                    <label class="block text-normal mb-1">Ulica</label>
+                    <InputText v-model.trim="product.street" fluid />
+                    </div>
+
+                    <div>
+                    <label class="block text-normal mb-1">Mesto</label>
+                    <InputText v-model.trim="product.city" fluid />
+                    </div>
+
+                    <div>
+                    <label class="block text-normal mb-1">PSČ</label>
+                    <InputText v-model.trim="product.zip" fluid />
+                    </div>
+                </div>
+
+                <div class="col-span-8">
+                    <div id="patient-map" class="w-full h-full rounded-md overflow-hidden"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <template #footer>
+            <Button
+            label="Uložiť"
+            class="!bg-accent !px-md !text-white hover:!bg-darkgrey"
+            @click="saveProduct"
+            />
+        </template>
         </Dialog>
+
 
 
         <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '600px'}" :modal="true" :closable="false" header="Upozornenie">
