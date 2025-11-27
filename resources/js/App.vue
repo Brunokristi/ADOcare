@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
@@ -8,6 +8,7 @@ import TercialNavbar from './components/TercialNavbar.vue';
 
 const router = useRouter();
 const route = useRoute();
+
 onMounted(() => {
     window.addEventListener('unauthenticated', () => {
         router.push({ name: 'login' });
@@ -22,30 +23,36 @@ const showPatient = computed(() => {
     return route.name !== 'home' && route.name !== 'settings';
 });
 
+const isSidebarOpen = ref(false);
+
+function handleToggleSidebar() {
+    isSidebarOpen.value = !isSidebarOpen.value;
+}
 </script>
 
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
-    
-    <Navbar v-if="showNavbar" class="flex-none" />
+    <Navbar
+      v-if="showNavbar"
+      class="flex-none"
+      @toggle-sidebar="handleToggleSidebar"
+    />
+
     <TercialNavbar v-if="showPatient" class="flex-none" />
 
     <div class="flex flex-1 overflow-hidden">
-      
-      <div class="flex-1 overflow-auto bg-white p-8">
-        <router-view />
-      </div>
+        <div class="flex-1 overflow-auto bg-white p-8">
+            <router-view />
+        </div>
 
-      <Sidebar v-if="showNavbar" class="flex-none" />
-
+        <Sidebar
+            v-if="isSidebarOpen"
+            class="flex-none bg-darkgrey text-white border-l border-lightgrey"
+        />
     </div>
 
-    <!-- Footer at the bottom -->
     <Footer class="flex-none" />
 
     <Toast />
   </div>
 </template>
-
-
-<style scoped></style>

@@ -35,7 +35,7 @@ const closePatient = () => {
 
     <!-- RIGHT -->
     <template #end>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
         <RouterLink
           :to="{ name: 'doctors' }"
           class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
@@ -43,9 +43,16 @@ const closePatient = () => {
           bodovanie
         </RouterLink>
 
+        <RouterLink
+          :to="{ name: 'patients' }"
+          class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
+        >
+          upraviť
+        </RouterLink>
+
         <button
           @click="closePatient"
-          class="text-almostwhite cursor-pointer flex items-center"
+          class="text-almostwhite cursor-pointer flex items-center ml-4"
         >
           <i
             :class="isHovered ? 'bi bi-pin-angle' : 'bi bi-pin-fill'"

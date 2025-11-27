@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch , nextTick } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
 import { usePatientStore } from '@/stores/patientStore';
@@ -8,13 +8,10 @@ import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'
 
-// OpenRouteService API key
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
-
 const toast = useToast();
 const patientStore = usePatientStore();
 
-// -------------------- TABLE DATA --------------------
 
 const dt = ref(null);
 const showRows = ref([]);
@@ -29,12 +26,10 @@ const rows = ref([
 
 const products = ref([...rows.value]);
 
-// -------------------- FILTER --------------------
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-// -------------------- PATIENT MODEL --------------------
 
 const productDialog = ref(false);
 
@@ -53,7 +48,6 @@ const product = ref({
     zip: '',
 });
 
-// -------------------- SELECT OPTIONS --------------------
 
 const genderOptions = [
     { label: 'Muž', value: 'M' },
@@ -73,18 +67,23 @@ const insuranceOptions = [
     { code: '27', name: 'Union' },
 ];
 
-// -------------------- MAP --------------------
 
 const map = ref(null);
 const routeLayer = ref(null);
 
-function initMap() {
-    if (map.value) return;
+function destroyMap() {
+    if (map.value) {
+        map.value.remove();
+        map.value = null;
+        routeLayer.value = null;
+    }
+}
 
+function initMap() {
     const el = document.getElementById('patient-map');
     if (!el) return;
 
-    map.value = L.map('patient-map').setView([48.1486, 17.1077], 13);
+    map.value = L.map(el).setView([48.1486, 17.1077], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -97,37 +96,38 @@ async function loadRoute() {
     const body = {
         coordinates: [
             [17.1077, 48.1486],
-            [17.12, 48.16]
-        ]
+            [17.12, 48.16],
+        ],
     };
 
-    const res = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
-        method: "POST",
+    const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
+        method: 'POST',
         headers: {
-            "Authorization": ORS_API_KEY,
-            "Content-Type": "application/json"
+            Authorization: ORS_API_KEY,
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
     });
 
     const data = await res.json();
 
-    if (routeLayer.value) routeLayer.value.remove();
+    if (routeLayer.value) {
+        routeLayer.value.remove();
+    }
 
     routeLayer.value = L.geoJSON(data, {
         style: {
-            color: "#5C9EAD",
+            color: '#5C9EAD',
             weight: 4,
-        }
+        },
     }).addTo(map.value);
 
-    map.value.fitBounds(routeLayer.value.getBounds(), { padding: [20, 20] });
+    const bounds = routeLayer.value.getBounds();
+    if (bounds.isValid()) {
+        map.value.fitBounds(bounds, { padding: [20, 20] });
+    }
 }
 
-onMounted(() => {
-    initMap();
-    loadRoute();
-});
 
 // -------------------- CRUD --------------------
 
@@ -427,7 +427,7 @@ function formatBirthNumber(value) {
         <template #footer>
             <Button
             label="Uložiť"
-            class="!bg-accent !px-md !text-white hover:!bg-darkgrey"
+            class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
             @click="saveProduct"
             />
         </template>
