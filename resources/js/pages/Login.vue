@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onBeforeMount, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import auth from '@/services/auth';
 import InputText from 'primevue/inputtext';
@@ -7,6 +7,16 @@ import Button from 'primevue/button';
 
 const router = useRouter();
 const route = useRoute();
+
+// Before loading the login page, check if user is logged in
+
+onBeforeMount(async () => {
+
+    if (await auth.isAuthenticated()) {
+        const redirect = (route.query.redirect as string) || '/';
+        router.push(redirect);
+    }
+});
 
 const login = ref('');
 const pin = ref('');

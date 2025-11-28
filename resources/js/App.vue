@@ -38,7 +38,7 @@ function handleToggleSidebar() {
       @toggle-sidebar="handleToggleSidebar"
     />
 
-    <TercialNavbar v-if="showPatient" class="flex-none" />
+    <TercialNavbar v-if=" showNavbar && showPatient" class="flex-none" />
 
     <div class="flex flex-1 overflow-hidden">
         <div class="flex-1 overflow-auto bg-white p-8">
@@ -46,7 +46,7 @@ function handleToggleSidebar() {
         </div>
 
         <Sidebar
-            v-if="isSidebarOpen"
+            v-if="showNavbar&& isSidebarOpen"
             class="flex-none bg-darkgrey text-white border-l border-lightgrey"
         />
     </div>

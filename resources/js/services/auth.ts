@@ -28,4 +28,10 @@ export function getToken() {
     return store.token;
 }
 
-export default { login, logout, getToken };
+
+export function isAuthenticated() {
+    const store = useAuthStore();
+    return store.isAuthenticated;
+}
+
+export default { login, logout, getToken,isAuthenticated };
