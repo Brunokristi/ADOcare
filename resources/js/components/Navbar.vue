@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import Logo from '@/components/Logo.vue';
+import { useRouter, RouterLink } from 'vue-router';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
-import { useAuthStore } from '@/stores/auth';
 import Menu from 'primevue/menu';
+import { useAuthStore } from '@/stores/auth';
 import api from '@/services/api';
 import type { Patient } from '@/types/models';
 
 const router = useRouter();
 const auth = useAuthStore();
+
+const emit = defineEmits<{
+    (e: 'toggle-sidebar'): void;
+}>();
+
 
 const selectedBranchId = computed({
     get: () => auth.currentBranch?.id ?? null,
@@ -19,94 +23,153 @@ const selectedBranchId = computed({
     },
 });
 
+const branches = computed(() => auth.branches ?? []);
 const isAuthenticated = computed(() => auth.isAuthenticated);
 
-const menuItems = [
-    { label: 'Settings', command: () => router.push('/settings') },
-    { label: 'Help', command: () => router.push('/help') },
-];
-if (isAuthenticated.value) menuItems.push({ label: 'Logout', command: () => router.push('/logout') });
 
+const patients = ref<{ label: string; command: () => void }[]>([]);
+const searchQuery = ref('');
 
+let debounceTimer: number | undefined;
 
-const patients = ref([] as any[]);
+async function fetchPatients(query: string) {
+    if (!query) {
+        patients.value = [];
+        return;
+    }
 
-// Watch for search input changes
-let searchQuery = ref('');
-let debounceTimer = ref(0);
-const patientsSearchMenuEl = ref<any>(null);
+    try {
+        const res = await api.get('/v1/patients', {
+            params: { paginate: true, q: query },
+        });
 
-async function searchPatients(e: Event) {
-    if (debounceTimer.value) clearTimeout(debounceTimer.value);
-    debounceTimer.value = setTimeout(async () => {
-        let data: IPaginatedIndexSuccessResponse<Patient> = {} as any;
-        const query = (e.target as HTMLInputElement).value;
-        try {
-            const res = await api.get('/v1/patients', { params: { paginate: true, q: query } });
-            data = res.data?.data;
-        } catch (error) {
-            console.error('Error fetching patients:', error);
-            return;
-        }
+        const data = res.data?.data as IPaginatedIndexSuccessResponse<Patient>;
+        const items = data?.items ?? [];
 
-        const items = data.items;
-        patients.value = items.map(p => ({
+        patients.value = items.map((p: Patient) => ({
             label: `${p.first_name} ${p.last_name} (ID: ${p.id})`,
-            command: () => {
-                router.push(`/patients/${p.id}`);
-            },
+            command: () => router.push(`/patients/${p.id}`),
         }));
-        patientsSearchMenuEl.value.show(e, e.target);
+    } catch (error) {
+        console.error('Error fetching patients:', error);
+    }
+}
+
+watch(searchQuery, (value) => {
+    if (debounceTimer) window.clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(() => fetchPatients(value), 300);
+});
 
 
-    }, 300); // 300ms debounce
-};
+function goBack() {
+    router.back();
+}
 
+function goHome() {
+    router.push('/');
+}
 
+async function logout() {
+    try {
+        await auth.logout();
+    } catch (e) {
+        console.error('Logout failed', e);
+    } finally {
+        router.push('/login');
+    }
+}
 
-
+function toggleSidebar() {
+    emit('toggle-sidebar');
+}
 </script>
 
 <template>
-    <nav class="p-3 flex items-center justify-between" style="background:#333333">
-        <div class="flex items-center space-x-4">
-            <Logo />
-        </div>
+    <nav class="px-3 py-2 flex items-center justify-between bg-darkgrey text-white">
+        <RouterLink
+            to="/"
+            class="h-10 flex items-center space-x-2 text-accent text-heading-accent"
+        >
+            <i class="bi bi-flower2 text-xl"></i>
+        </RouterLink>
 
-        <div class="flex items-center space-x-4">
-            <div class="hidden sm:block">
-                <InputText ref="patientsSearchInputEl" placeholder="Search…" class="bg-white/10 text-white"
-                    @input="searchPatients" />
-                <Menu ref="patientsSearchMenuEl" :model="patients" :popup="true" />
+        <div class="flex items-center gap-2 text-normal">
+            <!-- Back -->
+            <Button
+                icon="bi bi-arrow-left"
+                text
+                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                @click="goBack"
+            />
+
+            <!-- Home -->
+            <Button
+                icon="bi bi-circle text-xs"
+                text
+                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                @click="goHome"
+            />
+
+            <div class="relative h-7 flex items-center w-48"> 
+                <IconField class="h-full flex items-center w-full">
+                    <InputText
+                        v-model="searchQuery"
+                        class="!h-7 !bg-tag2 !text-white !border-none rounded-md pl-8 pr-2 w-full"
+                    />
+                    <InputIcon>
+                        <i class="bi bi-search text-lightgrey" />
+                    </InputIcon>
+                </IconField>
+
+                <Menu
+                    v-if="patients.length"
+                    :model="patients"
+                    class="absolute left-0 top-7 w-full bg-white text-darkgrey rounded-md shadow-lg z-20"
+                />
             </div>
-            <div class="text-sm text-white flex flex-row items-center space-x-3">
-                <Dropdown v-if="(auth.user?.roles_list.length ?? 0) > 1" v-model="auth.currentRole"
-                    :options="(auth.user?.roles_list || []).map(r => ({ label: r, value: r }))" optionLabel="label"
-                    optionValue="value" class="bg-white/10 text-white text-xs rounded"
-                    @change="() => auth.currentRole && auth.setCurrentRole(auth.currentRole)" />
-                <span v-else class="text-xs bg-white/10 rounded text-white">{{ auth?.currentRole ||
-                    '—' }}</span>
-                <Dropdown v-if="(auth.user?.branches?.length ?? 0) > 1" v-model="selectedBranchId"
-                    :options="(auth.user?.branches || []).map(b => ({ label: b.address, value: b.id }))"
-                    optionLabel="label" optionValue="value" class="bg-white/10 text-white text-xs rounded" />
-                <span v-else class="text-xs opacity-80">{{ auth?.currentBranch?.code || '—' }}</span>
-                <span class="font-semibold">{{ auth.user?.company.name || '—' }}</span>
-            </div>
-            <div class="flex items-center space-x-3">
-                <template v-if="isAuthenticated">
-                    <Button type="button" severity="secondary" class="text-black!" icon="pi pi-bars"
-                        @click="($refs as any).menu.toggle($event)" />
-                    <Menu ref="menu" :model="menuItems" :popup="true" />
-                </template>
-                <router-link v-else to="/login" class="text-sm text-white">Login</router-link>
-            </div>
+
+            <!-- User -->
+            <span
+                class="h-7 flex items-center rounded-md bg-tag2 text-white px-3 text-sm"
+            >
+                Erika Kaszová
+            </span>
+
+            <!-- Branch -->
+            <Dropdown
+                v-model="selectedBranchId"
+                :options="branches"
+                optionLabel="name"
+                optionValue="id"
+                class="w-40 !h-7 flex items-center !bg-tag2 !text-lightgrey !border-none rounded-md px-2 text-sm"
+            />
+
+
+            <!-- Company -->
+            <span
+                class="h-7 flex items-center rounded-md bg-tag2 text-white px-3 text-sm"
+            >
+                ADOS ADANED s.r.o.
+            </span>
+
+            <!-- Logout -->
+            <Button
+                v-if="isAuthenticated"
+                icon="bi bi-box-arrow-right"
+                text
+                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                @click="logout"
+            />
+
+            <!-- Sidebar toggle -->
+            <Button
+                icon="bi bi-grid-3x3-gap"
+                text
+                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                @click="toggleSidebar"
+            />
         </div>
     </nav>
 </template>
 
-<style scoped>
-/* small adjustments */
-.company {
-    color: #ffffff;
-}
-</style>
+

@@ -4,6 +4,7 @@ import App from './App.vue';
 import router from '@/router';
 import api from '@/services/api';
 import useAuthStore from './stores/auth';
+import { usePatientStore } from '@/stores/patientStore';
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
@@ -11,6 +12,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 
 import primeVueConfig from './config/primeVueConfig';
 import "primeicons/primeicons.css"
+
+import 'leaflet/dist/leaflet.css';
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -24,5 +27,8 @@ app.use(ToastService);
 app.config.globalProperties.$api = api;
 
 useAuthStore().init();
+
+const patientStore = usePatientStore();
+patientStore.loadFromStorage();
 
 app.mount('#app');

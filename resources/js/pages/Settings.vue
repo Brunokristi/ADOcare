@@ -1,9 +1,8 @@
-<script lang="ts" setup>
-
-
-// get props
-
-
+<script setup>
+import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
 </script>
 
-<template></template>
+<template>
+  <SecondaryNavbar />
+  <router-view />
+</template>
