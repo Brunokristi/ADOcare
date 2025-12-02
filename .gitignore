@@ -6,6 +6,8 @@
 /storage/*.key
 /storage/pail
 /vendor
+vendor
+node_modules
 /data-db
 /data-ors
 .DS_Store

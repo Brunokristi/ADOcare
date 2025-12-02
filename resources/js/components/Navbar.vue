@@ -7,6 +7,7 @@ import Menu from 'primevue/menu';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/services/api';
 import type { Patient } from '@/types/models';
+import auth from '@/services/auth';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -15,6 +16,7 @@ const route = useRoute();
 const showNavbar = computed(() => {
     return !(route.meta && (route.meta as any).hideNavbar === true);
 });
+const authStore = useAuthStore();
 
 const emit = defineEmits<{
     (e: 'toggle-sidebar'): void;
@@ -22,14 +24,14 @@ const emit = defineEmits<{
 
 
 const selectedBranchId = computed({
-    get: () => auth.currentBranch?.id ?? null,
+    get: () => authStore.currentBranch?.id ?? null,
     set: (v: number | null) => {
-        if (v != null) auth.setCurrentBranch(v);
+        if (v != null) authStore.setCurrentBranch(v);
     },
 });
 
-const branches = computed(() => auth.branches ?? []);
-const isAuthenticated = computed(() => auth.isAuthenticated);
+const branches = computed(() => authStore.branches ?? []);
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 
 const patients = ref<{ label: string; command: () => void }[]>([]);
@@ -80,6 +82,7 @@ async function logout() {
     } catch (e) {
         console.error('Logout failed', e);
     } finally {
+        authStore.clearAuth();
         router.push('/login');
     }
 }
@@ -103,7 +106,7 @@ function toggleSidebar() {
             <Button
                 icon="bi bi-arrow-left"
                 text
-                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="goBack"
             />
 
@@ -111,15 +114,15 @@ function toggleSidebar() {
             <Button
                 icon="bi bi-circle text-xs"
                 text
-                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="goHome"
             />
 
-            <div class="relative h-7 flex items-center w-48"> 
+            <div class="relative h-7 flex items-center w-48">
                 <IconField class="h-full flex items-center w-full">
                     <InputText
                         v-model="searchQuery"
-                        class="!h-7 !bg-tag2 !text-white !border-none rounded-md pl-8 pr-2 w-full"
+                        class="h-7! bg-tag2! text-white! border-none! rounded-md pl-8 pr-2 w-full"
                     />
                     <InputIcon>
                         <i class="bi bi-search text-lightgrey" />
@@ -146,7 +149,7 @@ function toggleSidebar() {
                 :options="branches"
                 optionLabel="name"
                 optionValue="id"
-                class="w-40 !h-7 flex items-center !bg-tag2 !text-lightgrey !border-none rounded-md px-2 text-sm"
+                class="w-40 h-7! flex items-center bg-tag2! text-lightgrey! border-none! rounded-md px-2 text-sm"
             />
 
 
@@ -162,7 +165,7 @@ function toggleSidebar() {
                 v-if="isAuthenticated"
                 icon="bi bi-box-arrow-right"
                 text
-                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="logout"
             />
 
@@ -170,7 +173,7 @@ function toggleSidebar() {
             <Button
                 icon="bi bi-grid-3x3-gap"
                 text
-                class="!h-7 !w-7 !min-h-0 !px-2 !rounded-md !bg-white !text-darkgrey flex items-center justify-center"
+                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="toggleSidebar"
             />
         </div>
