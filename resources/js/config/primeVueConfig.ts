@@ -12,6 +12,7 @@ const ADOPreset = definePreset(Material, {
                     x: '0.5rem',
                 },
                 listOptionPadding: "0.2rem 0.5rem",
+
             }
         }
     }
@@ -99,6 +100,14 @@ export default {
         select: {
             option: { class: 'focus:!bg-transparent' }
 
+        },
+
+        toast: {
+            root: { class: '!bg-transparent !rounded-md' },
+            message: { class: '!bg-transparent !rounded-md' },
+            messageContent: { class: '!bg-warning !text-white !rounded-md' },
+            messageIcon: { class: '!hidden' },
+            detail: { class: '!text-white' },
         }
 
 

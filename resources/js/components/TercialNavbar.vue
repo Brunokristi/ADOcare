@@ -37,7 +37,7 @@ const closePatient = () => {
     <template #end>
       <div class="flex items-center gap-2">
         <RouterLink
-          :to="{ name: 'doctors' }"
+          :to="{ path: '/patient/points' }"
           class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
         >
           bodovanie

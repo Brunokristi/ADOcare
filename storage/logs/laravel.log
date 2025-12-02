@@ -567,3 +567,28 @@ LINE 1: ...ers\" (\"code\", \"first_name\", \"last_name\", \"email\", \"login\",
 #8 /Users/brunokristian/Documents/ADOcare/artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #9 {main}
 "} 
+[2025-11-30 08:45:59] local.ERROR: Command "run" is not defined.
+
+Did you mean one of these?
+    cache:prune-stale-tags
+    model:prune
+    queue:prune-batches
+    queue:prune-failed
+    sanctum:prune-expired
+    schedule:run {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"run\" is not defined.
+
+Did you mean one of these?
+    cache:prune-stale-tags
+    model:prune
+    queue:prune-batches
+    queue:prune-failed
+    sanctum:prune-expired
+    schedule:run at /Users/brunokristian/Documents/ADOcare/vendor/symfony/console/Application.php:740)
+[stacktrace]
+#0 /Users/brunokristian/Documents/ADOcare/vendor/symfony/console/Application.php(298): Symfony\\Component\\Console\\Application->find('run')
+#1 /Users/brunokristian/Documents/ADOcare/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#2 /Users/brunokristian/Documents/ADOcare/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(197): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 /Users/brunokristian/Documents/ADOcare/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 /Users/brunokristian/Documents/ADOcare/artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#5 {main}
+"} 

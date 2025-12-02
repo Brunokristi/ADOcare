@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import Menu from 'primevue/menu';
@@ -10,6 +10,11 @@ import type { Patient } from '@/types/models';
 
 const router = useRouter();
 const auth = useAuthStore();
+const route = useRoute();
+
+const showNavbar = computed(() => {
+    return !(route.meta && (route.meta as any).hideNavbar === true);
+});
 
 const emit = defineEmits<{
     (e: 'toggle-sidebar'): void;
@@ -71,7 +76,7 @@ function goHome() {
 
 async function logout() {
     try {
-        await auth.logout();
+        await auth.clearAuth();
     } catch (e) {
         console.error('Logout failed', e);
     } finally {
@@ -93,7 +98,7 @@ function toggleSidebar() {
             <i class="bi bi-flower2 text-xl"></i>
         </RouterLink>
 
-        <div class="flex items-center gap-2 text-normal">
+        <div v-if="showNavbar" class="flex items-center gap-2 text-normal">
             <!-- Back -->
             <Button
                 icon="bi bi-arrow-left"
