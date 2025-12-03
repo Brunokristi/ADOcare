@@ -12,10 +12,14 @@ import Data from '@/pages/Data.vue'
 import Points from '@/partials/Data/Points.vue'
 import Patient from '@/pages/Patient.vue'
 import PatientPoints from '@/partials/Patient/Points.vue'
+import Document from '@/pages/Documents.vue'
+import DocumentPoints from '@/partials/Documents/Points.vue'
+
 
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
     { path: '/login', name: 'login', component: Login },
+
 
     {
         path: '/patients',
@@ -40,7 +44,7 @@ const routes = [
         },
         children: [
             {
-                path: '/points',
+                path: 'points',
                 name: 'pointsdata',
                 component: Points,
                 meta: {
@@ -49,6 +53,32 @@ const routes = [
                     link: 'bodovanie',
                     sidebar: true,
                     navbar: true,
+                },
+            },
+        ]
+    },
+
+    {
+        path: '/documents',
+        name: 'documents',
+        component: Document,
+        meta: {
+            requiresAuth: true,
+            title: 'Dokumenty',
+            sectionRoot: 'documents',
+            sidebar: false
+        },
+        children: [
+            {
+                path: 'points',
+                name: 'pointsdocument',
+                component: DocumentPoints,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Bodovanie',
+                    link: 'bodovanie',
+                    sidebar: false,
+                    navbar: false,
                 },
             },
         ]

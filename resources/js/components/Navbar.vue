@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter, useRoute, RouterLink } from 'vue-router';
+import { useRouter, RouterLink } from 'vue-router';
 import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import Menu from 'primevue/menu';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/services/api';
 import type { Patient } from '@/types/models';
-import auth from '@/services/auth';
 
 const router = useRouter();
 const auth = useAuthStore();
-const route = useRoute();
 
-const showNavbar = computed(() => {
-    return !(route.meta && (route.meta as any).hideNavbar === true);
-});
 const authStore = useAuthStore();
 
 const emit = defineEmits<{
@@ -30,7 +25,6 @@ const selectedBranchId = computed({
     },
 });
 
-const branches = computed(() => authStore.branches ?? []);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 
@@ -47,7 +41,7 @@ async function fetchPatients(query: string) {
 
     try {
         const res = await api.get('/v1/patients', {
-            params: { paginate: true, q: query },
+            params: { paginate: true, q: query }
         });
 
         const data = res.data?.data as IPaginatedIndexSuccessResponse<Patient>;
@@ -101,8 +95,7 @@ function toggleSidebar() {
             <i class="bi bi-flower2 text-xl"></i>
         </RouterLink>
 
-        <div v-if="showNavbar" class="flex items-center gap-2 text-normal">
-            <!-- Back -->
+        <div v-if="isAuthenticated" class="flex items-center gap-2 text-normal">
             <Button
                 icon="bi bi-arrow-left"
                 text
@@ -110,7 +103,6 @@ function toggleSidebar() {
                 @click="goBack"
             />
 
-            <!-- Home -->
             <Button
                 icon="bi bi-circle text-xs"
                 text
@@ -146,7 +138,6 @@ function toggleSidebar() {
             <!-- Branch -->
             <Dropdown
                 v-model="selectedBranchId"
-                :options="branches"
                 optionLabel="name"
                 optionValue="id"
                 class="w-40 h-7! flex items-center bg-tag2! text-lightgrey! border-none! rounded-md px-2 text-sm"

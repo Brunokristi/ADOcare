@@ -28,13 +28,13 @@ function handleToggleSidebar() {
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
     <Navbar
-      class="flex-none"
-      @toggle-sidebar="handleToggleSidebar"
+        class="flex-none"
+        @toggle-sidebar="handleToggleSidebar"
     />
 
     <TercialNavbar
-      v-if="isLoggedIn"
-      class="flex-none"
+        v-if="isLoggedIn"
+         class="flex-none"
     />
 
     <div class="flex flex-1 overflow-hidden">

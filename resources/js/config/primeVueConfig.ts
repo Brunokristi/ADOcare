@@ -12,6 +12,9 @@ const ADOPreset = definePreset(Material, {
                     x: '0.5rem',
                 },
                 listOptionPadding: "0.2rem 0.5rem",
+                autocomplete: {
+                    border: 0,
+                }
 
             }
         }
@@ -108,9 +111,19 @@ export default {
             messageContent: { class: '!bg-warning !text-white !rounded-md' },
             messageIcon: { class: '!hidden' },
             detail: { class: '!text-white' },
+        },
+        autocomplete: {
+            inputMultiple: {
+                class: '!border-0 !bg-white !outline-0 !rounded-md !py-2'
+            },
+            overlay: {
+                class: '!rounded-md !p-2'
+            },
+            option: {
+                class: 'hover:!bg-almostwhite hover:!text-accent !rounded-md'
+            }
+
         }
-
-
 
     }
 } as PrimeVueConfiguration;
