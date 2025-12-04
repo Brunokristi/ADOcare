@@ -25,27 +25,31 @@ interface SidebarItem {
   children?: SidebarChild[];
 }
 
-// Build sidebar items from your router config
+function capitalize(text: string): string {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
   const items: SidebarItem[] = [];
 
   for (const r of routes) {
     const meta = r.meta ?? {};
 
-    // only consider routes explicitly marked for sidebar
     if (!meta.sidebar) continue;
 
-    // children-based “section” (like /settings + its children)
     const children: SidebarChild[] = (r.children ?? [])
       .filter((c) => c.meta?.sidebar)
       .map((c) => {
         const childMeta = c.meta ?? {};
-        const label =
+
+        const rawLabel =
           childMeta.link ??
           childMeta.title ??
           String(c.name ?? c.path);
 
-        // normalize full path: if child path is relative, prepend parent
+        const label = capitalize(rawLabel);
+
         const fullPath = c.path.startsWith('/')
           ? c.path
           : `${r.path.replace(/\/$/, '')}/${c.path}`;
@@ -57,10 +61,12 @@ function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
         };
       });
 
-    const label =
+    const rawLabel =
       meta.title ??
       meta.link ??
       String(r.name ?? r.path);
+
+    const label = capitalize(rawLabel);
 
     const item: SidebarItem = {
       key: String(meta.sectionRoot ?? r.name ?? r.path),
@@ -74,6 +80,7 @@ function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
 
   return items;
 }
+
 
 // use the same hierarchy you defined in router/index.ts
 const rawRoutes = appRouter.options.routes as RawRoute[];
@@ -123,7 +130,6 @@ function go(path: string) {
         {{ item.label }}
       </button>
 
-      <!-- Section with children -> behaves like your Dávka / Nastavenia blocks -->
       <div v-else>
         <button
           class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-almostwhite hover:!text-accent"
