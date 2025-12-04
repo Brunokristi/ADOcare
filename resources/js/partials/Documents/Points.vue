@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import Button from 'primevue/button';
 
 type CoverSheet = {
   batchNumber: number;
   fileName: string;
-  amount: number;        // 1002.32
-  periodFrom: string;    // ISO date string "2025-02-01"
-  periodTo: string;      // ISO date string
+  amount: number;        
+  periodFrom: string;    
+  periodTo: string;
   performedBy: string;
-  performedDate: string; // ISO date string
+  performedDate: string;
   companyName: string;
   branchName: string;
 };
 
 const route = useRoute();
 
-// In real app you’d fetch this by ID from API.
-// For now we just compute it from route param or fallback.
 const batchNumber = computed(() => Number(route.params.id ?? 3032));
 
 const sheet = computed<CoverSheet>(() => ({

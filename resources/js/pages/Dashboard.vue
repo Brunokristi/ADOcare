@@ -1,5 +1,18 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
+import { computed } from 'vue';
+import type {User} from '@/types/models';
+import { useAuthStore } from '@/stores/auth';
+
+const authStore = useAuthStore();
+
+const user = computed<User | null>(() => authStore.user as User | null);
+
+const fullName = computed(() =>
+  user.value
+    ? `${user.value.first_name ?? ''}`.trim()
+    : ''
+);
 </script>
 
 <template>
@@ -7,7 +20,7 @@ import { RouterLink } from 'vue-router';
 
         <!-- Greeting -->
         <div class="text-heading-accent">
-            Dobrý deň Erika 😊,<br />
+            Dobrý deň {{ fullName }} 😊,<br />
             všetko je pre Vás pripravené.
         </div>
 

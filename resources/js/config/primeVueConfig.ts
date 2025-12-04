@@ -101,8 +101,13 @@ export default {
         },
 
         select: {
-            option: { class: 'focus:!bg-transparent' }
-
+            root: { class: '!rounded-md !border-0 !outline-0 !text-white' },
+            dropDownIcon: { class: '!text-white !text-sm' },
+            label: { class: '!text-white !text-normal' },
+            overlay: { class: '!rounded-md' },
+            header: { class: '!p-2 !text-white' },
+            listContainer: { class: '!p-2 !gap-2' },
+            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' }
         },
 
         toast: {
