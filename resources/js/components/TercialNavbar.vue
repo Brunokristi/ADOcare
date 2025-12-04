@@ -1,34 +1,50 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import Menubar from 'primevue/menubar';
 
 import { usePatientStore } from '@/stores/patientStore';
+import type { Patient } from '@/types/models';
 
 const patientStore = usePatientStore();
-const patient = computed(() => patientStore.current);
+
+// the raw patient from store
+const patient = computed<Patient | null>(() => patientStore.current);
+
+// derived data for display
+const patientName = computed(() =>
+  patient.value
+    ? `${patient.value.first_name ?? ''} ${patient.value.last_name ?? ''}`.trim()
+    : ''
+);
+
+const patientPersonalNumber = computed(
+  () => patient.value?.personal_number ?? ''
+);
 
 const isHovered = ref(false);
 
 const closePatient = () => {
-    isHovered.value = false;
-    patientStore.clear();
+  isHovered.value = false;
+  patientStore.clear();
 };
-
-
 </script>
 
 <template>
+  <!-- only show bar if a patient is selected -->
   <Menubar
     v-if="patient"
-    class="!bg-tag2 !px-3 flex items-center">
+    class="!bg-tag2 !px-3 flex items-center"
+  >
+    <!-- LEFT -->
     <template #start>
       <div class="flex items-center">
         <h2 class="!text-normal !px-sm !text-almostwhite border-r !border-almostwhite">
-          {{ patient.firstname }} {{ patient.lastname }}
+          {{ patientName }}
         </h2>
 
         <h2 class="!text-normal !px-sm !text-almostwhite">
-          {{ patient.personalnumber }}
+          {{ patientPersonalNumber }}
         </h2>
       </div>
     </template>
@@ -65,4 +81,3 @@ const closePatient = () => {
     </template>
   </Menubar>
 </template>
-
