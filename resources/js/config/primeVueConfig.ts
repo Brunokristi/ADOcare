@@ -92,20 +92,23 @@ export default {
         },
 
         dropdown: {
-            root: { class: '!rounded-md !border-darkgrey !outline-0' },
+            root: { class: '!rounded-md !border-darkgrey' },
             dropDownIcon: { class: '!fill-darkgrey' },
             overlay: { class: '!rounded-md' },
             header: { class: '!p-2' },
             listContainer: { class: '!p-2 !gap-2' },
-            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' }
+            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' },
+            dropdownIcon: { class: 'bi bi-caret-down-fill'}
+
         },
 
         select: {
-            root: { class: '!rounded-md !border-0 !outline-0 !text-white' },
-            dropDownIcon: { class: '!text-white !text-sm' },
-            label: { class: '!text-white !text-normal' },
+            root: { class: '!rounded-md  !outline-0 ' },
+            dropDownIcon: { class: '!text-sm' },
+            dropdown: {class: 'w-auto! mr-2' },
+            label: { class: '!text-normal' },
             overlay: { class: '!rounded-md' },
-            header: { class: '!p-2 !text-white' },
+            header: { class: '!p-2' },
             listContainer: { class: '!p-2 !gap-2' },
             option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' }
         },
