@@ -115,20 +115,19 @@ function go(path: string) {
 </script>
 
 <template>
-  <aside class="w-64 h-full bg-tag3 !border-0 !text-darkgrey p-4 space-y-1">
+  <aside class="flex flex-col w-64 h-full bg-tag3 !border-0 !text-darkgrey p-4 space-y-1">
     <!-- Loop through all sidebar items built from routes -->
-    <div
+    <template
       v-for="item in sidebarItems"
       :key="item.key"
     >
-      <!-- Simple item (no children) -> behaves like your Pacienti button -->
-      <button
+      <RouterLink
         v-if="!item.children || !item.children.length"
         class="w-full text-left px-3 py-2 rounded-md hover:bg-almostwhite hover:!text-accent"
-        @click="go(item.path)"
+        :to="item.path"
       >
         {{ item.label }}
-      </button>
+      </RouterLink>
 
       <div v-else>
         <button
@@ -156,6 +155,6 @@ function go(path: string) {
           </li>
         </ul>
       </div>
-    </div>
+    </template>
   </aside>
 </template>
