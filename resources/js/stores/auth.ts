@@ -52,8 +52,6 @@ export const useAuthStore = defineStore('auth', {
             this.init();
         },
 
-
-
         setCurrentRole(role: string) {
             this.currentRole = role;
             localStorage.setItem('current_role', role);

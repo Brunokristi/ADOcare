@@ -3,40 +3,113 @@ import { useAuthStore } from '@/stores/auth'
 import Dashboard from '@/pages/Dashboard.vue'
 import Login from '@/pages/Login.vue'
 import Patients from '@/pages/Patients.vue'
-import Cars from '@/pages/Cars.vue'
 import Settings from '@/pages/Settings.vue'
 import Procedures from '@/partials/Settings/Procedures.vue'
 import Diagnoses from '@/partials/Settings/Diagnoses.vue'
 import Doctors from '@/partials/Settings/Doctors.vue'
 import Macros from '@/partials/Settings/Macros.vue'
+import Data from '@/pages/Data.vue'
+import Points from '@/partials/Data/Points.vue'
+import Patient from '@/pages/Patient.vue'
+import PatientPoints from '@/partials/Patient/Points.vue'
+import Document from '@/pages/Documents.vue'
+import DocumentPoints from '@/partials/Documents/Points.vue'
+
 
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
-    { path: '/login', name: 'login', component: Login, meta: { hideNavbar: true } },
-    { path: '/cars', name: 'cars', component: Cars, meta: { requiresAuth: true } },
+    { path: '/login', name: 'login', component: Login },
+
 
     {
-        path: '/pac',
-        name: 'pac',
+        path: '/patients',
+        name: 'patients',
         component: Patients,
         meta: {
             requiresAuth: true,
             title: 'Pacienti',
-            sectionRoot: 'pac'
+            sidebar: true,
+        },
+    },
+
+    {
+        path: '/data',
+        name: 'data',
+        component: Data,
+        meta: {
+            requiresAuth: true,
+            title: 'Dávka',
+            sectionRoot: 'data',
+            sidebar: true
         },
         children: [
             {
-                path: '/patients',
-                name: 'patients',
-                component: Patients,
+                path: 'points',
+                name: 'pointsdata',
+                component: Points,
                 meta: {
                     requiresAuth: true,
-                    title: 'Prehľad pacientov',
-                    link: 'patients'
+                    title: 'Bodovanie',
+                    link: 'bodovanie',
+                    sidebar: true,
+                    navbar: true,
                 },
             },
         ]
     },
+
+    {
+        path: '/documents',
+        name: 'documents',
+        component: Document,
+        meta: {
+            requiresAuth: true,
+            title: 'Dokumenty',
+            sectionRoot: 'documents',
+            sidebar: false
+        },
+        children: [
+            {
+                path: 'points',
+                name: 'pointsdocument',
+                component: DocumentPoints,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Bodovanie',
+                    link: 'bodovanie',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+        ]
+    },
+
+    {
+        path: '/patient',
+        name: 'patient',
+        component: Patient,
+        meta: {
+            requiresAuth: true,
+            title: 'Pacient',
+            sectionRoot: 'patient',
+            sidebar: false
+        },
+        children: [
+            {
+                path: 'points',
+                name: 'points',
+                component: PatientPoints,
+                meta: {
+                    requiresAuth: true,
+                    title: 'Bodovanie pacienta',
+                    link: 'bodovanie',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+        ]
+    },
+
 
     {
         path: '/settings',
@@ -46,7 +119,9 @@ const routes = [
         meta: {
             requiresAuth: true,
             title: 'Nastavenia',
-            sectionRoot: 'settings'
+            sectionRoot: 'settings',
+            sidebar: true
+
         },
         children: [
             {
@@ -56,7 +131,9 @@ const routes = [
                 meta: {
                     requiresAuth: true,
                     title: 'Lekári',
-                    link: 'lekári'
+                    link: 'lekári',
+                    sidebar: true,
+                    navbar: true,
                 },
             },
             {
@@ -66,7 +143,9 @@ const routes = [
                 meta: {
                     requiresAuth: true,
                     title: 'Výkony',
-                    link: 'výkony'
+                    link: 'výkony',
+                    sidebar: true,
+                    navbar: true,
                 },
             },
             {
@@ -76,7 +155,9 @@ const routes = [
                 meta: {
                     requiresAuth: true,
                     title: 'Diagnózy',
-                    link: 'diagnózy'
+                    link: 'diagnózy',
+                    sidebar: true,
+                    navbar: true,
                 },
             },
             {
@@ -86,7 +167,9 @@ const routes = [
                 meta: {
                     requiresAuth: true,
                     title: 'Makrá',
-                    link: 'makrá'
+                    link: 'makrá',
+                    sidebar: true,
+                    navbar: true,
                 },
             },
         ],

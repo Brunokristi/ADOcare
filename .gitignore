@@ -27,3 +27,6 @@ yarn-error.log
 /.vscode
 /.zed
 /.junie
+node_modules/
+storage/logs/
+vendor/

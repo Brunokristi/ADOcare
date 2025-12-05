@@ -135,13 +135,10 @@ export interface Patient {
   longitude: number | null
   created_at: string | null
   updated_at: string | null
-  // relations
   doctor: Doctor
   visits: Visit[]
   insurance_company: InsuranceCompany
-  // counts
   visits_count: number
-  // exists
   doctor_exists: boolean
   visits_exists: boolean
   insurance_company_exists: boolean

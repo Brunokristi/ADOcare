@@ -12,6 +12,10 @@ const ADOPreset = definePreset(Material, {
                     x: '0.5rem',
                 },
                 listOptionPadding: "0.2rem 0.5rem",
+                autocomplete: {
+                    border: 0,
+                }
+
             }
         }
     }
@@ -97,11 +101,34 @@ export default {
         },
 
         select: {
-            option: { class: 'focus:!bg-transparent' }
+            root: { class: '!rounded-md !border-0 !outline-0 !text-white' },
+            dropDownIcon: { class: '!text-white !text-sm' },
+            label: { class: '!text-white !text-normal' },
+            overlay: { class: '!rounded-md' },
+            header: { class: '!p-2 !text-white' },
+            listContainer: { class: '!p-2 !gap-2' },
+            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' }
+        },
+
+        toast: {
+            root: { class: '!bg-transparent !rounded-md' },
+            message: { class: '!bg-transparent !rounded-md' },
+            messageContent: { class: '!bg-warning !text-white !rounded-md' },
+            messageIcon: { class: '!hidden' },
+            detail: { class: '!text-white' },
+        },
+        autocomplete: {
+            inputMultiple: {
+                class: '!border-0 !bg-white !outline-0 !rounded-md !py-2'
+            },
+            overlay: {
+                class: '!rounded-md !p-2'
+            },
+            option: {
+                class: 'hover:!bg-almostwhite hover:!text-accent !rounded-md'
+            }
 
         }
-
-
 
     }
 } as PrimeVueConfiguration;

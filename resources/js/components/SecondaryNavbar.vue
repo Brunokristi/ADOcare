@@ -32,15 +32,18 @@ const links = computed<SectionLink[]>(() => {
   const root = router.getRoutes().find(r => r.name === sectionRootName.value)
   if (!root) return []
 
-  return root.children.map(child => ({
-    key: child.name?.toString() ?? child.path,
-    label:
-      (child.meta?.link as string) ??
-      (child.meta?.title as string) ??
-      child.name?.toString(),
-    to: { name: child.name }
-  }))
+  return root.children
+    .filter(child => child.meta?.navbar === true)
+    .map(child => ({
+      key: child.name?.toString() ?? child.path,
+      label:
+        (child.meta?.link as string) ??
+        (child.meta?.title as string) ??
+        child.name?.toString(),
+      to: { name: child.name }
+    }))
 })
+
 
 const activeKey = computed(() => {
   const last = route.matched[route.matched.length - 1]

@@ -4,6 +4,8 @@ import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
 import { usePatientStore } from '@/stores/patientStore';
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'
@@ -194,6 +196,7 @@ const deleteshowRows = () => {
 
 const selectPatient = (row) => {
     patientStore.setPatient(row);
+    router.push(`patient/points`);
 };
 
 // -------------------- INFO LINE --------------------
@@ -225,9 +228,6 @@ function formatBirthNumber(value) {
     <SecondaryNavbar />
 
     <div>
-        <!-- Toast must be rendered somewhere for useToast() to work -->
-        <Toast />
-
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
             <template #end>
                 <div class="flex items-center gap-2 ">

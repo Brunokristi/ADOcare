@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import TercialNavbar from './components/TercialNavbar.vue';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
-const route = useRoute();
+const auth = useAuthStore();
 
 onMounted(() => {
     window.addEventListener('unauthenticated', () => {
@@ -15,13 +16,7 @@ onMounted(() => {
     });
 });
 
-const showNavbar = computed(() => {
-    return !(route.meta && (route.meta as any).hideNavbar === true);
-});
-
-const showPatient = computed(() => {
-    return route.name !== 'home' && route.name !== 'settings';
-});
+const isLoggedIn = computed(() => auth.isAuthenticated);
 
 const isSidebarOpen = ref(false);
 
@@ -33,12 +28,14 @@ function handleToggleSidebar() {
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
     <Navbar
-      v-if="showNavbar"
-      class="flex-none"
-      @toggle-sidebar="handleToggleSidebar"
+        class="flex-none"
+        @toggle-sidebar="handleToggleSidebar"
     />
 
-    <TercialNavbar v-if=" showNavbar && showPatient" class="flex-none" />
+    <TercialNavbar
+        v-if="isLoggedIn"
+         class="flex-none"
+    />
 
     <div class="flex flex-1 overflow-hidden">
         <div class="flex-1 overflow-auto bg-white p-8">
@@ -46,13 +43,13 @@ function handleToggleSidebar() {
         </div>
 
         <Sidebar
-            v-if="showNavbar&& isSidebarOpen"
+            v-if="isSidebarOpen && isLoggedIn"
             class="flex-none bg-darkgrey text-white border-l border-lightgrey"
         />
     </div>
 
     <Footer class="flex-none" />
 
-    <Toast />
+    <Toast position="bottom-right" />
   </div>
 </template>
