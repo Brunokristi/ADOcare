@@ -5278,3 +5278,252 @@ flushJobs@http://[::1]:5173/node_modules/.vite/deps/chunk-KLXR5Y5N.js:2504:30 {"
 [2025-12-04 16:13:43] local.WARNING: Deprecated since v4. Use DatePicker component instead. {"url":"http://127.0.0.1:8000/patient/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-04T16:13:43.780Z"} 
 [2025-12-04 16:14:20] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-04T16:14:19.972Z"} 
 [2025-12-04 16:14:20] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-04T16:14:19.972Z"} 
+[2025-12-05 19:54:32] local.ERROR: [vite] failed to connect to websocket.
+your current setup:
+  (browser) [::1]:5173/ <--[HTTP]--> localhost:5173/ (server)
+  (browser) [::1]:5173/ <--[WebSocket (failing)]--> localhost:5173/ (server)
+Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr . {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:54:31.976Z"} 
+[2025-12-05 19:54:39] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:54:39.388Z"} 
+[2025-12-05 19:54:57] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:54:56.885Z"} 
+[2025-12-05 19:54:57] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:54:56.885Z"} 
+[2025-12-05 19:56:41] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:56:40.875Z"} 
+[2025-12-05 19:56:42] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:56:41.985Z"} 
+[2025-12-05 19:56:42] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:56:41.985Z"} 
+[2025-12-05 19:56:42] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T19:56:42.060Z"} 
+[2025-12-05 20:00:29] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:00:29.818Z"} 
+[2025-12-05 20:00:29] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:00:29.818Z"} 
+[2025-12-05 20:04:16] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:04:15.598Z"} 
+[2025-12-05 20:04:16] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:04:15.599Z"} 
+[2025-12-05 20:06:01] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:06:00.025Z"} 
+[2025-12-05 20:06:01] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:06:00.025Z"} 
+[2025-12-05 20:06:01] local.ERROR: Failed to load insurance companies: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:54:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* get /api/insurance-companies true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:06:00.045Z"} 
+[2025-12-05 20:06:09] local.ERROR: Failed to search patients: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async searchPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:70:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* b get /api/patients true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:06:09.697Z"} 
+[2025-12-05 20:06:10] local.ERROR: Failed to search patients: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async searchPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:70:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* a get /api/patients true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:06:10.698Z"} 
+[2025-12-05 20:06:15] local.ERROR: Failed to search patients: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async searchPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:70:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* a get /api/patients true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:06:15.169Z"} 
+[2025-12-05 20:07:06] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:06.289Z"} 
+[2025-12-05 20:07:06] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:06.289Z"} 
+[2025-12-05 20:07:06] local.ERROR: Failed to load insurance companies: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:54:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* get /api/insurance-companies true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:06.359Z"} 
+[2025-12-05 20:07:06] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965159918:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:06.360Z"} 
+[2025-12-05 20:07:11] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:11.186Z"} 
+[2025-12-05 20:07:11] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:11.186Z"} 
+[2025-12-05 20:07:11] local.ERROR: Failed to load insurance companies: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:54:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* get /api/insurance-companies true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:11.215Z"} 
+[2025-12-05 20:07:15] local.ERROR: Failed to search patients: Request failed with status code 404 AxiosError AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async searchPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965159918:70:26) true true false xhr http fetch null null 0 XSRF-TOKEN X-XSRF-TOKEN -1 -1  application/json, text/plain, */* a get /api/patients true ERR_BAD_REQUEST 404 {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:07:15.550Z"} 
+[2025-12-05 20:12:29] local.WARNING: [Vue warn]: Property "isAuthenticated" was accessed during render but is not defined on instance. null at <Navbar class="flex-none" onToggleSidebar=fn<handleToggleSidebar> > null at <App> {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:12:28.255Z"} 
+[2025-12-05 20:12:29] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965548146:54:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:12:28.325Z"} 
+[2025-12-05 20:12:29] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965548146:44:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:12:28.327Z"} 
+[2025-12-05 20:12:51] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965570276:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:12:50.397Z"} 
+[2025-12-05 20:13:01] local.ERROR: [vite] ReferenceError Cannot access 'Points' before initialization ReferenceError: Cannot access 'Points' before initialization
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764965580444:44:20 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:00.544Z"} 
+[2025-12-05 20:13:01] local.ERROR: [vite] Failed to reload /resources/js/partials/Data/Points.vue. This could be due to syntax errors or importing non-existent modules. (see errors above) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:00.544Z"} 
+[2025-12-05 20:13:10] local.INFO: [hmr] /resources/js/partials/Data/Points.vue failed to apply HMR as it's within a circular import. Reloading page to reset the execution order. To debug and break the circular import, you can run `vite --debug hmr` to log the circular dependency path if a file change triggered it. {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:09.289Z"} 
+[2025-12-05 20:13:10] local.ERROR: [vite] ReferenceError Cannot access 'Points' before initialization ReferenceError: Cannot access 'Points' before initialization
+    at http://[::1]:5173/resources/js/router/index.ts?t=1764965589222:44:20 {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:09.289Z"} 
+[2025-12-05 20:13:10] local.ERROR: [vite] Failed to reload /resources/js/partials/Data/Points.vue. This could be due to syntax errors or importing non-existent modules. (see errors above) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:09.289Z"} 
+[2025-12-05 20:13:11] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965589222:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:11.099Z"} 
+[2025-12-05 20:13:13] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:13.515Z"} 
+[2025-12-05 20:13:13] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:13.515Z"} 
+[2025-12-05 20:13:13] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:57:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:13.564Z"} 
+[2025-12-05 20:13:13] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:13.583Z"} 
+[2025-12-05 20:13:14] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:14.783Z"} 
+[2025-12-05 20:13:14] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:14.783Z"} 
+[2025-12-05 20:13:14] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:14.802Z"} 
+[2025-12-05 20:13:14] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:57:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:14.834Z"} 
+[2025-12-05 20:13:15] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:15.568Z"} 
+[2025-12-05 20:13:15] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:15.568Z"} 
+[2025-12-05 20:13:15] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:57:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:15.605Z"} 
+[2025-12-05 20:13:15] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:15.619Z"} 
+[2025-12-05 20:13:21] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:21.015Z"} 
+[2025-12-05 20:13:21] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:21.015Z"} 
+[2025-12-05 20:13:21] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:57:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:21.080Z"} 
+[2025-12-05 20:13:21] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:21.091Z"} 
+[2025-12-05 20:13:31] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:31.249Z"} 
+[2025-12-05 20:13:31] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:31.250Z"} 
+[2025-12-05 20:13:31] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965589222:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:31.440Z"} 
+[2025-12-05 20:13:31] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:57:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:31.441Z"} 
+[2025-12-05 20:13:31] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:13:31.441Z"} 
+[2025-12-05 20:14:11] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965589222:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:14:11.133Z"} 
+[2025-12-05 20:15:23] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 401 AxiosError: Request failed with status code 401
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadAllPatients (http://[::1]:5173/resources/js/components/Navbar.vue?t=1764965589222:62:19) {"url":"http://127.0.0.1:8000/","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:15:23.375Z"} 
+[2025-12-05 20:16:00] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:16:00.159Z"} 
+[2025-12-05 20:16:00] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:16:00.160Z"} 
+[2025-12-05 20:16:00] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 404 AxiosError: Request failed with status code 404
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:16:00.179Z"} 
+[2025-12-05 20:19:09] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:07.784Z"} 
+[2025-12-05 20:19:09] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:07.785Z"} 
+[2025-12-05 20:19:09] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:07.995Z"} 
+[2025-12-05 20:19:14] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:14.087Z"} 
+[2025-12-05 20:19:14] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:14.087Z"} 
+[2025-12-05 20:19:14] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:14.250Z"} 
+[2025-12-05 20:19:16] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:16.433Z"} 
+[2025-12-05 20:19:16] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:16.433Z"} 
+[2025-12-05 20:19:16] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:16.596Z"} 
+[2025-12-05 20:19:37] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:36.713Z"} 
+[2025-12-05 20:19:37] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:36.713Z"} 
+[2025-12-05 20:19:37] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue?t=1764965589222:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:36.886Z"} 
+[2025-12-05 20:19:52] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:51.158Z"} 
+[2025-12-05 20:19:55] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:55.170Z"} 
+[2025-12-05 20:19:55] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:55.171Z"} 
+[2025-12-05 20:19:55] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:19:55.334Z"} 
+[2025-12-05 20:23:00] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:23:00.587Z"} 
+[2025-12-05 20:23:00] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:23:00.587Z"} 
+[2025-12-05 20:23:00] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:23:00.754Z"} 
+[2025-12-05 20:29:44] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:29:44.566Z"} 
+[2025-12-05 20:29:44] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:29:44.566Z"} 
+[2025-12-05 20:29:44] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:29:44.729Z"} 
+[2025-12-05 20:34:54] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:34:53.904Z"} 
+[2025-12-05 20:34:54] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:34:53.904Z"} 
+[2025-12-05 20:34:54] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:34:54.099Z"} 
+[2025-12-05 20:34:56] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:34:56.709Z"} 
+[2025-12-05 20:34:56] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:34:56.710Z"} 
+[2025-12-05 20:34:56] local.ERROR: Unhandled Promise Rejection AxiosError Request failed with status code 500 AxiosError: Request failed with status code 500
+    at settle (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1257:12)
+    at XMLHttpRequest.onloadend (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:1606:7)
+    at Axios.request (http://[::1]:5173/node_modules/.vite/deps/axios.js?v=2d4c50b7:2223:41)
+    at async loadInsurances (http://[::1]:5173/resources/js/partials/Data/Points.vue:47:19) {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:34:56.873Z"} 
+[2025-12-05 20:35:55] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:35:54.978Z"} 
+[2025-12-05 20:35:55] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:35:54.978Z"} 
+[2025-12-05 20:36:42] local.DEBUG: [vite] server connection lost. Polling for restart... {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:36:41.325Z"} 
+[2025-12-05 20:36:44] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:36:43.077Z"} 
+[2025-12-05 20:36:44] local.WARNING: Deprecated since v4. Use Select component instead. {"url":"http://127.0.0.1:8000/data/points","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","timestamp":"2025-12-05T20:36:43.077Z"} 

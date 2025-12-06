@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CarController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\InsuranceCompanyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,10 +32,9 @@ Route::prefix('auth')->group(function () {
 
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
-    // Cars CRUD
     Route::apiResource('cars', CarController::class);
 
-    // Patients CRUD
     Route::apiResource('patients', PatientController::class);
 
+    Route::get('insurance-companies', [InsuranceCompanyController::class, 'index']);
 });
