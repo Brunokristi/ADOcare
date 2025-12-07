@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import InputNumber from 'primevue/inputnumber';
 import Dropdown from 'primevue/dropdown';
 import DatePicker from 'primevue/datepicker';
 import Button from 'primevue/button';
 import AutoComplete from 'primevue/autocomplete';
 
+import api from '@/services/api';
+import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
+
 type BatchType = {
   code: string;
   name: string;
 };
 
+// UI types for this form
 type Insurance = {
-  code: string;
-  name: string;
+  id: number;
+  code: string | null;
+  name: string; // label shown in dropdown
 };
 
 type Patient = {
@@ -28,45 +33,102 @@ const emit = defineEmits<{
     batchType: BatchType | null;
     insurance: Insurance | null;
     period: Date[];
-    patients: Patient[];          // NEW: selected patients (can be empty for non-O dávka)
+    patients: Patient[];
   }): void;
 }>();
 
-// number input -> number | null
 const batchNumber = ref<number | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
 const dates = ref<Date[] | null>(null);
 
-// patients (for O - opravná dávka)
-const allPatients = ref<Patient[]>([
-  { id: 1, name: 'Bruno Kristián', personalNumber: '030420/4714' },
-  { id: 2, name: 'Viktória Kristiánová', personalNumber: '010426/4552' },
-  { id: 3, name: 'Bruno Kristián', personalNumber: '030424/4714' },
-  { id: 4, name: 'Bruno Kristián', personalNumber: '030424/4714' },
-  { id: 5, name: 'Bruno Kristián', personalNumber: '030424/4714' },
-  { id: 6, name: 'Bruno Kristián', personalNumber: '030424/4714' },
-]);
+const allPatients = ref<Patient[]>([]);
 const filteredPatients = ref<Patient[]>([]);
 const selectedPatients = ref<Patient[]>([]);
 
 const submitted = ref(false);
 
+// batch types stay static
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
   { code: 'O', name: 'Opravná dávka' },
 ]);
 
-const insurances = ref<Insurance[]>([
-  { code: '25', name: 'VšZP (25)' },
-  { code: '24', name: 'Dôvera (24)' },
-  { code: '27', name: 'Union (27)' },
-]);
+// loaded from backend
+const insurances = ref<Insurance[]>([]);
 
 const isCorrectionBatch = computed(() => batchType.value?.code === 'O');
 
+/**
+ * Map backend InsuranceCompany → UI Insurance
+ */
+function mapInsuranceCompanyToOption(company: InsuranceCompany): Insurance {
+  const displayName = company.name ?? '';
+  const code = company.code ?? '';
+
+  return {
+    id: company.id,
+    code: company.code,
+    // e.g. "VšZP (25)" or just name / code
+    name: displayName && code ? `${displayName} (${code})`
+      : displayName || code || `#${company.id}`,
+  };
+}
+
+/**
+ * Map backend Patient → UI Patient
+ * Same idea as your navbar `mapPatients`, but without keeping raw.
+ */
+function mapPatients(items: PatientModel[]): Patient[] {
+  return items.map(p => ({
+    id: p.id,
+    name: `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim(),
+    personalNumber: p.personal_number ?? '',
+  }));
+}
+
+/**
+ * Load all insurance companies (no pagination).
+ * Adjust URL if your API path differs.
+ */
+async function loadInsurances() {
+  const res = await api.get('/v1/insurance-companies', {
+    params: {
+      paginate: false,
+    },
+  });
+
+  const data = res.data?.data;
+  const items = (Array.isArray(data) ? data : data?.items) as InsuranceCompany[] ?? [];
+  insurances.value = items.map(mapInsuranceCompanyToOption);
+}
+
+/**
+ * Load all patients once, same pattern as your navbar.
+ */
+async function loadAllPatients() {
+  const res = await api.get('/v1/patients', {
+    params: {
+      paginate: false,
+    },
+  });
+
+  const data = res.data?.data;
+  const items = (Array.isArray(data) ? data : data?.items) as PatientModel[] ?? [];
+  allPatients.value = mapPatients(items);
+}
+
+/**
+ * Local search over already loaded patients
+ */
 function searchPatients(event: { query: string }) {
-  const q = event.query.toLowerCase();
+  const q = (event.query ?? '').toLowerCase().trim();
+
+  if (!q) {
+    filteredPatients.value = [];
+    return;
+  }
+
   filteredPatients.value = allPatients.value.filter(p =>
     p.name.toLowerCase().includes(q) ||
     p.personalNumber.toLowerCase().includes(q),
@@ -103,7 +165,13 @@ function onSubmit() {
     patients: selectedPatients.value,
   });
 }
+
+onMounted(() => {
+  loadInsurances();
+  loadAllPatients();
+});
 </script>
+
 
 <template>
   <div class="flex flex-col gap-6">
