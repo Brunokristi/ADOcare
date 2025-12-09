@@ -11,18 +11,13 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('api.auth');
 
-// API routes: wrap all routes with the ForceJsonResponse alias via Kernel
-// and use shorthand middleware aliases (see App\Http\Kernel.php)
-
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
 
-// Authentication
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 
-    // Protected auth routes (require Bearer token)
     Route::middleware(['api.auth'])->group(function () {
         Route::post('register', [AuthController::class, 'register'])->middleware('role:admin');
         Route::post('logout', [AuthController::class, 'logout']);
@@ -33,8 +28,9 @@ Route::prefix('auth')->group(function () {
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('cars', CarController::class);
-
     Route::apiResource('patients', PatientController::class);
-
-    Route::get('insurance-companies', [InsuranceCompanyController::class, 'index']);
+    Route::apiResource('insurance-companies', InsuranceCompanyController::class);
+    Route::apiResource('diagnoses', DiagnosisController::class);
+    Route::apiResource('procedures', ProcedureController::class);
 });
+

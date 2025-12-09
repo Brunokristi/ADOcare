@@ -14,8 +14,7 @@ const ADOPreset = definePreset(Material, {
                 listOptionPadding: "0.2rem 0.5rem",
                 autocomplete: {
                     border: 0,
-                }
-
+                },
             }
         }
     }
@@ -73,7 +72,8 @@ export default {
         },
 
         button: {
-            root: { class: '!p-xs !rounded-md' }
+            root: { class: '!p-xs !rounded-md' },
+
         },
 
         menubar: {
@@ -127,8 +127,21 @@ export default {
             option: {
                 class: 'hover:!bg-almostwhite hover:!text-accent !rounded-md'
             }
+        },
 
+        datepicker: {
+            panel: { class: '!rounded-md !text-normal !text-darkgrey !border-0' },
+            selectMonth: { class: '!bg-darkgrey !text-normal !text-white hover:!bg-accent !rounded-md' },
+            selectYear: { class: '!bg-darkgrey !text-normal !text-white hover:!bg-accent !rounded-md' },
+            day: {
+                class: [
+                    '!text-normal !rounded-md hover:!bg-tag3',
+                    '[&.p-datepicker-day-selected]:!bg-accent [&.p-datepicker-day-selected]:!text-white',
+                    '[&.p-datepicker-day-selected-range]:!bg-accent [&.p-datepicker-day-selected-range]:!text-white'
+
+                ].join(' ')
+            },
+            weekDay: { class: '!text-heading !text-darkgrey' },
         }
-
     }
 } as PrimeVueConfiguration;

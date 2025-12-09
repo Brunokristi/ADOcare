@@ -14,11 +14,10 @@ type BatchType = {
   name: string;
 };
 
-// UI types for this form
 type Insurance = {
   id: number;
   code: string | null;
-  name: string; // label shown in dropdown
+  name: string;
 };
 
 type Patient = {
@@ -48,37 +47,28 @@ const selectedPatients = ref<Patient[]>([]);
 
 const submitted = ref(false);
 
-// batch types stay static
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
   { code: 'O', name: 'Opravná dávka' },
 ]);
 
-// loaded from backend
 const insurances = ref<Insurance[]>([]);
 
 const isCorrectionBatch = computed(() => batchType.value?.code === 'O');
 
-/**
- * Map backend InsuranceCompany → UI Insurance
- */
+
 function mapInsuranceCompanyToOption(company: InsuranceCompany): Insurance {
   const displayName = company.name ?? '';
-  const code = company.code ?? '';
 
   return {
     id: company.id,
     code: company.code,
-    // e.g. "VšZP (25)" or just name / code
-    name: displayName && code ? `${displayName} (${code})`
-      : displayName || code || `#${company.id}`,
+    name: displayName ? `${displayName}`
+      : displayName || `#${company.id}`,
   };
 }
 
-/**
- * Map backend Patient → UI Patient
- * Same idea as your navbar `mapPatients`, but without keeping raw.
- */
+
 function mapPatients(items: PatientModel[]): Patient[] {
   return items.map(p => ({
     id: p.id,
@@ -103,9 +93,7 @@ async function loadInsurances() {
   insurances.value = items.map(mapInsuranceCompanyToOption);
 }
 
-/**
- * Load all patients once, same pattern as your navbar.
- */
+
 async function loadAllPatients() {
   const res = await api.get('/v1/patients', {
     params: {

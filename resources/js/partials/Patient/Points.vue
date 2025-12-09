@@ -2,10 +2,11 @@
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode } from '@primevue/core/api';
+import api from '@/services/api';
 
 type Option = {
   code: string;
-  name: string;
+  description: string;
 };
 
 type RecordEntry = {
@@ -20,49 +21,63 @@ const emit = defineEmits<{
   (e: 'submit', payload: RecordEntry): void;
 }>();
 
-
 const date = ref<Date | null>(new Date());
 const referralDate = ref<Date | null>(null);
 
-const diagnosis = ref<Option | null>(null);
-const diagnoses = ref<Option[]>([
-  { code: 'I10', name: 'Hypertenzná choroba (I10)' },
-  { code: 'E11', name: 'Diabetes mellitus 2. typu (E11)' },
-  { code: 'J45', name: 'Astma (J45)' },
-]);
+/* ---------- DIAGNOSES ---------- */
 
+const diagnosis = ref<Option | null>(null);
 const filteredDiagnoses = ref<Option[]>([]);
 
-function searchDiagnoses(event: { query: string }) {
-  const q = event.query.toLowerCase();
-  filteredDiagnoses.value = diagnoses.value.filter(d =>
-    d.code.toLowerCase().includes(q) ||
-    d.name.toLowerCase().includes(q),
-  );
+async function searchDiagnoses(event: { query: string }) {
+  try {
+    const q = event.query?.trim() ?? '';
+
+    if (!q || q.length < 1) {
+      filteredDiagnoses.value = [];
+      return;
+    }
+
+    const { data } = await api.get<Option[]>('/diagnoses', {
+      params: { q },
+    });
+
+    filteredDiagnoses.value = data;
+  } catch (e) {
+    console.error('Failed to load diagnoses', e);
+    filteredDiagnoses.value = [];
+  }
 }
 
-// procedures
-const procedure = ref<Option | null>(null);
-const procedures = ref<Option[]>([
-  { code: '213', name: 'Ošetrenie v domácom prostredí' },
-  { code: '310', name: 'Kontrolné vyšetrenie' },
-  { code: '411', name: 'Odber biologického materiálu' },
-]);
+/* ---------- PROCEDURES ---------- */
 
+const procedure = ref<Option | null>(null);
 const filteredProcedures = ref<Option[]>([]);
 
-function searchProcedures(event: { query: string }) {
-  const q = event.query.toLowerCase();
-  filteredProcedures.value = procedures.value.filter(p =>
-    p.code.toLowerCase().includes(q) ||
-    p.name.toLowerCase().includes(q),
-  );
+async function searchProcedures(event: { query: string }) {
+  try {
+    const q = event.query?.trim() ?? '';
+
+    if (!q || q.length < 1) {
+      filteredProcedures.value = [];
+      return;
+    }
+
+    const { data } = await api.get<Option[]>('/procedures', {
+      params: { q },
+    });
+
+    filteredProcedures.value = data;
+  } catch (e) {
+    console.error('Failed to load procedures', e);
+    filteredProcedures.value = [];
+  }
 }
+
+/* ---------- REST OF YOUR CODE STAYS THE SAME ---------- */
 
 const submitted = ref(false);
 const toast = useToast();
-
-/* ---------- TABLE STATE ---------- */
 
 const records = ref<RecordEntry[]>([]);
 const selectedRecords = ref<RecordEntry[]>([]);
@@ -81,8 +96,6 @@ function formatDate(d: Date | null) {
   if (!d) return '';
   return d.toLocaleDateString('sk-SK');
 }
-
-/* ---------- FORM SUBMIT ---------- */
 
 function onSubmit() {
   submitted.value = true;
@@ -110,10 +123,7 @@ function onSubmit() {
     referralDate: referralDate.value,
   };
 
-  // Add to local table
   records.value.push(payload);
-
-  // Emit to parent if needed
   emit('submit', payload);
 
   toast.add({
@@ -123,7 +133,6 @@ function onSubmit() {
     life: 3000,
   });
 
-  // Reset form if you like
   date.value = new Date();
   diagnosis.value = null;
   procedure.value = null;
@@ -181,8 +190,8 @@ function duplicateSelected() {
     life: 3000,
   });
 }
-
 </script>
+
 
 <template>
   <div class="flex flex-col gap-6">
