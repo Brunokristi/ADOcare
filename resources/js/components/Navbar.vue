@@ -158,7 +158,7 @@ function toggleSidebar() {
         optionLabel="name"
         filter
         placeholder="Vyberte pacienta"
-        class="!rounded-md !bg-tag2 !text-white min-w-[220px]"
+        class="!rounded-md border-0! !bg-tag2 !text-white min-w-[220px]"
       >
         <template #value="{ placeholder }">
           <span class="text-lightgrey text-normal">
@@ -191,7 +191,9 @@ function toggleSidebar() {
         optionLabel="label"
         optionValue="id"
         placeholder="Vyberte pobočku"
-        class="w-60 h-7! flex items-center bg-tag2! border-none! !rounded-md"
+        labelClass="text-white!"
+        dropdownIcon="bi bi-caret-down-fill text-white!"
+        class="w-60 h-7! flex items-center bg-tag2! border-none! rounded-md!"
       />
 
       <!-- Company name -->
