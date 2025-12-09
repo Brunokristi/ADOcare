@@ -16,9 +16,14 @@ class PatientController extends Controller
 
     public function index()
     {
-        $query = Patient::query();
+        $query = Patient::with(['doctor', 'visits', 'insuranceCompany']);
 
-        $results = ApiQuery::apply(request(), $query, searchable: ['first_name', 'last_name', 'personal_number'], allowedFilters: ['sex']);
+        $results = ApiQuery::apply(
+            request(),
+            $query,
+            searchable: ['first_name', 'last_name', 'personal_number'],
+            allowedFilters: ['sex']
+        );
 
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
@@ -39,7 +44,8 @@ class PatientController extends Controller
 
     public function show($id)
     {
-        $patient = Patient::find($id);
+        $patient = Patient::with(['doctor', 'visits', 'insuranceCompany'])->find($id);
+
         if (!$patient) {
             return $this->error('Not found', 404);
         }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\InsuranceCompanyController;
 use App\Http\Controllers\Api\DiagnosisController;
 use App\Http\Controllers\Api\ProcedureController;
+use App\Http\Controllers\Api\PatientPointController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,5 +35,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResource('insurance-companies', InsuranceCompanyController::class);
     Route::apiResource('diagnoses', DiagnosisController::class);
     Route::apiResource('procedures', ProcedureController::class);
+    Route::apiResource('patient-points', PatientPointController::class);
+
 });
 

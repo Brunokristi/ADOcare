@@ -158,17 +158,18 @@ function toggleSidebar() {
         optionLabel="name"
         filter
         placeholder="Vyberte pacienta"
-        class="!rounded-md border-0! !bg-tag2 !text-white min-w-[220px]"
+        dropdownIcon="bi bi-chevron-down !fill-white text-white!"
+        class="!rounded-md border-0! !bg-tag2 !text-white min-w-[220px] "
       >
         <template #value="{ placeholder }">
-          <span class="text-lightgrey text-normal">
+          <span class="text-normal text-white">
             {{ placeholder }}
           </span>
         </template>
 
         <template #option="{ option }">
           <div class="flex">
-            <span class="text-normla text-darkgrey pr-2">{{ option.name }}</span>
+            <span class="text-normal text-darkgrey pr-2">{{ option.name }}</span>
             <span class="bg-lightgrey rounded-md text-mini text-white px-2 content-center">
               {{ option.personalNumber }}
             </span>
@@ -192,7 +193,7 @@ function toggleSidebar() {
         optionValue="id"
         placeholder="Vyberte pobočku"
         labelClass="text-white!"
-        dropdownIcon="bi bi-caret-down-fill text-white!"
+        dropdownIcon="bi bi-chevron-down text-white!"
         class="w-60 h-7! flex items-center bg-tag2! border-none! rounded-md!"
       />
 

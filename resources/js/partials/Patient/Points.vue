@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode } from '@primevue/core/api';
+
 import api from '@/services/api';
+import { toApiDate } from '@/utils/dateUtils';
+import { usePatientStore } from '@/stores/patientStore';
+import { useAuthStore } from '@/stores/auth';
 import type { Diagnosis, Procedure } from '@/types/models';
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
 type Option = {
   id: number;
@@ -19,17 +28,140 @@ type RecordEntry = {
   referralDate: Date | null;
 };
 
+type PatientPointApi = {
+  id: number;
+  date: string | null;
+  patient_personal_number: string | null;
+  patient_name: string | null;
+  patient_id: number;
+  diagnosis_code: string | null;
+  diagnosis_id: number | null;
+  procedure_code: string | null;
+  procedure_id: number | null;
+  reference_date: string | null;
+  user_id: number;
+  branch_id: number;
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Stores & Refs                                                             */
+/* -------------------------------------------------------------------------- */
+
+const patientStore = usePatientStore();
+patientStore.loadFromStorage();
+
+const authStore = useAuthStore();
+
+const { current: currentPatient } = storeToRefs(patientStore);
+const { user, currentBranch } = storeToRefs(authStore);
+
+console.log('currentPatient', currentPatient.value);
+
 const emit = defineEmits<{
   (e: 'submit', payload: RecordEntry): void;
 }>();
 
+const toast = useToast();
+
+const isLoading = ref(false);
+
 const date = ref<Date | null>(new Date());
 const referralDate = ref<Date | null>(null);
 
-/* ---------- DIAGNOSES ---------- */
-
 const diagnosis = ref<Option | null>(null);
 const filteredDiagnoses = ref<Option[]>([]);
+
+const procedure = ref<Option | null>(null);
+const filteredProcedures = ref<Option[]>([]);
+
+const submitted = ref(false);
+
+const records = ref<RecordEntry[]>([]);
+const selectedRecords = ref<RecordEntry[]>([]);
+const deleteRecordsDialog = ref(false);
+
+const pointDialog = ref(false);
+const editSubmitted = ref(false);
+const editPoint = ref<RecordEntry | null>(null);
+
+/* -------------------------------------------------------------------------- */
+/*  Table helpers                                                             */
+/* -------------------------------------------------------------------------- */
+
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+});
+
+const recordsInfo = computed(() => {
+  const total = records.value.length;
+  return total ? `Počet záznamov: ${total}` : 'Žiadne záznamy';
+});
+
+function formatDate(d: Date | null) {
+  if (!d) return '';
+  return d.toLocaleDateString('sk-SK');
+}
+
+
+
+
+/* -------------------------------------------------------------------------- */
+/*  API: Load existing patient points                                         */
+/* -------------------------------------------------------------------------- */
+
+async function loadRecordsForPatient() {
+  if (!currentPatient.value) {
+    records.value = [];
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    const { data } = await api.get<PatientPointApi[]>('/v1/patient-points', {
+      params: {
+        patient_id: currentPatient.value.id,
+        paginate: false,
+      },
+    });
+
+    records.value = data.map((row) => ({
+      id: row.id,
+      date: row.date ? new Date(row.date) : null,
+      diagnosis: row.diagnosis_id
+        ? {
+            id: row.diagnosis_id,
+            code: row.diagnosis_code ?? '',
+            description: '',
+          }
+        : null,
+      procedure: row.procedure_id
+        ? {
+            id: row.procedure_id,
+            code: row.procedure_code ?? '',
+            description: '',
+          }
+        : null,
+      referralDate: row.reference_date ? new Date(row.reference_date) : null,
+    }));
+
+  } catch (e) {
+    console.error('Failed to load patient points', e);
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba načítania',
+      detail: 'Nepodarilo sa načítať body pacienta.',
+      life: 4000,
+    });
+    records.value = [];
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Lookup: Diagnoses & Procedures                                            */
+/* -------------------------------------------------------------------------- */
 
 async function searchDiagnoses(event: { query: string }) {
   try {
@@ -55,11 +187,6 @@ async function searchDiagnoses(event: { query: string }) {
   }
 }
 
-/* ---------- PROCEDURES ---------- */
-
-const procedure = ref<Option | null>(null);
-const filteredProcedures = ref<Option[]>([]);
-
 async function searchProcedures(event: { query: string }) {
   try {
     const q = event.query?.trim() ?? '';
@@ -84,9 +211,10 @@ async function searchProcedures(event: { query: string }) {
   }
 }
 
-/* ---------- NORMALIZATION HELPERS ---------- */
+/* -------------------------------------------------------------------------- */
+/*  Normalization helpers                                                     */
+/* -------------------------------------------------------------------------- */
 
-// Parse manual date input like "1.2.25", "01.02.2025", "1.2.2025"
 function parseDateInput(raw: unknown): Date | null {
   if (raw instanceof Date) {
     return isNaN(raw.getTime()) ? null : raw;
@@ -97,25 +225,25 @@ function parseDateInput(raw: unknown): Date | null {
   const value = raw.trim();
   if (!value) return null;
 
-  // dd.mm.yy or dd.mm.yyyy
   const match = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);
   if (!match) return null;
 
-  let [, dStr, mStr, yStr] = match as RegExpMatchArray;
+  const [, dStr, mStr, yStr] = match as RegExpMatchArray;
+
+  if (!dStr || !mStr || !yStr) return null;
+
   const day = Number(dStr);
   const month = Number(mStr);
   let year = Number(yStr);
 
-  if (yStr!.length === 2) {
+  if (yStr.length === 2) {
     year += 2000;
   }
 
-  // Basic sanity checks
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const result = new Date(year, month - 1, day);
 
-  // Validate date (e.g. 31.02.2025 should be rejected)
   if (
     result.getFullYear() !== year ||
     result.getMonth() !== month - 1 ||
@@ -127,17 +255,16 @@ function parseDateInput(raw: unknown): Date | null {
   return result;
 }
 
-// Resolve diagnosis if user only typed the code
 async function ensureDiagnosisSelected(): Promise<boolean> {
   const value = diagnosis.value as unknown;
 
-  // already an object with id → ok
   if (value && typeof value === 'object' && 'id' in (value as any)) {
     return true;
   }
 
   const raw = (value as string | undefined) ?? '';
   const code = raw.trim();
+
   if (!code) {
     diagnosis.value = null;
     return false;
@@ -171,7 +298,6 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
   }
 }
 
-// Resolve procedure if user only typed the code
 async function ensureProcedureSelected(): Promise<boolean> {
   const value = procedure.value as unknown;
 
@@ -181,6 +307,7 @@ async function ensureProcedureSelected(): Promise<boolean> {
 
   const raw = (value as string | undefined) ?? '';
   const code = raw.trim();
+
   if (!code) {
     procedure.value = null;
     return false;
@@ -214,136 +341,375 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 }
 
-/* ---------- REST OF YOUR CODE ---------- */
+/* -------------------------------------------------------------------------- */
+/*  Payload builders                                                          */
+/* -------------------------------------------------------------------------- */
 
-const submitted = ref(false);
-const toast = useToast();
+function buildPatientPointPayload() {
+  if (!currentPatient.value) {
+    throw new Error('No patient selected');
+  }
 
-const records = ref<RecordEntry[]>([]);
-const selectedRecords = ref<RecordEntry[]>([]);
-const deleteRecordsDialog = ref(false);
+  const patient = currentPatient.value;
+  const doctor = patient.doctor;
 
-const filters = ref({
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-});
+  const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim();
 
-const recordsInfo = computed(() => {
-  const total = records.value.length;
-  return total ? `Počet záznamov: ${total}` : 'Žiadne záznamy';
-});
+  return {
+    date: toApiDate(date.value),
+    patient_personal_number: patient.personal_number,
+    patient_name: fullName,
+    patient_id: patient.id,
 
-function formatDate(d: Date | null) {
-  if (!d) return '';
-  return d.toLocaleDateString('sk-SK');
+    diagnosis_code: diagnosis.value!.code,
+    diagnosis_id: diagnosis.value!.id,
+
+    procedure_code: procedure.value!.code,
+    procedure_id: procedure.value!.id,
+
+    doctor_pzs: doctor?.pzs ?? null,
+    doctor_zpr: doctor?.zpr ?? null,
+    doctor_id: doctor?.id ?? null,
+
+    reference_date: toApiDate(referralDate.value),
+    user_id: user.value?.id ?? null,
+    branch_id: currentBranch.value?.id ?? null,
+  };
 }
+
+function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
+  if (!currentPatient.value) {
+    throw new Error('No patient selected');
+  }
+
+  const patient = currentPatient.value;
+  const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim();
+
+  const doctorRel = (patient as any).doctor ?? null;
+  const doctorId = doctorRel?.id ?? patient.doctor_id ?? null;
+
+  return {
+    date: toApiDate(dateOverride),
+
+    patient_personal_number: patient.personal_number,
+    patient_name: fullName,
+    patient_id: patient.id,
+
+    diagnosis_code: row.diagnosis?.code ?? '',
+    diagnosis_id: row.diagnosis?.id ?? null,
+
+    procedure_code: row.procedure?.code ?? '',
+    procedure_id: row.procedure?.id ?? null,
+
+    doctor_pzs: doctorRel?.pzs ?? null,
+    doctor_zpr: doctorRel?.zpr ?? null,
+    doctor_id: doctorId,
+
+    reference_date: toApiDate(dateOverride),
+    user_id: user.value?.id ?? null,
+    branch_id: currentBranch.value!.id,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Form submit (create)                                                      */
+/* -------------------------------------------------------------------------- */
 
 async function onSubmit() {
   submitted.value = true;
 
-  // Normalize dates (in case user typed them)
-  const normalizedDate = parseDateInput(date.value as any);
-  const normalizedReferralDate = parseDateInput(referralDate.value as any);
+  date.value = parseDateInput(date.value as any);
+  referralDate.value = parseDateInput(referralDate.value as any);
 
-  date.value = normalizedDate;
-  referralDate.value = normalizedReferralDate;
-
-  // Normalize diagnosis / procedure if user typed only the code
   const diagnosisOk = await ensureDiagnosisSelected();
   const procedureOk = await ensureProcedureSelected();
 
+  // ❌ no toasts here – just let the <small> messages show
   if (!date.value || !diagnosisOk || !procedureOk || !referralDate.value) {
+    return;
+  }
+
+  if (!currentPatient.value) {
     toast.add({
-      severity: 'warn',
-      summary: 'Chýbajúce alebo neplatné údaje',
-      detail:
-        'Skontrolujte dátumy, kódy diagnóz a výkonov. Kódy musia existovať v databáze.',
-      life: 4000,
+      severity: 'error',
+      summary: 'Chýbajúci pacient',
+      detail: 'Najprv vyberte pacienta.',
+      life: 3000,
     });
     return;
   }
 
-  const newId =
-    records.value.length > 0
-      ? Math.max(...records.value.map((r) => r.id)) + 1
-      : 1;
+  let apiPayload;
+  try {
+    apiPayload = buildPatientPointPayload();
+  } catch (e: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: e.message,
+      life: 3000,
+    });
+    return;
+  }
 
-  const payload: RecordEntry = {
-    id: newId,
-    date: date.value,
-    diagnosis: diagnosis.value,
-    procedure: procedure.value,
-    referralDate: referralDate.value,
-  };
+  console.log('Sending payload:', apiPayload);
 
-  records.value.push(payload);
-  emit('submit', payload);
+  try {
+    await api.post('/v1/patient-points', apiPayload);
 
-  toast.add({
-    severity: 'success',
-    summary: 'Uložené',
-    detail: 'Záznam bol pridaný.',
-    life: 3000,
-  });
+    const newId =
+      records.value.length > 0
+        ? Math.max(...records.value.map((r) => r.id)) + 1
+        : 1;
 
-  date.value = new Date();
-  diagnosis.value = null;
-  procedure.value = null;
-  referralDate.value = null;
-  submitted.value = false;
+    const entry: RecordEntry = {
+      id: newId,
+      date: date.value,
+      diagnosis: diagnosis.value,
+      procedure: procedure.value,
+      referralDate: referralDate.value,
+    };
+
+    records.value.push(entry);
+    emit('submit', entry);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Uložené',
+      detail: 'Záznam bol uložený.',
+      life: 3000,
+    });
+
+    date.value = new Date();
+    diagnosis.value = null;
+    procedure.value = null;
+    referralDate.value = null;
+    submitted.value = false;
+  } catch (error: any) {
+    console.error('422 error:', error.response?.data);
+
+    const msg =
+      error.response?.data?.errors
+        ? Object.values(error.response.data.errors).flat()[0]
+        : error.response?.data?.message;
+
+    toast.add({
+      severity: 'error',
+      summary: 'Neuložené',
+      detail: msg ?? 'Záznam sa nepodarilo uložiť.',
+      life: 6000,
+    });
+  }
 }
 
-/* ---------- DELETE SELECTED ---------- */
+/* -------------------------------------------------------------------------- */
+/*  Edit dialog                                                               */
+/* -------------------------------------------------------------------------- */
+
+function editRecord(row: RecordEntry) {
+  editSubmitted.value = false;
+
+  editPoint.value = {
+    ...row,
+    date: row.date ? new Date(row.date) : null,
+    referralDate: row.referralDate ? new Date(row.referralDate) : null,
+    diagnosis: row.diagnosis ? { ...row.diagnosis } : null,
+    procedure: row.procedure ? { ...row.procedure } : null,
+  };
+
+  pointDialog.value = true;
+}
+
+async function savePoint() {
+  if (!editPoint.value) return;
+
+  editSubmitted.value = true;
+
+  const p = editPoint.value;
+
+  // normalize dates coming from the dialog (Calendar or text)
+  const normalizedDate = parseDateInput(p.date as any);
+  const normalizedReferral = parseDateInput(p.referralDate as any);
+
+  p.date = normalizedDate;
+  p.referralDate = normalizedReferral;
+
+  // validation – no toast, just inline messages
+  if (!p.date || !p.diagnosis || !p.procedure || !p.referralDate) {
+    return;
+  }
+
+  try {
+    await api.put(`/v1/patient-points/${p.id}`, {
+      date: toApiDate(p.date),
+      diagnosis_code: p.diagnosis.code,
+      diagnosis_id: p.diagnosis.id,
+      procedure_code: p.procedure.code,
+      procedure_id: p.procedure.id,
+      reference_date: toApiDate(p.referralDate),
+    });
+
+    const idx = records.value.findIndex((r) => r.id === p.id);
+    if (idx !== -1) {
+      // make sure we store the normalized dates
+      records.value[idx] = { ...p };
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Uložené',
+      detail: 'Záznam bol upravený.',
+      life: 3000,
+    });
+
+    pointDialog.value = false;
+  } catch (error: any) {
+    console.error('Failed to update point', error);
+
+    const msg =
+      error?.response?.data?.errors
+        ? (Object.values(error.response.data.errors).flat() as string[])[0]
+        : error?.response?.data?.message ?? 'Záznam sa nepodarilo upraviť.';
+
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: msg,
+      life: 5000,
+    });
+  }
+}
+
+
+
+/* -------------------------------------------------------------------------- */
+/*  Delete selected                                                           */
+/* -------------------------------------------------------------------------- */
 
 function confirmDeleteSelected() {
   if (!selectedRecords.value || !selectedRecords.value.length) return;
   deleteRecordsDialog.value = true;
 }
 
-function deleteSelected() {
-  const idsToDelete = new Set(selectedRecords.value.map((r) => r.id));
-  records.value = records.value.filter((r) => !idsToDelete.has(r.id));
-  selectedRecords.value = [];
-  deleteRecordsDialog.value = false;
-
-  toast.add({
-    severity: 'success',
-    summary: 'Vymazané',
-    detail: 'Vybrané záznamy boli vymazané.',
-    life: 3000,
-  });
-}
-
-function duplicateSelected() {
+async function deleteSelected() {
   if (!selectedRecords.value || !selectedRecords.value.length) return;
 
-  const today = new Date();
+  const idsToDelete = selectedRecords.value.map((r) => r.id);
 
-  const baseId =
-    records.value.length > 0
-      ? Math.max(...records.value.map((r) => r.id))
-      : 0;
+  try {
+    await Promise.all(
+      idsToDelete.map((id) => api.delete(`/v1/patient-points/${id}`)),
+    );
 
-  let nextId = baseId + 1;
+    const deleteSet = new Set(idsToDelete);
+    records.value = records.value.filter((r) => !deleteSet.has(r.id));
+    selectedRecords.value = [];
+    deleteRecordsDialog.value = false;
 
-  const clones = selectedRecords.value.map((r) => ({
-    ...r,
-    id: nextId++,
-    date: today,
-    referralDate: today,
-  }));
+    toast.add({
+      severity: 'success',
+      summary: 'Vymazané',
+      detail: 'Vybrané záznamy boli vymazané.',
+      life: 3000,
+    });
+  } catch (error: any) {
+    console.error('Failed to delete patient points', error);
 
-  records.value.push(...clones);
+    const msg =
+      error?.response?.data?.message ??
+      'Niektoré záznamy sa nepodarilo vymazať.';
 
-  toast.add({
-    severity: 'success',
-    summary: 'Duplikované',
-    detail: 'Vybrané záznamy boli duplikované s dnešným dátumom.',
-    life: 3000,
-  });
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba pri mazaní',
+      detail: msg,
+      life: 5000,
+    });
+  }
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Duplicate selected                                                        */
+/* -------------------------------------------------------------------------- */
+
+async function duplicateSelected() {
+  if (!selectedRecords.value || !selectedRecords.value.length) return;
+
+  if (!currentPatient.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Chýbajúci pacient',
+      detail: 'Najprv vyberte pacienta.',
+      life: 4000,
+    });
+    return;
+  }
+
+  const today = new Date();
+  const createdRows: RecordEntry[] = [];
+
+  try {
+    for (const original of selectedRecords.value) {
+      const payload = buildPayloadFromRow(original, today);
+      const { data } = await api.post('/v1/patient-points', payload);
+
+      const cloned: RecordEntry = {
+        id: data.id,
+        date: today,
+        referralDate: today,
+        diagnosis: original.diagnosis,
+        procedure: original.procedure,
+      };
+
+      createdRows.push(cloned);
+    }
+
+    records.value.push(...createdRows);
+
+
+    toast.add({
+      severity: 'success',
+      summary: 'Duplikované',
+      detail:
+        'Vybrané záznamy boli duplikované s dnešným dátumom a uložené do databázy.',
+      life: 3000,
+    });
+  } catch (error: any) {
+    console.error('Failed to duplicate patient points', error);
+
+    const msg =
+      error?.response?.data?.errors
+        ? (Object.values(error.response.data.errors).flat() as string[])[0]
+        : error?.response?.data?.message ??
+          'Niektoré záznamy sa nepodarilo duplikovať.';
+
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba pri duplikovaní',
+      detail: msg,
+      life: 6000,
+    });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Lifecycle                                                                 */
+/* -------------------------------------------------------------------------- */
+
+onMounted(() => {
+  if (currentPatient.value) {
+    loadRecordsForPatient();
+  }
+});
+
+watch(currentPatient, (newPatient) => {
+  if (newPatient) {
+    loadRecordsForPatient();
+  } else {
+    records.value = [];
+  }
+});
 </script>
-
-
 
 
 <template>
@@ -354,7 +720,7 @@ function duplicateSelected() {
           <!-- Dátum -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum</label>
-            <Calendar
+            <DatePicker
               v-model="date"
               dateFormat="dd.mm.yy"
               :showIcon="false"
@@ -366,9 +732,10 @@ function duplicateSelected() {
             </small>
           </div>
 
+          <!-- Diagnóza -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Diagnóza</label>
-              <AutoComplete
+            <AutoComplete
               v-model="diagnosis"
               :suggestions="filteredDiagnoses"
               optionLabel="code"
@@ -376,13 +743,15 @@ function duplicateSelected() {
               @complete="searchDiagnoses"
               class="w-full"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-              >
-                <template #option="slotProps">
-                  <div class="flex flex-col">
-                    <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
-                  </div>
-                </template>
-              </AutoComplete>
+            >
+              <template #option="slotProps">
+                <div class="flex flex-col">
+                  <span>
+                    {{ slotProps.option.code }} – {{ slotProps.option.description }}
+                  </span>
+                </div>
+              </template>
+            </AutoComplete>
             <small v-if="submitted && !diagnosis" class="text-warning">
               Diagnóza je povinná.
             </small>
@@ -399,23 +768,24 @@ function duplicateSelected() {
               @complete="searchProcedures"
               class="w-full"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-              >
-                  <template #option="slotProps">
-                    <div class="flex flex-col">
-                      <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
-                    </div>
-                  </template>
-                </AutoComplete>
+            >
+              <template #option="slotProps">
+                <div class="flex flex-col">
+                  <span>
+                    {{ slotProps.option.code }} – {{ slotProps.option.description }}
+                  </span>
+                </div>
+              </template>
+            </AutoComplete>
             <small v-if="submitted && !procedure" class="text-warning">
               Výkon je povinný.
             </small>
           </div>
 
-
           <!-- Dátum odporučenia -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum odporučenia</label>
-            <Calendar
+            <DatePicker
               v-model="referralDate"
               dateFormat="dd.mm.yy"
               :showIcon="false"
@@ -446,7 +816,6 @@ function duplicateSelected() {
       <Toolbar
         class="!bg-transparent !border-0 !shadow-none flex items-center justify-between py-3 !px-0"
       >
-
         <template #end>
           <div class="flex items-center gap-2">
             <IconField>
@@ -457,12 +826,11 @@ function duplicateSelected() {
             </IconField>
 
             <Button
-            icon="bi bi-copy"
-            @click="duplicateSelected"
-            :disabled="!selectedRecords || !selectedRecords.length"
-            class="!bg-accent !border-accent !text-white"
+              icon="bi bi-copy"
+              @click="duplicateSelected"
+              :disabled="!selectedRecords || !selectedRecords.length"
+              class="!bg-accent !border-accent !text-white"
             />
-
 
             <Button
               icon="bi bi-eraser"
@@ -484,6 +852,9 @@ function duplicateSelected() {
         scrollable
         scrollHeight="400px"
         class="text-sm"
+        sortMode="single"
+        :sortField="'date'"
+        :sortOrder="1"
       >
         <Column
           selectionMode="multiple"
@@ -500,7 +871,7 @@ function duplicateSelected() {
         <Column field="diagnosis" header="Diagnóza" sortable>
           <template #body="slotProps">
             <span v-if="slotProps.data.diagnosis">
-              {{ slotProps.data.diagnosis.code }} – {{ slotProps.data.diagnosis.description }}
+              {{ slotProps.data.diagnosis.code }}
             </span>
           </template>
         </Column>
@@ -508,7 +879,7 @@ function duplicateSelected() {
         <Column field="procedure" header="Výkon" sortable>
           <template #body="slotProps">
             <span v-if="slotProps.data.procedure">
-              {{ slotProps.data.procedure.code }} – {{ slotProps.data.procedure.description }}
+              {{ slotProps.data.procedure.code }}
             </span>
           </template>
         </Column>
@@ -518,12 +889,25 @@ function duplicateSelected() {
             {{ formatDate(slotProps.data.referralDate) }}
           </template>
         </Column>
+
+        <Column headerStyle="width: 3rem" :exportable="false">
+          <template #body="slotProps">
+            <Button
+              icon="bi bi-pencil"
+              text
+              rounded
+              @click="editRecord(slotProps.data)"
+              class="text-darkgrey! hover:bg-transparent! p-0! !h-min"
+            />
+          </template>
+        </Column>
       </DataTable>
 
       <div class="text-mini text-accent flex justify-end w-full py-2">
         {{ recordsInfo }}
       </div>
 
+      <!-- Delete dialog -->
       <Dialog
         v-model:visible="deleteRecordsDialog"
         :style="{ width: '600px' }"
@@ -551,6 +935,99 @@ function duplicateSelected() {
             />
           </div>
         </div>
+      </Dialog>
+
+      <!-- Edit dialog -->
+      <Dialog
+        v-model:visible="pointDialog"
+        :style="{ width: '600px' }"
+        header="Upraviť záznam"
+        :modal="true"
+      >
+        <div class="flex flex-col gap-6" v-if="editPoint">
+          <div class="col-span-12">
+            <label class="block text-normal mb-1">Dátum</label>
+            <Calendar
+              v-model="editPoint.date"
+              dateFormat="dd.mm.yy"
+              :showIcon="false"
+              class="w-full"
+              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            />
+            <small v-if="editSubmitted && !editPoint.date" class="text-warning">
+              Dátum je povinný.
+            </small>
+          </div>
+
+          <div class="col-span-12">
+            <label class="block text-normal mb-1">Diagnóza</label>
+            <AutoComplete
+              v-model="editPoint.diagnosis"
+              :suggestions="filteredDiagnoses"
+              optionLabel="code"
+              :minLength="1"
+              @complete="searchDiagnoses"
+              class="w-full"
+              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            >
+              <template #option="slotProps">
+                <span>
+                  {{ slotProps.option.code }} – {{ slotProps.option.description }}
+                </span>
+              </template>
+            </AutoComplete>
+            <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning">
+              Diagnóza je povinná.
+            </small>
+          </div>
+
+          <div class="col-span-12">
+            <label class="block text-normal mb-1">Výkon</label>
+            <AutoComplete
+              v-model="editPoint.procedure"
+              :suggestions="filteredProcedures"
+              optionLabel="code"
+              :minLength="1"
+              @complete="searchProcedures"
+              class="w-full"
+              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            >
+              <template #option="slotProps">
+                <span>
+                  {{ slotProps.option.code }} – {{ slotProps.option.description }}
+                </span>
+              </template>
+            </AutoComplete>
+            <small v-if="editSubmitted && !editPoint.procedure" class="text-warning">
+              Výkon je povinný.
+            </small>
+          </div>
+
+          <div class="col-span-12">
+            <label class="block text-normal mb-1">Dátum odporučenia</label>
+            <Calendar
+              v-model="editPoint.referralDate"
+              dateFormat="dd.mm.yy"
+              :showIcon="false"
+              class="w-full"
+              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            />
+            <small
+              v-if="editSubmitted && !editPoint.referralDate"
+              class="text-warning"
+            >
+              Dátum odporučenia je povinný.
+            </small>
+          </div>
+        </div>
+
+        <template #footer>
+          <Button
+            label="Uložiť"
+            class="!bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey"
+            @click="savePoint"
+          />
+        </template>
       </Dialog>
     </div>
   </div>
