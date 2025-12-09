@@ -1,36 +1,27 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Diagnosis;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class DiagnosisController extends Controller
 {
-    /**
-     * GET /v1/diagnoses
-     * Optional search: ?q=...
-     */
     public function index(Request $request)
     {
         $q = $request->query('q', '');
 
         $query = Diagnosis::query();
 
-        if ($q) {
-            $query->where(function ($sub) use ($q) {
-                $sub->where('code', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%");
-            });
-        }
+        if ($q !== '') {
+            $qLower = mb_strtolower($q);
 
-        // for autocomplete you might prefer ->limit(20)->get()
-        // for generic listing, pagination is nicer:
-        if ($request->boolean('paginate', false)) {
-            return $query
-                ->orderBy('code')
-                ->paginate(20, ['id', 'code', 'description']);
+            $query->where(function ($sub) use ($qLower) {
+                $sub->whereRaw('LOWER(code) LIKE ?', ["%{$qLower}%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%{$qLower}%"]);
+            });
         }
 
         return $query
@@ -39,9 +30,7 @@ class DiagnosisController extends Controller
             ->get(['id', 'code', 'description']);
     }
 
-    /**
-     * POST /v1/diagnoses
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -54,17 +43,11 @@ class DiagnosisController extends Controller
         return response()->json($diagnosis, Response::HTTP_CREATED);
     }
 
-    /**
-     * GET /v1/diagnoses/{diagnosis}
-     */
     public function show(Diagnosis $diagnosis)
     {
         return $diagnosis;
     }
 
-    /**
-     * PUT/PATCH /v1/diagnoses/{diagnosis}
-     */
     public function update(Request $request, Diagnosis $diagnosis)
     {
         $validated = $request->validate([
@@ -77,9 +60,6 @@ class DiagnosisController extends Controller
         return response()->json($diagnosis);
     }
 
-    /**
-     * DELETE /v1/diagnoses/{diagnosis}
-     */
     public function destroy(Diagnosis $diagnosis)
     {
         $diagnosis->delete();

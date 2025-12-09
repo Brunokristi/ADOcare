@@ -282,7 +282,14 @@ export interface ReportMonth {
 }
 
 export interface Diagnosis {
-  // columns
+  id: number
+  code: string | null
+  description: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface Procedure {
   id: number
   code: string | null
   description: string | null

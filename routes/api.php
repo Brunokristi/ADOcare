@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CarController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\InsuranceCompanyController;
+use App\Http\Controllers\Api\DiagnosisController;
+use App\Http\Controllers\Api\ProcedureController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
