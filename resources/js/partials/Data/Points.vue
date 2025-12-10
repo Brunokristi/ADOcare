@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import InputNumber from 'primevue/inputnumber';
-import Dropdown from 'primevue/dropdown';
-import DatePicker from 'primevue/datepicker';
-import Button from 'primevue/button';
-import AutoComplete from 'primevue/autocomplete';
 
 import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
@@ -185,7 +180,7 @@ onMounted(() => {
           <!-- Typ dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Typ dávky</label>
-            <Dropdown
+            <Select
               v-model="batchType"
               :options="batchTypes"
               optionLabel="name"
@@ -200,12 +195,12 @@ onMounted(() => {
           <!-- Poisťovňa -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Poisťovňa</label>
-            <Dropdown
+            <Select
               v-model="insurance"
               :options="insurances"
               optionLabel="name"
               fluid
-              class="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+              class="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !h-full"
             />
             <small v-if="submitted && !insurance" class="text-warning">
               Poisťovňa je povinná.
@@ -216,11 +211,13 @@ onMounted(() => {
             <label class="block text-normal mb-1">Obdobie</label>
             <DatePicker
               v-model="dates"
-              selectionMode="range"
+              view="month"
+              dateFormat="MM yy"
               :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
               fluid
             />
+
             <small
               v-if="submitted && (!dates || dates.length !== 2)"
               class="text-warning"

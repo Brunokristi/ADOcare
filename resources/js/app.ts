@@ -8,18 +8,25 @@ import { usePatientStore } from '@/stores/patientStore';
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 
+import { skLocale } from './locales/sk';
 import primeVueConfig from './config/primeVueConfig';
-import "primeicons/primeicons.css"
 
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import 'primeicons/primeicons.css';
 import 'leaflet/dist/leaflet.css';
 
 const app = createApp(App);
 const pinia = createPinia();
 
+app.use(
+    PrimeVue,
+    {
+        ...primeVueConfig,
+        locale: skLocale,
+    },
+);
 
-app.use(PrimeVue, primeVueConfig);
 app.use(pinia);
 app.use(router);
 app.use(ToastService);

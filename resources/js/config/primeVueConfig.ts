@@ -20,7 +20,6 @@ const ADOPreset = definePreset(Material, {
     }
 });
 
-
 export default {
     theme: {
         preset: ADOPreset,
@@ -98,14 +97,14 @@ export default {
             header: { class: '!p-2' },
             listContainer: { class: '!p-2 !gap-2' },
             option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' },
-            dropdownIcon: { class: 'bi bi-caret-down-fill'}
+            dropdownIcon: { class: 'bi bi-caret-down-fill' }
 
         },
 
         select: {
             root: { class: '!rounded-md  !outline-0 ' },
             dropDownIcon: { class: '!text-sm' },
-            dropdown: {class: 'w-auto! mr-2' },
+            dropdown: { class: 'w-auto! mr-2' },
             label: { class: '!text-normal' },
             overlay: { class: '!rounded-md' },
             header: { class: '!p-2' },
@@ -147,4 +146,6 @@ export default {
             weekDay: { class: '!text-heading !text-darkgrey' },
         }
     }
+
+
 } as PrimeVueConfiguration;

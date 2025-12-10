@@ -854,7 +854,7 @@ watch(currentPatient, (newPatient) => {
         class="text-sm"
         sortMode="single"
         :sortField="'date'"
-        :sortOrder="1"
+        :sortOrder="-1"
       >
         <Column
           selectionMode="multiple"
