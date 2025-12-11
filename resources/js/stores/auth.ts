@@ -69,6 +69,11 @@ export const useAuthStore = defineStore('auth', {
             this.token = null;
             localStorage.removeItem('api_token');
         },
+
+        clearCurrentBranch() {
+            this.currentBranch = null;
+            localStorage.removeItem('current_branch_id');
+        }
     },
 });
 

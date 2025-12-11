@@ -175,6 +175,7 @@ export default {
                 ].join(' ')
             },
             weekDay: { class: '!text-heading !text-darkgrey' },
+            month: { class: '!text-normal !text-darkgrey [&.p-datepicker-month-selected]:!bg-accent [&.p-datepicker-month-selected]:!text-white' },
         }
     }
 } as PrimeVueConfiguration;

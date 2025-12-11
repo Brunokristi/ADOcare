@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-
+import { useRouter } from 'vue-router';
 import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 
@@ -21,26 +21,19 @@ type Patient = {
   personalNumber: string;
 };
 
-const emit = defineEmits<{
-  (e: 'submit', payload: {
-    batchNumber: number;
-    batchType: BatchType | null;
-    insurance: Insurance | null;
-    period: Date[];
-    patients: Patient[];
-  }): void;
-}>();
+const router = useRouter();
 
 const batchNumber = ref<number | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
-const dates = ref<Date[] | null>(null);
+const dates = ref<Date | null>(null);
 
 const allPatients = ref<Patient[]>([]);
 const filteredPatients = ref<Patient[]>([]);
 const selectedPatients = ref<Patient[]>([]);
 
 const submitted = ref(false);
+const loading = ref(false);
 
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
@@ -51,18 +44,15 @@ const insurances = ref<Insurance[]>([]);
 
 const isCorrectionBatch = computed(() => batchType.value?.code === 'O');
 
-
 function mapInsuranceCompanyToOption(company: InsuranceCompany): Insurance {
   const displayName = company.name ?? '';
 
   return {
     id: company.id,
     code: company.code,
-    name: displayName ? `${displayName}`
-      : displayName || `#${company.id}`,
+    name: displayName ? `${displayName}` : displayName || `#${company.id}`,
   };
 }
-
 
 function mapPatients(items: PatientModel[]): Patient[] {
   return items.map(p => ({
@@ -75,9 +65,7 @@ function mapPatients(items: PatientModel[]): Patient[] {
 async function loadInsurances() {
   try {
     const { data } = await api.get<InsuranceCompany[]>('/v1/insurance-companies', {
-      params: {
-        paginate: false, // so backend returns a simple list
-      },
+      params: { paginate: false },
     });
 
     insurances.value = data.map(mapInsuranceCompanyToOption);
@@ -87,18 +75,19 @@ async function loadInsurances() {
   }
 }
 
-
-
 async function loadAllPatients() {
-  const res = await api.get('/v1/patients', {
-    params: {
-      paginate: false,
-    },
-  });
+  try {
+    const res = await api.get('/v1/patients', {
+      params: { paginate: false },
+    });
 
-  const data = res.data?.data;
-  const items = (Array.isArray(data) ? data : data?.items) as PatientModel[] ?? [];
-  allPatients.value = mapPatients(items);
+    const data = res.data?.data;
+    const items = (Array.isArray(data) ? data : data?.items) as PatientModel[] ?? [];
+    allPatients.value = mapPatients(items);
+  } catch (e) {
+    console.error('Failed to load patients', e);
+    allPatients.value = [];
+  }
 }
 
 /**
@@ -120,14 +109,14 @@ function searchPatients(event: { query: string }) {
 
 function removePatient(patient: Patient) {
   selectedPatients.value = selectedPatients.value.filter(
-    (p) => p.id !== patient.id
+    (p) => p.id !== patient.id,
   );
 }
 
-function onSubmit() {
+async function onSubmit() {
   submitted.value = true;
 
-  const hasPeriod = dates.value && dates.value.length === 2;
+  const hasPeriod = !!dates.value;
   const needsPatients = isCorrectionBatch.value;
 
   if (
@@ -140,13 +129,56 @@ function onSubmit() {
     return;
   }
 
-  emit('submit', {
-    batchNumber: batchNumber.value,
-    batchType: batchType.value,
-    insurance: insurance.value,
-    period: dates.value as Date[],
-    patients: selectedPatients.value,
-  });
+  if (!dates.value) {
+    return;
+  }
+
+  // Convert selected month into range
+  const monthDate = dates.value as Date;
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const periodFrom = new Date(year, month, 1);
+  const periodTo = new Date(year, month + 1, 0);
+
+  loading.value = true;
+
+  try {
+    const res = await api.post('/v1/batches/preview', {
+      batchNumber: batchNumber.value,
+      batchType: { code: batchType.value.code },
+      insurance: { id: insurance.value.id },
+      period: [periodFrom.toISOString(), periodTo.toISOString()],
+      patients: selectedPatients.value.map(p => ({ id: p.id })),
+    });
+
+    console.log('preview response', res.data);
+
+    const sheet = res.data.sheet;
+
+    // Use path instead of route name to avoid name mismatches
+    await router.push({
+      path: '/documents/points',
+      query: {
+        batchNumber: sheet.batchNumber,
+        fileName: sheet.fileName,
+        amount: sheet.amount,
+        periodFrom: sheet.periodFrom,
+        periodTo: sheet.periodTo,
+        performedBy: sheet.performedBy,
+        performedDate: sheet.performedDate,
+        companyName: sheet.companyName,
+        branchName: sheet.branchName,
+        insuranceId: insurance.value.id,
+        batchTypeCode: batchType.value.code,
+        period0: periodFrom.toISOString(),
+        period1: periodTo.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Preview or navigation failed', error);
+  } finally {
+    loading.value = false;
+  }
 }
 
 onMounted(() => {
@@ -172,7 +204,10 @@ onMounted(() => {
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
               fluid
             />
-            <small v-if="submitted && batchNumber === null" class="text-warning">
+            <small
+              v-if="submitted && batchNumber === null"
+              class="text-warning"
+            >
               Číslo dávky je povinné.
             </small>
           </div>
@@ -207,6 +242,7 @@ onMounted(() => {
             </small>
           </div>
 
+          <!-- Obdobie (month) -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Obdobie</label>
             <DatePicker
@@ -219,13 +255,14 @@ onMounted(() => {
             />
 
             <small
-              v-if="submitted && (!dates || dates.length !== 2)"
+              v-if="submitted && !dates"
               class="text-warning"
             >
               Obdobie je povinné.
             </small>
           </div>
 
+          <!-- Pacienti pre opravnu dávku -->
           <div
             v-if="isCorrectionBatch"
             class="col-span-12"
@@ -287,8 +324,6 @@ onMounted(() => {
               Pri opravnej dávke je potrebné vybrať aspoň jedného pacienta.
             </small>
           </div>
-
-
         </div>
       </section>
 

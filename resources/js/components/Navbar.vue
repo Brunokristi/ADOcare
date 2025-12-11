@@ -19,7 +19,6 @@ const emit = defineEmits<{
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const user = computed<User | null>(() => authStore.user as User | null);
 const companyName = computed(() => user.value?.company?.name ?? '');
-
 const fullName = computed(() =>
   user.value
     ? `${user.value.first_name ?? ''} ${user.value.last_name ?? ''}`.trim()
@@ -27,12 +26,32 @@ const fullName = computed(() =>
 );
 
 const selectedBranchId = computed<number | null>({
-  get: () => authStore.currentBranch?.id ?? null,
-  set: (v) => {
-    if (v != null) authStore.setCurrentBranch(v);
+  get: () => {
+    if (authStore.currentRole === 'manager') {
+      const managerOpt = branchOptions.value.find(o => o.isManager);
+      return managerOpt ? managerOpt.id : authStore.currentBranch?.id ?? null;
+    }
+    return authStore.currentBranch?.id ?? null;
+  },
+
+  set: (id) => {
+    if (id == null) return;
+
+    const numericId = typeof id === 'string' ? Number(id) : id;
+    const opt = branchOptions.value.find(o => o.id === numericId);
+    console.log('matched opt =', opt);
+
+    if (!opt) return;
+
+    if (opt.isManager) {
+      authStore.setCurrentRole('manager');
+      authStore.clearCurrentBranch();
+    } else {
+      authStore.setCurrentBranch(numericId);
+      authStore.setCurrentRole('nurse');
+    }
   },
 });
-
 
 const branchOptions = computed(() => {
   const u = user.value;
