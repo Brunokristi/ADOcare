@@ -26,6 +26,7 @@ type RecordEntry = {
   diagnosis: Option | null;
   procedure: Option | null;
   referralDate: Date | null;
+  quantity: number | null; 
 };
 
 type PatientPointApi = {
@@ -41,6 +42,7 @@ type PatientPointApi = {
   reference_date: string | null;
   user_id: number;
   branch_id: number;
+  quantity: number | null; 
 };
 
 /* -------------------------------------------------------------------------- */
@@ -73,6 +75,8 @@ const filteredDiagnoses = ref<Option[]>([]);
 
 const procedure = ref<Option | null>(null);
 const filteredProcedures = ref<Option[]>([]);
+
+const quantity = ref<number | null>(1);
 
 const submitted = ref(false);
 
@@ -143,6 +147,7 @@ async function loadRecordsForPatient() {
           }
         : null,
       referralDate: row.reference_date ? new Date(row.reference_date) : null,
+      quantity: row.quantity ?? null,
     }));
 
   } catch (e) {
@@ -391,6 +396,7 @@ function buildPatientPointPayload() {
     reference_date: toApiDate(referralDate.value),
     user_id: user.value?.id ?? null,
     branch_id: currentBranch.value?.id ?? null,
+    quantity: quantity.value,
   };
 }
 
@@ -425,6 +431,7 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
     reference_date: toApiDate(dateOverride),
     user_id: user.value?.id ?? null,
     branch_id: currentBranch.value!.id,
+    quantity: quantity.value,
   };
 }
 
@@ -443,7 +450,7 @@ async function onSubmit() {
   const procedureOk = await ensureProcedureSelected();
 
   // just let <small> validation messages show
-  if (!date.value || !diagnosisOk || !procedureOk || !referralDate.value) {
+  if (!date.value || !diagnosisOk || !procedureOk || !referralDate.value || !quantity.value || quantity.value! <= 0) {
     return;
   }
 
@@ -502,6 +509,7 @@ async function onSubmit() {
       diagnosis: diagnosis.value,
       procedure: procedure.value,
       referralDate: referralDate.value,
+      quantity: quantity.value,
     };
 
     records.value.push(entry);
@@ -518,8 +526,7 @@ async function onSubmit() {
     date.value = new Date();
     diagnosis.value = null;
     procedure.value = null;
-    // keep referralDate as the same reference date, or reset to null if you prefer
-    // referralDate.value = null;
+    quantity.value = 1;
     submitted.value = false;
   } catch (error: any) {
     console.error('422 error:', error.response?.data);
@@ -552,6 +559,7 @@ function editRecord(row: RecordEntry) {
     referralDate: row.referralDate ? new Date(row.referralDate) : null,
     diagnosis: row.diagnosis ? { ...row.diagnosis } : null,
     procedure: row.procedure ? { ...row.procedure } : null,
+    quantity: row.quantity ?? null,
   };
 
   pointDialog.value = true;
@@ -572,7 +580,7 @@ async function savePoint() {
   p.referralDate = normalizedReferral;
 
   // validation – no toast, just inline messages
-  if (!p.date || !p.diagnosis || !p.procedure || !p.referralDate) {
+  if (!p.date || !p.diagnosis || !p.procedure || !p.referralDate || !p.quantity || p.quantity! <= 0) {
     return;
   }
 
@@ -584,6 +592,7 @@ async function savePoint() {
       procedure_code: p.procedure.code,
       procedure_id: p.procedure.id,
       reference_date: toApiDate(p.referralDate),
+      quantity: p.quantity,
     });
 
     const idx = records.value.findIndex((r) => r.id === p.id);
@@ -696,6 +705,7 @@ async function duplicateSelected() {
         referralDate: today,
         diagnosis: original.diagnosis,
         procedure: original.procedure,
+        quantity: original.quantity,
       };
 
       createdRows.push(cloned);
@@ -756,7 +766,7 @@ watch(currentPatient, (newPatient) => {
   <div class="flex flex-col gap-6">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <div class="grid grid-cols-12 gap-4">
+        <div class="grid grid-cols-15 gap-4">
           <!-- Dátum -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum</label>
@@ -774,7 +784,7 @@ watch(currentPatient, (newPatient) => {
           </div>
 
           <!-- Diagnóza -->
-          <div class="col-span-12 md:col-span-3">
+          <div class="col-span-12 md:col-span-4">
             <label class="block text-normal mb-1">Diagnóza</label>
             <AutoComplete
               v-model="diagnosis"
@@ -799,7 +809,7 @@ watch(currentPatient, (newPatient) => {
           </div>
 
           <!-- Výkon -->
-          <div class="col-span-12 md:col-span-3">
+          <div class="col-span-12 md:col-span-4">
             <label class="block text-normal mb-1">Výkon</label>
             <AutoComplete
               v-model="procedure"
@@ -822,6 +832,22 @@ watch(currentPatient, (newPatient) => {
               Výkon je povinný.
             </small>
           </div>
+
+          <div class="col-span-12 md:col-span-1">
+            <label class="block text-normal mb-1">Počet</label>
+            <InputNumber
+              v-model.number="quantity"
+              class="w-full"
+              :min="0" 
+              :max="100"
+              
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            />
+            <small v-if="submitted && !quantity" class="text-warning">
+              Počet je povinný.
+            </small>
+          </div>
+
 
           <!-- Dátum odporučenia -->
           <div class="col-span-12 md:col-span-3">
@@ -926,6 +952,12 @@ watch(currentPatient, (newPatient) => {
           </template>
         </Column>
 
+        <Column field="quantity" header="Počet" sortable>
+          <template #body="slotProps">
+            {{ slotProps.data.quantity }}
+          </template>
+        </Column>
+
         <Column field="referralDate" header="Dátum odporučenia" sortable>
           <template #body="slotProps">
             {{ formatDate(slotProps.data.referralDate) }}
@@ -989,7 +1021,7 @@ watch(currentPatient, (newPatient) => {
         <div class="flex flex-col gap-6" v-if="editPoint">
           <div class="col-span-12">
             <label class="block text-normal mb-1">Dátum</label>
-            <Calendar
+            <DatePicker
               v-model="editPoint.date"
               dateFormat="dd.mm.yy"
               :showIcon="false"
@@ -1046,8 +1078,21 @@ watch(currentPatient, (newPatient) => {
           </div>
 
           <div class="col-span-12">
+            <label class="block text-normal mb-1">Počet</label>
+            <InputNumber
+              :modelValue="editPoint.quantity"
+              @update:modelValue="editPoint.quantity = $event ? Number($event) : null"
+              class="w-full"
+              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            />
+            <small v-if="editSubmitted && (!editPoint.quantity || editPoint.quantity <= 0)" class="text-warning">
+              Počet je povinný.
+            </small>
+          </div>
+
+          <div class="col-span-12">
             <label class="block text-normal mb-1">Dátum odporučenia</label>
-            <Calendar
+            <datePicker
               v-model="editPoint.referralDate"
               dateFormat="dd.mm.yy"
               :showIcon="false"
@@ -1061,6 +1106,7 @@ watch(currentPatient, (newPatient) => {
               Dátum odporučenia je povinný.
             </small>
           </div>
+
         </div>
 
         <template #footer>

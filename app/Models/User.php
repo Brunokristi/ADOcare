@@ -93,4 +93,10 @@ class User extends Authenticatable
         $this->roles()->syncWithoutDetaching([$roleId]);
     }
 
+    public function patients()
+    {
+        return $this->belongsToMany(Patient::class, 'patient_branch_user')
+                    ->withPivot('branch_id');
+    }
+
 }

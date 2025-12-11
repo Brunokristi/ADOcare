@@ -26,6 +26,7 @@ class PatientPoint extends Model
         'reference_date',
         'user_id',
         'branch_id',
+        'quantity',
     ];
 
     protected $casts = [

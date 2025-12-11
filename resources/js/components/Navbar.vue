@@ -96,9 +96,12 @@ function mapPatients(items: Patient[]) {
 }
 
 async function loadAllPatients() {
+  const branchId = authStore.currentBranch?.id ?? null;
+
   const res = await api.get('/v1/patients', {
     params: {
       paginate: false,
+      branch_id: branchId,   // <– send the selected branch
     },
   });
 
@@ -106,21 +109,6 @@ async function loadAllPatients() {
   const items = (Array.isArray(data) ? data : data?.items) as Patient[] ?? [];
   patientOptions.value = mapPatients(items);
 }
-
-watch(selectedPatient, (opt) => {
-  if (!opt) return;
-
-  patientStore.setPatient(opt.raw);
-  router.push('/patient/points');
-
-  selectedPatient.value = null;
-});
-
-onMounted(() => {
-  patientStore.loadFromStorage();
-  loadAllPatients();
-});
-
 
 function goBack() {
   router.back();
@@ -143,6 +131,20 @@ async function logout() {
 function toggleSidebar() {
   emit('toggle-sidebar');
 }
+
+watch(selectedPatient, (opt) => {
+  if (!opt) return;
+
+  patientStore.setPatient(opt.raw);
+  router.push('/patient/points');
+
+  selectedPatient.value = null;
+});
+
+onMounted(() => {
+  patientStore.loadFromStorage();
+  loadAllPatients();
+});
 </script>
 
 

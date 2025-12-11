@@ -102,6 +102,7 @@ export interface User {
   company: Company
   roles: Role[]
   report_months: ReportMonth[]
+  patients: Patient[]
   tokens: PersonalAccessToken[]
   notifications: DatabaseNotification[]
   // counts
@@ -109,6 +110,7 @@ export interface User {
   branches_count: number
   roles_count: number
   report_months_count: number
+  patients_count: number
   tokens_count: number
   notifications_count: number
   // exists
@@ -117,6 +119,7 @@ export interface User {
   company_exists: boolean
   roles_exists: boolean
   report_months_exists: boolean
+  patients_exists: boolean
   tokens_exists: boolean
   notifications_exists: boolean
 }
@@ -227,6 +230,7 @@ export interface PatientPoint {
   branch_id: number | null
   created_at: string | null
   updated_at: string | null
+  quantity: number | null
 }
 
 export interface Car {
@@ -315,12 +319,18 @@ export interface Patient {
   updated_at: string | null
   reference_date: string | null
   // relations
+  assigned_users: User[]
+  branches: Branch[]
   doctor: Doctor
   visits: Visit[]
   insurance_company: InsuranceCompany
   // counts
+  assigned_users_count: number
+  branches_count: number
   visits_count: number
   // exists
+  assigned_users_exists: boolean
+  branches_exists: boolean
   doctor_exists: boolean
   visits_exists: boolean
   insurance_company_exists: boolean

@@ -9,10 +9,6 @@ use Illuminate\Http\Response;
 
 class PatientPointController extends Controller
 {
-    /**
-     * GET /v1/patient-points
-     * Optional filters: ?patient_id=..., ?date_from=YYYY-MM-DD, ?date_to=YYYY-MM-DD, ?paginate=1
-     */
     public function index(Request $request)
     {
         $query = PatientPoint::query();
@@ -67,6 +63,7 @@ class PatientPointController extends Controller
             'reference_date'            => ['required', 'date'],
             'user_id'                   => ['required', 'integer'], // "exists:users,id"
             'branch_id'                 => ['required', 'integer'], // "exists:branches,id"
+            'quantity'                  => ['required', 'integer', 'min:1'],
         ]);
 
         $point = PatientPoint::create($validated);
@@ -106,6 +103,7 @@ class PatientPointController extends Controller
             'reference_date'            => ['sometimes', 'required', 'date'],
             'user_id'                   => ['sometimes', 'required', 'integer'],
             'branch_id'                 => ['sometimes', 'required', 'integer'],
+            'quantity'                  => ['sometimes', 'required', 'integer', 'min:1'],
         ]);
 
         $patientPoint->update($validated);

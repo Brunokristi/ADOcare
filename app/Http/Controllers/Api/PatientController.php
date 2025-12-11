@@ -14,12 +14,21 @@ class PatientController extends Controller
 {
     use ApiResponse;
 
-    public function index()
+    public function index(Request $request)
     {
-        $query = Patient::with(['doctor', 'visits', 'insuranceCompany']);
+        $user = $request->user();
+        $branchId = $request->integer('branch_id');
+
+        $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
+            ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
+                $q->where('users.id', $user->id);
+                if ($branchId) {
+                    $q->wherePivot('branch_id', $branchId);
+                }
+            });
 
         $results = ApiQuery::apply(
-            request(),
+            $request,
             $query,
             searchable: ['first_name', 'last_name', 'personal_number'],
             allowedFilters: ['sex']
@@ -27,6 +36,7 @@ class PatientController extends Controller
 
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
+
 
     public function store(Request $request)
     {
