@@ -11,7 +11,6 @@ export const usePatientStore = defineStore('patient', {
     actions: {
         setPatient(patient: Patient) {
             this.current = patient;
-            // store whole object for now
             localStorage.setItem(STORAGE_KEY, JSON.stringify(patient));
         },
 

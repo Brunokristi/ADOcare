@@ -14,14 +14,29 @@ class PatientController extends Controller
 {
     use ApiResponse;
 
-    public function index()
+    public function index(Request $request)
     {
-        $query = Patient::query();
+        $user = $request->user();
+        $branchId = $request->integer('branch_id');
 
-        $results = ApiQuery::apply(request(), $query, searchable: ['first_name', 'last_name', 'personal_number'], allowedFilters: ['sex']);
+        $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
+            ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
+                $q->where('users.id', $user->id);
+                if ($branchId) {
+                    $q->wherePivot('branch_id', $branchId);
+                }
+            });
+
+        $results = ApiQuery::apply(
+            $request,
+            $query,
+            searchable: ['first_name', 'last_name', 'personal_number'],
+            allowedFilters: ['sex']
+        );
 
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
+
 
     public function store(Request $request)
     {
@@ -30,6 +45,7 @@ class PatientController extends Controller
             'last_name' => 'required|string|max:255',
             'personal_number' => 'nullable|string',
             'sex' => 'nullable|in:M,F',
+            'reference_date'   => 'nullable|date',
         ]);
 
         $patient = Patient::create($data);
@@ -39,7 +55,8 @@ class PatientController extends Controller
 
     public function show($id)
     {
-        $patient = Patient::find($id);
+        $patient = Patient::with(['doctor', 'visits', 'insuranceCompany'])->find($id);
+
         if (!$patient) {
             return $this->error('Not found', 404);
         }
@@ -54,6 +71,7 @@ class PatientController extends Controller
             'last_name' => 'sometimes|required|string|max:255',
             'personal_number' => 'nullable|string',
             'sex' => 'nullable|in:M,F',
+            'reference_date'   => 'nullable|date',
         ]);
 
         $patient = Patient::find($id);

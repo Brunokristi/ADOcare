@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import InputNumber from 'primevue/inputnumber';
-import Dropdown from 'primevue/dropdown';
-import DatePicker from 'primevue/datepicker';
-import Button from 'primevue/button';
-import AutoComplete from 'primevue/autocomplete';
-
+import { useRouter } from 'vue-router';
 import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 
@@ -14,11 +9,10 @@ type BatchType = {
   name: string;
 };
 
-// UI types for this form
 type Insurance = {
   id: number;
   code: string | null;
-  name: string; // label shown in dropdown
+  name: string;
 };
 
 type Patient = {
@@ -27,58 +21,39 @@ type Patient = {
   personalNumber: string;
 };
 
-const emit = defineEmits<{
-  (e: 'submit', payload: {
-    batchNumber: number;
-    batchType: BatchType | null;
-    insurance: Insurance | null;
-    period: Date[];
-    patients: Patient[];
-  }): void;
-}>();
+const router = useRouter();
 
 const batchNumber = ref<number | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
-const dates = ref<Date[] | null>(null);
+const dates = ref<Date | null>(null);
 
 const allPatients = ref<Patient[]>([]);
 const filteredPatients = ref<Patient[]>([]);
 const selectedPatients = ref<Patient[]>([]);
 
 const submitted = ref(false);
+const loading = ref(false);
 
-// batch types stay static
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
   { code: 'O', name: 'Opravná dávka' },
 ]);
 
-// loaded from backend
 const insurances = ref<Insurance[]>([]);
 
 const isCorrectionBatch = computed(() => batchType.value?.code === 'O');
 
-/**
- * Map backend InsuranceCompany → UI Insurance
- */
 function mapInsuranceCompanyToOption(company: InsuranceCompany): Insurance {
   const displayName = company.name ?? '';
-  const code = company.code ?? '';
 
   return {
     id: company.id,
     code: company.code,
-    // e.g. "VšZP (25)" or just name / code
-    name: displayName && code ? `${displayName} (${code})`
-      : displayName || code || `#${company.id}`,
+    name: displayName ? `${displayName}` : displayName || `#${company.id}`,
   };
 }
 
-/**
- * Map backend Patient → UI Patient
- * Same idea as your navbar `mapPatients`, but without keeping raw.
- */
 function mapPatients(items: PatientModel[]): Patient[] {
   return items.map(p => ({
     id: p.id,
@@ -87,35 +62,32 @@ function mapPatients(items: PatientModel[]): Patient[] {
   }));
 }
 
-/**
- * Load all insurance companies (no pagination).
- * Adjust URL if your API path differs.
- */
 async function loadInsurances() {
-  const res = await api.get('/v1/insurance-companies', {
-    params: {
-      paginate: false,
-    },
-  });
+  try {
+    const { data } = await api.get<InsuranceCompany[]>('/v1/insurance-companies', {
+      params: { paginate: false },
+    });
 
-  const data = res.data?.data;
-  const items = (Array.isArray(data) ? data : data?.items) as InsuranceCompany[] ?? [];
-  insurances.value = items.map(mapInsuranceCompanyToOption);
+    insurances.value = data.map(mapInsuranceCompanyToOption);
+  } catch (e) {
+    console.error('Failed to load insurance companies', e);
+    insurances.value = [];
+  }
 }
 
-/**
- * Load all patients once, same pattern as your navbar.
- */
 async function loadAllPatients() {
-  const res = await api.get('/v1/patients', {
-    params: {
-      paginate: false,
-    },
-  });
+  try {
+    const res = await api.get('/v1/patients', {
+      params: { paginate: false },
+    });
 
-  const data = res.data?.data;
-  const items = (Array.isArray(data) ? data : data?.items) as PatientModel[] ?? [];
-  allPatients.value = mapPatients(items);
+    const data = res.data?.data;
+    const items = (Array.isArray(data) ? data : data?.items) as PatientModel[] ?? [];
+    allPatients.value = mapPatients(items);
+  } catch (e) {
+    console.error('Failed to load patients', e);
+    allPatients.value = [];
+  }
 }
 
 /**
@@ -137,14 +109,14 @@ function searchPatients(event: { query: string }) {
 
 function removePatient(patient: Patient) {
   selectedPatients.value = selectedPatients.value.filter(
-    (p) => p.id !== patient.id
+    (p) => p.id !== patient.id,
   );
 }
 
-function onSubmit() {
+async function onSubmit() {
   submitted.value = true;
 
-  const hasPeriod = dates.value && dates.value.length === 2;
+  const hasPeriod = !!dates.value;
   const needsPatients = isCorrectionBatch.value;
 
   if (
@@ -157,13 +129,56 @@ function onSubmit() {
     return;
   }
 
-  emit('submit', {
-    batchNumber: batchNumber.value,
-    batchType: batchType.value,
-    insurance: insurance.value,
-    period: dates.value as Date[],
-    patients: selectedPatients.value,
-  });
+  if (!dates.value) {
+    return;
+  }
+
+  // Convert selected month into range
+  const monthDate = dates.value as Date;
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const periodFrom = new Date(year, month, 1);
+  const periodTo = new Date(year, month + 1, 0);
+
+  loading.value = true;
+
+  try {
+    const res = await api.post('/v1/batches/preview', {
+      batchNumber: batchNumber.value,
+      batchType: { code: batchType.value.code },
+      insurance: { id: insurance.value.id },
+      period: [periodFrom.toISOString(), periodTo.toISOString()],
+      patients: selectedPatients.value.map(p => ({ id: p.id })),
+    });
+
+    console.log('preview response', res.data);
+
+    const sheet = res.data.sheet;
+
+    // Use path instead of route name to avoid name mismatches
+    await router.push({
+      path: '/documents/points',
+      query: {
+        batchNumber: sheet.batchNumber,
+        fileName: sheet.fileName,
+        amount: sheet.amount,
+        periodFrom: sheet.periodFrom,
+        periodTo: sheet.periodTo,
+        performedBy: sheet.performedBy,
+        performedDate: sheet.performedDate,
+        companyName: sheet.companyName,
+        branchName: sheet.branchName,
+        insuranceId: insurance.value.id,
+        batchTypeCode: batchType.value.code,
+        period0: periodFrom.toISOString(),
+        period1: periodTo.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Preview or navigation failed', error);
+  } finally {
+    loading.value = false;
+  }
 }
 
 onMounted(() => {
@@ -189,7 +204,10 @@ onMounted(() => {
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
               fluid
             />
-            <small v-if="submitted && batchNumber === null" class="text-warning">
+            <small
+              v-if="submitted && batchNumber === null"
+              class="text-warning"
+            >
               Číslo dávky je povinné.
             </small>
           </div>
@@ -197,7 +215,7 @@ onMounted(() => {
           <!-- Typ dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Typ dávky</label>
-            <Dropdown
+            <Select
               v-model="batchType"
               :options="batchTypes"
               optionLabel="name"
@@ -212,7 +230,7 @@ onMounted(() => {
           <!-- Poisťovňa -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Poisťovňa</label>
-            <Dropdown
+            <Select
               v-model="insurance"
               :options="insurances"
               optionLabel="name"
@@ -224,29 +242,34 @@ onMounted(() => {
             </small>
           </div>
 
+          <!-- Obdobie (month) -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Obdobie</label>
             <DatePicker
               v-model="dates"
-              selectionMode="range"
+              view="month"
+              dateFormat="MM yy"
               :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
               fluid
             />
+
             <small
-              v-if="submitted && (!dates || dates.length !== 2)"
+              v-if="submitted && !dates"
               class="text-warning"
             >
               Obdobie je povinné.
             </small>
           </div>
 
-          <!-- Vyhľadanie pacienta – only for Opravná dávka -->
+          <!-- Pacienti pre opravnu dávku -->
           <div
             v-if="isCorrectionBatch"
             class="col-span-12"
           >
-            <label class="block text-normal mb-1">Vyhľadajte pacienta</label>
+            <label class="block text-normal mb-2">
+              Vyhľadajte pacienta
+            </label>
 
             <AutoComplete
               v-model="selectedPatients"
@@ -255,34 +278,48 @@ onMounted(() => {
               optionLabel="name"
               :minLength="1"
               @complete="searchPatients"
-              class="w-full !border-none"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none "
+              fluid
+              class="w-full"
             >
+              <!-- suggestion option -->
               <template #option="slotProps">
-                <div class="flex gap-2">
-                  <span>{{ slotProps.option.name }}</span>
-                  <span class="text-white text-mini bg-lightgrey rounded-md p-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-normal text-darkgrey">
+                    {{ slotProps.option.name }}
+                  </span>
+                  <span class="bg-darkgrey rounded-md text-mini text-white px-2 py-0.5">
                     {{ slotProps.option.personalNumber }}
                   </span>
                 </div>
               </template>
 
-              <template #chip="slotProps" > 
-                <div class="flex items-center bg-darkgrey text-lightgrey px-3 py-1 rounded-md mr-2">
-                  <span class="pr-2 border-r">{{ slotProps.value.name }}</span>
-                  <span class="px-2">{{ slotProps.value.personalNumber }}
+              <!-- chip template -->
+              <template #chip="slotProps">
+                <div
+                  class="
+                    inline-flex items-center gap-2
+                    bg-darkgrey text-lightgrey
+                    px-3 py-1 rounded-md
+                    text-xs sm:text-sm
+                  "
+                >
+                  <span class="pr-2 border-r border-lightgrey truncate max-w-[8rem] sm:max-w-[10rem]">
+                    {{ slotProps.value.name }}
                   </span>
-                  <i 
-                    class="bi bi-x-lg cursor-pointer"
+                  <span class="px-1 sm:px-2 whitespace-nowrap">
+                    {{ slotProps.value.personalNumber }}
+                  </span>
+                  <i
+                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
                     @click.stop="removePatient(slotProps.value)"
-                    ></i>
+                  ></i>
                 </div>
               </template>
             </AutoComplete>
 
             <small
               v-if="submitted && isCorrectionBatch && !selectedPatients.length"
-              class="text-warning"
+              class="text-warning block mt-1"
             >
               Pri opravnej dávke je potrebné vybrať aspoň jedného pacienta.
             </small>

@@ -19,7 +19,6 @@ const emit = defineEmits<{
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const user = computed<User | null>(() => authStore.user as User | null);
 const companyName = computed(() => user.value?.company?.name ?? '');
-
 const fullName = computed(() =>
   user.value
     ? `${user.value.first_name ?? ''} ${user.value.last_name ?? ''}`.trim()
@@ -27,12 +26,32 @@ const fullName = computed(() =>
 );
 
 const selectedBranchId = computed<number | null>({
-  get: () => authStore.currentBranch?.id ?? null,
-  set: (v) => {
-    if (v != null) authStore.setCurrentBranch(v);
+  get: () => {
+    if (authStore.currentRole === 'manager') {
+      const managerOpt = branchOptions.value.find(o => o.isManager);
+      return managerOpt ? managerOpt.id : authStore.currentBranch?.id ?? null;
+    }
+    return authStore.currentBranch?.id ?? null;
+  },
+
+  set: (id) => {
+    if (id == null) return;
+
+    const numericId = typeof id === 'string' ? Number(id) : id;
+    const opt = branchOptions.value.find(o => o.id === numericId);
+    console.log('matched opt =', opt);
+
+    if (!opt) return;
+
+    if (opt.isManager) {
+      authStore.setCurrentRole('manager');
+      authStore.clearCurrentBranch();
+    } else {
+      authStore.setCurrentBranch(numericId);
+      authStore.setCurrentRole('nurse');
+    }
   },
 });
-
 
 const branchOptions = computed(() => {
   const u = user.value;
@@ -77,9 +96,12 @@ function mapPatients(items: Patient[]) {
 }
 
 async function loadAllPatients() {
+  const branchId = authStore.currentBranch?.id ?? null;
+
   const res = await api.get('/v1/patients', {
     params: {
       paginate: false,
+      branch_id: branchId,   // <– send the selected branch
     },
   });
 
@@ -87,21 +109,6 @@ async function loadAllPatients() {
   const items = (Array.isArray(data) ? data : data?.items) as Patient[] ?? [];
   patientOptions.value = mapPatients(items);
 }
-
-watch(selectedPatient, (opt) => {
-  if (!opt) return;
-
-  patientStore.setPatient(opt.raw);
-  router.push('/patient/points');
-
-  selectedPatient.value = null;
-});
-
-onMounted(() => {
-  patientStore.loadFromStorage();
-  loadAllPatients();
-});
-
 
 function goBack() {
   router.back();
@@ -124,6 +131,20 @@ async function logout() {
 function toggleSidebar() {
   emit('toggle-sidebar');
 }
+
+watch(selectedPatient, (opt) => {
+  if (!opt) return;
+
+  patientStore.setPatient(opt.raw);
+  router.push('/patient/points');
+
+  selectedPatient.value = null;
+});
+
+onMounted(() => {
+  patientStore.loadFromStorage();
+  loadAllPatients();
+});
 </script>
 
 
@@ -158,18 +179,19 @@ function toggleSidebar() {
         optionLabel="name"
         filter
         placeholder="Vyberte pacienta"
-        class="!rounded-md border-0! !bg-tag2 !text-white min-w-[220px]"
+        dropdownIcon="bi bi-chevron-down !text-white"
+        class="w-60 h-7! flex items-center bg-tag2! border-none!"
       >
         <template #value="{ placeholder }">
-          <span class="text-lightgrey text-normal">
+          <span class="text-normal text-white">
             {{ placeholder }}
           </span>
         </template>
 
         <template #option="{ option }">
           <div class="flex">
-            <span class="text-normla text-darkgrey pr-2">{{ option.name }}</span>
-            <span class="bg-lightgrey rounded-md text-mini text-white px-2 content-center">
+            <span class="text-normal text-darkgrey pr-2">{{ option.name }}</span>
+            <span class="bg-darkgrey rounded-md text-mini text-white px-2 content-center">
               {{ option.personalNumber }}
             </span>
           </div>
@@ -192,8 +214,8 @@ function toggleSidebar() {
         optionValue="id"
         placeholder="Vyberte pobočku"
         labelClass="text-white!"
-        dropdownIcon="bi bi-caret-down-fill text-white!"
-        class="w-60 h-7! flex items-center bg-tag2! border-none! rounded-md!"
+        dropdownIcon="bi bi-chevron-down text-white!"
+        class="w-60 h-7! flex items-center bg-tag2! border-none!"
       />
 
       <!-- Company name -->

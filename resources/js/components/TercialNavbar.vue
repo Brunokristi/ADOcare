@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter  } from 'vue-router';
 import Menubar from 'primevue/menubar';
 
 import { usePatientStore } from '@/stores/patientStore';
 import type { Patient } from '@/types/models';
 
+const router = useRouter();
 const patientStore = usePatientStore();
 
 // the raw patient from store
@@ -27,6 +28,7 @@ const isHovered = ref(false);
 const closePatient = () => {
   isHovered.value = false;
   patientStore.clear();
+  router.push('/patients');
 };
 </script>
 
@@ -39,7 +41,7 @@ const closePatient = () => {
     <!-- LEFT -->
     <template #start>
       <div class="flex items-center">
-        <h2 class="!text-normal !px-sm !text-almostwhite border-r !border-almostwhite">
+        <h2 class="!text-normal !pr-sm !text-almostwhite border-r !border-almostwhite">
           {{ patientName }}
         </h2>
 

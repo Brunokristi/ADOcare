@@ -4,6 +4,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CarController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\InsuranceCompanyController;
+use App\Http\Controllers\Api\DiagnosisController;
+use App\Http\Controllers\Api\ProcedureController;
+use App\Http\Controllers\Api\PatientPointController;
+use App\Http\Controllers\Api\PointsExportController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -11,18 +16,13 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('api.auth');
 
-// API routes: wrap all routes with the ForceJsonResponse alias via Kernel
-// and use shorthand middleware aliases (see App\Http\Kernel.php)
-
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
 
-// Authentication
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 
-    // Protected auth routes (require Bearer token)
     Route::middleware(['api.auth'])->group(function () {
         Route::post('register', [AuthController::class, 'register'])->middleware('role:admin');
         Route::post('logout', [AuthController::class, 'logout']);
@@ -33,8 +33,14 @@ Route::prefix('auth')->group(function () {
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('cars', CarController::class);
-
     Route::apiResource('patients', PatientController::class);
+    Route::apiResource('insurance-companies', InsuranceCompanyController::class);
+    Route::apiResource('diagnoses', DiagnosisController::class);
+    Route::apiResource('procedures', ProcedureController::class);
+    Route::apiResource('patient-points', PatientPointController::class);
 
-    Route::get('insurance-companies', [InsuranceCompanyController::class, 'index']);
+    Route::post('/batches/preview', [PointsExportController::class, 'preview']);
+    Route::post('/batches/download', [PointsExportController::class, 'download']);   
+
 });
+

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
+import { RouterLink } from 'vue-router';
 import appRouter from '@/router';
-
-const router = useRouter();
 
 interface RawRoute {
   path: string;
@@ -109,9 +107,6 @@ watch(
   { deep: true },
 );
 
-function go(path: string) {
-  router.push(path);
-}
 </script>
 
 <template>

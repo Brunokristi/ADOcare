@@ -63,7 +63,6 @@ class User extends Authenticatable
         return $this->belongsToMany(Branch::class, 'user_branches', 'user_id', 'branch_id');
     }
 
-    // One company through branches that all need to be the same company
     public function company()
     {
         return $this->hasOneThrough(Company::class, Branch::class, 'id', 'id', 'id', 'company_id');
@@ -92,6 +91,12 @@ class User extends Authenticatable
             $roleId = (int) $role;
         }
         $this->roles()->syncWithoutDetaching([$roleId]);
+    }
+
+    public function patients()
+    {
+        return $this->belongsToMany(Patient::class, 'patient_branch_user')
+                    ->withPivot('branch_id');
     }
 
 }

@@ -3,113 +3,103 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Filters\ApiQuery;
-use App\Http\Resources\InsuranceCompanyCollection;
-use App\Http\Resources\InsuranceCompanyResource;
-use App\Http\Responses\ApiResponse;
 use App\Models\InsuranceCompany;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class InsuranceCompanyController extends Controller
 {
-    use ApiResponse;
-
-    public function index()
+    public function index(Request $request)
     {
-      $query = InsuranceCompany::query();
+        $q = $request->query('q', '');
 
-      // tweak searchable/filters as you like
-      $results = ApiQuery::apply(
-          request(),
-          $query,
-          searchable: ['name', 'code', 'city', 'ico'],
-          allowedFilters: ['city', 'code', 'branch_code']
-      );
+        $query = InsuranceCompany::query();
 
-      return $this->success(
-          new InsuranceCompanyCollection($results),
-          'Insurance companies retrieved'
-      );
+        // Searching across relevant fields
+        if ($q) {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('code', 'like', "%{$q}%")
+                    ->orWhere('branch_code', 'like', "%{$q}%")
+                    ->orWhere('city', 'like', "%{$q}%");
+            });
+        }
+
+        // If pagination? Use paginate
+        if ($request->boolean('paginate', false)) {
+            return $query
+                ->orderBy('name')
+                ->paginate(20);
+        }
+
+        // Otherwise return limited results (useful for dropdowns/autocomplete)
+        return $query
+            ->orderBy('name')
+            ->limit(50)
+            ->get();
     }
 
+    /**
+     * POST /v1/insurance-companies
+     */
     public function store(Request $request)
     {
-      $data = $request->validate([
-          'name'        => 'required|string|max:255',
-          'address'     => 'nullable|string|max:255',
-          'city'        => 'nullable|string|max:255',
-          'psc'         => 'nullable|string|max:20',
-          'ico'         => 'nullable|string|max:50',
-          'dic'         => 'nullable|string|max:50',
-          'ic_dph'      => 'nullable|string|max:50',
-          'register'    => 'nullable|string|max:255',
-          'code'        => 'nullable|string|max:50',
-          'branch_code' => 'nullable|string|max:50',
-      ]);
+        $validated = $request->validate([
+            'name'         => ['required', 'string', 'max:255'],
+            'address'      => ['nullable', 'string', 'max:255'],
+            'city'         => ['nullable', 'string', 'max:255'],
+            'psc'          => ['nullable', 'string', 'max:50'],
+            'ico'          => ['nullable', 'string', 'max:50'],
+            'dic'          => ['nullable', 'string', 'max:50'],
+            'ic_dph'       => ['nullable', 'string', 'max:50'],
+            'register'     => ['nullable', 'string', 'max:255'],
+            'code'         => ['nullable', 'string', 'max:50'],
+            'branch_code'  => ['nullable', 'string', 'max:50'],
+        ]);
 
-      $company = InsuranceCompany::create($data);
+        $company = InsuranceCompany::create($validated);
 
-      return $this->success(
-          new InsuranceCompanyResource($company),
-          'Created',
-          201
-      );
+        return response()->json($company, Response::HTTP_CREATED);
     }
 
-    public function show($id)
+    /**
+     * GET /v1/insurance-companies/{insurance_company}
+     */
+    public function show(InsuranceCompany $insuranceCompany)
     {
-      $company = InsuranceCompany::find($id);
-
-      if (! $company) {
-          return $this->error('Not found', 404);
-      }
-
-      return $this->success(
-          new InsuranceCompanyResource($company),
-          'Insurance company retrieved'
-      );
+        return $insuranceCompany;
     }
 
-    public function update(Request $request, $id)
+    /**
+     * PUT/PATCH /v1/insurance-companies/{insurance_company}
+     */
+    public function update(Request $request, InsuranceCompany $insuranceCompany)
     {
-      $data = $request->validate([
-          'name'        => 'sometimes|required|string|max:255',
-          'address'     => 'nullable|string|max:255',
-          'city'        => 'nullable|string|max:255',
-          'psc'         => 'nullable|string|max:20',
-          'ico'         => 'nullable|string|max:50',
-          'dic'         => 'nullable|string|max:50',
-          'ic_dph'      => 'nullable|string|max:50',
-          'register'    => 'nullable|string|max:255',
-          'code'        => 'nullable|string|max:50',
-          'branch_code' => 'nullable|string|max:50',
-      ]);
+        $validated = $request->validate([
+            'name'         => ['sometimes', 'required', 'string', 'max:255'],
+            'address'      => ['sometimes', 'nullable', 'string', 'max:255'],
+            'city'         => ['sometimes', 'nullable', 'string', 'max:255'],
+            'psc'          => ['sometimes', 'nullable', 'string', 'max:50'],
+            'ico'          => ['sometimes', 'nullable', 'string', 'max:50'],
+            'dic'          => ['sometimes', 'nullable', 'string', 'max:50'],
+            'ic_dph'       => ['sometimes', 'nullable', 'string', 'max:50'],
+            'register'     => ['sometimes', 'nullable', 'string', 'max:255'],
+            'code'         => ['sometimes', 'nullable', 'string', 'max:50'],
+            'branch_code'  => ['sometimes', 'nullable', 'string', 'max:50'],
+        ]);
 
-      $company = InsuranceCompany::find($id);
+        $insuranceCompany->update($validated);
 
-      if (! $company) {
-          return $this->error('Not found', 404);
-      }
-
-      $company->fill($data);
-      $company->save();
-
-      return $this->success(
-          new InsuranceCompanyResource($company),
-          'Updated'
-      );
+        return response()->json($insuranceCompany, Response::HTTP_OK);
     }
 
-    public function destroy($id)
+    /**
+     * DELETE /v1/insurance-companies/{insurance_company}
+     */
+    public function destroy(InsuranceCompany $insuranceCompany)
     {
-      $company = InsuranceCompany::find($id);
+        $insuranceCompany->delete();
 
-      if (! $company) {
-          return $this->error('Not found', 404);
-      }
-
-      $company->delete();
-
-      return $this->success(null, 'Deleted');
+        return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }
