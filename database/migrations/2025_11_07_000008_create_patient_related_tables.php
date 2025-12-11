@@ -23,6 +23,7 @@ class CreatePatientRelatedTables extends Migration
             $table->string('zip')->nullable();
             $table->double('latitude')->nullable();
             $table->double('longitude')->nullable();
+            $table->date('reference_date')->nullable()->after('doctor_id');
             $table->timestamps();
             $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('set null');
             $table->foreign('insurance_company_id')->references('id')->on('insurance_companies')->onDelete('set null');
@@ -55,6 +56,7 @@ class CreatePatientRelatedTables extends Migration
             $table->date('reference_date')->nullable();
             $table->unsignedInteger('user_id')->nullable();
             $table->unsignedInteger('branch_id')->nullable();
+            $table->smallInteger('quantity')->nullable()->after('reference_date');
             $table->timestamps();
             $table->foreign('diagnosis_id')->references('id')->on('diagnoses')->onDelete('set null');
             $table->foreign('procedure_id')->references('id')->on('procedures')->onDelete('set null');
