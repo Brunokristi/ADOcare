@@ -8,7 +8,7 @@ import api from '@/services/api';
 import { toApiDate } from '@/utils/dateUtils';
 import { usePatientStore } from '@/stores/patientStore';
 import { useAuthStore } from '@/stores/auth';
-import type { Diagnosis, Procedure } from '@/types/models';
+import type { Diagnosis, Procedure, Patient } from '@/types/models';
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -158,6 +158,23 @@ async function loadRecordsForPatient() {
     isLoading.value = false;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/*  Fetch referal date from database                                          */
+/* -------------------------------------------------------------------------- */
+
+function initReferenceDateFromPatient() {
+  if (!currentPatient.value || !currentPatient.value.reference_date) {
+    referralDate.value = null;
+    return;
+  }
+
+  // currentPatient.reference_date is assumed YYYY-MM-DD
+  const d = new Date(currentPatient.value.reference_date);
+  referralDate.value = isNaN(d.getTime()) ? null : d;
+}
+
 
 /* -------------------------------------------------------------------------- */
 /*  Lookup: Diagnoses & Procedures                                            */
@@ -418,13 +435,14 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
 async function onSubmit() {
   submitted.value = true;
 
+  // normalize dates
   date.value = parseDateInput(date.value as any);
   referralDate.value = parseDateInput(referralDate.value as any);
 
   const diagnosisOk = await ensureDiagnosisSelected();
   const procedureOk = await ensureProcedureSelected();
 
-  // ❌ no toasts here – just let the <small> messages show
+  // just let <small> validation messages show
   if (!date.value || !diagnosisOk || !procedureOk || !referralDate.value) {
     return;
   }
@@ -455,8 +473,24 @@ async function onSubmit() {
   console.log('Sending payload:', apiPayload);
 
   try {
-    await api.post('/v1/patient-points', apiPayload);
+    if (currentPatient.value && referralDate.value) {
+      const refDate = toApiDate(referralDate.value);
 
+      await api.put(`/v1/patients/${currentPatient.value.id}`, {
+        reference_date: refDate,
+      });
+
+      const updatedPatient: Patient = {
+        ...(currentPatient.value as Patient),
+        reference_date: refDate,
+      };
+
+      patientStore.setPatient(updatedPatient); // 👈 this writes to localStorage
+    }
+
+
+
+    await api.post('/v1/patient-points', apiPayload);
     const newId =
       records.value.length > 0
         ? Math.max(...records.value.map((r) => r.id)) + 1
@@ -480,10 +514,12 @@ async function onSubmit() {
       life: 3000,
     });
 
+    // reset form
     date.value = new Date();
     diagnosis.value = null;
     procedure.value = null;
-    referralDate.value = null;
+    // keep referralDate as the same reference date, or reset to null if you prefer
+    // referralDate.value = null;
     submitted.value = false;
   } catch (error: any) {
     console.error('422 error:', error.response?.data);
@@ -501,6 +537,7 @@ async function onSubmit() {
     });
   }
 }
+
 
 /* -------------------------------------------------------------------------- */
 /*  Edit dialog                                                               */
@@ -698,15 +735,18 @@ async function duplicateSelected() {
 
 onMounted(() => {
   if (currentPatient.value) {
+    initReferenceDateFromPatient();
     loadRecordsForPatient();
   }
 });
 
 watch(currentPatient, (newPatient) => {
   if (newPatient) {
+    initReferenceDateFromPatient();
     loadRecordsForPatient();
   } else {
     records.value = [];
+    referralDate.value = null;
   }
 });
 </script>
@@ -725,6 +765,7 @@ watch(currentPatient, (newPatient) => {
               dateFormat="dd.mm.yy"
               :showIcon="false"
               class="w-full"
+              :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
             <small v-if="submitted && !date" class="text-warning">
@@ -790,6 +831,7 @@ watch(currentPatient, (newPatient) => {
               dateFormat="dd.mm.yy"
               :showIcon="false"
               class="w-full"
+              :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
             <small v-if="submitted && !referralDate" class="text-warning">
@@ -829,14 +871,14 @@ watch(currentPatient, (newPatient) => {
               icon="bi bi-copy"
               @click="duplicateSelected"
               :disabled="!selectedRecords || !selectedRecords.length"
-              class="!bg-accent !border-accent !text-white"
+              class="!h-7 !bg-accent !border-accent !text-white hover:!bg-darkgrey hover:!border-darkgrey"
             />
 
             <Button
               icon="bi bi-eraser"
               @click="confirmDeleteSelected"
               :disabled="!selectedRecords || !selectedRecords.length"
-              class="!bg-warning !border-warning !text-white"
+              class="!h-7 !bg-warning !border-warning !text-white"
             />
           </div>
         </template>

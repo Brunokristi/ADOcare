@@ -20,6 +20,17 @@ const ADOPreset = definePreset(Material, {
     }
 });
 
+const baseField =
+    '!rounded-md !h-7 ' +
+    '!border-darkgrey !bg-white ' +
+    '!text-normal !text-darkgrey ' +
+    '!outline-none !ring-0 !shadow-none ' +
+    'focus:!outline-none focus:!ring-0 focus:!shadow-none';
+
+const baseNoOutline =
+    '!outline-none !ring-0 !shadow-none ' +
+    'focus:!outline-none focus:!ring-0 focus:!shadow-none';
+
 export default {
     theme: {
         preset: ADOPreset,
@@ -27,7 +38,6 @@ export default {
             prefix: 'p',
             darkModeSelector: '.dark-theme',
             cssLayer: false
-
         },
     },
 
@@ -43,37 +53,35 @@ export default {
             sortIcon: { class: '!text-white !flex !items-center !justify-center' },
             columnTitle: { class: '!text-white !text-heading' },
             pcheadercheckbox: {
-                box: { class: ' !bg-darkgrey !border-white' },
-                root: {
-                    class: '!shadow-none hover:!shadow-none'
-                },
+                box: { class: '!bg-darkgrey !border-white' },
+                root: { class: '!shadow-none hover:!shadow-none' },
             },
             pcrowcheckbox: {
-                box: {
-                    class: '!border-darkgrey ',
-                },
-                root: {
-                    class: '!shadow-none hover:!shadow-none'
-                },
+                box: { class: '!border-darkgrey' },
+                root: { class: '!shadow-none hover:!shadow-none' },
             },
             bodycell: {
                 class: '!text-normal/5 !text-darkgrey !px-4 !border-0 !border-r !border-r-white last:!border-r-0',
             },
-
         },
 
+        /* ---------- INPUTS / TEXTAREA ---------- */
+
         inputtext: {
-            root: { class: '!border-darkgrey !text-darkgrey !outline-0 !p-xs !rounded-md' },
+            root: { class: baseField },
         },
 
         textarea: {
-            root: { class: '!border-darkgrey !text-darkgrey !outline-0 !p-xs !rounded-md' },
+            root: { class: `${baseField} !h-auto !min-h-[5rem] !py-2` },
         },
+
+        /* ---------- BUTTON ---------- */
 
         button: {
-            root: { class: '!p-xs !rounded-md' },
-
+            root: { class: `!p-xs !rounded-md ${baseNoOutline}` },
         },
+
+        /* ---------- MENU / MENUBAR / DIALOG / TOAST (unchanged look) ---------- */
 
         menubar: {
             root: { class: '!border-0 !px-0 !rounded-none !content-center' },
@@ -90,28 +98,6 @@ export default {
             root: { class: '!rounded-md' },
         },
 
-        dropdown: {
-            root: { class: '!rounded-md !border-darkgrey' },
-            dropDownIcon: { class: '!fill-darkgrey' },
-            overlay: { class: '!rounded-md' },
-            header: { class: '!p-2' },
-            listContainer: { class: '!p-2 !gap-2' },
-            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' },
-            dropdownIcon: { class: 'bi bi-caret-down-fill' }
-
-        },
-
-        select: {
-            root: { class: '!rounded-md  !outline-0 ' },
-            dropDownIcon: { class: '!text-sm' },
-            dropdown: { class: 'w-auto! mr-2' },
-            label: { class: '!text-normal' },
-            overlay: { class: '!rounded-md' },
-            header: { class: '!p-2' },
-            listContainer: { class: '!p-2 !gap-2' },
-            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' }
-        },
-
         toast: {
             root: { class: '!bg-transparent !rounded-md' },
             message: { class: '!bg-transparent !rounded-md' },
@@ -119,19 +105,65 @@ export default {
             messageIcon: { class: '!hidden' },
             detail: { class: '!text-white' },
         },
+
+        /* ---------- SELECT ---------- */
+
+        select: {
+            root: { class: `${baseField} !flex !items-center !gap-1` },
+            dropdown: { class: `${baseNoOutline} !border-0 !bg-transparent !px-1` },
+            dropDownIcon: { class: '!text-sm' },
+            label: { class: '!text-normal !text-darkgrey !truncate' },
+            overlay: { class: '!rounded-md !border-0' },
+            header: { class: '!p-2' },
+            listContainer: { class: '!p-2 !gap-2' },
+            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' },
+        },
+
+
         autocomplete: {
+            root: {
+                class: 'w-full flex flex-col items-stretch p-0 !border-0 bg-transparent'
+            },
+
+            input: {
+                class: [
+                    'w-full h-full !border-0 bg-transparent',
+                    '!text-normal !text-darkgrey',
+                    '!outline-none !ring-0 !shadow-none',
+                    'focus:!outline-none focus:!ring-0 focus:!shadow-none'
+                ].join(' ')
+            },
+
             inputMultiple: {
-                class: '!border-0 !bg-white !outline-0 !rounded-md !py-2'
+                class: [
+                    'w-full',
+                    '!rounded-md !border-0 !bg-white',
+                    '!px-2 !py-2',
+                    '!flex !flex-wrap !items-start !content-center !gap-1',
+                    'min-h-[2.5rem] max-h-40 overflow-y-auto',
+                    '!text-normal !text-darkgrey !outline-none !ring-0 !shadow-none',
+                    'focus:!outline-none focus:!ring-0 focus:!shadow-none'
+                ].join(' ')
             },
+
             overlay: {
-                class: '!rounded-md !p-2'
+                class: 'rounded-md p-2 w-auto border-0'
             },
+
             option: {
-                class: 'hover:!bg-almostwhite hover:!text-accent !rounded-md'
+                class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white'
             }
         },
 
+
         datepicker: {
+            root: { class: `${baseField} !flex !items-center` },
+            input: {
+                class: '!w-full !h-full !border-0 !bg-transparent ' +
+                    '!text-normal !text-darkgrey ' +
+                    '!outline-none !ring-0 !shadow-none ' +
+                    'focus:!outline-none focus:!ring-0 focus:!shadow-none',
+            },
             panel: { class: '!rounded-md !text-normal !text-darkgrey !border-0' },
             selectMonth: { class: '!bg-darkgrey !text-normal !text-white hover:!bg-accent !rounded-md' },
             selectYear: { class: '!bg-darkgrey !text-normal !text-white hover:!bg-accent !rounded-md' },
@@ -140,12 +172,9 @@ export default {
                     '!text-normal !rounded-md hover:!bg-tag3',
                     '[&.p-datepicker-day-selected]:!bg-accent [&.p-datepicker-day-selected]:!text-white',
                     '[&.p-datepicker-day-selected-range]:!bg-accent [&.p-datepicker-day-selected-range]:!text-white'
-
                 ].join(' ')
             },
             weekDay: { class: '!text-heading !text-darkgrey' },
         }
     }
-
-
 } as PrimeVueConfiguration;

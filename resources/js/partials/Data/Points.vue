@@ -72,21 +72,21 @@ function mapPatients(items: PatientModel[]): Patient[] {
   }));
 }
 
-/**
- * Load all insurance companies (no pagination).
- * Adjust URL if your API path differs.
- */
 async function loadInsurances() {
-  const res = await api.get('/v1/insurance-companies', {
-    params: {
-      paginate: false,
-    },
-  });
+  try {
+    const { data } = await api.get<InsuranceCompany[]>('/v1/insurance-companies', {
+      params: {
+        paginate: false, // so backend returns a simple list
+      },
+    });
 
-  const data = res.data?.data;
-  const items = (Array.isArray(data) ? data : data?.items) as InsuranceCompany[] ?? [];
-  insurances.value = items.map(mapInsuranceCompanyToOption);
+    insurances.value = data.map(mapInsuranceCompanyToOption);
+  } catch (e) {
+    console.error('Failed to load insurance companies', e);
+    insurances.value = [];
+  }
 }
+
 
 
 async function loadAllPatients() {
@@ -200,7 +200,7 @@ onMounted(() => {
               :options="insurances"
               optionLabel="name"
               fluid
-              class="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !h-full"
+              class="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
             <small v-if="submitted && !insurance" class="text-warning">
               Poisťovňa je povinná.
@@ -226,12 +226,13 @@ onMounted(() => {
             </small>
           </div>
 
-          <!-- Vyhľadanie pacienta – only for Opravná dávka -->
           <div
             v-if="isCorrectionBatch"
             class="col-span-12"
           >
-            <label class="block text-normal mb-1">Vyhľadajte pacienta</label>
+            <label class="block text-normal mb-2">
+              Vyhľadajte pacienta
+            </label>
 
             <AutoComplete
               v-model="selectedPatients"
@@ -240,38 +241,54 @@ onMounted(() => {
               optionLabel="name"
               :minLength="1"
               @complete="searchPatients"
-              class="w-full !border-none"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none "
+              fluid
+              class="w-full"
             >
+              <!-- suggestion option -->
               <template #option="slotProps">
-                <div class="flex gap-2">
-                  <span>{{ slotProps.option.name }}</span>
-                  <span class="text-white text-mini bg-lightgrey rounded-md p-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-normal text-darkgrey">
+                    {{ slotProps.option.name }}
+                  </span>
+                  <span class="bg-darkgrey rounded-md text-mini text-white px-2 py-0.5">
                     {{ slotProps.option.personalNumber }}
                   </span>
                 </div>
               </template>
 
-              <template #chip="slotProps" > 
-                <div class="flex items-center bg-darkgrey text-lightgrey px-3 py-1 rounded-md mr-2">
-                  <span class="pr-2 border-r">{{ slotProps.value.name }}</span>
-                  <span class="px-2">{{ slotProps.value.personalNumber }}
+              <!-- chip template -->
+              <template #chip="slotProps">
+                <div
+                  class="
+                    inline-flex items-center gap-2
+                    bg-darkgrey text-lightgrey
+                    px-3 py-1 rounded-md
+                    text-xs sm:text-sm
+                  "
+                >
+                  <span class="pr-2 border-r border-lightgrey truncate max-w-[8rem] sm:max-w-[10rem]">
+                    {{ slotProps.value.name }}
                   </span>
-                  <i 
-                    class="bi bi-x-lg cursor-pointer"
+                  <span class="px-1 sm:px-2 whitespace-nowrap">
+                    {{ slotProps.value.personalNumber }}
+                  </span>
+                  <i
+                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
                     @click.stop="removePatient(slotProps.value)"
-                    ></i>
+                  ></i>
                 </div>
               </template>
             </AutoComplete>
 
             <small
               v-if="submitted && isCorrectionBatch && !selectedPatients.length"
-              class="text-warning"
+              class="text-warning block mt-1"
             >
               Pri opravnej dávke je potrebné vybrať aspoň jedného pacienta.
             </small>
           </div>
+
+
         </div>
       </section>
 

@@ -35,6 +35,7 @@ class PatientController extends Controller
             'last_name' => 'required|string|max:255',
             'personal_number' => 'nullable|string',
             'sex' => 'nullable|in:M,F',
+            'reference_date'   => 'nullable|date',
         ]);
 
         $patient = Patient::create($data);
@@ -60,6 +61,7 @@ class PatientController extends Controller
             'last_name' => 'sometimes|required|string|max:255',
             'personal_number' => 'nullable|string',
             'sex' => 'nullable|in:M,F',
+            'reference_date'   => 'nullable|date',
         ]);
 
         $patient = Patient::find($id);

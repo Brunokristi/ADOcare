@@ -62,7 +62,7 @@ function linkClass(key: string) {
   <Menubar>
     <template #start>
       <div class="flex items-end">
-        <h1 class="!text-heading-accent !border-r-2 !border-accent !px-sm">
+        <h1 class="!text-heading-accent !border-r-2 !border-accent !pr-sm">
           {{ h1Title }}
         </h1>
         <h1 class="!text-heading-accent !text-darkgrey !px-sm !font-light">

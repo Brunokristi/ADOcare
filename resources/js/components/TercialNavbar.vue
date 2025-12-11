@@ -41,7 +41,7 @@ const closePatient = () => {
     <!-- LEFT -->
     <template #start>
       <div class="flex items-center">
-        <h2 class="!text-normal !px-sm !text-almostwhite border-r !border-almostwhite">
+        <h2 class="!text-normal !pr-sm !text-almostwhite border-r !border-almostwhite">
           {{ patientName }}
         </h2>
 

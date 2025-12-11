@@ -32,6 +32,7 @@ class PatientResource extends JsonResource
             'longitude'          => $this->longitude,
             'created_at'         => $this->created_at,
             'updated_at'         => $this->updated_at,
+            'reference_date'     => $this->reference_date,
 
             // relations
             'doctor' => $this->whenLoaded('doctor', function () {
