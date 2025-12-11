@@ -1,101 +1,18 @@
-export interface VisitText {
-  // columns
-  visit_id: number
-  text_id: number
-  // relations
-  visit: Visit
-  text: TextBlock
-  // counts
-  // exists
-  visit_exists: boolean
-  text_exists: boolean
-}
-
-export interface Diagnosis {
-  // columns
-  id: number
-  code: string | null
-  description: string | null
-  created_at: string | null
-  updated_at: string | null
-}
-
-export interface InsuranceCompany {
-  // columns
-  id: number
-  name: string | null
-  address: string | null
-  city: string | null
-  psc: string | null
-  ico: string | null
-  dic: string | null
-  ic_dph: string | null
-  register: string | null
-  code: string | null
-  branch_code: string | null
-  created_at: string | null
-  updated_at: string | null
-  // relations
-  patients: Patient[]
-  branches: Branch[]
-  // counts
-  patients_count: number
-  branches_count: number
-  // exists
-  patients_exists: boolean
-  branches_exists: boolean
-}
-
-export interface TextBlock {
-  // columns
-  id: number
-  text: string | null
-  position: number | null
-  created_at: string | null
-  updated_at: string | null
-  // relations
-  visits: Visit[]
-  // counts
-  visits_count: number
-  // exists
-  visits_exists: boolean
-}
-
-export interface Doctor {
-  // columns
-  id: number
-  first_name: string | null
-  last_name: string | null
-  title: string | null
-  zpr: string | null
-  pzs: string | null
-  created_at: string | null
-  updated_at: string | null
-  // relations
-  patients: Patient[]
-  // counts
-  patients_count: number
-  // exists
-  patients_exists: boolean
-}
-
 export interface User {
   // columns
   id: number
-  email: string
-  pin?: string
-  login: string | null
   first_name: string
   last_name: string
-  initials: string | null
   title: string | null
   code: string | null
   phone_number: string | null
-  remember_token?: string | null
+  email: string
+  login: string
+  pin?: string
+  initials: string | null
+  api_token?: string | null
   created_at: string | null
   updated_at: string | null
-  last_branch: number | null
-  api_token?: string | null
   // relations
   cars: Car[]
   branches: Branch[]
@@ -124,6 +41,182 @@ export interface User {
   notifications_exists: boolean
 }
 
+export interface InsuranceCompany {
+  // columns
+  id: number
+  name: string | null
+  address: string | null
+  city: string | null
+  psc: string | null
+  ico: string | null
+  dic: string | null
+  ic_dph: string | null
+  register: string | null
+  code: string | null
+  branch_code: string | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patients: Patient[]
+  branches: Branch[]
+  // counts
+  patients_count: number
+  branches_count: number
+  // exists
+  patients_exists: boolean
+  branches_exists: boolean
+}
+
+export interface VisitText {
+  // columns
+  visit_id: number
+  text_id: number
+  // relations
+  visit: Visit
+  text: TextBlock
+  // counts
+  // exists
+  visit_exists: boolean
+  text_exists: boolean
+}
+
+export interface Visit {
+  // columns
+  id: number
+  date: string | null
+  examination: string | null
+  statement: string | null
+  patient_id: number | null
+  month_id: number | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patient: Patient
+  month: ReportMonth
+  texts: TextBlock[]
+  // counts
+  texts_count: number
+  // exists
+  patient_exists: boolean
+  month_exists: boolean
+  texts_exists: boolean
+}
+
+export interface Procedure {
+  // columns
+  id: number
+  code: string | null
+  description: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface Doctor {
+  // columns
+  id: number
+  first_name: string | null
+  last_name: string | null
+  title: string | null
+  zpr: string | null
+  pzs: string | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patients: Patient[]
+  // counts
+  patients_count: number
+  // exists
+  patients_exists: boolean
+}
+
+export interface Patient {
+  // columns
+  id: number
+  first_name: string | null
+  last_name: string | null
+  title: string | null
+  personal_number: string | null
+  sex: string | null
+  contact: string | null
+  doctor_id: number | null
+  insurance_company_id: number | null
+  address: string | null
+  city: string | null
+  zip: string | null
+  latitude: number | null
+  longitude: number | null
+  reference_date: string | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  assigned_users: User[]
+  branches: Branch[]
+  doctor: Doctor
+  visits: Visit[]
+  insurance_company: InsuranceCompany
+  // counts
+  assigned_users_count: number
+  branches_count: number
+  visits_count: number
+  // exists
+  assigned_users_exists: boolean
+  branches_exists: boolean
+  doctor_exists: boolean
+  visits_exists: boolean
+  insurance_company_exists: boolean
+}
+
+export interface Branch {
+  // columns
+  id: number
+  company_id: number | null
+  code: string | null
+  identificator: string | null
+  address: string | null
+  city: string | null
+  psc: string | null
+  phone: string | null
+  email: string | null
+  latitude: number | null
+  longitude: number | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  company: Company
+  users: User[]
+  report_months: ReportMonth[]
+  cars: Car[]
+  patients: Patient[]
+  // counts
+  users_count: number
+  report_months_count: number
+  cars_count: number
+  patients_count: number
+  // exists
+  company_exists: boolean
+  users_exists: boolean
+  report_months_exists: boolean
+  cars_exists: boolean
+  patients_exists: boolean
+}
+
+export interface Car {
+  // columns
+  id: number
+  evc: string | null
+  company_id: number | null
+  user_id: number | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  company: Company
+  user: User
+  // counts
+  // exists
+  company_exists: boolean
+  user_exists: boolean
+}
+
 export interface Role {
   // columns
   id: number
@@ -136,6 +229,28 @@ export interface Role {
   users_count: number
   // exists
   users_exists: boolean
+}
+
+export interface PatientPoint {
+  // columns
+  id: number
+  date: string | null
+  patient_personal_number: string | null
+  patient_name: string | null
+  patient_id: number | null
+  diagnosis_code: string | null
+  diagnosis_id: number | null
+  procedure_code: string | null
+  procedure_id: number | null
+  doctor_pzs: string | null
+  doctor_zpr: string | null
+  doctor_id: number | null
+  reference_date: string | null
+  user_id: number | null
+  branch_id: number | null
+  quantity: number | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface Company {
@@ -171,105 +286,19 @@ export interface Company {
   users_exists: boolean
 }
 
-export interface Branch {
+export interface TextBlock {
   // columns
   id: number
-  company_id: number | null
-  code: string | null
-  identificator: string | null
-  address: string | null
-  city: string | null
-  psc: string | null
-  phone: string | null
-  email: string | null
-  latitude: number | null
-  longitude: number | null
+  text: string | null
+  position: number | null
   created_at: string | null
   updated_at: string | null
   // relations
-  company: Company
-  users: User[]
-  report_months: ReportMonth[]
-  cars: Car[]
+  visits: Visit[]
   // counts
-  users_count: number
-  report_months_count: number
-  cars_count: number
+  visits_count: number
   // exists
-  company_exists: boolean
-  users_exists: boolean
-  report_months_exists: boolean
-  cars_exists: boolean
-}
-
-export interface Procedure {
-  // columns
-  id: number
-  code: string | null
-  description: string | null
-  created_at: string | null
-  updated_at: string | null
-}
-
-export interface PatientPoint {
-  // columns
-  id: number
-  date: string | null
-  patient_personal_number: string | null
-  patient_name: string | null
-  patient_id: number | null
-  diagnosis_code: string | null
-  diagnosis_id: number | null
-  procedure_code: string | null
-  procedure_id: number | null
-  doctor_pzs: string | null
-  doctor_zpr: string | null
-  doctor_id: number | null
-  reference_date: string | null
-  user_id: number | null
-  branch_id: number | null
-  created_at: string | null
-  updated_at: string | null
-  quantity: number | null
-}
-
-export interface Car {
-  // columns
-  id: number
-  evc: string | null
-  company_id: number | null
-  user_id: number | null
-  created_at: string | null
-  updated_at: string | null
-  // relations
-  company: Company
-  user: User
-  // counts
-  // exists
-  company_exists: boolean
-  user_exists: boolean
-}
-
-export interface Visit {
-  // columns
-  id: number
-  date: string | null
-  examination: string | null
-  statement: string | null
-  patient_id: number | null
-  month_id: number | null
-  created_at: string | null
-  updated_at: string | null
-  // relations
-  patient: Patient
-  month: ReportMonth
-  texts: TextBlock[]
-  // counts
-  texts_count: number
-  // exists
-  patient_exists: boolean
-  month_exists: boolean
-  texts_exists: boolean
+  visits_exists: boolean
 }
 
 export interface ReportMonth {
@@ -299,39 +328,11 @@ export interface ReportMonth {
   visits_exists: boolean
 }
 
-export interface Patient {
+export interface Diagnosis {
   // columns
   id: number
-  first_name: string | null
-  last_name: string | null
-  title: string | null
-  personal_number: string | null
-  sex: string | null
-  contact: string | null
-  doctor_id: number | null
-  insurance_company_id: number | null
-  address: string | null
-  city: string | null
-  zip: string | null
-  latitude: number | null
-  longitude: number | null
+  code: string | null
+  description: string | null
   created_at: string | null
   updated_at: string | null
-  reference_date: string | null
-  // relations
-  assigned_users: User[]
-  branches: Branch[]
-  doctor: Doctor
-  visits: Visit[]
-  insurance_company: InsuranceCompany
-  // counts
-  assigned_users_count: number
-  branches_count: number
-  visits_count: number
-  // exists
-  assigned_users_exists: boolean
-  branches_exists: boolean
-  doctor_exists: boolean
-  visits_exists: boolean
-  insurance_company_exists: boolean
 }
