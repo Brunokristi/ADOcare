@@ -50,6 +50,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     // Newly added resources
     Route::apiResource('branches', BranchController::class);
+    Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
+
+
+
     Route::apiResource('companies', CompanyController::class);
     Route::apiResource('doctors', DoctorController::class);
     Route::apiResource('report-months', ReportMonthController::class);
@@ -63,4 +67,3 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/batches/download', [PointsExportController::class, 'download']);
 
 });
-

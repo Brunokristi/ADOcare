@@ -18,6 +18,13 @@ class BranchController extends Controller
         return new BaseCollection($results);
     }
 
+    public function patients(Branch $branch)
+    {
+        $query = $branch->patients()->query();
+        $results = ApiQuery::apply(request(), $query);
+        return new BaseCollection($results);
+    }
+
     public function store(Request $request)
     {
         $item = Branch::create($request->all());
