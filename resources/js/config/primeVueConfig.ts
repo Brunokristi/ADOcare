@@ -147,7 +147,7 @@ export default {
             },
 
             overlay: {
-                class: 'rounded-md p-2 w-auto border-0'
+                class: '!rounded-md !p-2 w-auto border-0'
             },
 
             option: {

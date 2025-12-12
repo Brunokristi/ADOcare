@@ -15,9 +15,11 @@ const emit = defineEmits<{
   (e: 'toggle-sidebar'): void;
 }>();
 
+/* ------------ BASIC AUTH / USER ------------ */
 
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const user = computed<User | null>(() => authStore.user as User | null);
+
 const companyName = computed(() => user.value?.company?.name ?? '');
 const fullName = computed(() =>
   user.value
@@ -25,33 +27,7 @@ const fullName = computed(() =>
     : ''
 );
 
-const selectedBranchId = computed<number | null>({
-  get: () => {
-    if (authStore.currentRole === 'manager') {
-      const managerOpt = branchOptions.value.find(o => o.isManager);
-      return managerOpt ? managerOpt.id : authStore.currentBranch?.id ?? null;
-    }
-    return authStore.currentBranch?.id ?? null;
-  },
-
-  set: (id) => {
-    if (id == null) return;
-
-    const numericId = typeof id === 'string' ? Number(id) : id;
-    const opt = branchOptions.value.find(o => o.id === numericId);
-    console.log('matched opt =', opt);
-
-    if (!opt) return;
-
-    if (opt.isManager) {
-      authStore.setCurrentRole('manager');
-      authStore.clearCurrentBranch();
-    } else {
-      authStore.setCurrentBranch(numericId);
-      authStore.setCurrentRole('nurse');
-    }
-  },
-});
+/* ------------ BRANCH SELECT ------------ */
 
 const branchOptions = computed(() => {
   const u = user.value;
@@ -64,7 +40,6 @@ const branchOptions = computed(() => {
   }));
 
   const roleNames = (u as any).roles_list ?? [];
-
   const hasManager = roleNames.some(
     (r: string) => r && r.trim().toLowerCase() === 'manager'
   );
@@ -80,13 +55,48 @@ const branchOptions = computed(() => {
   return options;
 });
 
+const selectedBranchId = computed<number | null>({
+  get: () => {
+    if (authStore.currentRole === 'manager') {
+      const managerOpt = branchOptions.value.find(o => o.isManager);
+      return managerOpt ? managerOpt.id : authStore.currentBranch?.id ?? null;
+    }
+    return authStore.currentBranch?.id ?? null;
+  },
+  set: (id) => {
+    if (id == null) return;
 
-const patientOptions = ref<
-  { id: number; name: string; personalNumber: string; raw: Patient }[]
->([]);
-const selectedPatient = ref<any | null>(null);
+    const numericId = typeof id === 'string' ? Number(id) : id;
+    const opt = branchOptions.value.find(o => o.id === numericId);
 
-function mapPatients(items: Patient[]) {
+    if (!opt) return;
+
+    if (opt.isManager) {
+      authStore.setCurrentRole('manager');
+      authStore.clearCurrentBranch();
+      patientStore.clear();
+    } else {
+      authStore.setCurrentBranch(numericId);
+      authStore.setCurrentRole('nurse');
+      patientStore.clear();
+    }
+  },
+});
+
+/* ------------ PATIENT SELECT ------------ */
+
+type PatientOption = {
+  id: number;
+  name: string;
+  personalNumber: string;
+  raw: Patient;
+};
+
+const patientOptions = ref<PatientOption[]>([]);
+const selectedPatient = ref<PatientOption | null>(null);
+const patientsLoading = ref(false);
+
+function mapPatients(items: Patient[]): PatientOption[] {
   return items.map(p => ({
     id: p.id,
     name: `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim(),
@@ -96,27 +106,40 @@ function mapPatients(items: Patient[]) {
 }
 
 async function loadAllPatients() {
+  if (!isAuthenticated.value) {
+    patientOptions.value = [];
+    return;
+  }
+
   const branchId = authStore.currentBranch?.id ?? null;
 
-  const res = await api.get('/v1/patients', {
-    params: {
-      paginate: false,
-      branch_id: branchId,   // <– send the selected branch
-    },
-  });
+  try {
+    patientsLoading.value = true;
 
-  const data = res.data?.data;
-  const items = (Array.isArray(data) ? data : data?.items) as Patient[] ?? [];
-  patientOptions.value = mapPatients(items);
+    const res = await api.get('/v1/patients', {
+      params: {
+        paginate: false,
+        ...(branchId ? { branch_id: branchId } : {}),
+      },
+    });
+
+    const data = res.data?.data;
+    const items =
+      (Array.isArray(data) ? data : data?.items) as Patient[] ?? [];
+
+    patientOptions.value = mapPatients(items);
+  } catch (e) {
+    console.error('Failed to load patients', e);
+    patientOptions.value = [];
+  } finally {
+    patientsLoading.value = false;
+  }
 }
 
-function goBack() {
-  router.back();
-}
+/* ------------ NAVIGATION / ACTIONS ------------ */
 
-function goHome() {
-  router.push('/');
-}
+const goBack = () => router.back();
+const goHome = () => router.push('/');
 
 async function logout() {
   try {
@@ -132,22 +155,29 @@ function toggleSidebar() {
   emit('toggle-sidebar');
 }
 
+/* when patient is selected from navbar → save & go to detail page */
 watch(selectedPatient, (opt) => {
   if (!opt) return;
-
   patientStore.setPatient(opt.raw);
   router.push('/patient/points');
-
   selectedPatient.value = null;
 });
+
+/* ------------ LIFECYCLE ------------ */
 
 onMounted(() => {
   patientStore.loadFromStorage();
   loadAllPatients();
 });
+
+/* reload patients when branch changes */
+watch(
+  () => authStore.currentBranch?.id,
+  () => {
+    loadAllPatients();
+  }
+);
 </script>
-
-
 
 <template>
   <nav class="px-3 py-2 flex items-center justify-between bg-darkgrey text-lightgrey">
@@ -173,18 +203,20 @@ onMounted(() => {
         @click="goHome"
       />
 
+      <!-- PATIENT SELECT -->
       <Select
         v-model="selectedPatient"
         :options="patientOptions"
         optionLabel="name"
         filter
-        placeholder="Vyberte pacienta"
+        :loading="patientsLoading"
+        :placeholder="patientsLoading ? 'Načítavam pacientov...' : 'Vyberte pacienta'"
         dropdownIcon="bi bi-chevron-down !text-white"
         class="w-60 h-7! flex items-center bg-tag2! border-none!"
       >
-        <template #value="{ placeholder }">
+        <template #value>
           <span class="text-normal text-white">
-            {{ placeholder }}
+            Vyberte pacienta
           </span>
         </template>
 
@@ -193,6 +225,15 @@ onMounted(() => {
             <span class="text-normal text-darkgrey pr-2">{{ option.name }}</span>
             <span class="bg-darkgrey rounded-md text-mini text-white px-2 content-center">
               {{ option.personalNumber }}
+            </span>
+          </div>
+        </template>
+
+        <template #empty>
+          <div class="flex items-center gap-2 px-2 py-1 text-normal text-darkgrey">
+            <i v-if="patientsLoading" class="bi bi-arrow-repeat animate-spin" />
+            <span>
+              {{ patientsLoading ? 'Načítavam pacientov...' : 'Pacienti neboli nájdení' }}
             </span>
           </div>
         </template>
@@ -244,6 +285,3 @@ onMounted(() => {
     </div>
   </nav>
 </template>
-
-
-
