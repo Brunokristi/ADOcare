@@ -4,16 +4,30 @@ import { defineStore } from 'pinia';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
+        storeStatus: 'ready' as 'ready' | 'initializing',
         token: (localStorage.getItem('api_token') as string | null) || null,
         user: null as null | IUser,
         currentRole: null as null | string,
         currentBranch: null as null | IBranch,
     }),
     getters: {
-        isAuthenticated: (state) => !!state.token,
+        isAuthenticated: (state) => !!state.user,
     },
     actions: {
+        async waitUntilInitialized() {
+            if (this.storeStatus === 'ready') return;
+            return new Promise<void>((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (this.storeStatus === 'ready') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 50);
+            });
+        },
+
         async init() {
+            this.storeStatus = 'initializing';
             if (!this.token) return;
             try {
                 this.user = await this.fetchUserProfile();
@@ -38,6 +52,8 @@ export const useAuthStore = defineStore('auth', {
             } else if (this.user?.branches.length) {
                 this.currentBranch = this.user.branches[0] ?? null;
             }
+
+            this.storeStatus = 'ready';
         },
 
         async fetchUserProfile() {

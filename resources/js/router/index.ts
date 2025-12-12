@@ -196,7 +196,7 @@ const router = createRouter({
     routes,
 })
 
-router.beforeEach((to: any, from: any, next: any) => {
+router.beforeEach(async (to: any, from: any, next: any) => {
     const auth = useAuthStore()
     // Set the document title
     if (to.meta.title) {
@@ -204,6 +204,9 @@ router.beforeEach((to: any, from: any, next: any) => {
     } else {
         document.title = 'ADOcare'
     }
+
+    await auth.waitUntilInitialized();
+
     if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
         return next({ name: 'login', query: { redirect: to.fullPath } })
     }
