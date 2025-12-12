@@ -33,6 +33,12 @@ class BranchController extends Controller
         return $this->success(new PatientCollection($results), 'Branch patients retrieved');
     }
 
+    public function doctors(Branch $branch)
+    {
+        $doctors = $branch->company->doctors()->get();
+        return $this->success($doctors, 'Branch doctors retrieved');
+    }
+
     public function store(\App\Http\Requests\StoreBranchRequest $request)
     {
         $item = Branch::create($request->all());
