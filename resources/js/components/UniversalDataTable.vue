@@ -116,7 +116,7 @@ watch(selectedRows, (val) => {
                      <div class="flex-1">
                         <Paginator v-bind="state"
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-                            v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="(e) => onSort(e)" v-model:selection="selectedRows"
+                            v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="onSort" v-model:selection="selectedRows"
                         />
                     </div>
                     <div class="flex-1 text-right text-xs text-accent">
