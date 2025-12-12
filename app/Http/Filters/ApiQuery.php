@@ -26,6 +26,19 @@ class ApiQuery
      */
     public static function apply(Request $request, Builder $query, array $searchable = [], array $allowedFilters = [])
     {
+
+        // Validate inputs
+        $request->validate([
+            'filter' => 'sometimes|array',
+            'q' => 'sometimes|string|max:255',
+            'sort' => 'sometimes|string|max:255',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'limit' => 'sometimes|integer|min:1|max:1000',
+            'all' => 'sometimes|boolean',
+            'paginate' => 'sometimes|boolean',
+            'with' => 'sometimes|string|max:255',
+        ]);
+
         // Filters
         $filters = $request->input('filter', []);
         if (is_array($filters)) {
@@ -72,13 +85,21 @@ class ApiQuery
         }
 
         // Pagination
-        $paginate = $request->input('paginate', '1');
+        $paginate = $request->boolean('paginate', true);
         $perPage = (int) $request->input('per_page', 15);
+        $limit = (int) $request->input('limit', 100);
+        if ($request->boolean('all')) {
+            $paginate = false;
+            $limit = -1;
+        }
 
         $sql = $query->toRawSql();
 
 
-        if ($paginate === '0' || $paginate === 0 || $request->boolean('paginate') === false) {
+        if (!$paginate) {
+            if ($limit > 0) {
+                $query->limit($limit);
+            }
             $result = $query->get();
         } else {
             $result = $query->paginate($perPage)->withQueryString();
