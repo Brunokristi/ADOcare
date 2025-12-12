@@ -22,9 +22,8 @@ class PatientController extends Controller
         $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
             ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
                 $q->where('users.id', $user->id);
-                if ($branchId) {
-                    $q->wherePivot('branch_id', $branchId);
-                }
+                $q->wherePivot('branch_id', $branchId);
+                
             });
 
         $results = ApiQuery::apply(
