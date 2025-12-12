@@ -132,7 +132,7 @@ watch(selectedRows, (val) => {
                 style="width: 3rem" />
 
             <Column v-for="col in columns" :key="col.field ?? col.header" :field="col.field" :header="col.header"
-                :sortable="col.sortable" :style="col.style">
+                :sortable="col.sortable" :style="col.style + '; width: ' + (col.width ?? 'auto')">
                 <template #body="{ data }">
                     <slot :name="col.slot ?? 'col-' + col.field" :row="data" :value="col.field ? data[col.field] : '-'">
                         <component v-if="col.component" :is="col.component" :value="col.field ? data[col.field] : null"
