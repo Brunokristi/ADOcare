@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import type { Patient } from '@/types/models';
+import type { Doctor, InsuranceCompany, Patient } from '@/types/models';
+import api from '@/services/api';
 
 const STORAGE_KEY = 'selected-patient';
 
@@ -26,6 +27,47 @@ export const usePatientStore = defineStore('patient', {
                 localStorage.removeItem(STORAGE_KEY);
             }
         },
+
+        fetchPatient(patientId: number) {
+            return api.get(`v1/patients/${patientId}`)
+                .then((response) => {
+                    const patient = response.data.data as Patient;
+                    this.setPatient(patient);
+                    return patient;
+                })
+                .catch((error) => {
+                    throw new Error('Failed to fetch patient: ' + error);
+                });
+        },
+
+
+        async savePatient(patient: Patient) {
+            try {
+                const response = await api.put(`v1/patients/${patient.id}`, patient);
+                return response;
+            } catch (error) {
+                throw new Error('Failed to save patient: ' + error);
+            }
+        },
+
+        async fetchDoctor(patientId: number) {
+            try {
+                const response = await api.get(`v1/patients/${patientId}/doctor`);
+                return response.data.data as Doctor;
+            } catch (error) {
+                throw new Error('Failed to fetch doctor: ' + error);
+            }
+        },
+
+        async fetchInsuranceCompany(patientId: number) {
+            try {
+                const response = await api.get(`v1/patients/${patientId}/insurance-company`);
+                return response.data.data as InsuranceCompany
+            } catch (error) {
+                throw new Error('Failed to fetch insurance company: ' + error);
+            }
+        },
+
 
         clear() {
             this.current = null;
