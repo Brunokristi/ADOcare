@@ -1,4 +1,9 @@
 // Types for UniversalDataTable
+// A component may be a sync component (Component) or an async loader returning a
+// component. This union accepts either so callers can pass `defineAsyncComponent`
+// loaders or plain components.
+type VueComponent = Component | (() => Promise<Component>);
+
 type ValueFormatter<T = any> = (value: any, row: T) => string | number | null;
 
 interface ColumnDef<T = any> {
@@ -13,13 +18,16 @@ interface ColumnDef<T = any> {
     width?: string;
     style?: string;
     align?: 'left' | 'center' | 'right';
-    component?: Component;
+    // a Vue component (sync) or an async component loader
+    component?: VueComponent;
+    componentOptions?: Record<string, any>;
     // optional scoped slot name to use (slot receives { row, value })
     slot?: string;
     // fallback value formatter if no component/slot
     render?: ValueFormatter<T>;
     // exportable flag
     exportable?: boolean;
+
 }
 
 interface ActionDef<T = any> {
