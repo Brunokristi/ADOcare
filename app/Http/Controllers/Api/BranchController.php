@@ -20,9 +20,13 @@ class BranchController extends Controller
 
     public function patients(Branch $branch)
     {
-        $query = $branch->patients()->query();
+        $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
+            ->whereHas('assignedUsers', function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            });
+
         $results = ApiQuery::apply(request(), $query);
-        return new BaseCollection($results);
+        return $this->success(new PatientCollection($results), 'Branch patients retrieved');
     }
 
     public function store(Request $request)
