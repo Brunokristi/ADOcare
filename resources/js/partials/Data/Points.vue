@@ -84,14 +84,13 @@ async function loadInsurances() {
 
 async function loadAllPatients() {
   const id = branchId.value;
-  console.log('Loading patients for branch', id);
 
   try {
     patientsLoading.value = true;
 
     const res = await api.get('/v1/patients', {
       params: {
-        paginate: false,
+        paginate: 0,
         ...(id ? { branch_id: id } : {}),
       },
     });
@@ -165,14 +164,21 @@ async function onSubmit() {
       batchType: { code: batchType.value.code },
       insurance: { id: insurance.value.id },
       period: [periodFrom.toISOString(), periodTo.toISOString()],
+      user: { id: authStore.user?.id },
+      branch: { id: authStore.currentBranch?.id},
+      company: { id: authStore.currentBranch?.company_id},
       patients: selectedPatients.value.map(p => ({ id: p.id })),
     });
 
     console.log('preview response', res.data);
 
-    const sheet = res.data.sheet;
+    const sheet = res.data?.data?.sheet;
 
-    // Use path instead of route name to avoid name mismatches
+    if (!sheet) {
+      console.error('Missing sheet in response:', res.data);
+      return;
+    }
+
     await router.push({
       path: '/documents/points',
       query: {
@@ -189,6 +195,7 @@ async function onSubmit() {
         batchTypeCode: batchType.value.code,
         period0: periodFrom.toISOString(),
         period1: periodTo.toISOString(),
+        patientIds: JSON.stringify(sheet.patients ?? []),
       },
     });
   } catch (error) {

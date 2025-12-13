@@ -23,12 +23,12 @@ class PatientController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $branchId = $request->integer('branch_id');
+        $branchId = $request->input('branch_id');
 
         $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
             ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
                 $q->where('users.id', $user->id);
-                $q->wherePivot('branch_id', $branchId);
+                $q->where('patient_branch_users.branch_id', (int) $branchId);
                 
             });
 
@@ -39,9 +39,9 @@ class PatientController extends Controller
             allowedFilters: ['sex']
         );
 
-
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
+
 
 
     public function store(Request $request)

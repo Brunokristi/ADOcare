@@ -196,21 +196,24 @@ const router = createRouter({
     routes,
 })
 
-router.beforeEach(async (to: any, from: any, next: any) => {
-    const auth = useAuthStore()
-    // Set the document title
-    if (to.meta.title) {
-        document.title = `${to.meta.title} | ADOcare`
-    } else {
-        document.title = 'ADOcare'
-    }
+router.beforeEach(async (to, _from, next) => {
+    const auth = useAuthStore();
 
-    await auth.waitUntilInitialized();
+    if (to.meta.title) document.title = `${to.meta.title} | ADOcare`;
+    else document.title = 'ADOcare';
+
+    try {
+        await auth.waitUntilInitialized();
+    } catch (e) {
+        await auth.clearAuth?.();
+    }
 
     if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
-        return next({ name: 'login', query: { redirect: to.fullPath } })
+        return next({ name: 'login', query: { redirect: to.fullPath } });
     }
-    return next()
-})
+
+    return next();
+});
+
 
 export default router

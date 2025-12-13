@@ -43,7 +43,6 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('cars', CarController::class);
     Route::apiResource('patients', PatientController::class);
-    // /patients/{patient}/ Doctors, Insurance Companies, Diagnoses, Procedures, Patient Points
     Route::group(['prefix' => 'patients/{patient}'], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
         Route::get('doctor', [PatientController::class, 'doctor']);
@@ -76,5 +75,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/batches/preview', [PointsExportController::class, 'preview']);
     Route::post('/batches/download', [PointsExportController::class, 'download']);
+    Route::post('/batches/statement-pdf', [PointsExportController::class, 'statementPdf']);
+
 
 });

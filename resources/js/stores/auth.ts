@@ -28,32 +28,40 @@ export const useAuthStore = defineStore('auth', {
 
         async init() {
             this.storeStatus = 'initializing';
-            if (!this.token) return;
+
             try {
-                this.user = await this.fetchUserProfile();
-            } catch (error) {
-                // this.clearAuth();
-                router.push({ name: 'login' });
-            }
-
-            const savedRole = localStorage.getItem('current_role');
-            if (savedRole && this.user?.roles_list.includes(savedRole)) {
-                this.currentRole = savedRole;
-            } else if (this.user?.roles_list.length) {
-                this.currentRole = this.user.roles_list[0] ?? null;
-            }
-
-            const savedBranchId = localStorage.getItem('current_branch_id');
-            if (savedBranchId) {
-                const branch = this.user?.branches.find(b => b.id === parseInt(savedBranchId));
-                if (branch) {
-                    this.currentBranch = branch;
+                if (!this.token) {
+                    this.user = null;
+                    this.currentRole = null;
+                    this.currentBranch = null;
+                    return;
                 }
-            } else if (this.user?.branches.length) {
-                this.currentBranch = this.user.branches[0] ?? null;
-            }
 
-            this.storeStatus = 'ready';
+                this.user = await this.fetchUserProfile();
+
+                const savedRole = localStorage.getItem('current_role');
+                if (savedRole && this.user?.roles_list.includes(savedRole)) {
+                    this.currentRole = savedRole;
+                } else if (this.user?.roles_list.length) {
+                    this.currentRole = this.user.roles_list[0] ?? null;
+                }
+
+                const savedBranchId = localStorage.getItem('current_branch_id');
+                if (savedBranchId) {
+                    const branch = this.user?.branches.find(b => b.id === parseInt(savedBranchId));
+                    if (branch) this.currentBranch = branch;
+                } else if (this.user?.branches.length) {
+                    this.currentBranch = this.user.branches[0] ?? null;
+                }
+            } catch (error) {
+                this.clearAuth();
+                this.user = null;
+                this.currentRole = null;
+                this.currentBranch = null;
+                router.push({ name: 'login' });
+            } finally {
+                this.storeStatus = 'ready';
+            }
         },
 
         async fetchUserProfile() {
@@ -83,6 +91,9 @@ export const useAuthStore = defineStore('auth', {
 
         clearAuth() {
             this.token = null;
+            this.user = null;
+            this.currentRole = null;
+            this.currentBranch = null;
             localStorage.removeItem('api_token');
         },
 
