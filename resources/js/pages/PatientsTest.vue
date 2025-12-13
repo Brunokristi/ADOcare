@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, shallowRef } from 'vue';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
 import type { Patient } from '@/types/models';
 import useAuthStore from '@/stores/auth';
 import ActionButtons from '@/components/table-columns/ActionButtons.vue';
+import { usePatientStore } from '@/stores/patientStore';
+import router from '@/router';
+import EditPatientDialog from './partials/patient/EditPatientDialog.vue';
+import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 
 // Simple formatter used in the example
 function formatBirthNumber(value?: string) {
@@ -12,6 +16,11 @@ function formatBirthNumber(value?: string) {
     const last = digits.slice(6, 10);
     return last.length ? `${first}/${last}` : first;
 }
+
+const patientStore = usePatientStore();
+
+const editPatientDialogVisible = ref(false);
+const editPatient = ref<Patient>({} as Patient);
 
 const tableEl = ref<InstanceType<typeof UniversalDataTable> | null>(null);
 
@@ -29,21 +38,29 @@ const options = ref<DataTableOptions<Patient>>({
         { field: 'personal_number', header: 'Rodné číslo', sortable: false, render: (v) => formatBirthNumber(v) },
         { field: 'sex', header: 'Pohlavie', render: (v) => v === 'M' ? 'Muž' : 'Žena' },
         {
-            field: 'edit', header: 'Akcie', component: ActionButtons, componentOptions: [
+            field: 'pin', header: '', width: "3rem", component: shallowRef(ActionButtons), componentOptions: [
+                {
+                    icon: (row: Patient) => patientStore.current?.id === row.id ? 'bi bi-pin-fill' : 'bi bi-pin',
+                    color: 'info',
+                    tooltip: 'Pripnúť pacienta',
+                    action: (row: Patient) => {
+                        console.log('Pinning patient', row);
+                        patientStore.setPatient(row);
+                        router.push(`patient/points`);
+                    }
+                }
+            ]
+        },
+        {
+            field: 'edit', header: '', width: "3rem", component: shallowRef(ActionButtons), componentOptions: [
                 {
                     icon: 'bi bi-pencil',
                     color: 'info',
                     tooltip: 'Editovať pacienta',
                     action: (row: Patient) => {
                         console.log('Edit patient', row);
-                    }
-                },
-                {
-                    icon: 'bi bi-eye',
-                    color: 'success',
-                    tooltip: 'Zobraziť detaily pacienta',
-                    action: (row: Patient) => {
-                        console.log('View patient', row);
+                        editPatient.value = { ...row };
+                        editPatientDialogVisible.value = true;
                     }
                 }
             ]
@@ -87,6 +104,10 @@ const options = ref<DataTableOptions<Patient>>({
                 <span class="text-muted">{{ formatBirthNumber(value) }}</span>
             </template>
         </UniversalDataTable>
+
+        <EditPatientDialog :visible="editPatientDialogVisible" :patient="editPatient" />
+
+
     </div>
 </template>
 

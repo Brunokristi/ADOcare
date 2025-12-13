@@ -1,11 +1,9 @@
 <template>
 
     <div class="flex gap-2">
-        <button v-for="(btn, idx) in customOptions" :key="idx" :title="btn.tooltip"
-            :class="`p-button p-component p-button-icon-only p-button-rounded p-button-text p-button-${btn.color}`"
-            @click="btn.action(row)" type="button">
-            <span :class="`pi ${btn.icon}`"></span>
-        </button>
+        <Button v-for="(btn, idx) in customOptions" :key="idx" :title="btn.tooltip"
+            :icon="typeof btn.icon === 'function' ? btn.icon(row ?? {}, column ?? {}) : btn.icon"
+            @click="btn.action(row)" variant="text" class="text-darkgrey! hover:bg-transparent! p-0!" />
     </div>
 
 </template>
@@ -18,7 +16,7 @@ import { baseColumnProps } from './base/Props';
 
 interface ActionButtonOptions {
     color: string;
-    icon: string;
+    icon: string | ((row: Record<string, any>, column: Record<string, any>) => string);
     tooltip: string;
     action: (row: any) => void;
 }
@@ -26,9 +24,6 @@ interface ActionButtonOptions {
 defineProps({
     ...baseColumnProps,
     customOptions: { type: Object as PropType<ActionButtonOptions[]>, required: false },
-
-
-
 })
 
 

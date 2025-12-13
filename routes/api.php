@@ -43,6 +43,16 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('cars', CarController::class);
     Route::apiResource('patients', PatientController::class);
+    // /patients/{patient}/ Doctors, Insurance Companies, Diagnoses, Procedures, Patient Points
+    Route::group(['prefix' => 'patients/{patient}'], function () {
+        Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
+        Route::get('doctor', [PatientController::class, 'doctor']);
+        Route::get('diagnoses', [PatientController::class, 'diagnoses']);
+        Route::get('procedures', [PatientController::class, 'procedures']);
+        Route::get('patient-points', [PatientController::class, 'patientPoints']);
+
+    });
+
     Route::apiResource('insurance-companies', InsuranceCompanyController::class);
     Route::apiResource('diagnoses', DiagnosisController::class);
     Route::apiResource('procedures', ProcedureController::class);
@@ -51,6 +61,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     // Newly added resources
     Route::apiResource('branches', BranchController::class);
     Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
+    Route::get('/branches/{branch}/doctors', [BranchController::class, 'doctors']);
 
 
 

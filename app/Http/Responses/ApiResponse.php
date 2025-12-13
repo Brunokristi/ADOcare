@@ -29,4 +29,16 @@ trait ApiResponse
             'errors' => $errors,
         ], $status);
     }
+
+
+
+    protected function notFound(string $message = 'Not Found', $errors = null)
+    {
+        return $this->error($message, 404, $errors);
+    }
+    protected function forbidden(string $message = 'Forbidden', $errors = null)
+    {
+        return $this->error($message, 403, $errors);
+    }
+
 }
