@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
+import { useAuthStore } from '@/stores/auth';
+
+const authStore = useAuthStore();
+const branchId = computed(() => authStore.currentBranch?.id ?? null);
+
 
 type BatchType = {
   code: string;
@@ -34,6 +39,8 @@ const selectedPatients = ref<Patient[]>([]);
 
 const submitted = ref(false);
 const loading = ref(false);
+const patientsLoading = ref(false);
+
 
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
@@ -76,23 +83,32 @@ async function loadInsurances() {
 }
 
 async function loadAllPatients() {
+  const id = branchId.value;
+
   try {
+    patientsLoading.value = true;
+
     const res = await api.get('/v1/patients', {
-      params: { paginate: false },
+      params: {
+        paginate: 0,
+        ...(id ? { branch_id: id } : {}),
+      },
     });
 
     const data = res.data?.data;
-    const items = (Array.isArray(data) ? data : data?.items) as PatientModel[] ?? [];
+    const items = ((Array.isArray(data) ? data : data?.items) as PatientModel[]) ?? [];
+
     allPatients.value = mapPatients(items);
   } catch (e) {
     console.error('Failed to load patients', e);
     allPatients.value = [];
+  } finally {
+    patientsLoading.value = false;
   }
 }
 
-/**
- * Local search over already loaded patients
- */
+
+
 function searchPatients(event: { query: string }) {
   const q = (event.query ?? '').toLowerCase().trim();
 
@@ -148,14 +164,21 @@ async function onSubmit() {
       batchType: { code: batchType.value.code },
       insurance: { id: insurance.value.id },
       period: [periodFrom.toISOString(), periodTo.toISOString()],
+      user: { id: authStore.user?.id },
+      branch: { id: authStore.currentBranch?.id},
+      company: { id: authStore.currentBranch?.company_id},
       patients: selectedPatients.value.map(p => ({ id: p.id })),
     });
 
     console.log('preview response', res.data);
 
-    const sheet = res.data.sheet;
+    const sheet = res.data?.data?.sheet;
 
-    // Use path instead of route name to avoid name mismatches
+    if (!sheet) {
+      console.error('Missing sheet in response:', res.data);
+      return;
+    }
+
     await router.push({
       path: '/documents/points',
       query: {
@@ -172,6 +195,7 @@ async function onSubmit() {
         batchTypeCode: batchType.value.code,
         period0: periodFrom.toISOString(),
         period1: periodTo.toISOString(),
+        patientIds: JSON.stringify(sheet.patients ?? []),
       },
     });
   } catch (error) {
@@ -181,10 +205,15 @@ async function onSubmit() {
   }
 }
 
+watch(branchId, (id) => {
+  if (!id) return;
+  loadAllPatients();
+}, { immediate: true });
+
 onMounted(() => {
   loadInsurances();
-  loadAllPatients();
 });
+
 </script>
 
 
@@ -278,6 +307,7 @@ onMounted(() => {
               optionLabel="name"
               :minLength="1"
               @complete="searchPatients"
+              :loading="patientsLoading"
               fluid
               class="w-full"
             >

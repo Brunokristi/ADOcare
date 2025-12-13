@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 
 import Button from 'primevue/button';
 import Toolbar from 'primevue/toolbar';
@@ -16,11 +17,23 @@ type CoverSheet = {
   performedDate: string;
   companyName: string;
   branchName: string;
+  patients?: number[];
 };
 
+const authStore = useAuthStore();
 const route = useRoute();
 
 const batchNumber = computed(() => Number(route.query.batchNumber ?? 0));
+const patientIds = computed<number[]>(() => {
+  const raw = route.query.patientIds;
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(String(raw));
+    return Array.isArray(arr) ? arr.map((x) => Number(x)).filter((x) => x > 0) : [];
+  } catch {
+    return [];
+  }
+});
 
 const sheet = computed<CoverSheet>(() => ({
   batchNumber: batchNumber.value,
@@ -32,7 +45,9 @@ const sheet = computed<CoverSheet>(() => ({
   performedDate: String(route.query.performedDate ?? ''),
   companyName: String(route.query.companyName ?? ''),
   branchName: String(route.query.branchName ?? ''),
+  patients: patientIds.value, 
 }));
+
 
 const formattedAmount = computed(
   () =>
@@ -47,34 +62,73 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('sk-SK');
 }
 
-async function downloadFile() {
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function buildPayload() {
+  const period0 = String(route.query.period0 ?? sheet.value.periodFrom ?? '');
+  const period1 = String(route.query.period1 ?? sheet.value.periodTo ?? '');
+
+  return {
+    batchNumber: sheet.value.batchNumber,
+    batchType: { code: String(route.query.batchTypeCode ?? 'N') },
+    insurance: { id: Number(route.query.insuranceId ?? 0) },
+    period: [period0, period1],
+    user: { id: authStore.user?.id },
+    branch: { id: authStore.currentBranch?.id },
+    company: { id: authStore.currentBranch?.company_id },
+    patients: (sheet.value.patients ?? []).map((id: number) => ({ id })),
+  };
+}
+
+async function downloadTxt() {
   try {
-    const payload = {
-      batchNumber: sheet.value.batchNumber,
-      batchType: { code: String(route.query.batchTypeCode ?? 'N') },
-      insurance: { id: Number(route.query.insuranceId) },
-      period: [
-        String(route.query.period0),
-        String(route.query.period1),
-      ],
-      patients: [],
-    };
+    const payload = buildPayload();
 
     const res = await api.post('/v1/batches/download', payload, {
       responseType: 'blob',
+      headers: { Accept: 'text/plain' },
     });
 
-    const blob = new Blob([res.data], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([res.data], { type: 'text/plain;charset=utf-8' });
+    triggerDownload(blob, sheet.value.fileName);
+  } catch (err: any) {
+    // show JSON validation errors if backend returns 422 as Blob
+    const blob = err?.response?.data;
+    if (blob instanceof Blob) {
+      console.error('TXT download error:', await blob.text());
+    } else {
+      console.error('TXT download failed', err);
+    }
+  }
+}
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = sheet.value.fileName;
-    a.click();
+// ✅ Toolbar button: PDF statement
+async function downloadStatementPdf() {
+  try {
+    const payload = buildPayload();
 
-    URL.revokeObjectURL(url);
-  } catch (e) {
-    console.error('Download failed', e);
+    const res = await api.post('/v1/batches/statement-pdf', payload, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' },
+    });
+
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const pdfName = `sprievodny_list_${sheet.value.batchNumber}.pdf`;
+    triggerDownload(blob, pdfName);
+  } catch (err: any) {
+    const blob = err?.response?.data;
+    if (blob instanceof Blob) {
+      console.error('PDF download error:', await blob.text());
+    } else {
+      console.error('PDF download failed', err);
+    }
   }
 }
 
@@ -82,6 +136,7 @@ function printPage() {
   window.print();
 }
 </script>
+
 
 <template>
   <div class="flex flex-col gap-4 cover-sheet-page">
@@ -95,7 +150,7 @@ function printPage() {
       <Button
         icon="bi bi-download"
         class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !h-7"
-        @click="downloadFile"
+        @click="downloadTxt"
       />
     </div>
 
@@ -114,7 +169,7 @@ function printPage() {
           <Button
             icon="bi bi-download"
             class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !h-7"
-            @click="downloadFile"
+            @click="downloadStatementPdf"
           />
 
           <Button

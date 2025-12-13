@@ -10,6 +10,8 @@ import { useAuthStore } from '@/stores/auth';
 const router = useRouter();
 const auth = useAuthStore();
 
+auth.init();
+
 onMounted(() => {
     window.addEventListener('unauthenticated', () => {
         router.push({ name: 'login' });
