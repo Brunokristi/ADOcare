@@ -103,24 +103,24 @@ watch(selectedRows, (val) => {
             :totalRecords="remote.total.value" :lazy="true" :loading="remote.loading.value" :dataKey="rowKey"
             v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="(e) => onSort(e)" v-model:selection="selectedRows"
             :selectionMode="opt.selectable ? 'multiple' : undefined"
-            :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]"
-            >
+            :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]">
             <template #paginatorcontainer="state">
                 <div class="flex items-center justify-between w-full px-2">
                     <div class="flex-1 text-xs">
                         Zobraziť
-                        <Select class="text-xs!" labelClass="text-xs!"  v-model="remote.per_page.value" :options="opt.pageSizeOptions ?? [10, 25, 50]"
-                             />
+                        <Select class="text-xs!" labelClass="text-xs!" v-model="remote.per_page.value"
+                            :options="opt.pageSizeOptions ?? [10, 25, 50]" />
                         záznamov na stranu
                     </div>
-                     <div class="flex-1">
+                    <div class="flex-1">
                         <Paginator v-bind="state"
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-                            v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="(e) => onSort(e)" v-model:selection="selectedRows"
-                        />
+                            v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="onSort"
+                            v-model:selection="selectedRows" />
                     </div>
                     <div class="flex-1 text-right text-xs text-accent">
-                        Výsledky od <b>{{ state.first }}</b> do <b>{{ state.last }}</b> z celkových <b>{{ state.totalRecords }}</b> záznamov
+                        Výsledky od <b>{{ state.first }}</b> do <b>{{ state.last }}</b> z celkových <b>{{
+                            state.totalRecords }}</b> záznamov
                     </div>
 
 
@@ -136,7 +136,7 @@ watch(selectedRows, (val) => {
                 <template #body="{ data }">
                     <slot :name="col.slot ?? 'col-' + col.field" :row="data" :value="col.field ? data[col.field] : '-'">
                         <component v-if="col.component" :is="col.component" :value="col.field ? data[col.field] : null"
-                            :row="data" />
+                            :row="data" :customOptions="col?.componentOptions ?? {}" />
                         <span v-else>{{ col.render ? col.render(col.field ? data[col.field] : null, data) : (col.field ?
                             data[col.field] : '-') }}</span>
                     </slot>

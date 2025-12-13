@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\CarCollection;
 use App\Http\Resources\CarResource;
 use App\Http\Filters\ApiQuery;
+use App\Http\Requests\StoreCarRequest;
+use App\Http\Requests\UpdateCarRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Car;
 use Illuminate\Http\Request;
@@ -23,13 +25,9 @@ class CarController extends Controller
         return $this->success(new CarCollection($results), 'Cars retrieved');
     }
 
-    public function store(Request $request)
+    public function store(StoreCarRequest $request)
     {
-        $data = $request->validate([
-            'evc' => 'required|string|max:255',
-            'company_id' => 'nullable|integer',
-            'user_id' => 'nullable|integer',
-        ]);
+        $data = $request->validated();
 
         $car = Car::create($data);
 
@@ -46,13 +44,9 @@ class CarController extends Controller
         return $this->success(new CarResource($car), 'Car retrieved');
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateCarRequest $request, $id)
     {
-        $data = $request->validate([
-            'evc' => 'sometimes|required|string|max:255',
-            'company_id' => 'nullable|integer',
-            'user_id' => 'nullable|integer',
-        ]);
+        $data = $request->validated();
 
         $car = Car::find($id);
         if (!$car) {

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use App\Models\Procedure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class ProcedureController extends Controller
 {
+    use ApiResponse;
     public function index(Request $request)
     {
         $q = $request->query('q', '');
@@ -24,10 +26,12 @@ class ProcedureController extends Controller
             });
         }
 
-        return $query
+        $items = $query
             ->orderBy('code')
             ->limit(50)
             ->get(['id', 'code', 'description']);
+
+        return $this->success($items, 'Procedures retrieved');
     }
 
     /**
@@ -36,13 +40,13 @@ class ProcedureController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code'        => ['required', 'string', 'max:50', 'unique:procedures,code'],
+            'code' => ['required', 'string', 'max:50', 'unique:procedures,code'],
             'description' => ['required', 'string', 'max:255'],
         ]);
 
         $procedure = Procedure::create($validated);
 
-        return response()->json($procedure, Response::HTTP_CREATED);
+        return $this->success($procedure, 'Created', Response::HTTP_CREATED);
     }
 
     /**
@@ -50,7 +54,7 @@ class ProcedureController extends Controller
      */
     public function show(Procedure $procedure)
     {
-        return $procedure;
+        return $this->success($procedure, 'Procedure retrieved');
     }
 
     /**
@@ -59,13 +63,13 @@ class ProcedureController extends Controller
     public function update(Request $request, Procedure $procedure)
     {
         $validated = $request->validate([
-            'code'        => ['sometimes', 'required', 'string', 'max:50', 'unique:procedures,code,' . $procedure->id],
+            'code' => ['sometimes', 'required', 'string', 'max:50', 'unique:procedures,code,' . $procedure->id],
             'description' => ['sometimes', 'required', 'string', 'max:255'],
         ]);
 
         $procedure->update($validated);
 
-        return response()->json($procedure);
+        return $this->success($procedure, 'Updated');
     }
 
     /**
@@ -75,6 +79,6 @@ class ProcedureController extends Controller
     {
         $procedure->delete();
 
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
 }

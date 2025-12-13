@@ -43,4 +43,9 @@ class Branch extends Model
     {
         return $this->hasMany(Car::class, 'company_id');
     }
+
+    public function patients()
+    {
+        return $this->belongsToMany(Patient::class, 'patient_branch_users', 'branch_id', 'patient_id');
+    }
 }

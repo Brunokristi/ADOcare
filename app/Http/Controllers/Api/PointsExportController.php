@@ -2,52 +2,53 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Carbon\Carbon;
 
 class PointsExportController extends Controller
 {
+    use ApiResponse;
+
     public function preview(Request $request)
     {
         $data = $request->validate([
-            'batchNumber'           => 'required|integer',
-            'batchType.code'        => 'required|string',
-            'insurance.id'          => 'required|integer',
-            'period'                => 'required|array|size:2',
-            'period.*'              => 'required|date',
-            'patients'              => 'array',
-            'patients.*.id'         => 'integer',
+            'batchNumber' => 'required|integer',
+            'batchType.code' => 'required|string',
+            'insurance.id' => 'required|integer',
+            'period' => 'required|array|size:2',
+            'period.*' => 'required|date',
+            'patients' => 'array',
+            'patients.*.id' => 'integer',
         ]);
 
         // ✅ dummy data, no DB queries
         $sheet = [
-            'batchNumber'   => $data['batchNumber'],
-            'fileName'      => "davka.{$data['batchNumber']}.txt",
-            'amount'        => 123.45,
-            'periodFrom'    => $data['period'][0],
-            'periodTo'      => $data['period'][1],
-            'performedBy'   => 'Test User',
+            'batchNumber' => $data['batchNumber'],
+            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'amount' => 123.45,
+            'periodFrom' => $data['period'][0],
+            'periodTo' => $data['period'][1],
+            'performedBy' => 'Test User',
             'performedDate' => now()->toDateString(),
-            'companyName'   => 'ADOS ADANED s.r.o.',
-            'branchName'    => 'Lučenec, Mierová 1A',
+            'companyName' => 'ADOS ADANED s.r.o.',
+            'branchName' => 'Lučenec, Mierová 1A',
         ];
 
-        return response()->json([
-            'sheet' => $sheet,
-        ]);
+        return $this->success(['sheet' => $sheet], 'Preview generated');
     }
 
     public function download(Request $request)
     {
         $data = $request->validate([
-            'batchNumber'           => 'required|integer',
-            'batchType.code'        => 'required|string',
-            'insurance.id'          => 'required|integer',
-            'period'                => 'required|array|size:2',
-            'period.*'              => 'required|date',
-            'patients'              => 'array',
-            'patients.*.id'         => 'integer',
+            'batchNumber' => 'required|integer',
+            'batchType.code' => 'required|string',
+            'insurance.id' => 'required|integer',
+            'period' => 'required|array|size:2',
+            'period.*' => 'required|date',
+            'patients' => 'array',
+            'patients.*.id' => 'integer',
         ]);
 
         $content = $this->generateTxtContent($data);

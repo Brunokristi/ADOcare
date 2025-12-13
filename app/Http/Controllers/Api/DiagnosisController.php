@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use App\Models\Diagnosis;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class DiagnosisController extends Controller
 {
+    use ApiResponse;
     public function index(Request $request)
     {
         $q = $request->query('q', '');
@@ -24,10 +26,12 @@ class DiagnosisController extends Controller
             });
         }
 
-        return $query
+        $items = $query
             ->orderBy('code')
             ->limit(50)
             ->get(['id', 'code', 'description']);
+
+        return $this->success($items, 'Diagnoses retrieved');
     }
 
 
@@ -40,12 +44,12 @@ class DiagnosisController extends Controller
 
         $diagnosis = Diagnosis::create($validated);
 
-        return response()->json($diagnosis, Response::HTTP_CREATED);
+        return $this->success($diagnosis, 'Created', Response::HTTP_CREATED);
     }
 
     public function show(Diagnosis $diagnosis)
     {
-        return $diagnosis;
+        return $this->success($diagnosis, 'Diagnosis retrieved');
     }
 
     public function update(Request $request, Diagnosis $diagnosis)
@@ -57,13 +61,13 @@ class DiagnosisController extends Controller
 
         $diagnosis->update($validated);
 
-        return response()->json($diagnosis);
+        return $this->success($diagnosis, 'Updated');
     }
 
     public function destroy(Diagnosis $diagnosis)
     {
         $diagnosis->delete();
 
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
 }

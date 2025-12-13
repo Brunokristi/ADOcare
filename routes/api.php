@@ -8,6 +8,15 @@ use App\Http\Controllers\Api\DiagnosisController;
 use App\Http\Controllers\Api\ProcedureController;
 use App\Http\Controllers\Api\PatientPointController;
 use App\Http\Controllers\Api\PointsExportController;
+use App\Http\Controllers\Api\BranchController;
+use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\DoctorController;
+use App\Http\Controllers\Api\ReportMonthController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\TextBlockController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VisitController;
+use App\Http\Controllers\Api\VisitTextController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -39,8 +48,22 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResource('procedures', ProcedureController::class);
     Route::apiResource('patient-points', PatientPointController::class);
 
+    // Newly added resources
+    Route::apiResource('branches', BranchController::class);
+    Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
+
+
+
+    Route::apiResource('companies', CompanyController::class);
+    Route::apiResource('doctors', DoctorController::class);
+    Route::apiResource('report-months', ReportMonthController::class);
+    Route::apiResource('roles', RoleController::class);
+    Route::apiResource('text-blocks', TextBlockController::class);
+    Route::apiResource('users', UserController::class);
+    Route::apiResource('visits', VisitController::class);
+    Route::apiResource('visit-texts', VisitTextController::class);
+
     Route::post('/batches/preview', [PointsExportController::class, 'preview']);
-    Route::post('/batches/download', [PointsExportController::class, 'download']);   
+    Route::post('/batches/download', [PointsExportController::class, 'download']);
 
 });
-

@@ -33,6 +33,7 @@ class PatientController extends Controller
             allowedFilters: ['sex']
         );
 
+
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
 

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use App\Models\InsuranceCompany;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class InsuranceCompanyController extends Controller
 {
+    use ApiResponse;
     public function index(Request $request)
     {
         $q = $request->query('q', '');
@@ -45,21 +47,21 @@ class InsuranceCompanyController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
-            'address'      => ['nullable', 'string', 'max:255'],
-            'city'         => ['nullable', 'string', 'max:255'],
-            'psc'          => ['nullable', 'string', 'max:50'],
-            'ico'          => ['nullable', 'string', 'max:50'],
-            'dic'          => ['nullable', 'string', 'max:50'],
-            'ic_dph'       => ['nullable', 'string', 'max:50'],
-            'register'     => ['nullable', 'string', 'max:255'],
-            'code'         => ['nullable', 'string', 'max:50'],
-            'branch_code'  => ['nullable', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'psc' => ['nullable', 'string', 'max:50'],
+            'ico' => ['nullable', 'string', 'max:50'],
+            'dic' => ['nullable', 'string', 'max:50'],
+            'ic_dph' => ['nullable', 'string', 'max:50'],
+            'register' => ['nullable', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:50'],
+            'branch_code' => ['nullable', 'string', 'max:50'],
         ]);
 
         $company = InsuranceCompany::create($validated);
 
-        return response()->json($company, Response::HTTP_CREATED);
+        return $this->success($company, 'Created', Response::HTTP_CREATED);
     }
 
     /**
@@ -67,7 +69,7 @@ class InsuranceCompanyController extends Controller
      */
     public function show(InsuranceCompany $insuranceCompany)
     {
-        return $insuranceCompany;
+        return $this->success($insuranceCompany, 'Insurance company retrieved');
     }
 
     /**
@@ -76,21 +78,21 @@ class InsuranceCompanyController extends Controller
     public function update(Request $request, InsuranceCompany $insuranceCompany)
     {
         $validated = $request->validate([
-            'name'         => ['sometimes', 'required', 'string', 'max:255'],
-            'address'      => ['sometimes', 'nullable', 'string', 'max:255'],
-            'city'         => ['sometimes', 'nullable', 'string', 'max:255'],
-            'psc'          => ['sometimes', 'nullable', 'string', 'max:50'],
-            'ico'          => ['sometimes', 'nullable', 'string', 'max:50'],
-            'dic'          => ['sometimes', 'nullable', 'string', 'max:50'],
-            'ic_dph'       => ['sometimes', 'nullable', 'string', 'max:50'],
-            'register'     => ['sometimes', 'nullable', 'string', 'max:255'],
-            'code'         => ['sometimes', 'nullable', 'string', 'max:50'],
-            'branch_code'  => ['sometimes', 'nullable', 'string', 'max:50'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'address' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'psc' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'ico' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'dic' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'ic_dph' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'register' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'code' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'branch_code' => ['sometimes', 'nullable', 'string', 'max:50'],
         ]);
 
         $insuranceCompany->update($validated);
 
-        return response()->json($insuranceCompany, Response::HTTP_OK);
+        return $this->success($insuranceCompany, 'Updated', Response::HTTP_OK);
     }
 
     /**
@@ -100,6 +102,6 @@ class InsuranceCompanyController extends Controller
     {
         $insuranceCompany->delete();
 
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
 }
