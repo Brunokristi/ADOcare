@@ -1,41 +1,236 @@
 <script setup>
-import { ref, computed, onMounted, watch , nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
 import { usePatientStore } from '@/stores/patientStore';
+import { useAuthStore } from '@/stores/auth';
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 import { useRouter } from 'vue-router';
-const router = useRouter();
+import api from '@/services/api';
 
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css'
+import 'leaflet/dist/leaflet.css';
 
+const router = useRouter();
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 const toast = useToast();
 const patientStore = usePatientStore();
+const authStore = useAuthStore();
+
+const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
 
 const dt = ref(null);
 const showRows = ref([]);
 const submitted = ref(false);
 
-const rows = ref([
-    { id: 1, firstname: 'Bruno', lastname: 'Kristián', personalnumber: '713482/2025', address: 'Modré zeme 21', city: 'Lučenec', doctorId: 1 },
-    { id: 2, firstname: 'Laura', lastname: 'Šimková', personalnumber: '825374/2019', address: 'Javorová 12', city: 'Zvolen', doctorId: 2 },
-    { id: 3, firstname: 'Samuel', lastname: 'Pavlík', personalnumber: '940215/3021', address: 'Slnečná 44', city: 'Banská Bystrica', doctorId: 3 },
-    // ... keep the rest unchanged
-]);
-
-const products = ref([...rows.value]);
+const products = ref([]); // table rows (UI shape)
 
 const filters = ref({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-
 const productDialog = ref(false);
+const deleteProductsDialog = ref(false);
 
+// UI form model (keep your current layout bindings)
 const product = ref({
+  id: null,
+  firstName: '',
+  lastName: '',
+  title: '',
+  birthNumber: '',
+  gender: null,
+  contact: '',
+  doctorId: null,
+  insuranceCode: null,
+  street: '',
+  city: '',
+  zip: '',
+});
+
+// options (keep your current ones)
+const genderOptions = [
+  { label: 'Muž', value: 'M' },
+  { label: 'Žena', value: 'F' }
+];
+
+const doctorOptions = ref([]);
+const insuranceOptions = ref([]);
+
+async function loadDoctorsOptions() {
+  const res = await api.get('/v1/doctors');
+
+  const items = res.data?.data?.items ?? [];
+
+  doctorOptions.value = items.map(d => ({
+    id: d.id,
+    name: `${d.title ? d.title + ' ' : ''}${d.first_name} ${d.last_name}`.trim(),
+  }));
+}
+
+async function loadInsuranceOptions() {
+  const res = await api.get('/v1/insurance-companies'); // no paginate for dropdown
+  const items = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+
+  insuranceOptions.value = items.map(c => ({
+    id: c.id,
+    code: String(c.code),
+    name: c.name,
+  }));
+}
+
+
+// -------------------- MAP --------------------
+const map = ref(null);
+const routeLayer = ref(null);
+
+function destroyMap() {
+  if (map.value) {
+    map.value.remove();
+    map.value = null;
+    routeLayer.value = null;
+  }
+}
+
+function initMap() {
+  const el = document.getElementById('patient-map');
+  if (!el) return;
+
+  // prevent double-init when reopening dialog
+  destroyMap();
+
+  map.value = L.map(el).setView([48.1486, 17.1077], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+  }).addTo(map.value);
+}
+
+async function loadRoute() {
+  if (!ORS_API_KEY || !map.value) return;
+
+  const body = {
+    coordinates: [
+      [17.1077, 48.1486],
+      [17.12, 48.16],
+    ],
+  };
+
+  const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
+    method: 'POST',
+    headers: {
+      Authorization: ORS_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+
+  if (routeLayer.value) routeLayer.value.remove();
+
+  routeLayer.value = L.geoJSON(data, {
+    style: { color: '#5C9EAD', weight: 4 },
+  }).addTo(map.value);
+
+  const bounds = routeLayer.value.getBounds();
+  if (bounds.isValid()) {
+    map.value.fitBounds(bounds, { padding: [20, 20] });
+  }
+}
+
+// -------------------- API ↔ UI mapping helpers --------------------
+function apiToUi(p) {
+  const doctorName =
+    p.doctor
+      ? `${p.doctor.title ? p.doctor.title + ' ' : ''}${p.doctor.first_name ?? ''} ${p.doctor.last_name ?? ''}`.trim()
+      : '';
+
+  return {
+    id: p.id,
+    firstname: p.first_name ?? '',
+    lastname: p.last_name ?? '',
+    personalnumber: p.personal_number ?? '',
+    address: p.address ?? '',
+    city: p.city ?? '',
+    doctorId: p.doctor_id ?? null,
+    doctor: doctorName || (p.doctor_id ? String(p.doctor_id) : ''),
+
+    // keep full original api record for editing (non-visual)
+    _api: p,
+  };
+}
+
+function uiToApiPayload(ui) {
+  // insurance in your UI is "code", but backend expects insurance_company_id (integer).
+  // If your insuranceOptions are only codes, this will send null by default to avoid validation errors.
+  // Replace this mapping once you have real insurance companies with ids in frontend.
+  const insurance_company_id = null;
+
+  return {
+    branch_id: branchId.value,
+
+    first_name: ui.firstName,
+    last_name: ui.lastName,
+    title: ui.title || null,
+    personal_number: ui.birthNumber || null,
+    sex: ui.gender || null,
+    contact: ui.contact || null,
+
+    doctor_id: ui.doctorId || null,
+    insurance_company_id,
+
+    address: ui.street || null,
+    city: ui.city || null,
+    zip: ui.zip || null,
+
+    latitude: null,
+    longitude: null,
+
+    reference_date: null,
+  };
+}
+
+function setFormFromApi(apiPatient) {
+  product.value = {
+    id: apiPatient.id ?? null,
+    firstName: apiPatient.first_name ?? '',
+    lastName: apiPatient.last_name ?? '',
+    title: apiPatient.title ?? '',
+    birthNumber: apiPatient.personal_number ?? '',
+    gender: apiPatient.sex ?? null,
+    contact: apiPatient.contact ?? '',
+    doctorId: apiPatient.doctor_id ?? null,
+    insuranceCode: apiPatient.insurance_company?.code ?? null,
+    street: apiPatient.address ?? '',
+    city: apiPatient.city ?? '',
+    zip: apiPatient.zip ?? '',
+  };
+}
+
+// -------------------- LOAD LIST --------------------
+async function loadPatients() {
+  if (!branchId.value) return;
+
+  const res = await api.get('/v1/patients', {
+    params: { branch_id: branchId.value },
+  });
+
+  console.log('LOAD PATIENTS RESPONSE:', res.data);
+
+  const items = res.data?.data?.items ?? [];
+  products.value = items.map(apiToUi)
+}
+
+
+
+
+onMounted(loadPatients);
+
+// -------------------- CRUD --------------------
+const openNew = () => {
+  product.value = {
     id: null,
     firstName: '',
     lastName: '',
@@ -48,181 +243,141 @@ const product = ref({
     street: '',
     city: '',
     zip: '',
-});
+  };
 
+  submitted.value = false;
+  productDialog.value = true;
 
-const genderOptions = [
-    { label: 'Muž', value: 'M' },
-    { label: 'Žena', value: 'F' }
-];
-
-const doctorOptions = [
-    { id: 1, name: 'MUDr. Viliam Džurbala' },
-    { id: 2, name: 'MUDr. Jana Kováčová' },
-    { id: 3, name: 'MUDr. Peter Horváth' },
-    { id: 4, name: 'MUDr. Lucia Mareková' },
-];
-
-const insuranceOptions = [
-    { code: '25', name: 'VšZP' },
-    { code: '24', name: 'Dôvera' },
-    { code: '27', name: 'Union' },
-];
-
-
-const map = ref(null);
-const routeLayer = ref(null);
-
-function destroyMap() {
-    if (map.value) {
-        map.value.remove();
-        map.value = null;
-        routeLayer.value = null;
-    }
-}
-
-function initMap() {
-    const el = document.getElementById('patient-map');
-    if (!el) return;
-
-    map.value = L.map(el).setView([48.1486, 17.1077], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-    }).addTo(map.value);
-}
-
-async function loadRoute() {
-    if (!ORS_API_KEY || !map.value) return;
-
-    const body = {
-        coordinates: [
-            [17.1077, 48.1486],
-            [17.12, 48.16],
-        ],
-    };
-
-    const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
-        method: 'POST',
-        headers: {
-            Authorization: ORS_API_KEY,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-
-    if (routeLayer.value) {
-        routeLayer.value.remove();
-    }
-
-    routeLayer.value = L.geoJSON(data, {
-        style: {
-            color: '#5C9EAD',
-            weight: 4,
-        },
-    }).addTo(map.value);
-
-    const bounds = routeLayer.value.getBounds();
-    if (bounds.isValid()) {
-        map.value.fitBounds(bounds, { padding: [20, 20] });
-    }
-}
-
-
-// -------------------- CRUD --------------------
-
-const openNew = () => {
-    product.value = {
-        id: null,
-        firstName: '',
-        lastName: '',
-        title: '',
-        birthNumber: '',
-        gender: null,
-        contact: '',
-        doctorId: null,
-        insuranceCode: null,
-        street: '',
-        city: '',
-        zip: '',
-    };
-
-    submitted.value = false;
-    productDialog.value = true;
-
-    setTimeout(() => {
-        initMap();
-        loadRoute();
-    }, 50);
+  setTimeout(() => {
+    initMap();
+    loadRoute();
+  }, 50);
 };
 
 const editProduct = (row) => {
-    product.value = { ...row };
-    productDialog.value = true;
+  // row is UI shape; prefer using stored API record if present
+  const apiPatient = row._api;
+  if (apiPatient) setFormFromApi(apiPatient);
+  else {
+    product.value = {
+      id: row.id ?? null,
+      firstName: row.firstname ?? '',
+      lastName: row.lastname ?? '',
+      title: '',
+      birthNumber: row.personalnumber ?? '',
+      gender: null,
+      contact: '',
+      doctorId: row.doctorId ?? null,
+      insuranceCode: null,
+      street: row.address ?? '',
+      city: row.city ?? '',
+      zip: '',
+    };
+  }
 
-    setTimeout(() => {
-        initMap();
-        loadRoute();
-    }, 50);
+  submitted.value = false;
+  productDialog.value = true;
+
+  setTimeout(() => {
+    initMap();
+    loadRoute();
+  }, 50);
 };
 
-const saveProduct = () => {
-    submitted.value = true;
+const saveProduct = async () => {
+  submitted.value = true;
 
-    if (!product.value.firstName || !product.value.lastName) return;
+  if (!product.value.firstName || !product.value.lastName) return;
 
+  const payload = uiToApiPayload(product.value);
+
+  try {
     if (product.value.id) {
-        const index = products.value.findIndex(p => p.id === product.value.id);
-        products.value[index] = { ...product.value };
+      const res = await api.patch(`/v1/patients/${product.value.id}`, payload);
+      const updated = res.data?.data ?? res.data;
+
+      const uiRow = apiToUi(updated);
+      const index = products.value.findIndex((p) => p.id === uiRow.id);
+      if (index !== -1) products.value[index] = uiRow;
+
+      toast.add({ severity: 'success', summary: 'OK', detail: 'Updated', life: 2000 });
     } else {
-        product.value.id = Date.now();
-        products.value.push({ ...product.value });
+      const res = await api.post('/v1/patients', payload);
+      const created = res.data?.data ?? res.data;
+
+      products.value.unshift(apiToUi(created));
+      toast.add({ severity: 'success', summary: 'OK', detail: 'Created', life: 2000 });
     }
 
     productDialog.value = false;
+  } catch (e) {
+    const status = e?.response?.status;
+    if (status === 422) {
+      toast.add({ severity: 'warn', summary: 'Validation', detail: 'Please fill required fields', life: 3000 });
+    } else {
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Save failed', life: 3000 });
+    }
+    console.error(e);
+  }
 };
 
-const deleteProductsDialog = ref(false);
+const confirmDeleteSelected = () => {
+  deleteProductsDialog.value = true;
+};
 
-const deleteshowRows = () => {
-    products.value = products.value.filter(val => !showRows.value.includes(val));
+const deleteshowRows = async () => {
+  try {
+    const ids = showRows.value.map((r) => r.id);
+    await Promise.all(ids.map((id) => api.delete(`/v1/patients/${id}`)));
+
+    products.value = products.value.filter((p) => !ids.includes(p.id));
     deleteProductsDialog.value = false;
     showRows.value = [];
+
+    toast.add({ severity: 'success', summary: 'OK', detail: 'Deleted', life: 2000 });
+  } catch (e) {
+    console.error(e);
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Delete failed', life: 3000 });
+  }
 };
 
 // -------------------- PATIENT PIN --------------------
-
 const selectPatient = (row) => {
-    patientStore.setPatient(row);
-    router.push(`patient/points`);
+  // store the API patient if possible (so other pages can use correct field names)
+  patientStore.setPatient(row._api ?? row);
+  router.push(`patient/points`);
 };
 
 // -------------------- INFO LINE --------------------
-
 const recordsInfo = computed(() => {
-    if (!dt.value) return "";
-    const total = products.value.length;
-    const filtered = dt.value.processedData?.length;
-    return `${filtered ?? total} z ${total} záznamov`;
+  if (!dt.value) return '';
+  const total = products.value.length;
+  const filtered = dt.value.processedData?.length;
+  return `${filtered ?? total} z ${total} záznamov`;
 });
 
 function formatBirthNumber(value) {
-    let digits = value.replace(/\D/g, '');
-
-    const first = digits.slice(0, 6);
-    const last = digits.slice(6, 10);
-
-    if (last.length > 0) {
-        return `${first}/${last}`;
-    }
-
-    return first;
+  const digits = value.replace(/\D/g, '');
+  const first = digits.slice(0, 6);
+  const last = digits.slice(6, 10);
+  return last.length > 0 ? `${first}/${last}` : first;
 }
 
-</script>
+watch(
+  () => branchId.value,
+  async (id) => {
+    if (!id) return;
+    await Promise.all([
+      loadPatients(),
+      loadDoctorsOptions(),
+      loadInsuranceOptions(),
+    ]);
+  },
+  { immediate: true }
+);
 
+
+</script>
 
 <template>
     <SecondaryNavbar />
@@ -338,7 +493,7 @@ function formatBirthNumber(value) {
 
                 <div class="col-span-4">
                     <label class="block text-normal mb-1">Pohlavie</label>
-                    <Dropdown
+                    <Select
                     v-model="product.gender"
                     :options="genderOptions"
                     optionLabel="label"
@@ -363,7 +518,7 @@ function formatBirthNumber(value) {
                 </div>
                 <div class="col-span-6">
                     <label class="block text-normal mb-1">Lekár</label>
-                    <Dropdown
+                    <Select
                     v-model="product.doctorId"
                     :options="doctorOptions"
                     optionLabel="name"
@@ -376,13 +531,13 @@ function formatBirthNumber(value) {
                             <Button label="Pridať" fluid variant="text" size="small" icon="bi bi-plus" class="!text-accent !bg-tag3 hover:!bg-accent hover:!text-white" />
                         </div>
                     </template>
-                    </Dropdown>
+                </Select>
                     
                 </div>
 
                 <div class="col-span-6">
                     <label class="block text-normal mb-1">Poisťovňa</label>
-                    <Dropdown
+                    <Select
                     v-model="product.insuranceCode"
                     :options="insuranceOptions"
                     optionLabel="name"

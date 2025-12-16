@@ -1,18 +1,15 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
+use App\Http\Filters\ApiQuery;
+use App\Http\Resources\BaseCollection;
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\PatientResource;
-use App\Http\Resources\BaseCollection;
-use App\Http\Filters\ApiQuery;
 use App\Http\Responses\ApiResponse;
-use App\Models\Patient;
-use App\Models\InsuranceCompany;
-use App\Models\Doctor;
 use App\Models\Diagnosis;
-use App\Models\Procedure;
+use App\Models\Patient;
 use App\Models\PatientPoint;
+use App\Models\Procedure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
@@ -42,19 +39,39 @@ class PatientController extends Controller
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
 
-
-
     public function store(Request $request)
     {
         $data = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'personal_number' => 'nullable|string',
-            'sex' => 'nullable|in:M,F',
-            'reference_date' => 'nullable|date',
+            'branch_id'            => 'required|integer|exists:branches,id',
+
+            'first_name'           => 'required|string|max:255',
+            'last_name'            => 'required|string|max:255',
+            'title'                => 'nullable|string|max:255',
+            'personal_number'      => 'nullable|string|max:255',
+            'sex'                  => 'nullable|in:M,F',
+            'contact'              => 'nullable|string|max:255',
+
+            'doctor_id'            => 'nullable|integer|exists:doctors,id',
+            'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
+
+            'address'              => 'nullable|string|max:255',
+            'city'                 => 'nullable|string|max:255',
+            'zip'                  => 'nullable|string|max:50',
+
+            'latitude'             => 'nullable|numeric',
+            'longitude'            => 'nullable|numeric',
+
+            'reference_date'       => 'nullable|date',
         ]);
 
-        $patient = Patient::create($data);
+        $patient = Patient::create(collect($data)->except('branch_id')->toArray());
+
+        // Attach current user + branch in pivot (patient_branch_users)
+        $patient->assignedUsers()->syncWithoutDetaching([
+            $request->user()->id => ['branch_id' => (int) $data['branch_id']],
+        ]);
+
+        $patient->load(['doctor', 'visits', 'insuranceCompany']);
 
         return $this->success(new PatientResource($patient), 'Created', 201);
     }
@@ -70,14 +87,30 @@ class PatientController extends Controller
         return $this->success(new PatientResource($patient), 'Patient retrieved');
     }
 
+
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'first_name' => 'sometimes|required|string|max:255',
-            'last_name' => 'sometimes|required|string|max:255',
-            'personal_number' => 'nullable|string',
-            'sex' => 'nullable|in:M,F',
-            'reference_date' => 'nullable|date',
+            'branch_id'            => 'sometimes|integer|exists:branches,id',
+
+            'first_name'           => 'sometimes|required|string|max:255',
+            'last_name'            => 'sometimes|required|string|max:255',
+            'title'                => 'nullable|string|max:255',
+            'personal_number'      => 'nullable|string|max:255',
+            'sex'                  => 'nullable|in:M,F',
+            'contact'              => 'nullable|string|max:255',
+
+            'doctor_id'            => 'nullable|integer|exists:doctors,id',
+            'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
+
+            'address'              => 'nullable|string|max:255',
+            'city'                 => 'nullable|string|max:255',
+            'zip'                  => 'nullable|string|max:50',
+
+            'latitude'             => 'nullable|numeric',
+            'longitude'            => 'nullable|numeric',
+
+            'reference_date'       => 'nullable|date',
         ]);
 
         $patient = Patient::find($id);
@@ -85,13 +118,22 @@ class PatientController extends Controller
             return $this->error('Not found', 404);
         }
 
-        $patient->fill($data);
+        $patient->fill(collect($data)->except('branch_id')->toArray());
         $patient->save();
+
+        if (array_key_exists('branch_id', $data)) {
+            $patient->assignedUsers()->syncWithoutDetaching([
+                $request->user()->id => ['branch_id' => (int) $data['branch_id']],
+            ]);
+        }
+
+        $patient->load(['doctor', 'visits', 'insuranceCompany']);
 
         return $this->success(new PatientResource($patient), 'Updated');
     }
 
-    public function destroy($id)
+
+    public function destroy(Request $request, $id)
     {
         $patient = Patient::find($id);
         if (!$patient) {
@@ -103,67 +145,39 @@ class PatientController extends Controller
         return $this->success(null, 'Deleted');
     }
 
-    /**
-     * GET /v1/patients/{patient}/insurance-companies
-     */
+
     public function insuranceCompany(Request $request, Patient $patient)
     {
         $insuranceCompany = $patient->insuranceCompany;
-        if (!$insuranceCompany) {
-            return $this->notFound();
-        }
-
+        if (!$insuranceCompany) return $this->notFound();
         return $this->success($insuranceCompany, 'Insurance Company retrieved');
     }
 
-    /**
-     * GET /v1/patients/{patient}/doctor
-     */
     public function doctor(Request $request, Patient $patient)
     {
         $doctor = $patient->doctor;
-        if (!$doctor) {
-            return $this->notFound();
-        }
-
+        if (!$doctor) return $this->notFound();
         return $this->success($doctor, 'Doctor retrieved');
-
     }
 
-    /**
-     * GET /v1/patients/{patient}/diagnoses
-     */
     public function diagnoses(Request $request, Patient $patient)
     {
         $query = Diagnosis::query();
-
         $results = ApiQuery::apply($request, $query, searchable: ['code', 'description']);
-
         return $this->success(new BaseCollection($results), 'Diagnoses retrieved');
     }
 
-    /**
-     * GET /v1/patients/{patient}/procedures
-     */
     public function procedures(Request $request, Patient $patient)
     {
         $query = Procedure::query();
-
         $results = ApiQuery::apply($request, $query, searchable: ['code', 'description']);
-
         return $this->success(new BaseCollection($results), 'Procedures retrieved');
     }
 
-    /**
-     * GET /v1/patients/{patient}/patient-points
-     */
     public function patientPoints(Request $request, Patient $patient)
     {
         $query = PatientPoint::query()->where('patient_id', $patient->id);
-
         $results = ApiQuery::apply($request, $query, searchable: ['reference_date', 'user_id', 'branch_id']);
-
         return $this->success(new BaseCollection($results), 'Patient points retrieved');
     }
-
 }

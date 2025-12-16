@@ -18,6 +18,7 @@ import DocumentPoints from '@/partials/Documents/Points.vue'
 import Patients from '@/pages/Patients.vue'
 
 
+
 const routes = [
     { path: '/', name: 'home', component: Dashboard },
     {
@@ -66,6 +67,18 @@ const routes = [
                     link: 'bodovanie',
                     sidebar: true,
                     navbar: true,
+                },
+            },
+
+            {
+                path: 'kilometers',
+                name: 'kilometersdata',
+                component: Points,
+                meta: {
+                    title: 'Kilometre',
+                    link: 'kilometre',
+                    sidebar: false,
+                    navbar: false,
                 },
             },
         ]
