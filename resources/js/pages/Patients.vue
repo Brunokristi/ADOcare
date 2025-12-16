@@ -8,23 +8,23 @@ import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 import { useRouter } from 'vue-router';
 import api from '@/services/api';
 
+import AutoComplete from 'primevue/autocomplete';
+
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const router = useRouter();
-const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 const toast = useToast();
 const patientStore = usePatientStore();
 const authStore = useAuthStore();
 
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
-
 const dt = ref(null);
 const showRows = ref([]);
 const submitted = ref(false);
 
-const products = ref([]); // table rows (UI shape)
+const products = ref([]);
 
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -33,63 +33,96 @@ const filters = ref({
 const productDialog = ref(false);
 const deleteProductsDialog = ref(false);
 
-// UI form model (keep your current layout bindings)
 const product = ref({
   id: null,
   firstName: '',
   lastName: '',
-  title: '',
+  title: '', // optional
   birthNumber: '',
   gender: null,
-  contact: '',
+  contact: '', // optional
   doctorId: null,
-  insuranceCode: null,
+  insuranceCompanyId: null,
+
   street: '',
   city: '',
   zip: '',
+  latitude: null,
+  longitude: null,
 });
 
-// options (keep your current ones)
+const errors = ref({});
+
 const genderOptions = [
   { label: 'Muž', value: 'M' },
-  { label: 'Žena', value: 'F' }
+  { label: 'Žena', value: 'F' },
 ];
 
 const doctorOptions = ref([]);
 const insuranceOptions = ref([]);
 
+// -------------------- VALIDATION --------------------
+function validateForm() {
+  const e = {};
+
+  if (!product.value.firstName?.trim()) e.firstName = 'Meno je povinné.';
+  if (!product.value.lastName?.trim()) e.lastName = 'Priezvisko je povinné.';
+  if (!product.value.birthNumber?.trim()) e.birthNumber = 'Rodné číslo je povinné.';
+  if (!product.value.gender) e.gender = 'Pohlavie je povinné.';
+
+  if (!product.value.doctorId) e.doctorId = 'Lekár je povinný.';
+  if (!product.value.insuranceCompanyId) e.insuranceCompanyId = 'Poisťovňa je povinná.';
+
+  if (!product.value.street?.trim()) e.street = 'Ulica je povinná.';
+  if (!product.value.city?.trim()) e.city = 'Mesto je povinné.';
+  if (!product.value.zip?.trim()) e.zip = 'PSČ je povinné.';
+
+  if (product.value.latitude == null || product.value.longitude == null) {
+    e.coordinates = 'Vyberte adresu zo zoznamu, aby sa uložila poloha.';
+  }
+
+  errors.value = e;
+  return Object.keys(e).length === 0;
+}
+
+// -------------------- Doctors / Insurance --------------------
 async function loadDoctorsOptions() {
-  const res = await api.get('/v1/doctors');
+  if (!branchId.value) return;
+
+  const res = await api.get('/v1/doctors', {
+    params: {
+      branch_id: branchId.value,
+      favourites: 1,
+    },
+  });
 
   const items = res.data?.data?.items ?? [];
-
-  doctorOptions.value = items.map(d => ({
+  doctorOptions.value = items.map((d) => ({
     id: d.id,
-    name: `${d.title ? d.title + ' ' : ''}${d.first_name} ${d.last_name}`.trim(),
+    name: `${d.title ? d.title + ' ' : ''}${d.first_name ?? ''} ${d.last_name ?? ''}`.trim(),
   }));
 }
 
 async function loadInsuranceOptions() {
-  const res = await api.get('/v1/insurance-companies'); // no paginate for dropdown
-  const items = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+  const res = await api.get('/v1/insurance-companies');
+  const items = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
 
-  insuranceOptions.value = items.map(c => ({
+  insuranceOptions.value = items.map((c) => ({
     id: c.id,
-    code: String(c.code),
     name: c.name,
+    code: String(c.code),
   }));
 }
 
-
 // -------------------- MAP --------------------
 const map = ref(null);
-const routeLayer = ref(null);
+const marker = ref(null);
 
 function destroyMap() {
   if (map.value) {
     map.value.remove();
     map.value = null;
-    routeLayer.value = null;
+    marker.value = null;
   }
 }
 
@@ -97,47 +130,103 @@ function initMap() {
   const el = document.getElementById('patient-map');
   if (!el) return;
 
-  // prevent double-init when reopening dialog
   destroyMap();
 
   map.value = L.map(el).setView([48.1486, 17.1077], 13);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(map.value);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map.value);
 }
 
-async function loadRoute() {
-  if (!ORS_API_KEY || !map.value) return;
+function setMarker(lat, lng) {
+  if (!map.value || lat == null || lng == null) return;
 
-  const body = {
-    coordinates: [
-      [17.1077, 48.1486],
-      [17.12, 48.16],
-    ],
-  };
+  const latLng = [lat, lng];
+  if (marker.value) marker.value.remove();
+  marker.value = L.marker(latLng).addTo(map.value);
+  map.value.setView(latLng, 16);
+}
 
-  const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car', {
-    method: 'POST',
-    headers: {
-      Authorization: ORS_API_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+function setMarkerFromProduct() {
+  if (!map.value) return;
+  if (product.value.latitude == null || product.value.longitude == null) return;
+  setMarker(product.value.latitude, product.value.longitude);
+}
 
-  const data = await res.json();
+// -------------------- Address Autocomplete --------------------
+const addressQuery = ref('');
+const addressSuggestions = ref([]);
 
-  if (routeLayer.value) routeLayer.value.remove();
+async function searchAddress(e) {
+  try {
+    const q = (e?.query ?? '').trim();
+    if (!q) {
+      addressSuggestions.value = [];
+      return;
+    }
 
-  routeLayer.value = L.geoJSON(data, {
-    style: { color: '#5C9EAD', weight: 4 },
-  }).addTo(map.value);
+    const res = await api.get('/v1/geocode/autocomplete', {
+      params: { text: q },
+    });
 
-  const bounds = routeLayer.value.getBounds();
-  if (bounds.isValid()) {
-    map.value.fitBounds(bounds, { padding: [20, 20] });
+    const features = res.data?.features ?? [];
+
+    addressSuggestions.value = features.map((f) => {
+      const p = f.properties ?? {};
+      const coords = f.geometry?.coordinates ?? [];
+
+      const street =
+        [p.street, p.housenumber].filter(Boolean).join(' ').trim()
+        || p.name
+        || '';
+
+      const city = p.locality || p.county || p.region || '';
+      const zip = p.postalcode || '';
+
+      return {
+        label: p.label || `${street}${city ? ', ' + city : ''}${zip ? ', ' + zip : ''}`,
+        street,
+        city,
+        zip,
+        lng: coords[0] ?? null,
+        lat: coords[1] ?? null,
+      };
+    });
+  } catch (err) {
+    console.error('searchAddress error:', err);
+    addressSuggestions.value = [];
   }
+}
+
+function onAddressSelect(event) {
+  try {
+    const sel = event?.value;
+    if (!sel) return;
+
+    product.value.street = sel.street || '';
+    product.value.city = sel.city || '';
+    product.value.zip = sel.zip || '';
+
+    product.value.latitude = sel.lat ?? null;
+    product.value.longitude = sel.lng ?? null;
+
+    addressQuery.value = sel.label || product.value.street;
+
+    // clear address-related errors as soon as user selects
+    if (errors.value.street) delete errors.value.street;
+    if (errors.value.city) delete errors.value.city;
+    if (errors.value.zip) delete errors.value.zip;
+    if (errors.value.coordinates) delete errors.value.coordinates;
+
+    nextTick(() => setMarker(product.value.latitude, product.value.longitude));
+  } catch (err) {
+    console.error('onAddressSelect error:', err);
+  }
+}
+
+function syncAddressQueryFromProduct() {
+  const s = product.value.street || '';
+  const c = product.value.city || '';
+  const z = product.value.zip || '';
+  addressQuery.value = [s, c, z].filter(Boolean).join(', ');
 }
 
 // -------------------- API ↔ UI mapping helpers --------------------
@@ -156,37 +245,28 @@ function apiToUi(p) {
     city: p.city ?? '',
     doctorId: p.doctor_id ?? null,
     doctor: doctorName || (p.doctor_id ? String(p.doctor_id) : ''),
-
-    // keep full original api record for editing (non-visual)
     _api: p,
   };
 }
 
 function uiToApiPayload(ui) {
-  // insurance in your UI is "code", but backend expects insurance_company_id (integer).
-  // If your insuranceOptions are only codes, this will send null by default to avoid validation errors.
-  // Replace this mapping once you have real insurance companies with ids in frontend.
-  const insurance_company_id = null;
-
   return {
     branch_id: branchId.value,
-
     first_name: ui.firstName,
     last_name: ui.lastName,
-    title: ui.title || null,
+    title: ui.title || null, // optional
     personal_number: ui.birthNumber || null,
     sex: ui.gender || null,
-    contact: ui.contact || null,
-
+    contact: ui.contact || null, // optional
     doctor_id: ui.doctorId || null,
-    insurance_company_id,
+    insurance_company_id: ui.insuranceCompanyId || null,
 
     address: ui.street || null,
     city: ui.city || null,
     zip: ui.zip || null,
 
-    latitude: null,
-    longitude: null,
+    latitude: ui.latitude ?? null,
+    longitude: ui.longitude ?? null,
 
     reference_date: null,
   };
@@ -202,11 +282,17 @@ function setFormFromApi(apiPatient) {
     gender: apiPatient.sex ?? null,
     contact: apiPatient.contact ?? '',
     doctorId: apiPatient.doctor_id ?? null,
-    insuranceCode: apiPatient.insurance_company?.code ?? null,
+    insuranceCompanyId: apiPatient.insurance_company_id ?? null,
+
     street: apiPatient.address ?? '',
     city: apiPatient.city ?? '',
     zip: apiPatient.zip ?? '',
+    latitude: apiPatient.latitude ?? null,
+    longitude: apiPatient.longitude ?? null,
   };
+
+  syncAddressQueryFromProduct();
+  errors.value = {};
 }
 
 // -------------------- LOAD LIST --------------------
@@ -217,19 +303,14 @@ async function loadPatients() {
     params: { branch_id: branchId.value },
   });
 
-  console.log('LOAD PATIENTS RESPONSE:', res.data);
-
   const items = res.data?.data?.items ?? [];
-  products.value = items.map(apiToUi)
+  products.value = items.map(apiToUi);
 }
-
-
-
 
 onMounted(loadPatients);
 
 // -------------------- CRUD --------------------
-const openNew = () => {
+function resetForm() {
   product.value = {
     id: null,
     firstName: '',
@@ -239,55 +320,45 @@ const openNew = () => {
     gender: null,
     contact: '',
     doctorId: null,
-    insuranceCode: null,
+    insuranceCompanyId: null,
     street: '',
     city: '',
     zip: '',
+    latitude: null,
+    longitude: null,
   };
 
+  addressQuery.value = '';
+  addressSuggestions.value = [];
+  errors.value = {};
   submitted.value = false;
+}
+
+const openNew = () => {
+  resetForm();
   productDialog.value = true;
 
   setTimeout(() => {
     initMap();
-    loadRoute();
   }, 50);
 };
 
 const editProduct = (row) => {
-  // row is UI shape; prefer using stored API record if present
   const apiPatient = row._api;
   if (apiPatient) setFormFromApi(apiPatient);
-  else {
-    product.value = {
-      id: row.id ?? null,
-      firstName: row.firstname ?? '',
-      lastName: row.lastname ?? '',
-      title: '',
-      birthNumber: row.personalnumber ?? '',
-      gender: null,
-      contact: '',
-      doctorId: row.doctorId ?? null,
-      insuranceCode: null,
-      street: row.address ?? '',
-      city: row.city ?? '',
-      zip: '',
-    };
-  }
 
   submitted.value = false;
   productDialog.value = true;
 
   setTimeout(() => {
     initMap();
-    loadRoute();
+    setMarkerFromProduct();
   }, 50);
 };
 
 const saveProduct = async () => {
   submitted.value = true;
-
-  if (!product.value.firstName || !product.value.lastName) return;
+  if (!validateForm()) return;
 
   const payload = uiToApiPayload(product.value);
 
@@ -343,9 +414,8 @@ const deleteshowRows = async () => {
 
 // -------------------- PATIENT PIN --------------------
 const selectPatient = (row) => {
-  // store the API patient if possible (so other pages can use correct field names)
   patientStore.setPatient(row._api ?? row);
-  router.push(`patient/points`);
+  router.push('patient/points');
 };
 
 // -------------------- INFO LINE --------------------
@@ -356,259 +426,270 @@ const recordsInfo = computed(() => {
   return `${filtered ?? total} z ${total} záznamov`;
 });
 
-function formatBirthNumber(value) {
-  const digits = value.replace(/\D/g, '');
-  const first = digits.slice(0, 6);
-  const last = digits.slice(6, 10);
-  return last.length > 0 ? `${first}/${last}` : first;
+function goToDoctorsSettings() {
+  nextTick(() => router.push('/settings/doctors'));
 }
 
 watch(
   () => branchId.value,
   async (id) => {
     if (!id) return;
-    await Promise.all([
-      loadPatients(),
-      loadDoctorsOptions(),
-      loadInsuranceOptions(),
-    ]);
+    await Promise.all([loadPatients(), loadDoctorsOptions(), loadInsuranceOptions()]);
   },
   { immediate: true }
 );
-
-
 </script>
 
 <template>
-    <SecondaryNavbar />
+  <SecondaryNavbar />
 
-    <div>
-        <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
-            <template #end>
-                <div class="flex items-center gap-2 ">
-                    <IconField>
-                        <InputText v-model="filters['global'].value"  />
-                        <InputIcon>
-                            <i class="bi bi-search text-darkgrey" />
-                        </InputIcon>
-                    </IconField>
+  <div>
+    <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
+      <template #end>
+        <div class="flex items-center gap-2">
+          <IconField>
+            <InputText v-model="filters['global'].value" />
+            <InputIcon>
+              <i class="bi bi-search text-darkgrey" />
+            </InputIcon>
+          </IconField>
 
-                    <Button icon="bi bi-plus" @click="openNew" class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey!"/>
+          <Button
+            icon="bi bi-plus"
+            @click="openNew"
+            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey!"
+          />
 
-                    <Button
-                        icon="bi bi-eraser"
-                        @click="confirmDeleteSelected"
-                        :disabled="!showRows || !showRows.length"
-                        class="bg-warning! border-warning!"
-                    />
-                </div>
-            </template>
-        </Toolbar>
-
-        <DataTable
-            ref="dt"
-            v-model:selection="showRows"
-            :value="products"
-            dataKey="id"
-            :filters="filters"
-            stripedRows
-            removableSort
-            scrollable
-            scrollHeight="600px"
-        >
-            <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
-            <Column field="firstname" header="Meno" sortable />
-            <Column field="lastname" header="Priezvisko" sortable />
-            <Column field="personalnumber" header="Rodné číslo" sortable disabled />
-            <Column field="address" header="Adresa" sortable />
-            <Column field="city" header="Mesto" sortable/>
-            <Column field="doctor" header="Ošetrujúci lekár" sortable/>
-            <Column :exportable="false" style="width: 3rem">
-                <template #body="slotProps">
-                    <Button
-                    :icon="patientStore.current?.id === slotProps.data.id ? 'bi bi-pin-fill' : 'bi bi-pin-angle'"
-                    @click="selectPatient(slotProps.data)"
-                    variant="text"
-                    class="text-darkgrey! hover:bg-transparent! p-0!"
-                    />
-                </template>
-            </Column>
-            <Column :exportable="false" style="width: 3rem">
-                <template #body="slotProps">
-                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="text-darkgrey! hover:bg-transparent! p-0!" />
-                </template>
-            </Column>
-            
-        </DataTable>
-
-        <div class="text-mini text-accent flex justify-end w-full py-2">
-            {{ recordsInfo }}
+          <Button
+            icon="bi bi-eraser"
+            @click="confirmDeleteSelected"
+            :disabled="!showRows || !showRows.length"
+            class="bg-warning! border-warning!"
+          />
         </div>
+      </template>
+    </Toolbar>
 
-        <Dialog v-model:visible="productDialog" :style="{ width: '90%' }" header="Pacient" :modal="true">
-        <div class="flex flex-col gap-6">
+    <DataTable
+      ref="dt"
+      v-model:selection="showRows"
+      :value="products"
+      dataKey="id"
+      :filters="filters"
+      stripedRows
+      removableSort
+      scrollable
+      scrollHeight="600px"
+    >
+      <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
+      <Column field="firstname" header="Meno" sortable />
+      <Column field="lastname" header="Priezvisko" sortable />
+      <Column field="personalnumber" header="Rodné číslo" sortable disabled />
+      <Column field="address" header="Adresa" sortable />
+      <Column field="city" header="Mesto" sortable />
+      <Column field="doctor" header="Ošetrujúci lekár" sortable />
 
-            <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-12">
-                    <label class="block text-normal text-accent">Osobné údaje</label>
-                </div>
-                <div class="col-span-4">
-                    <label class="block text-normal mb-1">Meno</label>
-                    <InputText
-                    v-model.trim="product.firstName"
-                    fluid
-                    :invalid="submitted && !product.firstName"
-                    />
-                    <small v-if="submitted && !product.firstName" class="text-warning">
-                    Meno je povinné.
-                    </small>
-                </div>
-
-                <div class="col-span-4">
-                    <label class="block text-normal mb-1">Priezvisko</label>
-                    <InputText
-                    v-model.trim="product.lastName"
-                    fluid
-                    :invalid="submitted && !product.lastName"
-                    />
-                    <small v-if="submitted && !product.lastName" class="text-warning">
-                    Priezvisko je povinné.
-                    </small>
-                </div>
-
-                <div class="col-span-4">
-                    <label class="block text-normal mb-1">Titul</label>
-                    <InputText v-model.trim="product.title" fluid />
-                </div>
-
-                <div class="col-span-4">
-                    <label class="block text-normal mb-1">Rodné číslo</label>
-                    <InputText 
-                        v-model.trim="product.birthNumber"
-                        @input="product.birthNumber = formatBirthNumber($event.target.value)"
-                        maxlength="11"
-                        fluid 
-                    />
-                </div>
-
-                <div class="col-span-4">
-                    <label class="block text-normal mb-1">Pohlavie</label>
-                    <Select
-                    v-model="product.gender"
-                    :options="genderOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    fluid
-                    />
-                </div>
-
-                <div class="col-span-4">
-                    <label class="block text-normal mb-1">Kontakt</label>
-                    <InputText v-model.trim="product.contact" fluid />
-                </div>
-            </div>
-
-
-
-
-
-            <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-12">
-                    <label class="block text-normal text-accent">Zdravotné detaily</label>
-                </div>
-                <div class="col-span-6">
-                    <label class="block text-normal mb-1">Lekár</label>
-                    <Select
-                    v-model="product.doctorId"
-                    :options="doctorOptions"
-                    optionLabel="name"
-                    optionValue="id"
-                    fluid
-                    filter
-                    >
-                    <template #footer>
-                        <div class="p-2">
-                            <Button label="Pridať" fluid variant="text" size="small" icon="bi bi-plus" class="!text-accent !bg-tag3 hover:!bg-accent hover:!text-white" />
-                        </div>
-                    </template>
-                </Select>
-                    
-                </div>
-
-                <div class="col-span-6">
-                    <label class="block text-normal mb-1">Poisťovňa</label>
-                    <Select
-                    v-model="product.insuranceCode"
-                    :options="insuranceOptions"
-                    optionLabel="name"
-                    optionValue="code"
-                    fluid
-                    />
-                </div>
-            </div>
-
-
-
-
-
-            <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-12">
-                    <label class="block text-normal text-accent">Adresa</label>
-                </div>
-                <div class="col-span-4 flex flex-col gap-4">
-                    <div>
-                    <label class="block text-normal mb-1">Ulica</label>
-                    <InputText v-model.trim="product.street" fluid />
-                    </div>
-
-                    <div>
-                    <label class="block text-normal mb-1">Mesto</label>
-                    <InputText v-model.trim="product.city" fluid />
-                    </div>
-
-                    <div>
-                    <label class="block text-normal mb-1">PSČ</label>
-                    <InputText v-model.trim="product.zip" fluid />
-                    </div>
-                </div>
-
-                <div class="col-span-8">
-                    <div id="patient-map" class="w-full h-full rounded-md overflow-hidden"></div>
-                </div>
-            </div>
-
-        </div>
-
-        <template #footer>
-            <Button
-            label="Uložiť"
-            class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
-            @click="saveProduct"
-            />
+      <Column :exportable="false" style="width: 3rem">
+        <template #body="slotProps">
+          <Button
+            :icon="patientStore.current?.id === slotProps.data.id ? 'bi bi-pin-fill' : 'bi bi-pin-angle'"
+            @click="selectPatient(slotProps.data)"
+            variant="text"
+            class="text-darkgrey! hover:bg-transparent! p-0!"
+          />
         </template>
-        </Dialog>
+      </Column>
 
+      <Column :exportable="false" style="width: 3rem">
+        <template #body="slotProps">
+          <Button
+            icon="bi bi-pencil"
+            @click="editProduct(slotProps.data)"
+            variant="text"
+            class="text-darkgrey! hover:bg-transparent! p-0!"
+          />
+        </template>
+      </Column>
+    </DataTable>
 
-
-        <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '600px'}" :modal="true" :closable="false" header="Upozornenie">
-            <div class="flex items-center justify-between w-full">
-                <span class="text-heading">Naozaj si prajete vymazať záznamy?</span>
-
-                <div class="flex items-center gap-2">
-                <Button
-                    label="Nie"
-                    text
-                    @click="deleteProductsDialog = false"
-                    class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
-                />
-                <Button
-                    label="Áno"
-                    text
-                    @click="deleteshowRows"
-                    class="!bg-warning !px-md !text-white"
-                />
-                </div>
-            </div>
-        </Dialog>
+    <div class="text-mini text-accent flex justify-end w-full py-2">
+      {{ recordsInfo }}
     </div>
+  </div>
+
+  <Dialog v-model:visible="productDialog" :style="{ width: '90%' }" header="Pacient" :modal="true">
+    <div class="flex flex-col gap-6">
+      <!-- Personal -->
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12">
+          <label class="block text-normal text-accent">Osobné údaje</label>
+        </div>
+
+        <div class="col-span-4">
+          <label class="block text-normal mb-1">Meno</label>
+          <InputText v-model.trim="product.firstName" fluid :invalid="submitted && !!errors.firstName" />
+          <small v-if="submitted && errors.firstName" class="text-warning">{{ errors.firstName }}</small>
+        </div>
+
+        <div class="col-span-4">
+          <label class="block text-normal mb-1">Priezvisko</label>
+          <InputText v-model.trim="product.lastName" fluid :invalid="submitted && !!errors.lastName" />
+          <small v-if="submitted && errors.lastName" class="text-warning">{{ errors.lastName }}</small>
+        </div>
+
+        <div class="col-span-4">
+          <label class="block text-normal mb-1">Titul</label>
+          <InputText v-model.trim="product.title" fluid />
+        </div>
+
+        <div class="col-span-4">
+          <label class="block text-normal mb-1">Rodné číslo</label>
+          <InputText v-model.trim="product.birthNumber" maxlength="11" fluid :invalid="submitted && !!errors.birthNumber" />
+          <small v-if="submitted && errors.birthNumber" class="text-warning">{{ errors.birthNumber }}</small>
+        </div>
+
+        <div class="col-span-4">
+          <label class="block text-normal mb-1">Pohlavie</label>
+          <Select
+            v-model="product.gender"
+            :options="genderOptions"
+            optionLabel="label"
+            optionValue="value"
+            fluid
+            :invalid="submitted && !!errors.gender"
+          />
+          <small v-if="submitted && errors.gender" class="text-warning">{{ errors.gender }}</small>
+        </div>
+
+        <div class="col-span-4">
+          <label class="block text-normal mb-1">Kontakt</label>
+          <InputText v-model.trim="product.contact" fluid />
+        </div>
+      </div>
+
+      <!-- Medical -->
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12">
+          <label class="block text-normal text-accent">Zdravotné detaily</label>
+        </div>
+
+        <div class="col-span-6">
+          <label class="block text-normal mb-1">Lekár</label>
+          <Select
+            v-model="product.doctorId"
+            :options="doctorOptions"
+            optionLabel="name"
+            optionValue="id"
+            fluid
+            filter
+            :invalid="submitted && !!errors.doctorId"
+          >
+            <template #footer>
+              <div class="p-2">
+                <Button
+                  label="Pridať"
+                  fluid
+                  variant="text"
+                  size="small"
+                  icon="bi bi-plus"
+                  class="!text-accent !bg-tag3 hover:!bg-accent hover:!text-white"
+                  @click="goToDoctorsSettings"
+                />
+              </div>
+            </template>
+          </Select>
+          <small v-if="submitted && errors.doctorId" class="text-warning">{{ errors.doctorId }}</small>
+        </div>
+
+        <div class="col-span-6">
+          <label class="block text-normal mb-1">Poisťovňa</label>
+          <Select
+            v-model="product.insuranceCompanyId"
+            :options="insuranceOptions"
+            optionLabel="name"
+            optionValue="id"
+            fluid
+            :invalid="submitted && !!errors.insuranceCompanyId"
+          />
+          <small v-if="submitted && errors.insuranceCompanyId" class="text-warning">
+            {{ errors.insuranceCompanyId }}
+          </small>
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12">
+          <label class="block text-normal text-accent">Adresa</label>
+        </div>
+
+        <div class="col-span-4 flex flex-col gap-4">
+          <div>
+            <label class="block text-normal mb-1">Ulica</label>
+            <AutoComplete
+              v-model="addressQuery"
+              :suggestions="addressSuggestions"
+              optionLabel="label"
+              @complete="searchAddress"
+              @item-select="onAddressSelect"
+              fluid
+              forceSelection=""
+              :invalid="submitted && !!errors.street"
+            />
+            <small v-if="submitted && errors.street" class="text-warning">{{ errors.street }}</small>
+          </div>
+
+          <div>
+            <label class="block text-normal mb-1">Mesto</label>
+            <InputText v-model.trim="product.city" fluid :invalid="submitted && !!errors.city" />
+            <small v-if="submitted && errors.city" class="text-warning">{{ errors.city }}</small>
+          </div>
+
+          <div>
+            <label class="block text-normal mb-1">PSČ</label>
+            <InputText v-model.trim="product.zip" fluid :invalid="submitted && !!errors.zip" />
+            <small v-if="submitted && errors.zip" class="text-warning">{{ errors.zip }}</small>
+          </div>
+
+          <small v-if="submitted && errors.coordinates" class="text-warning">
+            {{ errors.coordinates }}
+          </small>
+        </div>
+
+        <div class="col-span-8">
+          <div id="patient-map" class="w-full h-full rounded-md overflow-hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <Button
+        label="Uložiť"
+        class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+        @click="saveProduct"
+      />
+    </template>
+  </Dialog>
+
+  <Dialog
+    v-model:visible="deleteProductsDialog"
+    :style="{ width: '600px' }"
+    :modal="true"
+    :closable="false"
+    header="Upozornenie"
+  >
+    <div class="flex items-center justify-between w-full">
+      <span class="text-heading">Naozaj si prajete vymazať záznamy?</span>
+
+      <div class="flex items-center gap-2">
+        <Button
+          label="Nie"
+          text
+          @click="deleteProductsDialog = false"
+          class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+        />
+        <Button label="Áno" text @click="deleteshowRows" class="!bg-warning !px-md !text-white" />
+      </div>
+    </div>
+  </Dialog>
 </template>

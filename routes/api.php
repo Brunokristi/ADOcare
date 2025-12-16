@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\TextBlockController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\VisitTextController;
+use App\Http\Controllers\Api\GeocodeController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -72,6 +74,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/batches/preview', [PointsExportController::class, 'preview']);
     Route::post('/batches/download', [PointsExportController::class, 'download']);
     Route::post('/batches/statement-pdf', [PointsExportController::class, 'statementPdf']);
+
+    Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
+
 
 
 });

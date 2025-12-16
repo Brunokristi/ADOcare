@@ -20,7 +20,7 @@ class Doctor extends Model
 
     public function branches()
     {
-        return $this->belongsToMany(Branch::class);
+        return $this->belongsToMany(Branch::class, 'branch_doctor', 'doctor_id', 'branch_id');
     }
 
 }
