@@ -49,7 +49,7 @@ export default {
         },
 
         column: {
-            headercell: { class: '!bg-darkgrey !text-white !text-heading px-4 py-2 !border-r !border-r-white last:!border-r-0' },
+            headercell: { class: '!bg-darkgrey !text-white !text-heading !px-4 !py-2 !border-r !border-r-white last:!border-r-0' },
             sortIcon: { class: '!text-white !flex !items-center !justify-center' },
             columnTitle: { class: '!text-white !text-heading' },
             pcheadercheckbox: {

@@ -59,16 +59,15 @@ function linkClass(key: string) {
 </script>
 
 <template>
-  <Menubar>
-    <template #start>
-      <div class="flex items-end">
+  <Menubar 
+  class="pb-2 justify-between flex items-center">
+    <template #start class="flex items-center">
         <h1 class="!text-heading-accent !border-r-2 !border-accent !pr-sm">
           {{ h1Title }}
         </h1>
         <h1 class="!text-heading-accent !text-darkgrey !px-sm !font-light">
           {{ h2Title }}
         </h1>
-      </div>
     </template>
 
     <template #end>
@@ -81,6 +80,7 @@ function linkClass(key: string) {
         {{ l.label }}
       </RouterLink>
     </template>
+
   </Menubar>
 </template>
 

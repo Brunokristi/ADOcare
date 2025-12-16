@@ -36,7 +36,7 @@ const closePatient = () => {
   <!-- only show bar if a patient is selected -->
   <Menubar
     v-if="patient"
-    class="!bg-tag2 !px-3 flex items-center"
+    class="!bg-tag2 !px-3 flex items-center py-2 justify-between"
   >
     <!-- LEFT -->
     <template #start>

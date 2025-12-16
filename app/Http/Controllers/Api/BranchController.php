@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\PatientCollection;
+use App\Http\Resources\DoctorCollection;
+use App\Http\Resources\DoctorResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Branch;
 use App\Models\Patient;
+use App\Models\Doctor;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Response;
@@ -35,8 +38,8 @@ class BranchController extends Controller
 
     public function doctors(Branch $branch)
     {
-        $doctors = $branch->company->doctors()->get();
-        return $this->success($doctors, 'Branch doctors retrieved');
+        $doctors = Doctor::query()->get();
+        return DoctorResource::collection($doctors);
     }
 
     public function store(\App\Http\Requests\StoreBranchRequest $request)
