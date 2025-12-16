@@ -77,6 +77,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
 
+    Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
+    Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
+
+
 
 
 });

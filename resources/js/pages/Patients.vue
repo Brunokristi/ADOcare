@@ -21,19 +21,19 @@ const authStore = useAuthStore();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
 const dt = ref(null);
-const showRows = ref([]);
+const selectedPatients = ref([]);
 const submitted = ref(false);
 
-const products = ref([]);
+const patients = ref([]);
 
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-const productDialog = ref(false);
-const deleteProductsDialog = ref(false);
+const patientDialog = ref(false);
+const deletePatientsDialog = ref(false);
 
-const product = ref({
+const patient = ref({
   id: null,
   firstName: '',
   lastName: '',
@@ -65,19 +65,25 @@ const insuranceOptions = ref([]);
 function validateForm() {
   const e = {};
 
-  if (!product.value.firstName?.trim()) e.firstName = 'Meno je povinné.';
-  if (!product.value.lastName?.trim()) e.lastName = 'Priezvisko je povinné.';
-  if (!product.value.birthNumber?.trim()) e.birthNumber = 'Rodné číslo je povinné.';
-  if (!product.value.gender) e.gender = 'Pohlavie je povinné.';
+  if (!patient.value.firstName?.trim()) e.firstName = 'Meno je povinné.';
+  if (!patient.value.lastName?.trim()) e.lastName = 'Priezvisko je povinné.';
 
-  if (!product.value.doctorId) e.doctorId = 'Lekár je povinný.';
-  if (!product.value.insuranceCompanyId) e.insuranceCompanyId = 'Poisťovňa je povinná.';
+  if (!patient.value.birthNumber?.trim()) {
+    e.birthNumber = 'Rodné číslo je povinné.';
+  } else if (!/^\d{9,10}$/.test(patient.value.birthNumber)) {
+    e.birthNumber = 'Rodné číslo musí mať 9 alebo 10 číslic a obsahovať iba čísla.';
+  }
 
-  if (!product.value.street?.trim()) e.street = 'Ulica je povinná.';
-  if (!product.value.city?.trim()) e.city = 'Mesto je povinné.';
-  if (!product.value.zip?.trim()) e.zip = 'PSČ je povinné.';
+  if (!patient.value.gender) e.gender = 'Pohlavie je povinné.';
 
-  if (product.value.latitude == null || product.value.longitude == null) {
+  if (!patient.value.doctorId) e.doctorId = 'Lekár je povinný.';
+  if (!patient.value.insuranceCompanyId) e.insuranceCompanyId = 'Poisťovňa je povinná.';
+
+  if (!patient.value.street?.trim()) e.street = 'Ulica je povinná.';
+  if (!patient.value.city?.trim()) e.city = 'Mesto je povinné.';
+  if (!patient.value.zip?.trim()) e.zip = 'PSČ je povinné.';
+
+  if (patient.value.latitude == null || patient.value.longitude == null) {
     e.coordinates = 'Vyberte adresu zo zoznamu, aby sa uložila poloha.';
   }
 
@@ -105,7 +111,7 @@ async function loadDoctorsOptions() {
 
 async function loadInsuranceOptions() {
   const res = await api.get('/v1/insurance-companies');
-  const items = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+  const items = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
 
   insuranceOptions.value = items.map((c) => ({
     id: c.id,
@@ -145,10 +151,10 @@ function setMarker(lat, lng) {
   map.value.setView(latLng, 16);
 }
 
-function setMarkerFromProduct() {
+function setMarkerFromPatient() {
   if (!map.value) return;
-  if (product.value.latitude == null || product.value.longitude == null) return;
-  setMarker(product.value.latitude, product.value.longitude);
+  if (patient.value.latitude == null || patient.value.longitude == null) return;
+  setMarker(patient.value.latitude, patient.value.longitude);
 }
 
 // -------------------- Address Autocomplete --------------------
@@ -174,9 +180,9 @@ async function searchAddress(e) {
       const coords = f.geometry?.coordinates ?? [];
 
       const street =
-        [p.street, p.housenumber].filter(Boolean).join(' ').trim()
-        || p.name
-        || '';
+        [p.street, p.housenumber].filter(Boolean).join(' ').trim() ||
+        p.name ||
+        '';
 
       const city = p.locality || p.county || p.region || '';
       const zip = p.postalcode || '';
@@ -201,31 +207,30 @@ function onAddressSelect(event) {
     const sel = event?.value;
     if (!sel) return;
 
-    product.value.street = sel.street || '';
-    product.value.city = sel.city || '';
-    product.value.zip = sel.zip || '';
+    patient.value.street = sel.street || '';
+    patient.value.city = sel.city || '';
+    patient.value.zip = sel.zip || '';
 
-    product.value.latitude = sel.lat ?? null;
-    product.value.longitude = sel.lng ?? null;
+    patient.value.latitude = sel.lat ?? null;
+    patient.value.longitude = sel.lng ?? null;
 
-    addressQuery.value = sel.label || product.value.street;
+    addressQuery.value = sel.label || patient.value.street;
 
-    // clear address-related errors as soon as user selects
     if (errors.value.street) delete errors.value.street;
     if (errors.value.city) delete errors.value.city;
     if (errors.value.zip) delete errors.value.zip;
     if (errors.value.coordinates) delete errors.value.coordinates;
 
-    nextTick(() => setMarker(product.value.latitude, product.value.longitude));
+    nextTick(() => setMarker(patient.value.latitude, patient.value.longitude));
   } catch (err) {
     console.error('onAddressSelect error:', err);
   }
 }
 
-function syncAddressQueryFromProduct() {
-  const s = product.value.street || '';
-  const c = product.value.city || '';
-  const z = product.value.zip || '';
+function syncAddressQueryFromPatient() {
+  const s = patient.value.street || '';
+  const c = patient.value.city || '';
+  const z = patient.value.zip || '';
   addressQuery.value = [s, c, z].filter(Boolean).join(', ');
 }
 
@@ -273,7 +278,7 @@ function uiToApiPayload(ui) {
 }
 
 function setFormFromApi(apiPatient) {
-  product.value = {
+  patient.value = {
     id: apiPatient.id ?? null,
     firstName: apiPatient.first_name ?? '',
     lastName: apiPatient.last_name ?? '',
@@ -291,7 +296,7 @@ function setFormFromApi(apiPatient) {
     longitude: apiPatient.longitude ?? null,
   };
 
-  syncAddressQueryFromProduct();
+  syncAddressQueryFromPatient();
   errors.value = {};
 }
 
@@ -304,14 +309,14 @@ async function loadPatients() {
   });
 
   const items = res.data?.data?.items ?? [];
-  products.value = items.map(apiToUi);
+  patients.value = items.map(apiToUi);
 }
 
 onMounted(loadPatients);
 
 // -------------------- CRUD --------------------
 function resetForm() {
-  product.value = {
+  patient.value = {
     id: null,
     firstName: '',
     lastName: '',
@@ -336,79 +341,109 @@ function resetForm() {
 
 const openNew = () => {
   resetForm();
-  productDialog.value = true;
+  patientDialog.value = true;
 
   setTimeout(() => {
     initMap();
   }, 50);
 };
 
-const editProduct = (row) => {
+const editPatient = (row) => {
   const apiPatient = row._api;
   if (apiPatient) setFormFromApi(apiPatient);
 
   submitted.value = false;
-  productDialog.value = true;
+  patientDialog.value = true;
 
   setTimeout(() => {
     initMap();
-    setMarkerFromProduct();
+    setMarkerFromPatient();
   }, 50);
 };
 
-const saveProduct = async () => {
+const savePatient = async () => {
   submitted.value = true;
   if (!validateForm()) return;
 
-  const payload = uiToApiPayload(product.value);
+  const payload = uiToApiPayload(patient.value);
 
   try {
-    if (product.value.id) {
-      const res = await api.patch(`/v1/patients/${product.value.id}`, payload);
-      const updated = res.data?.data ?? res.data;
+    if (patient.value.id) {
+        const res = await api.patch(`/v1/patients/${patient.value.id}`, payload);
+        const updated = res.data?.data ?? res.data;
 
-      const uiRow = apiToUi(updated);
-      const index = products.value.findIndex((p) => p.id === uiRow.id);
-      if (index !== -1) products.value[index] = uiRow;
+        const uiRow = apiToUi(updated);
+        const index = patients.value.findIndex((p) => p.id === uiRow.id);
+        if (index !== -1) patients.value[index] = uiRow;
 
-      toast.add({ severity: 'success', summary: 'OK', detail: 'Updated', life: 2000 });
+        toast.add({
+            severity: 'success',
+            summary: 'Pacient upravený',
+            detail: 'Zmeny boli úspešne uložené.',
+            life: 2500,
+        });
     } else {
       const res = await api.post('/v1/patients', payload);
       const created = res.data?.data ?? res.data;
 
-      products.value.unshift(apiToUi(created));
-      toast.add({ severity: 'success', summary: 'OK', detail: 'Created', life: 2000 });
+      patients.value.unshift(apiToUi(created));
+      toast.add({
+        severity: 'success',
+        summary: 'Pacient uložený',
+        detail: 'Nový pacient bol úspešne vytvorený.',
+        life: 2500,
+    });
     }
 
-    productDialog.value = false;
+    patientDialog.value = false;
   } catch (e) {
     const status = e?.response?.status;
     if (status === 422) {
-      toast.add({ severity: 'warn', summary: 'Validation', detail: 'Please fill required fields', life: 3000 });
+      toast.add({
+        severity: 'warn',
+        summary: 'Neplatné údaje',
+        detail: 'Skontrolujte, prosím, povinné polia.',
+        life: 3500,
+        });
     } else {
-      toast.add({ severity: 'error', summary: 'Error', detail: 'Save failed', life: 3000 });
+      toast.add({
+        severity: 'error',
+        summary: 'Chyba pri ukladaní',
+        detail: 'Pacienta sa nepodarilo uložiť. Skúste to znova.',
+        life: 4000,
+        });
     }
     console.error(e);
   }
 };
 
 const confirmDeleteSelected = () => {
-  deleteProductsDialog.value = true;
+  deletePatientsDialog.value = true;
 };
 
-const deleteshowRows = async () => {
+const deleteSelectedPatients = async () => {
   try {
-    const ids = showRows.value.map((r) => r.id);
+    const ids = selectedPatients.value.map((r) => r.id);
     await Promise.all(ids.map((id) => api.delete(`/v1/patients/${id}`)));
 
-    products.value = products.value.filter((p) => !ids.includes(p.id));
-    deleteProductsDialog.value = false;
-    showRows.value = [];
+    patients.value = patients.value.filter((p) => !ids.includes(p.id));
+    deletePatientsDialog.value = false;
+    selectedPatients.value = [];
 
-    toast.add({ severity: 'success', summary: 'OK', detail: 'Deleted', life: 2000 });
+    toast.add({
+        severity: 'success',
+        summary: 'Záznamy vymazané',
+        detail: 'Vybrané záznamy boli úspešne odstránené.',
+        life: 2500,
+        });
   } catch (e) {
     console.error(e);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Delete failed', life: 3000 });
+    toast.add({
+        severity: 'error',
+        summary: 'Chyba pri mazaní',
+        detail: 'Záznamy sa nepodarilo vymazať.',
+        life: 4000,
+    });
   }
 };
 
@@ -421,7 +456,7 @@ const selectPatient = (row) => {
 // -------------------- INFO LINE --------------------
 const recordsInfo = computed(() => {
   if (!dt.value) return '';
-  const total = products.value.length;
+  const total = patients.value.length;
   const filtered = dt.value.processedData?.length;
   return `${filtered ?? total} z ${total} záznamov`;
 });
@@ -463,7 +498,7 @@ watch(
           <Button
             icon="bi bi-eraser"
             @click="confirmDeleteSelected"
-            :disabled="!showRows || !showRows.length"
+            :disabled="!selectedPatients || !selectedPatients.length"
             class="bg-warning! border-warning!"
           />
         </div>
@@ -472,8 +507,8 @@ watch(
 
     <DataTable
       ref="dt"
-      v-model:selection="showRows"
-      :value="products"
+      v-model:selection="selectedPatients"
+      :value="patients"
       dataKey="id"
       :filters="filters"
       stripedRows
@@ -504,7 +539,7 @@ watch(
         <template #body="slotProps">
           <Button
             icon="bi bi-pencil"
-            @click="editProduct(slotProps.data)"
+            @click="editPatient(slotProps.data)"
             variant="text"
             class="text-darkgrey! hover:bg-transparent! p-0!"
           />
@@ -517,7 +552,7 @@ watch(
     </div>
   </div>
 
-  <Dialog v-model:visible="productDialog" :style="{ width: '90%' }" header="Pacient" :modal="true">
+  <Dialog v-model:visible="patientDialog" :style="{ width: '90%' }" header="Pacient" :modal="true">
     <div class="flex flex-col gap-6">
       <!-- Personal -->
       <div class="grid grid-cols-12 gap-4">
@@ -527,31 +562,37 @@ watch(
 
         <div class="col-span-4">
           <label class="block text-normal mb-1">Meno</label>
-          <InputText v-model.trim="product.firstName" fluid :invalid="submitted && !!errors.firstName" />
+          <InputText v-model.trim="patient.firstName" fluid :invalid="submitted && !!errors.firstName" />
           <small v-if="submitted && errors.firstName" class="text-warning">{{ errors.firstName }}</small>
         </div>
 
         <div class="col-span-4">
           <label class="block text-normal mb-1">Priezvisko</label>
-          <InputText v-model.trim="product.lastName" fluid :invalid="submitted && !!errors.lastName" />
+          <InputText v-model.trim="patient.lastName" fluid :invalid="submitted && !!errors.lastName" />
           <small v-if="submitted && errors.lastName" class="text-warning">{{ errors.lastName }}</small>
         </div>
 
         <div class="col-span-4">
           <label class="block text-normal mb-1">Titul</label>
-          <InputText v-model.trim="product.title" fluid />
+          <InputText v-model.trim="patient.title" fluid />
         </div>
 
         <div class="col-span-4">
           <label class="block text-normal mb-1">Rodné číslo</label>
-          <InputText v-model.trim="product.birthNumber" maxlength="11" fluid :invalid="submitted && !!errors.birthNumber" />
+          <InputText
+            v-model.trim="patient.birthNumber"
+            maxlength="10"
+            fluid
+            @input="patient.birthNumber = patient.birthNumber.replace(/\\D/g, '')"
+            :invalid="submitted && !!errors.birthNumber"
+          />
           <small v-if="submitted && errors.birthNumber" class="text-warning">{{ errors.birthNumber }}</small>
         </div>
 
         <div class="col-span-4">
           <label class="block text-normal mb-1">Pohlavie</label>
           <Select
-            v-model="product.gender"
+            v-model="patient.gender"
             :options="genderOptions"
             optionLabel="label"
             optionValue="value"
@@ -563,7 +604,7 @@ watch(
 
         <div class="col-span-4">
           <label class="block text-normal mb-1">Kontakt</label>
-          <InputText v-model.trim="product.contact" fluid />
+          <InputText v-model.trim="patient.contact" fluid />
         </div>
       </div>
 
@@ -576,7 +617,7 @@ watch(
         <div class="col-span-6">
           <label class="block text-normal mb-1">Lekár</label>
           <Select
-            v-model="product.doctorId"
+            v-model="patient.doctorId"
             :options="doctorOptions"
             optionLabel="name"
             optionValue="id"
@@ -604,7 +645,7 @@ watch(
         <div class="col-span-6">
           <label class="block text-normal mb-1">Poisťovňa</label>
           <Select
-            v-model="product.insuranceCompanyId"
+            v-model="patient.insuranceCompanyId"
             :options="insuranceOptions"
             optionLabel="name"
             optionValue="id"
@@ -633,7 +674,6 @@ watch(
               @complete="searchAddress"
               @item-select="onAddressSelect"
               fluid
-              forceSelection=""
               :invalid="submitted && !!errors.street"
             />
             <small v-if="submitted && errors.street" class="text-warning">{{ errors.street }}</small>
@@ -641,13 +681,13 @@ watch(
 
           <div>
             <label class="block text-normal mb-1">Mesto</label>
-            <InputText v-model.trim="product.city" fluid :invalid="submitted && !!errors.city" />
+            <InputText v-model.trim="patient.city" fluid :invalid="submitted && !!errors.city" />
             <small v-if="submitted && errors.city" class="text-warning">{{ errors.city }}</small>
           </div>
 
           <div>
             <label class="block text-normal mb-1">PSČ</label>
-            <InputText v-model.trim="product.zip" fluid :invalid="submitted && !!errors.zip" />
+            <InputText v-model.trim="patient.zip" fluid :invalid="submitted && !!errors.zip" />
             <small v-if="submitted && errors.zip" class="text-warning">{{ errors.zip }}</small>
           </div>
 
@@ -666,13 +706,13 @@ watch(
       <Button
         label="Uložiť"
         class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
-        @click="saveProduct"
+        @click="savePatient"
       />
     </template>
   </Dialog>
 
   <Dialog
-    v-model:visible="deleteProductsDialog"
+    v-model:visible="deletePatientsDialog"
     :style="{ width: '600px' }"
     :modal="true"
     :closable="false"
@@ -685,10 +725,10 @@ watch(
         <Button
           label="Nie"
           text
-          @click="deleteProductsDialog = false"
+          @click="deletePatientsDialog = false"
           class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
         />
-        <Button label="Áno" text @click="deleteshowRows" class="!bg-warning !px-md !text-white" />
+        <Button label="Áno" text @click="deleteSelectedPatients" class="!bg-warning !px-md !text-white" />
       </div>
     </div>
   </Dialog>
