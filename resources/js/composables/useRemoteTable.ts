@@ -1,8 +1,12 @@
 import { ref, computed } from 'vue';
 import api from '@/services/api';
+
 type RemoteLoadResultLocal<T = any> = { items: T[]; total: number };
 
-export function useRemoteTable<T = any>(endpointUrl: string, opts: { defaultPageSize?: number; extraParams?: Record<string, any> } = {}) {
+export function useRemoteTable<T = any>(
+  endpointUrl: string,
+  opts: { defaultPageSize?: number; extraParams?: Record<string, any> } = {}
+) {
   const loading = ref(false);
   const items = ref<T[]>([]);
   const total = ref<number>(0);
@@ -12,29 +16,50 @@ export function useRemoteTable<T = any>(endpointUrl: string, opts: { defaultPage
   const q = ref<string>('');
   const sort = ref<string | undefined>(undefined);
 
-  const params = computed(() => ({
-    paginate: true,
-    page: page.value,
-    per_page: per_page.value,
-    q: q.value || '',
-    sort: sort.value || undefined,
-    ...opts.extraParams,
-  }));
+  const params = computed(() => {
+    const p: Record<string, any> = {
+      paginate: true,
+      page: Number(page.value),
+      per_page: Number(per_page.value),
+      ...opts.extraParams,
+    };
+
+    // only send q if non-empty (prevents backend 422)
+    const qq = typeof q.value === 'string' ? q.value.trim() : '';
+    if (qq.length > 0) p.q = qq;
+    else delete p.q;
+
+    // only send sort if non-empty
+    const ss = typeof sort.value === 'string' ? sort.value.trim() : '';
+    if (ss.length > 0) p.sort = ss;
+    else delete p.sort;
+
+    return p;
+  });
 
   async function loadPage(p: number = 1): Promise<RemoteLoadResultLocal<T> | void> {
+    // skip if endpoint is empty (branch not ready)
+    if (!endpointUrl || endpointUrl.trim().length === 0) {
+      items.value = [];
+      total.value = 0;
+      return { items: [], total: 0 };
+    }
+
     loading.value = true;
     page.value = p;
+
     try {
+      console.log('[useRemoteTable] GET', endpointUrl, params.value);
+
       const res = (await api.get(endpointUrl, { params: params.value })).data as IPaginatedIndexSuccessResponse<T>;
-    console.log('[useRemoteTable] loadPage response', res);
+      console.log('[useRemoteTable] loadPage response', res);
 
       const payload = res.data;
 
-        items.value = payload.items;
-        total.value = payload.meta.total;
+      items.value = payload.items;
+      total.value = payload.meta.total;
 
-
-      return { items: items.value, total: total.value } as RemoteLoadResultLocal<T>;
+      return { items: payload.items, total: payload.meta.total };
     } catch (err) {
       console.error('[useRemoteTable] load failed', err);
       items.value = [];
@@ -45,7 +70,7 @@ export function useRemoteTable<T = any>(endpointUrl: string, opts: { defaultPage
   }
 
   function setSearch(v: string) {
-    q.value = v;
+    q.value = v ?? '';
   }
 
   function setSort(s: string | undefined) {

@@ -1,94 +1,165 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
+import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/stores/auth';
+import api from '@/services/api';
+
+const toast = useToast();
+const authStore = useAuthStore();
+
+const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
 const dt = ref(null);
+const rows = ref([]); // doctors from API
 
-// Raw data
-const rows = ref([
-    { id: 1, firstname: 'Viliam', lastname: 'Džurbala', title: 'MUDr.', zpr: 'A95466020', pzs: 'P58480020202', favourite: true },
-    { id: 2, firstname: 'Jana', lastname: 'Kováčová', title: 'MUDr.', zpr: 'A12457893', pzs: 'P58480020203', favourite: false },
-    { id: 3, firstname: 'Peter', lastname: 'Horváth', title: 'MUDr.', zpr: 'A87456231', pzs: 'P58480020204', favourite: false },
-    { id: 4, firstname: 'Lucia', lastname: 'Marekova', title: 'MUDr.', zpr: 'A65231478', pzs: 'P58480020205', favourite: false },
-    { id: 5, firstname: 'Martin', lastname: 'Šimek', title: 'MUDr.', zpr: 'A98745621', pzs: 'P58480020206', favourite: false },
-    { id: 6, firstname: 'Simona', lastname: 'Krajčíková', title: 'MUDr.', zpr: 'A65478932', pzs: 'P58480020207', favourite: false },
-    { id: 7, firstname: 'Tomáš', lastname: 'Novotný', title: 'MUDr.', zpr: 'A78451269', pzs: 'P58480020208', favourite: false },
-    { id: 8, firstname: 'Katarína', lastname: 'Valentová', title: 'MUDr.', zpr: 'A54123687', pzs: 'P58480020209', favourite: true },
-    { id: 9, firstname: 'Andrej', lastname: 'Bielik', title: 'MUDr.', zpr: 'A96325847', pzs: 'P58480020210', favourite: false },
-    { id: 10, firstname: 'Mária', lastname: 'Zelená', title: 'MUDr.', zpr: 'A75395146', pzs: 'P58480020211', favourite: false },
-    { id: 11, firstname: 'Rastislav', lastname: 'Urban', title: 'MUDr.', zpr: 'A25874139', pzs: 'P58480020212', favourite: false },
-    { id: 12, firstname: 'Veronika', lastname: 'Foltínová', title: 'MUDr.', zpr: 'A15948732', pzs: 'P58480020213', favourite: false },
-    { id: 13, firstname: 'Patrik', lastname: 'Holub', title: 'MUDr.', zpr: 'A48715926', pzs: 'P58480020214', favourite: false },
-    { id: 14, firstname: 'Barbora', lastname: 'Kalinová', title: 'MUDr.', zpr: 'A36987412', pzs: 'P58480020215', favourite: true },
-    { id: 15, firstname: 'Marek', lastname: 'Škoda', title: 'MUDr.', zpr: 'A24861379', pzs: 'P58480020216', favourite: false },
-    { id: 16, firstname: 'Nikola', lastname: 'Veselá', title: 'MUDr.', zpr: 'A95175348', pzs: 'P58480020217', favourite: false },
-    { id: 17, firstname: 'Adam', lastname: 'Krajčír', title: 'MUDr.', zpr: 'A78641235', pzs: 'P58480020218', favourite: false },
-    { id: 18, firstname: 'Eva', lastname: 'Malíková', title: 'MUDr.', zpr: 'A31478592', pzs: 'P58480020219', favourite: false },
-    { id: 19, firstname: 'Filip', lastname: 'Konečný', title: 'MUDr.', zpr: 'A62574381', pzs: 'P58480020220', favourite: false },
-    { id: 20, firstname: 'Daniela', lastname: 'Hrivnáková', title: 'MUDr.', zpr: 'A85741236', pzs: 'P58480020221', favourite: false },
-]);
-
-// local reactive copy
-const products = ref([...rows.value]);
+const loading = ref(false);
+const showOnlyFav = ref(false);
 
 // Search filter
 const filters = ref({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-// Toggle: show only favourites?
-const showOnlyFav = ref(false);
+// -------- Fetch doctors --------
+async function loadDoctors() {
+  if (!branchId.value) return;
 
-// Computed filtered data (before search)
-const filteredBase = computed(() => {
-    return showOnlyFav.value
-        ? products.value.filter(p => p.favourite)
-        : products.value;
-});
+  loading.value = true;
+  try {
+    const res = await api.get('/v1/doctors', {
+      params: {
+        branch_id: branchId.value,
+        favourites: showOnlyFav.value ? 1 : 0,
+        // paginate: false, // if your ApiQuery supports it and you want all
+      },
+    });
 
-// DataTable uses `filteredBase` as its value
-const tableData = computed(() => filteredBase.value);
+    const items = res.data?.data?.items ?? [];
+    rows.value = items.map((d) => ({
+      id: d.id,
+      firstname: d.first_name ?? '',
+      lastname: d.last_name ?? '',
+      title: d.title ?? '',
+      zpr: d.zpr ?? '',
+      pzs: d.pzs ?? '',
+      // normalize true/false
+      is_favourite: !!d.is_favourite,
+      _api: d,
+    }));
+  } catch (e) {
+    console.error(e);
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba pri načítaní',
+      detail: 'Lekárov sa nepodarilo načítať.',
+      life: 4000,
+    });
+  } finally {
+    loading.value = false;
+  }
+}
 
-// Record counter text
+// -------- DataTable source (before built-in search) --------
+const tableData = computed(() => rows.value);
+
+// -------- Records info --------
 const recordsInfo = computed(() => {
-    if (!dt.value) return '';
+  if (!dt.value) {
+    const total = rows.value.length;
+    return `${total} z ${total} záznamov`;
+  }
 
-    const total = filteredBase.value.length;
-    const filtered = dt.value.processedData?.length;
+  const total = rows.value.length;
+  const filtered = dt.value.processedData?.length;
 
-    if (filtered == null) return `${total} z ${total} záznamov`;
-    return `${filtered} z ${total} záznamov`;
+  if (filtered == null) return `${total} z ${total} záznamov`;
+  return `${filtered} z ${total} záznamov`;
 });
 
-// Toggle favourite
-const toggleFavourite = (row) => {
-    row.favourite = !row.favourite;
-};
+// -------- Toggle favourite (UI + optional backend) --------
+async function toggleFavourite(row) {
+  // optimistic UI
+  row.is_favourite = !row.is_favourite;
+
+  // OPTIONAL: persist to backend (recommended)
+  // You need endpoints like:
+  // POST   /v1/branches/{branch}/doctors/{doctor}   -> attach
+  // DELETE /v1/branches/{branch}/doctors/{doctor}   -> detach
+  // If you don't have them yet, you can delete this try/catch and it will remain UI-only.
+  try {
+    if (row.is_favourite) {
+      await api.post(`/v1/branches/${branchId.value}/doctors/${row.id}`);
+      toast.add({
+        severity: 'success',
+        summary: 'Pridané medzi obľúbené',
+        detail: 'Lekár bol pridaný medzi obľúbené.',
+        life: 2000,
+      });
+    } else {
+      await api.delete(`/v1/branches/${branchId.value}/doctors/${row.id}`);
+      toast.add({
+        severity: 'success',
+        summary: 'Odstránené z obľúbených',
+        detail: 'Lekár bol odstránený z obľúbených.',
+        life: 2000,
+      });
+    }
+  } catch (e) {
+    console.error(e);
+
+    // rollback UI if backend failed
+    row.is_favourite = !row.is_favourite;
+
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: 'Nepodarilo sa zmeniť obľúbeného lekára.',
+      life: 4000,
+    });
+  }
+}
+
+// When branch changes or toggle changes, reload
+watch(
+  () => branchId.value,
+  (id) => {
+    if (!id) return;
+    loadDoctors();
+  },
+  { immediate: true }
+);
+
+watch(showOnlyFav, () => {
+  loadDoctors();
+});
+
+onMounted(() => {
+  // in case branchId already exists
+  if (branchId.value) loadDoctors();
+});
 </script>
 
 <template>
   <div>
-
     <Toolbar class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between">
-
       <template #end>
         <div class="flex items-center gap-4">
-
           <IconField>
-            <InputText v-model="filters['global'].value" />
+            <InputText v-model="filters['global'].value" placeholder="Hľadať..." />
             <InputIcon>
               <i class="bi bi-search text-darkgrey" />
             </InputIcon>
           </IconField>
 
           <Button
-            icon="bi bi-heart-fill"
+            :icon="showOnlyFav ? 'bi bi-heart-fill' : 'bi bi-heart'"
             @click="showOnlyFav = !showOnlyFav"
             class="!bg-accent !border-accent !text-white hover:!bg-darkgrey"
+            v-tooltip.bottom="showOnlyFav ? 'Zobraziť všetkých' : 'Len obľúbení'"
           />
         </div>
       </template>
-
     </Toolbar>
 
     <DataTable
@@ -100,6 +171,7 @@ const toggleFavourite = (row) => {
       removableSort
       scrollable
       scrollHeight="600px"
+      :loading="loading"
     >
       <Column field="firstname" header="Meno" sortable />
       <Column field="lastname" header="Priezvisko" sortable />
@@ -107,23 +179,20 @@ const toggleFavourite = (row) => {
       <Column field="zpr" header="ZPR" sortable />
       <Column field="pzs" header="PZS" sortable />
 
-      <!-- Favourite icon -->
       <Column header=" " style="width: 3rem">
         <template #body="{ data }">
           <Button
-            :icon="data.favourite ? 'bi bi-heart-fill' : 'bi bi-heart'"
+            :icon="data.is_favourite ? 'bi bi-heart-fill' : 'bi bi-heart'"
             @click="toggleFavourite(data)"
             variant="text"
             class="!text-darkgrey hover:!bg-transparent p-0"
           />
         </template>
       </Column>
-
     </DataTable>
 
     <div class="text-mini text-accent flex justify-end w-full py-2">
       {{ recordsInfo }}
     </div>
-
   </div>
 </template>

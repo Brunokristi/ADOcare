@@ -177,6 +177,17 @@ watch(
     loadAllPatients();
   }
 );
+
+watch(
+  () => [authStore.currentBranch?.id, authStore.currentRole],
+  ([newBranch, newRole], [oldBranch, oldRole]) => {
+    if (newBranch !== oldBranch || newRole !== oldRole) {
+      patientStore.clear();
+      router.push('/');
+    }
+  }
+);
+
 </script>
 
 <template>

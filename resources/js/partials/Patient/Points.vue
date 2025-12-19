@@ -194,11 +194,18 @@ async function searchDiagnoses(event: { query: string }) {
       return;
     }
 
-    const { data } = await api.get<Diagnosis[]>('/v1/diagnoses', {
-      params: { q },
-    });
+    const res = await api.get('/v1/diagnoses', { params: { q } });
 
-    filteredDiagnoses.value = data.map((d) => ({
+    // normalize common API shapes
+    const raw = res.data;
+    const arr =
+      Array.isArray(raw) ? raw :
+      Array.isArray(raw?.data) ? raw.data :
+      Array.isArray(raw?.data?.items) ? raw.data.items :
+      Array.isArray(raw?.items) ? raw.items :
+      [];
+
+    filteredDiagnoses.value = (arr as Diagnosis[]).map((d) => ({
       id: d.id,
       code: d.code ?? '',
       description: d.description ?? '',
@@ -209,6 +216,7 @@ async function searchDiagnoses(event: { query: string }) {
   }
 }
 
+
 async function searchProcedures(event: { query: string }) {
   try {
     const q = event.query?.trim() ?? '';
@@ -218,11 +226,18 @@ async function searchProcedures(event: { query: string }) {
       return;
     }
 
-    const { data } = await api.get<Procedure[]>('/v1/procedures', {
-      params: { q },
-    });
+    const res = await api.get('/v1/procedures', { params: { q } });
 
-    filteredProcedures.value = data.map((p) => ({
+    // normalize common API shapes
+    const raw = res.data;
+    const arr =
+      Array.isArray(raw) ? raw :
+      Array.isArray(raw?.data) ? raw.data :
+      Array.isArray(raw?.data?.items) ? raw.data.items :
+      Array.isArray(raw?.items) ? raw.items :
+      [];
+
+    filteredProcedures.value = (arr as Procedure[]).map((p) => ({
       id: p.id,
       code: p.code ?? '',
       description: p.description ?? '',
@@ -232,6 +247,7 @@ async function searchProcedures(event: { query: string }) {
     filteredProcedures.value = [];
   }
 }
+
 
 /* -------------------------------------------------------------------------- */
 /*  Normalization helpers                                                     */

@@ -15,9 +15,40 @@ class DoctorController extends Controller
     use ApiResponse;
     public function index(Request $request)
     {
-        $query = Doctor::query();
-        $results = ApiQuery::apply(request(), $query);
+        $branchId = (int) $request->query('branch_id');
+
+        if ($branchId <= 0) {
+            return $this->error('branch_id is required', 422);
+        }
+
+        $query = Doctor::query()
+            ->withExists([
+                'branches as is_favourite' => fn ($q) => $q->where('branches.id', $branchId),
+            ]);
+
+        if ($request->boolean('favourites')) {
+            $query->whereHas('branches', fn ($q) => $q->where('branches.id', $branchId));
+        }
+
+        $results = ApiQuery::apply($request, $query);
+
         return $this->success(new BaseCollection($results), 'Doctors retrieved');
+    }
+
+
+    public function favourites(Request $request)
+    {
+        $branchId = $request->user()->branch_id; // adjust if needed
+
+        $query = Doctor::query()
+            ->whereHas('branches', fn ($q) => $q->where('branches.id', $branchId))
+            ->withExists([
+                'branches as is_favourite' => fn ($q) => $q->where('branches.id', $branchId),
+            ]);
+
+        $results = ApiQuery::apply($request, $query);
+
+        return $this->success(new BaseCollection($results), 'Favourite doctors retrieved');
     }
 
     public function store(\App\Http\Requests\StoreDoctorRequest $request)

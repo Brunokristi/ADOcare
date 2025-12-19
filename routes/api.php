@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\TextBlockController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\VisitTextController;
+use App\Http\Controllers\Api\GeocodeController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +44,7 @@ Route::prefix('auth')->group(function () {
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('cars', CarController::class);
+    
     Route::apiResource('patients', PatientController::class);
     Route::group(['prefix' => 'patients/{patient}'], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
@@ -49,20 +52,15 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('diagnoses', [PatientController::class, 'diagnoses']);
         Route::get('procedures', [PatientController::class, 'procedures']);
         Route::get('patient-points', [PatientController::class, 'patientPoints']);
-
     });
+    Route::apiResource('branches', BranchController::class);
+    Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
+    Route::get('/branches/{branch}/doctors', [BranchController::class, 'doctors']);
 
     Route::apiResource('insurance-companies', InsuranceCompanyController::class);
     Route::apiResource('diagnoses', DiagnosisController::class);
     Route::apiResource('procedures', ProcedureController::class);
     Route::apiResource('patient-points', PatientPointController::class);
-
-    // Newly added resources
-    Route::apiResource('branches', BranchController::class);
-    Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
-    Route::get('/branches/{branch}/doctors', [BranchController::class, 'doctors']);
-
-
 
     Route::apiResource('companies', CompanyController::class);
     Route::apiResource('doctors', DoctorController::class);
@@ -76,6 +74,13 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/batches/preview', [PointsExportController::class, 'preview']);
     Route::post('/batches/download', [PointsExportController::class, 'download']);
     Route::post('/batches/statement-pdf', [PointsExportController::class, 'statementPdf']);
+
+    Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
+
+    Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
+    Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
+
+
 
 
 });

@@ -40,7 +40,6 @@ class Company extends Model
 
     public function users()
     {
-        // users related to this company via branches -> user_branches pivot
         return $this->hasManyThrough(User::class, Branch::class, 'company_id', 'id', 'id', 'id');
     }
 }
