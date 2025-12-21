@@ -1,0 +1,51 @@
+<script setup lang="ts">
+/// <reference path="../../../types/ui.d.ts" />
+import { onMounted, ref } from 'vue';
+import { usePatientStore } from '@/stores/patientStore';
+import { type Patient } from '@/types/models';
+import api from '@/services/api';
+import { useToast } from 'primevue/usetoast';
+import PatientForm from './PatientForm.vue';
+import type { IModalContentProps } from '@/types/ui';
+
+
+const patientStore = usePatientStore();
+const props = defineProps<IModalContentProps & { patientId: number; }>();
+
+const patient = ref<Patient>({} as Patient);
+
+
+
+const toast = useToast();
+
+const createPatient = async () => {
+    // basic validation
+    if (!patient.value.first_name || !patient.value.last_name) {
+        return;
+    }
+
+    // use api to save patient
+    // try {
+    //     await patientStore.createPatient(patient.value)
+    //     toast.add({ severity: 'success', summary: 'Pacient uložený', detail: `Pacient ${patient.value.first_name} bol úspešne uložený.` });
+    //     // If opened via provider, resolve via modalResolve, otherwise emit events
+    //     if (props.modalResolve) {
+    //         props.modalResolve(patient.value);
+    //     }
+    // } catch (e) {
+    //     console.error('Failed to save patient', e);
+    //     toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pacienta. Skúste to znova.', life: 5000 });
+    // }
+
+};
+
+</script>
+
+
+<template>
+    <PatientForm v-if="patient" v-model:patient="patient" />
+    <div class="mt-4 flex justify-end">
+        <Button label="Uložiť" class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
+            @click="createPatient" />
+    </div>
+</template>
