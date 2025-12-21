@@ -6,6 +6,7 @@ import Footer from '@/components/Footer.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import TercialNavbar from './components/TercialNavbar.vue';
 import { useAuthStore } from '@/stores/auth';
+import ModalProvider from './components/ModalProvider.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -53,5 +54,8 @@ function handleToggleSidebar() {
     <Footer class="flex-none" />
 
     <Toast position="bottom-right" />
+
+    <ModalProvider />
+
   </div>
 </template>

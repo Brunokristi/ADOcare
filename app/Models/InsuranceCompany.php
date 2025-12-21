@@ -12,6 +12,7 @@ class InsuranceCompany extends Model
     protected $table = 'insurance_companies';
 
     protected $fillable = [
+        'id',
         'name',
         'address',
         'city',
