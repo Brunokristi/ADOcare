@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BaseCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\InsuranceCompany;
 use Illuminate\Http\Request;
@@ -35,10 +36,12 @@ class InsuranceCompanyController extends Controller
         }
 
         // Otherwise return limited results (useful for dropdowns/autocomplete)
-        return $query
+        $result = $query
             ->orderBy('name')
             ->limit(50)
             ->get();
+
+        return $this->success(new BaseCollection($result), 'Insurance companies retrieved');
     }
 
     /**
