@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Patient extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'patients';
 
@@ -16,13 +17,13 @@ class Patient extends Model
     public function assignedUsers()
     {
         return $this->belongsToMany(User::class, 'patient_branch_users')
-                    ->withPivot('branch_id'); 
+            ->withPivot('branch_id');
     }
 
     public function branches()
     {
         return $this->belongsToMany(Branch::class, 'patient_branch_users')
-                    ->withPivot('user_id');
+            ->withPivot('user_id');
     }
 
     public function doctor()

@@ -25,6 +25,7 @@ class CreatePatientRelatedTables extends Migration
             $table->double('longitude')->nullable();
             $table->date('reference_date')->nullable()->after('doctor_id');
             $table->timestamps();
+            $table->softDeletes();
             $table->foreign('doctor_id')->references('id')->on('doctors')->onDelete('set null');
             $table->foreign('insurance_company_id')->references('id')->on('insurance_companies')->onDelete('set null');
         });
