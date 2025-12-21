@@ -181,6 +181,8 @@ watch(
 watch(
   () => [authStore.currentBranch?.id, authStore.currentRole],
   ([newBranch, newRole], [oldBranch, oldRole]) => {
+    if (!oldBranch && !oldRole) return; // initial load
+
     if (newBranch !== oldBranch || newRole !== oldRole) {
       patientStore.clear();
       router.push('/');
