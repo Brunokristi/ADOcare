@@ -73,10 +73,13 @@ export interface Doctor {
   updated_at: string | null
   // relations
   patients: Patient[]
+  branches: Branch[]
   // counts
   patients_count: number
+  branches_count: number
   // exists
   patients_exists: boolean
+  branches_exists: boolean
 }
 
 export interface User {
@@ -192,17 +195,20 @@ export interface Branch {
   report_months: ReportMonth[]
   cars: Car[]
   patients: Patient[]
+  doctors: Doctor[]
   // counts
   users_count: number
   report_months_count: number
   cars_count: number
   patients_count: number
+  doctors_count: number
   // exists
   company_exists: boolean
   users_exists: boolean
   report_months_exists: boolean
   cars_exists: boolean
   patients_exists: boolean
+  doctors_exists: boolean
 }
 
 export interface Procedure {
@@ -337,4 +343,20 @@ export interface Patient {
   doctor_exists: boolean
   visits_exists: boolean
   insurance_company_exists: boolean
+}
+
+export interface Macro {
+  // columns
+  id: number
+  name: string
+  abbreviation: string
+  text: string
+  user_id: number
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  user: User
+  // counts
+  // exists
+  user_exists: boolean
 }
