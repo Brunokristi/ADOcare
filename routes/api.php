@@ -44,8 +44,9 @@ Route::prefix('auth')->group(function () {
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('cars', CarController::class);
-    
+
     Route::apiResource('patients', PatientController::class);
+    Route::delete('patients', [PatientController::class, 'destroyMany']);
     Route::group(['prefix' => 'patients/{patient}'], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
         Route::get('doctor', [PatientController::class, 'doctor']);

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
+use App\Http\Requests\PatientDeleteManyRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\PatientResource;
@@ -26,7 +27,7 @@ class PatientController extends Controller
             ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
                 $q->where('users.id', $user->id);
                 $q->where('patient_branch_users.branch_id', (int) $branchId);
-                
+
             });
 
         $results = ApiQuery::apply(
@@ -42,26 +43,26 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'branch_id'            => 'required|integer|exists:branches,id',
+            'branch_id' => 'required|integer|exists:branches,id',
 
-            'first_name'           => 'required|string|max:255',
-            'last_name'            => 'required|string|max:255',
-            'title'                => 'nullable|string|max:255',
-            'personal_number'      => 'nullable|string|max:255',
-            'sex'                  => 'nullable|in:M,F',
-            'contact'              => 'nullable|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'personal_number' => 'nullable|string|max:255',
+            'sex' => 'nullable|in:M,F',
+            'contact' => 'nullable|string|max:255',
 
-            'doctor_id'            => 'nullable|integer|exists:doctors,id',
+            'doctor_id' => 'nullable|integer|exists:doctors,id',
             'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
 
-            'address'              => 'nullable|string|max:255',
-            'city'                 => 'nullable|string|max:255',
-            'zip'                  => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'zip' => 'nullable|string|max:50',
 
-            'latitude'             => 'nullable|numeric',
-            'longitude'            => 'nullable|numeric',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
 
-            'reference_date'       => 'nullable|date',
+            'reference_date' => 'nullable|date',
         ]);
 
         $patient = Patient::create(collect($data)->except('branch_id')->toArray());
@@ -91,26 +92,26 @@ class PatientController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'branch_id'            => 'sometimes|integer|exists:branches,id',
+            'branch_id' => 'sometimes|integer|exists:branches,id',
 
-            'first_name'           => 'sometimes|required|string|max:255',
-            'last_name'            => 'sometimes|required|string|max:255',
-            'title'                => 'nullable|string|max:255',
-            'personal_number'      => 'nullable|string|max:255',
-            'sex'                  => 'nullable|in:M,F',
-            'contact'              => 'nullable|string|max:255',
+            'first_name' => 'sometimes|required|string|max:255',
+            'last_name' => 'sometimes|required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'personal_number' => 'nullable|string|max:255',
+            'sex' => 'nullable|in:M,F',
+            'contact' => 'nullable|string|max:255',
 
-            'doctor_id'            => 'nullable|integer|exists:doctors,id',
+            'doctor_id' => 'nullable|integer|exists:doctors,id',
             'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
 
-            'address'              => 'nullable|string|max:255',
-            'city'                 => 'nullable|string|max:255',
-            'zip'                  => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'zip' => 'nullable|string|max:50',
 
-            'latitude'             => 'nullable|numeric',
-            'longitude'            => 'nullable|numeric',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
 
-            'reference_date'       => 'nullable|date',
+            'reference_date' => 'nullable|date',
         ]);
 
         $patient = Patient::find($id);
@@ -133,14 +134,20 @@ class PatientController extends Controller
     }
 
 
-    public function destroy(Request $request, $id)
+    public function destroy(Patient $patient)
     {
-        $patient = Patient::find($id);
         if (!$patient) {
             return $this->error('Not found', 404);
         }
-
+        // Soft delete
         $patient->delete();
+        return $this->success(null, 'Deleted');
+    }
+
+    public function destroyMany(PatientDeleteManyRequest $request)
+    {
+
+        Patient::whereIn('id', $request->input('ids'))->delete();
 
         return $this->success(null, 'Deleted');
     }
@@ -149,14 +156,16 @@ class PatientController extends Controller
     public function insuranceCompany(Request $request, Patient $patient)
     {
         $insuranceCompany = $patient->insuranceCompany;
-        if (!$insuranceCompany) return $this->notFound();
+        if (!$insuranceCompany)
+            return $this->notFound();
         return $this->success($insuranceCompany, 'Insurance Company retrieved');
     }
 
     public function doctor(Request $request, Patient $patient)
     {
         $doctor = $patient->doctor;
-        if (!$doctor) return $this->notFound();
+        if (!$doctor)
+            return $this->notFound();
         return $this->success($doctor, 'Doctor retrieved');
     }
 
