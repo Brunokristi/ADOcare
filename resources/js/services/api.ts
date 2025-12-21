@@ -18,6 +18,23 @@ api.interceptors.request.use((config) => {
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        // Convert all true/false query params to 1/0 and if there is a 'q' param, trim it and make sure its a string
+        if (config.params) {
+            for (const key in config.params) {
+                if (typeof config.params[key] === 'boolean') {
+                    config.params[key] = config.params[key] ? 1 : 0;
+                }
+            }
+            if (config.params.q !== undefined) {
+                config.params.q = String(config.params.q).trim();
+                console.log(`Trimmed q param: '${config.params.q}'`);
+
+                if (config.params.q === '') {
+                    delete config.params.q;
+                }
+            }
+        }
+
     } catch (e) {
         // store may not be initialized yet in some contexts; fallback to localStorage
         const token = localStorage.getItem('api_token');
@@ -52,6 +69,7 @@ interface FetchEntitiesOptions {
     sort?: string;
     q?: string;
     filter?: Record<string, any>;
+    [key: string]: any;
 };
 
 type FetchEntitiesPaginatedOptions = /*without limit*/ Omit<FetchEntitiesOptions, 'limit'> & {
@@ -81,7 +99,7 @@ api.fetchEntity = async function <T>(url: string, options?: FetchEntityOptions):
 }
 
 api.fetchEntities = async function <T>(url: string, options?: FetchEntitiesOptions): Promise<T[]> {
-    const params = { ...options, paginate: false };
+    const params = { ...options, paginate: 0 };
     try {
         const response = await api.get(url, {
             params: params,
@@ -94,7 +112,7 @@ api.fetchEntities = async function <T>(url: string, options?: FetchEntitiesOptio
 }
 
 api.fetchEntitiesPaginated = async function <T>(url: string, options?: FetchEntitiesPaginatedOptions) {
-    const params = { ...options, paginate: true };
+    const params = { ...options, paginate: 1 };
     try {
         const response = await api.get(url, {
             params: params,
