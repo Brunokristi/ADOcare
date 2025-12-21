@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\VisitTextController;
 use App\Http\Controllers\Api\GeocodeController;
+use \App\Http\Controllers\Api\MacroController;
 
 
 use Illuminate\Http\Request;
@@ -52,6 +53,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('diagnoses', [PatientController::class, 'diagnoses']);
         Route::get('procedures', [PatientController::class, 'procedures']);
         Route::get('patient-points', [PatientController::class, 'patientPoints']);
+
     });
     Route::apiResource('branches', BranchController::class);
     Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
@@ -60,6 +62,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResource('insurance-companies', InsuranceCompanyController::class);
     Route::apiResource('diagnoses', DiagnosisController::class);
     Route::apiResource('procedures', ProcedureController::class);
+    Route::apiResource('macros', MacroController::class);
+
     Route::apiResource('patient-points', PatientPointController::class);
 
     Route::apiResource('companies', CompanyController::class);
