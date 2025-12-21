@@ -19,7 +19,7 @@ class BaseCollection extends ResourceCollection
     public function __construct($resource, ?string $resourceClass = null)
     {
         parent::__construct($resource);
-        $this->sql = $resource->sql ?? null;
+        $this->sql = isset($resource->sql) ? $resource->sql : null;
         if ($resourceClass !== null) {
             $this->resourceClass = $resourceClass;
         }
@@ -36,7 +36,7 @@ class BaseCollection extends ResourceCollection
         $result = [
             'items' => $items,
             'count' => $this->collection->count(),
-            'sql' => $this->sql,
+            'sql' => $this->sql ?? null,
         ];
 
         // If the underlying resource is a paginator, include pagination metadata
