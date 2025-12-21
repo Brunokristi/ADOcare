@@ -23,6 +23,9 @@ class ApiQuery
      * - sort=field,-other    (comma-separated, prefix - for DESC)
      * - per_page=N, page=N
      * - paginate=0|1 (default 1)
+     * - limit=N (when paginate=0)
+     * - all=1 (disable pagination/limit)
+     * - with=relation1,relation2 (eager load relations)
      */
     public static function apply(Request $request, Builder $query, array $searchable = [], array $allowedFilters = [])
     {
@@ -38,6 +41,14 @@ class ApiQuery
             'paginate' => 'sometimes|in:true,false,1,0',
             'with' => 'sometimes|string|max:255',
         ]);
+
+
+        // Eager loading
+        $with = $request->input('with');
+        if ($with) {
+            $relations = array_map('trim', explode(',', $with));
+            $query->with($relations);
+        }
 
         // Filters
         $filters = $request->input('filter', []);
