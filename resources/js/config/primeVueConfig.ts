@@ -61,7 +61,7 @@ export default {
                 root: { class: '!shadow-none hover:!shadow-none' },
             },
             bodycell: {
-                class: '!text-normal/5 !text-darkgrey !px-4 !border-0 !border-r !border-r-white last:!border-r-0',
+                class: '!text-normal/5 !text-darkgrey !px-4 !py-1 !border-0 !border-r !border-r-white last:!border-r-0',
             },
         },
 
@@ -176,6 +176,21 @@ export default {
             },
             weekDay: { class: '!text-heading !text-darkgrey' },
             month: { class: '!text-normal !text-darkgrey [&.p-datepicker-month-selected]:!bg-accent [&.p-datepicker-month-selected]:!text-white' },
+        },
+
+        paginator: {
+            root: { class: '!border-0 !rounded-none !text-mini !p-0 !bg-darkgrey !h-7 !align-middle' },
+            prevIcon: { class: '!bi !bi-chevron-left !text-white' },
+            prev: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
+            nextIcon: { class: '!bi !bi-chevron-right !text-white' },
+            next: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
+            firstIcon: { class: '!bi !bi-chevron-bar-left !text-white' },
+            first: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
+            lastIcon: { class: '!bi !bi-chevron-bar-right !text-white' },
+            last: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
+            page: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
         }
+
+
     }
 } as PrimeVueConfiguration;

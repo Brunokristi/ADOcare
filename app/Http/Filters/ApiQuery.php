@@ -67,18 +67,27 @@ class ApiQuery
         }
 
         // Search
-        $q = $request->input('q');
-        if ($q && count($searchable) > 0) {
+        $q = trim((string) $request->input('q', ''));
+        if ($q !== '' && count($searchable) > 0) {
             $query->where(function (Builder $b) use ($searchable, $q) {
+                $like = "%{$q}%";
+
                 foreach ($searchable as $i => $col) {
+                    // normalize DB value and user input the same way:
+                    // - cast to text (safe for non-text cols)
+                    // - lower() for case-insensitive
+                    // - immutable_unaccent() for accent-insensitive
+                    $expr = "public.immutable_unaccent(lower(cast({$col} as text))) LIKE public.immutable_unaccent(lower(?))";
+
                     if ($i === 0) {
-                        $b->where($col, 'ILIKE', "%{$q}%");
+                        $b->whereRaw($expr, [$like]);
                     } else {
-                        $b->orWhere($col, 'ILIKE', "%{$q}%");
+                        $b->orWhereRaw($expr, [$like]);
                     }
                 }
             });
         }
+
 
         // Sorting
         $sort = $request->input('sort');
@@ -98,7 +107,7 @@ class ApiQuery
         // Pagination
         $paginate = $request->boolean('paginate', true);
         $perPage = (int) $request->input('per_page', 15);
-        $limit = (int) $request->input('limit', 100);
+        $limit = (int) $request->input('limit', -1);
         if ($request->boolean('all')) {
             $paginate = false;
             $limit = -1;
