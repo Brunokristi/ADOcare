@@ -13,15 +13,10 @@ const rows = ref([])
 const loading = ref(false)
 const showOnlyFav = ref(false)
 
-// server-side search text
 const search = ref('')
-
-// paginator state
-const first = ref(0)      // offset
-const perPage = ref(25)   // rows per page
+const first = ref(0)
+const perPage = ref(50)
 const totalRecords = ref(0)
-
-// sorting state (server-side)
 const sortField = ref(null)
 const sortOrder = ref(null) // 1 or -1
 
@@ -37,7 +32,6 @@ function uiFieldToApiField(field) {
 }
 
 function buildSortParam() {
-  // if user sorts in UI, send it; otherwise rely on backend default alpha
   if (!sortField.value || !sortOrder.value) return undefined
   const apiField = uiFieldToApiField(sortField.value)
   return sortOrder.value === -1 ? `-${apiField}` : apiField
@@ -232,7 +226,7 @@ onMounted(() => {
               :icon="data.is_favourite ? 'bi bi-heart-fill' : 'bi bi-heart'"
               @click="toggleFavourite(data)"
               variant="text"
-              class="!text-darkgrey hover:!bg-transparent p-0"
+              class="!text-darkgrey hover:!bg-transparent p-0!"
             />
           </template>
         </Column>

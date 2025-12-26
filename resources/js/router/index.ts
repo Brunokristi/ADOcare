@@ -196,8 +196,8 @@ const routes = [
                 meta: {
                     title: 'Makrá (new)',
                     link: 'makrá-new',
-                    sidebar: true,
-                    navbar: true,
+                    sidebar: false,
+                    navbar: false,
                 },
             },
         ],
