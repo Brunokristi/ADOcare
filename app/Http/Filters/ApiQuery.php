@@ -67,27 +67,39 @@ class ApiQuery
         }
 
         // Search
+        // Search
         $q = trim((string) $request->input('q', ''));
         if ($q !== '' && count($searchable) > 0) {
-            $query->where(function (Builder $b) use ($searchable, $q) {
-                $like = "%{$q}%";
 
-                foreach ($searchable as $i => $col) {
-                    // normalize DB value and user input the same way:
-                    // - cast to text (safe for non-text cols)
-                    // - lower() for case-insensitive
-                    // - immutable_unaccent() for accent-insensitive
-                    $expr = "public.immutable_unaccent(lower(cast({$col} as text))) LIKE public.immutable_unaccent(lower(?))";
+            // split query into tokens: "Adam   Kohane" -> ["Adam","Kohane"]
+            $tokens = preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY);
 
-                    if ($i === 0) {
-                        $b->whereRaw($expr, [$like]);
-                    } else {
-                        $b->orWhereRaw($expr, [$like]);
-                    }
+            // If somehow split fails, fallback to whole string
+            if (!$tokens || count($tokens) === 0) {
+                $tokens = [$q];
+            }
+
+            $query->where(function (Builder $outer) use ($searchable, $tokens) {
+
+                // AND between tokens (must match all tokens)
+                foreach ($tokens as $token) {
+                    $like = "%{$token}%";
+
+                    $outer->where(function (Builder $inner) use ($searchable, $like) {
+                        // OR between columns (token can match any searchable column)
+                        foreach ($searchable as $i => $col) {
+                            $expr = "public.immutable_unaccent(lower(cast({$col} as text))) LIKE public.immutable_unaccent(lower(?))";
+
+                            if ($i === 0) {
+                                $inner->whereRaw($expr, [$like]);
+                            } else {
+                                $inner->orWhereRaw($expr, [$like]);
+                            }
+                        }
+                    });
                 }
             });
         }
-
 
         // Sorting
         $sort = $request->input('sort');

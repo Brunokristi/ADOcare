@@ -327,6 +327,7 @@ export interface Patient {
   created_at: string | null
   updated_at: string | null
   reference_date: string | null
+  deleted_at: string | null
   // relations
   assigned_users: User[]
   branches: Branch[]

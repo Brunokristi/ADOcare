@@ -71,16 +71,24 @@ function mapPatients(items: PatientModel[]): Patient[] {
 
 async function loadInsurances() {
   try {
-    const { data } = await api.get<InsuranceCompany[]>('/v1/insurance-companies', {
-      params: { paginate: false },
-    });
+    const res = await api.get('/v1/insurance-companies', {
+      params: { paginate: 0 },
+    })
 
-    insurances.value = data.map(mapInsuranceCompanyToOption);
+    const payload = res.data?.data
+
+    const items =
+      (payload?.items as InsuranceCompany[] | undefined) ??
+      (Array.isArray(payload) ? (payload as InsuranceCompany[]) : []) ??
+      []
+
+    insurances.value = items.map(mapInsuranceCompanyToOption)
   } catch (e) {
-    console.error('Failed to load insurance companies', e);
-    insurances.value = [];
+    console.error('Failed to load insurance companies', e)
+    insurances.value = []
   }
 }
+
 
 async function loadAllPatients() {
   const id = branchId.value;

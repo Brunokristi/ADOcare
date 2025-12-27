@@ -44,7 +44,7 @@ const routes = [
         component: PatientsTest,
         meta: {
             title: 'Pacienti Test',
-            sidebar: true,
+            sidebar: false,
         },
     },
 

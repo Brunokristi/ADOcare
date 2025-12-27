@@ -35,10 +35,11 @@ class DoctorController extends Controller
             $query->orderBy('last_name')->orderBy('first_name');
         }
 
+
         $results = ApiQuery::apply(
             $request,
             $query,
-            searchable: ['first_name', 'last_name', 'title', 'zpr', 'pzs']
+            searchable: ['first_name', 'last_name', 'zpr', 'pzs']
         );
 
         return $this->success(new BaseCollection($results), 'Doctors retrieved');

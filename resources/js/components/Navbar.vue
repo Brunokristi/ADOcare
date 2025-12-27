@@ -1,203 +1,299 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
+import { computed, ref, onMounted, watch } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 
-import { useAuthStore } from '@/stores/auth';
-import { usePatientStore } from '@/stores/patientStore';
-import api from '@/services/api';
-import type { Patient, User } from '@/types/models';
+import { useAuthStore } from '@/stores/auth'
+import { usePatientStore } from '@/stores/patientStore'
+import api from '@/services/api'
+import type { Patient, User } from '@/types/models'
 
-const router = useRouter();
-const authStore = useAuthStore();
-const patientStore = usePatientStore();
+const router = useRouter()
+const authStore = useAuthStore()
+const patientStore = usePatientStore()
 
 const emit = defineEmits<{
-  (e: 'toggle-sidebar'): void;
-}>();
+  (e: 'toggle-sidebar'): void
+}>()
 
 /* ------------ BASIC AUTH / USER ------------ */
 
-const isAuthenticated = computed(() => authStore.isAuthenticated);
-const user = computed<User | null>(() => authStore.user as User | null);
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const user = computed<User | null>(() => authStore.user as User | null)
 
-const companyName = computed(() => user.value?.company?.name ?? '');
+const companyName = computed(() => user.value?.company?.name ?? '')
 const fullName = computed(() =>
-  user.value
-    ? `${user.value.first_name ?? ''} ${user.value.last_name ?? ''}`.trim()
-    : ''
-);
+  user.value ? `${user.value.first_name ?? ''} ${user.value.last_name ?? ''}`.trim() : ''
+)
 
-/* ------------ BRANCH SELECT ------------ */
+/* ------------ BRANCH SELECT OPTIONS ------------ */
 
-const branchOptions = computed(() => {
-  const u = user.value;
-  if (!u) return [];
+type BranchOption = { id: number; label: string; isManager: boolean }
 
-  const options = (u.branches ?? []).map(b => ({
+const branchOptions = computed<BranchOption[]>(() => {
+  const u = user.value
+  if (!u) return []
+
+  const options: BranchOption[] = (u.branches ?? []).map((b: any) => ({
     id: b.id,
     label: b.address || b.identificator || b.city || '',
     isManager: false,
-  }));
+  }))
 
-  const roleNames = (u as any).roles_list ?? [];
-  const hasManager = roleNames.some(
-    (r: string) => r && r.trim().toLowerCase() === 'manager'
-  );
+  const roleNames: string[] = (u as any).roles_list ?? []
+  const hasManager = roleNames.some((r) => r && r.trim().toLowerCase() === 'manager')
 
   if (hasManager) {
-    options.push({
-      id: 999999,
-      label: 'Manažér',
-      isManager: true,
-    });
+    options.push({ id: 999999, label: 'Manažér', isManager: true })
   }
 
-  return options;
-});
+  return options
+})
 
-const selectedBranchId = computed<number | null>({
-  get: () => {
-    if (authStore.currentRole === 'manager') {
-      const managerOpt = branchOptions.value.find(o => o.isManager);
-      return managerOpt ? managerOpt.id : authStore.currentBranch?.id ?? null;
-    }
-    return authStore.currentBranch?.id ?? null;
-  },
-  set: (id) => {
-    if (id == null) return;
+/**
+ * Local v-model for the Branch <Select>.
+ * We keep this in sync with authStore.currentBranch/currentRole.
+ */
+const selectedBranchIdLocal = ref<number | null>(null)
 
-    const numericId = typeof id === 'string' ? Number(id) : id;
-    const opt = branchOptions.value.find(o => o.id === numericId);
+/* ------------ Persistence to DB ------------ */
 
-    if (!opt) return;
+/**
+ * Update user->last_branch in DB.
+ * Change this endpoint to whatever you actually have.
+ *
+ * Examples you might have:
+ * - PATCH /v1/users/me  { last_branch_id }
+ * - PATCH /v1/me        { last_branch_id }
+ * - PATCH /v1/profile   { last_branch_id }
+ */
+async function saveLastBranchToDb(branchId: number) {
+  try {
+    await api.patch('/v1/users/me/last-branch', { last_branch_id: branchId })
+  } catch (e) {
+    console.error('Failed to save last_branch_id', e)
+  }
+}
 
-    if (opt.isManager) {
-      authStore.setCurrentRole('manager');
-      authStore.clearCurrentBranch();
-      patientStore.clear();
+/* ------------ Branch application logic ------------ */
+
+function getUserLastBranchId(u: any): number | null {
+  // support different shapes:
+  return (
+    (u?.last_branch_id ?? null) ||
+    (u?.last_branch?.id ?? null) ||
+    null
+  )
+}
+
+function userHasBranch(u: any, branchId: number) {
+  return (u?.branches ?? []).some((b: any) => Number(b.id) === Number(branchId))
+}
+
+async function applyBranchSelection(id: number) {
+  const opt = branchOptions.value.find((o) => o.id === id)
+  if (!opt) return
+
+  if (opt.isManager) {
+    authStore.setCurrentRole('manager')
+    authStore.clearCurrentBranch()
+    patientStore.clear()
+    return
+  }
+
+  authStore.setCurrentRole('nurse')
+  authStore.setCurrentBranch(id)
+  patientStore.clear()
+
+  await saveLastBranchToDb(id)
+}
+
+/**
+ * Initialize branch on login:
+ * - If user has last_branch_id and it’s allowed -> use it.
+ * - Else pick first available branch (non-manager) and save it.
+ * - If user has no branches -> keep null.
+ */
+async function ensureBranchInitialized() {
+  const u: any = user.value
+  if (!isAuthenticated.value || !u) return
+
+  // If already in manager role, don't force a branch
+  if (authStore.currentRole === 'manager') {
+    selectedBranchIdLocal.value = 999999
+    return
+  }
+
+  // If store already has a branch, just reflect it
+  const current = authStore.currentBranch?.id ?? null
+  if (current) {
+    selectedBranchIdLocal.value = current
+    return
+  }
+
+  const last = getUserLastBranchId(u)
+  if (last && userHasBranch(u, last)) {
+    selectedBranchIdLocal.value = last
+    await applyBranchSelection(last)
+    return
+  }
+
+  // pick first real branch option
+  const firstBranch = branchOptions.value.find((o) => !o.isManager)
+  if (firstBranch) {
+    selectedBranchIdLocal.value = firstBranch.id
+    await applyBranchSelection(firstBranch.id)
+    return
+  }
+
+  selectedBranchIdLocal.value = null
+}
+
+/* Keep local select synced when store changes externally */
+watch(
+  () => [authStore.currentBranch?.id, authStore.currentRole] as const,
+  ([branchId, role]) => {
+    if (role === 'manager') {
+      selectedBranchIdLocal.value = 999999
     } else {
-      authStore.setCurrentBranch(numericId);
-      authStore.setCurrentRole('nurse');
-      patientStore.clear();
+      selectedBranchIdLocal.value = branchId ?? null
     }
   },
-});
+  { immediate: true }
+)
+
+/* When user/options load, initialize branch if needed */
+watch(
+  () => [isAuthenticated.value, user.value, branchOptions.value.length] as const,
+  async () => {
+    await ensureBranchInitialized()
+  },
+  { immediate: true }
+)
+
+/* When user picks a branch in UI, apply + persist */
+watch(
+  selectedBranchIdLocal,
+  async (id, oldId) => {
+    if (id == null) return
+    if (id === oldId) return
+
+    // If user clicks current value, ignore
+    if (authStore.currentRole === 'manager' && id === 999999) return
+    if (authStore.currentRole !== 'manager' && id === authStore.currentBranch?.id) return
+
+    await applyBranchSelection(id)
+  }
+)
 
 /* ------------ PATIENT SELECT ------------ */
 
 type PatientOption = {
-  id: number;
-  name: string;
-  personalNumber: string;
-  raw: Patient;
-};
+  id: number
+  name: string
+  personalNumber: string
+  raw: Patient
+}
 
-const patientOptions = ref<PatientOption[]>([]);
-const selectedPatient = ref<PatientOption | null>(null);
-const patientsLoading = ref(false);
+const patientOptions = ref<PatientOption[]>([])
+const selectedPatient = ref<PatientOption | null>(null)
+const patientsLoading = ref(false)
 
 function mapPatients(items: Patient[]): PatientOption[] {
-  return items.map(p => ({
+  return items.map((p) => ({
     id: p.id,
     name: `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim(),
     personalNumber: p.personal_number ?? '',
     raw: p,
-  }));
+  }))
 }
 
 async function loadAllPatients() {
   if (!isAuthenticated.value) {
-    patientOptions.value = [];
-    return;
+    patientOptions.value = []
+    return
   }
 
-  const branchId = authStore.currentBranch?.id ?? null;
+  const branchId = authStore.currentBranch?.id ?? null
 
   try {
-    patientsLoading.value = true;
+    patientsLoading.value = true
 
     const res = await api.get('/v1/patients', {
       params: {
         paginate: 0,
         ...(branchId ? { branch_id: branchId } : {}),
       },
-    });
+    })
 
-    const data = res.data?.data;
-    const items =
-      (Array.isArray(data) ? data : data?.items) as Patient[] ?? [];
+    const data = res.data?.data
+    const items = ((Array.isArray(data) ? data : data?.items) as Patient[]) ?? []
 
-    patientOptions.value = mapPatients(items);
+    patientOptions.value = mapPatients(items)
   } catch (e) {
-    console.error('Failed to load patients', e);
-    patientOptions.value = [];
+    console.error('Failed to load patients', e)
+    patientOptions.value = []
   } finally {
-    patientsLoading.value = false;
+    patientsLoading.value = false
   }
-}
-
-/* ------------ NAVIGATION / ACTIONS ------------ */
-
-const goBack = () => router.back();
-const goHome = () => router.push('/');
-
-async function logout() {
-  try {
-    await authStore.clearAuth();
-  } catch (e) {
-    console.error('Logout failed', e);
-  } finally {
-    router.push('/login');
-  }
-}
-
-function toggleSidebar() {
-  emit('toggle-sidebar');
 }
 
 /* when patient is selected from navbar → save & go to detail page */
 watch(selectedPatient, (opt) => {
-  if (!opt) return;
-  patientStore.setPatient(opt.raw);
-  router.push('/patient/points');
-  selectedPatient.value = null;
-});
+  if (!opt) return
+  patientStore.setPatient(opt.raw)
+  router.push('/patient/points')
+  selectedPatient.value = null
+})
+
+/* ------------ NAVIGATION / ACTIONS ------------ */
+
+const goBack = () => router.back()
+const goHome = () => router.push('/')
+
+async function logout() {
+  try {
+    await authStore.clearAuth()
+  } catch (e) {
+    console.error('Logout failed', e)
+  } finally {
+    router.push('/login')
+  }
+}
+
+function toggleSidebar() {
+  emit('toggle-sidebar')
+}
 
 /* ------------ LIFECYCLE ------------ */
 
 onMounted(() => {
-  patientStore.loadFromStorage();
-  loadAllPatients();
-});
+  patientStore.loadFromStorage()
+  loadAllPatients()
+})
 
 /* reload patients when branch changes */
 watch(
   () => authStore.currentBranch?.id,
   () => {
-    loadAllPatients();
+    loadAllPatients()
   }
-);
+)
 
 watch(
-  () => [authStore.currentBranch?.id, authStore.currentRole],
+  () => [authStore.currentBranch?.id, authStore.currentRole] as const,
   ([newBranch, newRole], [oldBranch, oldRole]) => {
-    if (!oldBranch && !oldRole) return; // initial load
-
+    if (!oldBranch && !oldRole) return
     if (newBranch !== oldBranch || newRole !== oldRole) {
-      patientStore.clear();
-      router.push('/');
+      patientStore.clear()
+      router.push('/')
     }
   }
-);
-
+)
 </script>
 
 <template>
   <nav class="px-3 py-2 flex items-center justify-between bg-darkgrey text-lightgrey">
-    <RouterLink
-      to="/"
-      class="h-10 flex items-center space-x-2 text-accent text-heading-accent"
-    >
+    <RouterLink to="/" class="h-10 flex items-center space-x-2 text-accent text-heading-accent">
       <i class="bi bi-flower2 text-xl"></i>
     </RouterLink>
 
@@ -228,9 +324,7 @@ watch(
         class="w-60 h-7! flex items-center bg-tag2! border-none!"
       >
         <template #value>
-          <span class="text-normal text-white">
-            Vyberte pacienta
-          </span>
+          <span class="text-normal text-white">Vyberte pacienta</span>
         </template>
 
         <template #option="{ option }">
@@ -245,9 +339,7 @@ watch(
         <template #empty>
           <div class="flex items-center gap-2 px-2 py-1 text-normal text-darkgrey">
             <i v-if="patientsLoading" class="bi bi-arrow-repeat animate-spin" />
-            <span>
-              {{ patientsLoading ? 'Načítavam pacientov...' : 'Pacienti neboli nájdení' }}
-            </span>
+            <span>{{ patientsLoading ? 'Načítavam pacientov...' : 'Pacienti neboli nájdení' }}</span>
           </div>
         </template>
       </Select>
@@ -262,7 +354,7 @@ watch(
 
       <!-- Branch select -->
       <Select
-        v-model="selectedBranchId"
+        v-model="selectedBranchIdLocal"
         :options="branchOptions"
         optionLabel="label"
         optionValue="id"
@@ -280,7 +372,6 @@ watch(
         {{ companyName }}
       </span>
 
-      <!-- Logout -->
       <Button
         icon="bi bi-box-arrow-right"
         text
@@ -288,7 +379,6 @@ watch(
         @click="logout"
       />
 
-      <!-- Sidebar toggle -->
       <Button
         icon="bi bi-grid-3x3-gap"
         text

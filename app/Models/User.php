@@ -28,6 +28,7 @@ class User extends Authenticatable
         'login',
         'code',
         'pin',
+        'last_branch',
     ];
 
     /**
@@ -97,6 +98,11 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Patient::class, 'patient_branch_user')
                     ->withPivot('branch_id');
+    }
+
+    public function lastBranch()
+    {
+        return $this->belongsTo(\App\Models\Branch::class, 'last_branch_id');
     }
 
 }

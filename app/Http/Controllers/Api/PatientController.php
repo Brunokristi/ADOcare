@@ -21,14 +21,18 @@ class PatientController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $branchId = $request->input('branch_id');
+        $branchId = (int) $request->input('branch_id');
 
         $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
             ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
-                $q->where('users.id', $user->id);
-                $q->where('patient_branch_users.branch_id', (int) $branchId);
-
+                $q->where('users.id', $user->id)
+                ->where('patient_branch_users.branch_id', $branchId);
             });
+
+        if (!$request->filled('sort')) {
+            $query->orderBy('last_name')
+                ->orderBy('first_name');
+        }
 
         $results = ApiQuery::apply(
             $request,
@@ -39,6 +43,7 @@ class PatientController extends Controller
 
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
+
 
     public function store(Request $request)
     {

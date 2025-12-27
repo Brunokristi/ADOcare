@@ -38,7 +38,6 @@ const closePatient = () => {
     v-if="patient"
     class="!bg-tag2 !px-3 flex items-center py-2 justify-between"
   >
-    <!-- LEFT -->
     <template #start>
       <div class="flex items-center">
         <h2 class="!text-normal !pr-sm !text-almostwhite border-r !border-almostwhite">
