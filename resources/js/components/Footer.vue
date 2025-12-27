@@ -1,6 +1,15 @@
 <template>
-    <footer
-        class="w-full bg-darkgrey text-accent text-xs py-1 px-3 flex items-center ">
-        ADOcare
+    <footer class="flex justify-center py-1 ">
+        <RouterLink to="/" class="flex items-center">
+            <p
+            class="text-white text-mini pr-1">
+            adocare
+            </p>
+            <img
+            src="/logo.svg"
+            alt="Logo"
+            class="h-4 w-auto"
+            />
+        </RouterLink>
     </footer>
 </template>

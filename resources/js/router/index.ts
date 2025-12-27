@@ -212,8 +212,8 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
     const auth = useAuthStore();
 
-    if (to.meta.title) document.title = `${to.meta.title} | ADOcare`;
-    else document.title = 'ADOcare';
+    if (to.meta.title) document.title = `${to.meta.title} | adocare`;
+    else document.title = 'adocare';
 
     try {
         await auth.waitUntilInitialized();

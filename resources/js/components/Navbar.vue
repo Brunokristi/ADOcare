@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter} from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 import { usePatientStore } from '@/stores/patientStore'
@@ -35,7 +35,7 @@ const branchOptions = computed<BranchOption[]>(() => {
 
   const options: BranchOption[] = (u.branches ?? []).map((b: any) => ({
     id: b.id,
-    label: b.address || b.identificator || b.city || '',
+    label: b.address + ", " + b.city || b.identificator || b.city || '',
     isManager: false,
   }))
 
@@ -292,11 +292,7 @@ watch(
 </script>
 
 <template>
-  <nav class="px-3 py-2 flex items-center justify-between bg-darkgrey text-lightgrey">
-    <RouterLink to="/" class="h-10 flex items-center space-x-2 text-accent text-heading-accent">
-      <i class="bi bi-flower2 text-xl"></i>
-    </RouterLink>
-
+  <nav class="px-3 py-2 flex items-center justify-end bg-darkgrey text-lightgrey min-h-10">
     <div v-if="isAuthenticated" class="flex items-center gap-2 text-normal">
       <Button
         icon="bi bi-arrow-left"
@@ -380,7 +376,7 @@ watch(
       />
 
       <Button
-        icon="bi bi-grid-3x3-gap"
+        icon="bi bi-list"
         text
         class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
         @click="toggleSidebar"
