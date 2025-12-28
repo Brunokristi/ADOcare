@@ -14,10 +14,14 @@ const auth = useAuthStore();
 
 auth.init();
 
+const OPT_OUT_KEY = 'price_check_alert_dont_show';     // ✅ only key we care about
+const OLD_SEEN_KEY = 'price_check_alert_seen';         // ✅ clean old key if it exists
+
 onMounted(() => {
+  // ✅ migration: remove old “seen once” key so it doesn’t block you
+  localStorage.removeItem(OLD_SEEN_KEY);
+
   window.addEventListener('unauthenticated', () => {
-    // so the alert shows again on next successful login
-    localStorage.removeItem('price_check_alert_seen');
     router.push({ name: 'login' });
   });
 });
@@ -30,35 +34,44 @@ function handleToggleSidebar() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Login alert (once per login)                                              */
+/*  Login alert (every login unless opted out)                                 */
 /* -------------------------------------------------------------------------- */
 
 const showPriceAlert = ref(false);
+const dontShowAgain = ref(false);
 
 watch(
   isLoggedIn,
   (loggedIn) => {
     if (!loggedIn) return;
 
-    const seen = 0;
-    if (!seen) {
+    const optedOut = localStorage.getItem(OPT_OUT_KEY) === '1';
+    if (!optedOut) {
+      dontShowAgain.value = false;   // reset choice each time dialog opens
       showPriceAlert.value = true;
     }
   },
   { immediate: true },
 );
 
+function persistOptOutIfChecked() {
+  if (dontShowAgain.value) {
+    localStorage.setItem(OPT_OUT_KEY, '1');
+  }
+}
+
 function closePriceAlert() {
-  localStorage.setItem('price_check_alert_seen', '1');
+  persistOptOutIfChecked();
   showPriceAlert.value = false;
 }
 
 function goToPricesPage() {
-  localStorage.setItem('price_check_alert_seen', '1');
+  persistOptOutIfChecked();
   showPriceAlert.value = false;
   router.push('/settings/procedures');
 }
 </script>
+
 
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
@@ -84,7 +97,6 @@ function goToPricesPage() {
     <ModalProvider />
     <GlobalPatientModal />
 
-    <!-- ✅ Login alert -->
     <Dialog
       v-model:visible="showPriceAlert"
       :modal="true"
@@ -96,6 +108,14 @@ function goToPricesPage() {
         <p class="text-normal">
           Skontrolujte ceny úhrady zdravotnej starostlivosti
         </p>
+
+        <!-- ✅ don't show again -->
+        <div class="flex items-center gap-2">
+          <Checkbox v-model="dontShowAgain" binary inputId="dontShowAgain" />
+          <label for="dontShowAgain" class="text-sm text-darkgrey">
+            Už viac nezobrazovať
+          </label>
+        </div>
 
         <div class="flex justify-end gap-2">
           <Button

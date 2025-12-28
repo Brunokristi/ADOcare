@@ -204,7 +204,7 @@ class PointsExportController extends Controller
             '753b',
             $company->ico ?? '',
             $generatedYmd,
-            '1',
+            $batchNumber,
             $rowCount,
             '1',
             '1',
@@ -214,13 +214,13 @@ class PointsExportController extends Controller
 
         // Line 2 (with trailing | and the empty field before EUR)
         $line2 = implode('|', [
-            $branch->code ?? '',
             $branch->identificator ?? '',
+            $branch->code ?? '',
             $user->code ?? '',
-            number_format((float)$workingTime, 2, '.', ''), // 1.00
-            $termYYYYMM,                                    // 202506
-            '845',
-            '',                                             // makes the double ||
+            number_format((float)$workingTime, 2, '.', ''),
+            $termYYYYMM,
+            '850',
+            $batchNumber,
             'EUR',
             ''
         ]);
@@ -243,25 +243,37 @@ class PointsExportController extends Controller
                 $r->diagnosis_code ?? '',
                 $r->procedure_code ?? '',
                 $r->quantity ?? 1,
-
-                '', '', '', '', '', '', '',     // 7 empties
-
-                '0.00',
-                '0.00',
-
-                '',                               // empty => gives ||O|
+                '', 
+                '', 
+                '', 
+                '', 
+                '', 
+                '', 
+                '',
+                '',
+                '',
                 'O',
-
                 $r->doctor_pzs ?? '',
-                $r->doctor_zpr ?? '',
-
-                '', '', '', '',                   // 4 empties
+                $r->doctor_zpr ?? '', 
+                '', 
+                '',
+                '',
                 $dateYmd,
-                '', '', '', '',                   // 4 empties
-                '0.00',
-
-                '', '', '', '', '', '', '', '', '', '', '', // 12 empties
-                '' // trailing |
+                '',
+                '',
+                '', 
+                '', 
+                '', 
+                '',
+                '',
+                '', 
+                '', 
+                '', 
+                '', 
+                '', 
+                '', 
+                '', 
+                '',
             ];
 
             $dataLines[] = implode('|', $fields);

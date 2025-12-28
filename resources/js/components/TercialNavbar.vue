@@ -1,6 +1,6 @@
 <!-- src/components/PatientNavbar.vue -->
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, useAttrs } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import Menubar from 'primevue/menubar'
 import Dialog from 'primevue/dialog'
@@ -9,6 +9,9 @@ import Button from 'primevue/button'
 import { usePatientStore } from '@/stores/patientStore'
 import { useUiModalsStore } from '@/stores/uiModals'
 import type { Patient } from '@/types/models'
+
+defineOptions({ inheritAttrs: false })
+const attrs = useAttrs()
 
 const router = useRouter()
 const patientStore = usePatientStore()
@@ -102,18 +105,21 @@ watch(
   { immediate: true, deep: true }
 )
 
-
 function openEditFromIncompleteModal() {
   const id = incompletePatientId.value
   if (!id) return
   showIncompleteModal.value = false
   uiModals.openPatientEdit(id)
 }
-
 </script>
 
 <template>
-  <Menubar v-if="patient" class="!bg-tag2 !px-3 flex items-center py-2 justify-between">
+  <!-- ✅ Forward parent attrs (class, style, etc.) onto Menubar -->
+  <Menubar
+    v-if="patient"
+    v-bind="attrs"
+    class="!bg-tag2 !px-3 flex items-center py-2 justify-between"
+  >
     <template #start>
       <div class="flex items-center">
         <h2 class="!text-normal !pr-sm !text-almostwhite border-r !border-almostwhite">

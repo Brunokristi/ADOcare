@@ -189,7 +189,25 @@ export default {
             lastIcon: { class: '!bi !bi-chevron-bar-right !text-white' },
             last: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
             page: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
+        },
+
+        checkbox: {
+            root: {
+                class: `!shadow-none hover:!shadow-none ${baseNoOutline}`,
+            },
+            box: {
+                class: `
+            !border-darkgrey
+            data-[p-checked=true]:!bg-accent
+            data-[p-checked=true]:!border-accent
+            `,
+            },
+            icon: {
+                class: '!text-white',
+            },
+            input: { class: '!bg-darkgrey' },
         }
+
 
 
     }
