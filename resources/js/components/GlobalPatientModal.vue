@@ -5,6 +5,7 @@ import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { useUiModalsStore } from '@/stores/uiModals'
+import { usePatientStore } from '@/stores/patientStore'
 
 // PrimeVue components assumed globally registered in your app
 import AutoComplete from 'primevue/autocomplete'
@@ -14,6 +15,8 @@ import 'leaflet/dist/leaflet.css'
 const toast = useToast()
 const authStore = useAuthStore()
 const uiModals = useUiModalsStore()
+const patientStore = usePatientStore()
+
 
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
 
@@ -316,7 +319,16 @@ async function savePatient() {
 
   saving.value = true
   try {
-    await api.patch(`/v1/patients/${patient.value.id}`, uiToApiPayload(patient.value))
+    const payload = uiToApiPayload(patient.value)
+
+    const res = await api.patch(`/v1/patients/${patient.value.id}`, payload)
+
+    const maybeUpdated = res.data?.data ?? res.data
+    if (maybeUpdated && maybeUpdated.id) {
+      patientStore.setPatient(maybeUpdated)
+    } else {
+      await patientStore.fetchPatient(patient.value.id)
+    }
 
     toast.add({
       severity: 'success',

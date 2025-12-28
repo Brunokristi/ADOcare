@@ -7,9 +7,9 @@ INSERT INTO patient_branch_users (
 )
 SELECT
     id AS patient_id,
-    2  AS branch_id,
-    4  AS user_id,
+    3  AS branch_id,
+    5  AS user_id,
     NOW() AS created_at,
     NOW() AS updated_at
 FROM patients
-WHERE id BETWEEN 257 AND 415;
+WHERE id BETWEEN 416 AND 533;

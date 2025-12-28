@@ -249,7 +249,6 @@ function onAddressSelect(event) {
   if (!sel) return
 
   patient.value.street = sel.street || ''
-  // city+zip should be filled (auto) but user can still edit them after
   patient.value.city = sel.city || patient.value.city || ''
   patient.value.zip = sel.zip || patient.value.zip || ''
 
@@ -469,7 +468,14 @@ const savePatient = async () => {
   try {
     if (patient.value.id) {
       await api.patch(`/v1/patients/${patient.value.id}`, payload)
+
+      // ✅ refresh list
       await loadPatients(currentPage())
+
+      // ✅ refresh global selected patient (if this is the one selected)
+      if (patientStore.current?.id === patient.value.id) {
+        await patientStore.fetchPatient(patient.value.id)
+      }
 
       toast.add({
         severity: 'success',
@@ -488,6 +494,7 @@ const savePatient = async () => {
         life: 2500,
       })
     }
+
 
     patientDialog.value = false
   } catch (e) {
@@ -557,10 +564,25 @@ function addressUntilSecondComma(value) {
 }
 
 // -------------------- PATIENT PIN --------------------
-const selectPatient = (row) => {
-  patientStore.setPatient(row._api ?? row)
-  router.push('patient/points')
+const selectPatient = async (row) => {
+  try {
+    const id = row?.id ?? row?._api?.id
+    if (!id) return
+
+    const fresh = await patientStore.fetchPatient(id)
+
+    router.push('patient/points')
+  } catch (e) {
+    console.error(e)
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: 'Pacienta sa nepodarilo načítať.',
+      life: 4000,
+    })
+  }
 }
+
 
 // -------------------- INFO LINE --------------------
 const recordsInfo = computed(() => {
@@ -600,7 +622,7 @@ watch(
           <template #end>
             <div class="flex items-center gap-2">
               <IconField>
-                <InputText v-model="search" placeholder="Hľadať..." />
+                <InputText v-model="search" />
                 <InputIcon>
                   <i class="bi bi-search text-darkgrey" />
                 </InputIcon>
