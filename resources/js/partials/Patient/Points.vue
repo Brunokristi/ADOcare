@@ -379,6 +379,11 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 }
 
+function truncate(text: string, max = 60) {
+  if (!text) return '';
+  return text.length > max ? text.slice(0, max) + '…' : text;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Payload builders                                                          */
 /* -------------------------------------------------------------------------- */
@@ -813,8 +818,9 @@ watch(currentPatient, (newPatient) => {
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
+                  <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
                   <span>
-                    {{ slotProps.option.code }} – {{ slotProps.option.description }}
+                    {{ truncate(slotProps.option.description, 60) }}
                   </span>
                 </div>
               </template>
@@ -838,8 +844,9 @@ watch(currentPatient, (newPatient) => {
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
+                  <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
                   <span>
-                    {{ slotProps.option.code }} – {{ slotProps.option.description }}
+                    {{ truncate(slotProps.option.description, 60) }}
                   </span>
                 </div>
               </template>

@@ -546,6 +546,16 @@ const deleteSelectedPatients = async () => {
   }
 }
 
+function addressUntilSecondComma(value) {
+  if (!value) return ''
+
+  const parts = String(value)
+    .split(',')
+    .map(p => p.trim())
+    .filter(Boolean)
+  return parts.slice(0, 2).join(', ')
+}
+
 // -------------------- PATIENT PIN --------------------
 const selectPatient = (row) => {
   patientStore.setPatient(row._api ?? row)
@@ -640,9 +650,11 @@ watch(
             <Column field="lastname" header="Priezvisko" sortable style="width: 14rem" />
             <Column field="personalnumber" header="Rodné číslo" sortable style="width: 10rem" />
 
-            <Column field="address" header="Adresa" sortable style="width: 16rem">
+            <Column field="address" header="Adresa" sortable style="width: 100%">
               <template #body="{ data }">
-                <div class="truncate max-w-full">{{ data.address }}</div>
+                <span :title="data.address">
+                  {{ addressUntilSecondComma(data.address) }}
+                </span>
               </template>
             </Column>
 

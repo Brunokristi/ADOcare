@@ -106,6 +106,7 @@ export interface User {
   roles: Role[]
   report_months: ReportMonth[]
   patients: Patient[]
+  last_branch: Branch
   tokens: PersonalAccessToken[]
   notifications: DatabaseNotification[]
   // counts
@@ -123,6 +124,7 @@ export interface User {
   roles_exists: boolean
   report_months_exists: boolean
   patients_exists: boolean
+  last_branch_exists: boolean
   tokens_exists: boolean
   notifications_exists: boolean
 }
@@ -328,6 +330,7 @@ export interface Patient {
   updated_at: string | null
   reference_date: string | null
   deleted_at: string | null
+  dekurz_number: string | null
   // relations
   assigned_users: User[]
   branches: Branch[]

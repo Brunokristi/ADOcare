@@ -7,7 +7,7 @@ import Sidebar from '@/components/Sidebar.vue';
 import TercialNavbar from './components/TercialNavbar.vue';
 import { useAuthStore } from '@/stores/auth';
 import ModalProvider from './components/ModalProvider.vue';
-import Modal from '@/components/Modal.vue';
+import GlobalPatientModal from '@/components/GlobalPatientModal.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -57,7 +57,7 @@ function handleToggleSidebar() {
     <Toast position="bottom-right" />
 
     <ModalProvider />
-    <Modal />
+    <GlobalPatientModal />
 
   </div>
 </template>

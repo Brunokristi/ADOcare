@@ -502,7 +502,7 @@ watch(
         </div>
 
         <div class="col-span-8">
-          <div id="patient-map-global" class="w-full h-[360px] rounded-md overflow-hidden"></div>
+          <div id="patient-map-global" class="w-full h-full rounded-md overflow-hidden"></div>
         </div>
       </div>
     </div>
