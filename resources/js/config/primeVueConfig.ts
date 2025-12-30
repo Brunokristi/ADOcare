@@ -99,11 +99,11 @@ export default {
         },
 
         toast: {
-            root: { class: '!bg-transparent !rounded-md' },
-            message: { class: '!bg-transparent !rounded-md' },
-            messageContent: { class: '!bg-warning !text-white !rounded-md' },
+            root: { class: '!rounded-md' },
+            message: { class: '!rounded-md' },
+            messageContent: { class: '!text-dark !rounded-md' },
             messageIcon: { class: '!hidden' },
-            detail: { class: '!text-white' },
+            detail: { class: '!text-dark' },
         },
 
         /* ---------- SELECT ---------- */
