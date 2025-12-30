@@ -40,13 +40,24 @@ export const usePatientStore = defineStore('patient', {
                 });
         },
 
-        async savePatient(patient: Patient) {
+        async persistPatientData(patient: Patient) {
             try {
                 await api.put(`/v1/patients/${patient.id}`, patient);
                 const fresh = await this.fetchPatient(patient.id);
                 return fresh;
             } catch (error) {
                 throw new Error('Failed to save patient: ' + error);
+            }
+        },
+
+        async createPatient(patient: Patient, branchId: number) {
+            try {
+                const response = await api.post(`/v1/patients`, { ...patient, branch_id: branchId });
+                const created = response.data.data as Patient;
+                // this.setPatient(created);
+                return created;
+            } catch (error) {
+                throw new Error('Failed to create patient: ' + error);
             }
         },
 

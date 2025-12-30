@@ -85,7 +85,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
                     tooltip: 'Editovať pacienta',
                     action: (row: Patient) => {
                         // open the edit dialog programmatically; the dialog component expects `patientId` prop
-                        openModal(markRaw(EditPatientDialog), { patientId: row.id }, { style: { width: "90%" } }).then(() => {
+                        openModal(markRaw(EditPatientDialog), { title: 'Upraviť Pacienta', patientId: row.id }, { style: { width: "90%" } }).then(() => {
                             // optionally handle result after close
                         });
                     },
@@ -119,7 +119,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             handler: async ({ remote }) => {
                 console.log('Add action triggered');
 
-                await openModal(markRaw(CreatePatientModalBody), {}, { style: { width: "90%" } });
+                await openModal(markRaw(CreatePatientModalBody), { title: 'Pridať Pacienta' }, { style: { width: "90%" } });
 
                 // await remote.loadPage(1);
             },
@@ -149,8 +149,6 @@ const options = computed<DataTableOptions<Patient>>(() => ({
         <div v-else class="p-4 text-darkgrey">
             Loading branch...
         </div>
-
-        <!-- ModalProvider renders programmatic modals. EditPatientDialog will be opened via `useModal.open()` -->
     </div>
 </template>
 

@@ -7,13 +7,13 @@ import api from '@/services/api';
 import { useToast } from 'primevue/usetoast';
 import PatientForm from './PatientForm.vue';
 import type { IModalContentProps } from '@/types/ui';
+import useAuthStore from '@/stores/auth';
 
 
 const patientStore = usePatientStore();
 const props = defineProps<IModalContentProps & { patientId: number; }>();
 
 const patient = ref<Patient>({} as Patient);
-
 
 
 const toast = useToast();
@@ -25,17 +25,20 @@ const createPatient = async () => {
     }
 
     // use api to save patient
-    // try {
-    //     await patientStore.createPatient(patient.value)
-    //     toast.add({ severity: 'success', summary: 'Pacient uložený', detail: `Pacient ${patient.value.first_name} bol úspešne uložený.` });
-    //     // If opened via provider, resolve via modalResolve, otherwise emit events
-    //     if (props.modalResolve) {
-    //         props.modalResolve(patient.value);
-    //     }
-    // } catch (e) {
-    //     console.error('Failed to save patient', e);
-    //     toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pacienta. Skúste to znova.', life: 5000 });
-    // }
+    try {
+        const branchId = useAuthStore().currentBranch?.id ?? null;
+        if (!branchId) {
+            throw new Error('Nie ste priradený k žiadnej pobočke. Skúste sa znovu prihlásiť.');
+        }
+        await patientStore.createPatient(patient.value, branchId)
+        toast.add({ severity: 'success', summary: 'Pacient vytvorený', detail: `Pacient ${patient.value.first_name} bol úspešne vytvorený.` });
+        if (props.modalResolve) {
+            props.modalResolve(patient.value);
+        }
+    } catch (e) {
+        console.error('Failed to save patient', e);
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pacienta. Skúste to znova.', life: 5000 });
+    }
 
 };
 

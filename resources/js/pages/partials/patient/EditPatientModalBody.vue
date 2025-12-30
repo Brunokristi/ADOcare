@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /// <reference path="../../../types/ui.d.ts" />
-import {  onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { usePatientStore } from '@/stores/patientStore';
 import { type Patient } from '@/types/models';
 import api from '@/services/api';
@@ -10,7 +10,7 @@ import type { IModalContentProps } from '@/types/ui';
 
 
 const patientStore = usePatientStore();
-const props = defineProps<IModalContentProps & {    patientId: number;}>();
+const props = defineProps<IModalContentProps & { patientId: number; }>();
 
 const patient = ref<any>({} as Patient);
 
@@ -33,7 +33,7 @@ const savePatient = async () => {
 
     // use api to save patient
     try {
-        await patientStore.savePatient(patient.value)
+        await patientStore.persistPatientData(patient.value)
         toast.add({ severity: 'success', summary: 'Pacient uložený', detail: `Pacient ${patient.value.first_name} bol úspešne uložený.` });
         // If opened via provider, resolve via modalResolve, otherwise emit events
         if (props.modalResolve) {
