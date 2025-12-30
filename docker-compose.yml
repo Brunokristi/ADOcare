@@ -1,10 +1,11 @@
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16.6
     restart: unless-stopped
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: secret
+      POSTGRES_DB: adocare
     volumes:
       - ./data-db:/var/lib/postgresql/data
     ports:
