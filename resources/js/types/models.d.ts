@@ -11,6 +11,7 @@ export interface User {
   pin?: string
   initials: string | null
   api_token?: string | null
+  last_branch: number | null
   created_at: string | null
   updated_at: string | null
   // relations
