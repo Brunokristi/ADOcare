@@ -9,30 +9,35 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Http\Resources\BaseCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
 
 class ProcedureController extends Controller
 {
     use ApiResponse;
 
-    // Insurer codes you show as columns in the UI
     private const INS_CODES = ['25', '24', '27'];
 
-    /**
-     * GET /v1/procedures?q=
-     *
-     * Returns procedures with computed columns: price25, price24, price27
-     */
     public function index(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
 
-        // Map insurance code -> insurance_company_branch.id
-        $insuranceIdsByCode = $this->insuranceIdsByCode(); // ['25' => 10, '24' => 11, '27' => 12]
+        // pagination params
+        $perPage = (int) $request->query('per_page', 25);
+        $perPage = max(1, min($perPage, 100)); // cap for safety (match your ApiQuery max if you want)
+        $page = max(1, (int) $request->query('page', 1));
+
+        // sort param: "field" or "-field"
+        $sort = trim((string) $request->query('sort', ''));
+
+        // Map insurance code -> insurance_company.id
+        $insuranceIdsByCode = $this->insuranceIdsByCode();
         $id25 = $insuranceIdsByCode['25'] ?? null;
         $id24 = $insuranceIdsByCode['24'] ?? null;
         $id27 = $insuranceIdsByCode['27'] ?? null;
 
-        // Build join subqueries for each insurer code
+        // Build subqueries (price per procedure for each insurer)
         $p25 = DB::table('procedure_company_prices')
             ->select('procedure_id', 'price')
             ->when($id25, fn($qq) => $qq->where('insurance_company_id', $id25));
@@ -59,21 +64,63 @@ class ProcedureController extends Controller
                 DB::raw('pc27.price as price27'),
             ]);
 
+        // ---- search across ALL records (before paginate) ----
         if ($q !== '') {
-            $qLower = mb_strtolower($q);
-            $query->where(function ($sub) use ($qLower) {
-                $sub->whereRaw('LOWER(p.code) LIKE ?', ["%{$qLower}%"])
-                    ->orWhereRaw('LOWER(p.description) LIKE ?', ["%{$qLower}%"]);
+            // diacritics-insensitive if you have immutable_unaccent; otherwise fallback
+            // We'll use the function if it exists (no crash if it doesn't).
+            // Since you've already created it, this will work.
+            $like = "%{$q}%";
+            $query->where(function ($sub) use ($like) {
+                $sub->whereRaw("public.immutable_unaccent(lower(cast(p.code as text))) LIKE public.immutable_unaccent(lower(cast(? as text)))", [$like])
+                    ->orWhereRaw("public.immutable_unaccent(lower(cast(p.description as text))) LIKE public.immutable_unaccent(lower(cast(? as text)))", [$like]);
             });
         }
 
-        $items = $query
-            ->orderBy('p.code')
-            ->limit(100)
-            ->get();
+        // ---- sorting (supports computed alias columns too) ----
+        // Allow only these fields to prevent SQL injection
+        $allowedSort = [
+            'code' => 'p.code',
+            'description' => 'p.description',
+            'price25' => 'price25',
+            'price24' => 'price24',
+            'price27' => 'price27',
+        ];
 
-        return $this->success($items, 'Procedures retrieved');
+        $direction = 'asc';
+        $field = 'code';
+
+        if ($sort !== '') {
+            if (str_starts_with($sort, '-')) {
+                $direction = 'desc';
+                $field = substr($sort, 1);
+            } else {
+                $field = $sort;
+            }
+        }
+
+        if (!array_key_exists($field, $allowedSort)) {
+            $field = 'code';
+        }
+
+        $orderExpr = $allowedSort[$field];
+
+        // Special handling for alias columns (price25/24/27 are select aliases)
+        if (in_array($field, ['price25', 'price24', 'price27'], true)) {
+            // Put NULLs last for nicer sorting
+            $query->orderByRaw("$orderExpr IS NULL asc")
+                ->orderBy($orderExpr, $direction)
+                ->orderBy('p.code', 'asc');
+        } else {
+            $query->orderBy($orderExpr, $direction)
+                ->orderBy('p.code', 'asc');
+        }
+
+        // ---- paginate ----
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page)->withQueryString();
+
+        return $this->success(new BaseCollection($paginator), 'Procedures retrieved');
     }
+
 
     /**
      * POST /v1/procedures

@@ -41,6 +41,8 @@ Route::prefix('auth')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
     });
 });
+Route::middleware('auth:sanctum')->patch('/v1/users/me/last-branch', [AuthController::class, 'updateLastBranch']);
+
 
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 

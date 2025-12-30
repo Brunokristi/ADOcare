@@ -216,7 +216,7 @@ const recordsInfo = computed(() => {
             <Column field="description" header="Popis" />
             <Column :exportable="false" style="width: 3rem">
                 <template #body="slotProps">
-                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="!text-darkgrey hover:!bg-transparent " />
+                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="!text-darkgrey hover:!bg-transparent !p-0 " />
                 </template>
             </Column>
         </DataTable>

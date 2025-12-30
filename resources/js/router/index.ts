@@ -44,7 +44,7 @@ const routes = [
         component: PatientsTest,
         meta: {
             title: 'Pacienti Test',
-            sidebar: true,
+            sidebar: false,
         },
     },
 
@@ -196,8 +196,8 @@ const routes = [
                 meta: {
                     title: 'Makrá (new)',
                     link: 'makrá-new',
-                    sidebar: true,
-                    navbar: true,
+                    sidebar: false,
+                    navbar: false,
                 },
             },
         ],
@@ -212,8 +212,8 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
     const auth = useAuthStore();
 
-    if (to.meta.title) document.title = `${to.meta.title} | ADOcare`;
-    else document.title = 'ADOcare';
+    if (to.meta.title) document.title = `${to.meta.title} | adocare`;
+    else document.title = 'adocare';
 
     try {
         await auth.waitUntilInitialized();

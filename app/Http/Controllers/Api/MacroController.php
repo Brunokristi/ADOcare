@@ -7,6 +7,9 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Macro;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Http\Filters\ApiQuery;
+use App\Http\Resources\BaseCollection;
+
 
 class MacroController extends Controller
 {
@@ -19,29 +22,28 @@ class MacroController extends Controller
     public function index(Request $request)
     {
         $userId = (int) ($request->user()?->id);
-
-        $q = trim((string) $request->query('q', ''));
+        if ($userId <= 0) {
+            return $this->error('Unauthenticated', 401);
+        }
 
         $query = Macro::query()
             ->where('user_id', $userId);
 
-        if ($q !== '') {
-            $qLower = mb_strtolower($q);
-
-            $query->where(function ($sub) use ($qLower) {
-                $sub->whereRaw('LOWER(name) LIKE ?', ["%{$qLower}%"])
-                    ->orWhereRaw('LOWER(abbreviation) LIKE ?', ["%{$qLower}%"])
-                    ->orWhereRaw('LOWER(text) LIKE ?', ["%{$qLower}%"]);
-            });
+        // Default alphabetical sort if client doesn't provide ?sort=
+        if (!$request->filled('sort')) {
+            $query->orderBy('name');
         }
 
-        $items = $query
-            ->orderBy('name')
-            ->limit(200)
-            ->get(['id', 'name', 'abbreviation', 'text', 'user_id']);
+        // Apply server-side search/sort/pagination
+        $results = ApiQuery::apply(
+            $request,
+            $query,
+            searchable: ['name', 'abbreviation', 'text']
+        );
 
-        return $this->success($items, 'Macros retrieved');
+        return $this->success(new BaseCollection($results), 'Macros retrieved');
     }
+
 
     /**
      * POST /v1/macros

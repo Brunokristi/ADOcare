@@ -29,7 +29,7 @@ export const usePatientStore = defineStore('patient', {
         },
 
         fetchPatient(patientId: number) {
-            return api.get(`v1/patients/${patientId}`)
+            return api.get(`/v1/patients/${patientId}`)
                 .then((response) => {
                     const patient = response.data.data as Patient;
                     this.setPatient(patient);
@@ -40,19 +40,20 @@ export const usePatientStore = defineStore('patient', {
                 });
         },
 
-
         async savePatient(patient: Patient) {
             try {
-                const response = await api.put(`v1/patients/${patient.id}`, patient);
-                return response;
+                await api.put(`/v1/patients/${patient.id}`, patient);
+                const fresh = await this.fetchPatient(patient.id);
+                return fresh;
             } catch (error) {
                 throw new Error('Failed to save patient: ' + error);
             }
         },
 
+
         async fetchDoctor(patientId: number) {
             try {
-                const response = await api.get(`v1/patients/${patientId}/doctor`);
+                const response = await api.get(`/v1/patients/${patientId}/doctor`);
                 return response.data.data as Doctor;
             } catch (error) {
                 throw new Error('Failed to fetch doctor: ' + error);
@@ -61,7 +62,7 @@ export const usePatientStore = defineStore('patient', {
 
         async fetchInsuranceCompany(patientId: number) {
             try {
-                const response = await api.get(`v1/patients/${patientId}/insurance-company`);
+                const response = await api.get(`/v1/patients/${patientId}/insurance-company`);
                 return response.data.data as InsuranceCompany
             } catch (error) {
                 throw new Error('Failed to fetch insurance company: ' + error);
