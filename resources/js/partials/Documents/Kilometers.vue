@@ -4,13 +4,11 @@ import { useRoute } from 'vue-router';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 
-import Button from 'primevue/button';
-import Toolbar from 'primevue/toolbar';
-
 type CoverSheet = {
   batchNumber: number;
   fileName: string;
   amount: number;
+  totalKilometers: number;
   periodFrom: string;
   periodTo: string;
   performedBy: string;
@@ -40,6 +38,7 @@ const sheet = computed<CoverSheet>(() => ({
   batchNumber: batchNumber.value,
   fileName: String(route.query.fileName ?? `davka.${batchNumber.value}.txt`),
   amount: Number(route.query.amount ?? 0),
+  totalKilometers: Number(route.query.kilometers ?? 0),
   periodFrom: String(route.query.periodFrom ?? ''),
   periodTo: String(route.query.periodTo ?? ''),
   performedBy: String(route.query.performedBy ?? ''),
@@ -57,6 +56,14 @@ const formattedAmount = computed(
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }) + '€',
+);
+
+const formattedKilometers = computed(
+  () =>
+    sheet.value.totalKilometers.toLocaleString('sk-SK', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + ' km',
 );
 
 function formatDate(dateStr: string) {
@@ -93,7 +100,7 @@ async function downloadTxt() {
   try {
     const payload = buildPayload();
 
-    const res = await api.post('/v1/batches/points/download', payload, {
+    const res = await api.post('/v1/batches/kilometers/download', payload, {
       responseType: 'blob',
       headers: { Accept: 'text/plain' },
     });
@@ -116,7 +123,7 @@ async function downloadStatementPdf() {
   try {
     const payload = buildPayload();
 
-    const res = await api.post('/v1/batches/points/statement-pdf', payload, {
+    const res = await api.post('/v1/batches/kilometers/statement-pdf', payload, {
       responseType: 'blob',
       headers: { Accept: 'application/pdf' },
     });
@@ -186,8 +193,9 @@ function printPage() {
     <div class="cover-sheet-wrapper">
       <div id="cover-sheet">
         <div class="text-center font-bold text-lg mb-4">
-          SPRIEVODNÝ LIST | vykázané body
+          SPRIEVODNÝ LIST | vykázané kilometre
         </div>
+        
 
         <table class="w-full border-collapse border-b-0 text-sm">
           <tbody>
@@ -202,6 +210,13 @@ function printPage() {
               <td class="border border-black p-2 align-top w-full">
                 <strong>Vykázaná suma:</strong><br />
                 {{ formattedAmount }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="border border-black p-2 align-top w-full">
+                <strong>Počet kilometrov:</strong><br />
+                {{ formattedKilometers }}
               </td>
             </tr>
 

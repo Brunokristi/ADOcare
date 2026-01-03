@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
-class PointsExportController extends Controller
+class KilometersExportController extends Controller
 {
     use ApiResponse;
 
@@ -50,24 +51,66 @@ class PointsExportController extends Controller
             ->values()
             ->all();
 
-        logger()->info('Preview patientIds', [
-            'patients_payload' => $data['patients'] ?? null,
-            'patientIds' => $patientIds,
-        ]);
+        $amount = 0;
+        $totalKilometers = 0;
 
-        $amount = DB::table('patient_points as pp')
+        $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
+            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
+            ->join('procedures as proc', function ($join) {
+                $join->where('proc.code', '0000');
+            })
             ->join('procedure_company_prices as pcp', function ($join) {
-                $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
+                $join->on('pcp.procedure_id', '=', 'proc.id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
             })
             ->where('pp.user_id', $userId)
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
+            ->whereIn('pp.procedure_code', ['3439', '3440'])
             ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->selectRaw('COALESCE(SUM(pp.quantity * pcp.price), 0) as total')
-            ->value('total');
+            ->select([
+                'pp.id',
+                'pp.date',
+                'b.latitude as branch_lat',
+                'b.longitude as branch_lng',
+                'p.latitude as patient_lat',
+                'p.longitude as patient_lng',
+                'pcp.price'
+            ])
+            ->get();
+        
+        $rows = $rows->sortBy('date');
+        $visitedAddressesPerDay = [];
+
+        foreach ($rows as $row) {
+            if ($row->branch_lat && $row->branch_lng && $row->patient_lat && $row->patient_lng) {
+                $dateString = is_string($row->date) ? $row->date : (isset($row->date) ? $row->date->toDateString() : 'unknown');
+                $patientAddress = "{$row->patient_lat},{$row->patient_lng}";
+                
+                if (!isset($visitedAddressesPerDay[$dateString])) {
+                    $visitedAddressesPerDay[$dateString] = [];
+                }
+                
+                if (in_array($patientAddress, $visitedAddressesPerDay[$dateString])) {
+                    $distance = 0;
+                } else {
+                    $distance = $this->getDistanceFromOpenRoute(
+                        $row->branch_lat,
+                        $row->branch_lng,
+                        $row->patient_lat,
+                        $row->patient_lng
+                    );
+                    $visitedAddressesPerDay[$dateString][] = $patientAddress;
+                }
+                
+                $totalKilometers += $distance;
+                $amount += $distance * $row->price;
+            } else {
+                
+            }
+        }
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
         $branchName = DB::table('branches')
@@ -88,6 +131,7 @@ class PointsExportController extends Controller
             'batchNumber'   => $data['batchNumber'],
             'fileName'      => "davka.{$data['batchNumber']}.txt",
             'amount'        => (string) $amount,
+            'kilometers'    => round($totalKilometers, 2),
             'periodFrom'    => $from,
             'periodTo'      => $to,
             'performedBy'   => $performedBy ?: "User #{$userId}",
@@ -134,12 +178,6 @@ class PointsExportController extends Controller
             ->values()
             ->all();
 
-        logger()->info('Download patientIds', [
-            'patients_payload' => $data['patients'] ?? null,
-            'patientIds' => $patientIds,
-        ]);
-
-        // Header data
         $company = DB::table('company')
             ->where('id', $companyId)
             ->select('id', 'ico', 'name')
@@ -166,47 +204,94 @@ class PointsExportController extends Controller
             ->where('id', $insuranceId)
             ->value('branch_code');
 
+        $userCar = DB::table('cars')
+            ->where('company_id', $companyId)
+            ->where('user_id', $userId)
+            ->value('evc') ?? '0';
+
         $termYYYYMM = Carbon::parse($from)->format('Ym');
         $generatedYmd = now()->setTimezone('Europe/Bratislava')->format('Ymd');
 
-        // Rows
         $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('doctors as d', 'd.id', '=', 'p.doctor_id')
+            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
             ->join('patient_branch_users as pbu', function ($join) {
                 $join->on('pbu.patient_id', '=', 'p.id')
                     ->on('pbu.user_id', '=', 'pp.user_id')
                     ->on('pbu.branch_id', '=', 'pp.branch_id');
             })
+            ->join('procedures as proc', function ($join) {
+                $join->where('proc.code', '0000');
+            })
             ->join('procedure_company_prices as pcp', function ($join) {
-                $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
+                $join->on('pcp.procedure_id', '=', 'proc.id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
             })
             ->where('pp.user_id', $userId)
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
+            ->whereIn('pp.procedure_code', ['3439', '3440'])
             ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->orderBy('pp.date')
             ->select([
                 'pp.date',
+                'pp.patient_id',
                 'p.personal_number',
                 'p.last_name',
                 'p.first_name',
+                'p.sex',
+                'p.city as patient_city',
+                'p.address as patient_address',
+                'p.latitude as patient_lat',
+                'p.longitude as patient_lng',
                 'pp.diagnosis_code',
                 'pp.procedure_code',
                 'pp.quantity',
                 'd.pzs as doctor_pzs',
                 'd.zpr as doctor_zpr',
+                'b.city as branch_city',
+                'b.address as branch_address',
+                'b.latitude as branch_lat',
+                'b.longitude as branch_lng',
+                'pcp.price'
             ])
             ->get();
 
+        $rows = $rows->sortBy('date');
+        $visitedAddressesPerDay = [];
+        $kilometersPerRow = [];
+        $rowIndex = 0;
+
+        foreach ($rows as $row) {
+            $dateString = is_string($row->date) ? $row->date : (isset($row->date) ? $row->date->toDateString() : 'unknown');
+            $patientAddress = "{$row->patient_lat},{$row->patient_lng}";
+            
+            if (!isset($visitedAddressesPerDay[$dateString])) {
+                $visitedAddressesPerDay[$dateString] = [];
+            }
+            
+            if (!in_array($patientAddress, $visitedAddressesPerDay[$dateString])) {
+                $distance = $this->getDistanceFromOpenRoute(
+                    $row->branch_lat,
+                    $row->branch_lng,
+                    $row->patient_lat,
+                    $row->patient_lng
+                );
+                $visitedAddressesPerDay[$dateString][] = $patientAddress;
+                $kilometersPerRow[$rowIndex] = $distance;
+            } else {
+                $kilometersPerRow[$rowIndex] = 0;
+            }
+            $rowIndex++;
+        }
+
         $rowCount = $rows->count();
 
-        // Line 1 (with trailing |)
         $line1 = implode('|', [
             $type,
-            '753b',
+            '793n',
             $company->ico ?? '',
             $generatedYmd,
             $batchNumber,
@@ -217,28 +302,25 @@ class PointsExportController extends Controller
             ''
         ]);
 
-        // Line 2 (with trailing | and the empty field before EUR)
         $line2 = implode('|', [
             $branch->identificator ?? '',
             $branch->code ?? '',
             $user->code ?? '',
             number_format((float)$workingTime, 2, '.', ''),
             $termYYYYMM,
-            '850',
             $batchNumber,
             'EUR',
             ''
         ]);
 
-        // Data lines
         $dataLines = [];
         $i = 1;
-
+        $rowIndex = 0;
         foreach ($rows as $r) {
             $dayDD   = Carbon::parse($r->date)->format('d');
             $dateYmd = Carbon::parse($r->date)->format('Ymd');
-
             $patientName = trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? ''));
+            $kilometers = $kilometersPerRow[$rowIndex] ?? 0;
 
             $fields = [
                 $i,
@@ -246,43 +328,30 @@ class PointsExportController extends Controller
                 $r->personal_number ?? '',
                 $patientName,
                 $r->diagnosis_code ?? '',
-                $r->procedure_code ?? '',
-                $r->quantity ?? 1,
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
                 '',
                 '',
+                'ADOS',
+                round($kilometers, 0),
+                substr($r->branch_city ?? '', 0, 50),
+                substr($r->branch_address ?? '', 0, 50),
+                substr($r->patient_city ?? '', 0, 50), 
+                substr($r->patient_address ?? '', 0, 50),
+                $i,
+                $userCar,
+                '0',
                 '',
-                'O',
+                'N',
                 $r->doctor_pzs ?? '',
                 $r->doctor_zpr ?? '', 
-                '', 
+                'SK',
                 '',
-                '',
-                $dateYmd,
-                '',
-                '',
-                '', 
-                '', 
-                '', 
-                '',
-                '',
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
+                $r->sex ?? '',
                 '',
             ];
 
             $dataLines[] = implode('|', $fields);
             $i++;
+            $rowIndex++;
         }
 
         $content = implode("\r\n", array_merge([$line1, $line2], $dataLines)) . "\r\n";
@@ -321,19 +390,66 @@ class PointsExportController extends Controller
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')->filter()->values()->all();
 
-        $amount = DB::table('patient_points as pp')
+        $amount = 0;
+        $totalKilometers = 0;
+        $totalKilometers = 0;
+
+        $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
+            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
+            ->join('procedures as proc', function ($join) {
+                $join->where('proc.code', '0000');
+            })
             ->join('procedure_company_prices as pcp', function ($join) {
-                $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
+                $join->on('pcp.procedure_id', '=', 'proc.id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
             })
             ->where('pp.user_id', $userId)
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
+            ->whereIn('pp.procedure_code', ['3439', '3440'])
             ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->selectRaw('COALESCE(SUM(pp.quantity * pcp.price), 0) as total')
-            ->value('total');
+            ->select([
+                'pp.id',
+                'pp.date',
+                'b.latitude as branch_lat',
+                'b.longitude as branch_lng',
+                'p.latitude as patient_lat',
+                'p.longitude as patient_lng',
+                'pcp.price'
+            ])
+            ->get();
+
+        $rows = $rows->sortBy('date');
+        
+        $visitedAddressesPerDay = [];
+
+        foreach ($rows as $row) {
+            if ($row->branch_lat && $row->branch_lng && $row->patient_lat && $row->patient_lng) {
+                $dateString = is_string($row->date) ? $row->date : (isset($row->date) ? $row->date->toDateString() : 'unknown');
+                $patientAddress = "{$row->patient_lat},{$row->patient_lng}";
+                
+                if (!isset($visitedAddressesPerDay[$dateString])) {
+                    $visitedAddressesPerDay[$dateString] = [];
+                }
+                
+                if (in_array($patientAddress, $visitedAddressesPerDay[$dateString])) {
+                    $distance = 0;
+                } else {
+                    $distance = $this->getDistanceFromOpenRoute(
+                        $row->branch_lat,
+                        $row->branch_lng,
+                        $row->patient_lat,
+                        $row->patient_lng
+                    );
+                    $visitedAddressesPerDay[$dateString][] = $patientAddress;
+                }
+                
+                $totalKilometers += $distance;
+                $amount += $distance * $row->price;
+            }
+        }
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
         $branchName = DB::table('branches')
@@ -346,7 +462,7 @@ class PointsExportController extends Controller
             ->selectRaw("TRIM(CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,''))) as name")
             ->value('name');
 
-        $insuranceName = DB::table('insurance_companies')
+        $induranceName = DB::table('insurance_companies')
             ->where('id', $insuranceId)
             ->value('name');
 
@@ -354,14 +470,15 @@ class PointsExportController extends Controller
             'batchNumber'   => $data['batchNumber'],
             'fileName'      => "davka.{$data['batchNumber']}.txt",
             'amount'        => (string) $amount,
+            'kilometers'    => round($totalKilometers, 2),
             'periodFrom'    => $from,
             'periodTo'      => $to,
             'performedBy'   => $performedBy ?: "User #{$userId}",
             'performedDate' => now()->setTimezone('Europe/Bratislava')->toDateString(),
             'companyName'   => $companyName,
             'branchName'    => $branchName,
-            'insuranceName'=> $insuranceName,
-            'fileType'     =>  "vykázané body",
+            'insuranceName'=> $induranceName,
+            'fileType'     =>  "vykázané kilometre",
         ];
 
         $pdf = Pdf::loadView('pdf.statement', ['sheet' => $sheet])
@@ -370,6 +487,49 @@ class PointsExportController extends Controller
         $pdfName = "sprievodny_list_{$sheet['batchNumber']}.pdf";
 
         return $pdf->download($pdfName);
+    }
+
+    private function getDistanceFromOpenRoute($startLat, $startLng, $endLat, $endLng)
+    {
+        try {
+            $apiKey = config('services.ors.key');
+            
+            if (!$apiKey) {
+                logger()->warning('OpenRoute API key not configured');
+                return 0;
+            }
+
+            logger()->info('OpenRoute API Call', [
+                'start' => "{$startLng},{$startLat}",
+                'end' => "{$endLng},{$endLat}",
+                'hasApiKey' => !empty($apiKey),
+            ]);
+
+            $response = Http::get('https://api.openrouteservice.org/v2/directions/driving-car', [
+                'api_key' => $apiKey,
+                'start' => "{$startLng},{$startLat}",
+                'end' => "{$endLng},{$endLat}",
+            ]);
+
+            logger()->info('OpenRoute API Response', [
+                'status' => $response->status(),
+                'successful' => $response->successful(),
+                'body' => $response->body(),
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $distance = $data['features'][0]['properties']['summary']['distance'] / 1000;
+                logger()->info('Distance extracted', ['distance' => $distance]);
+                return $distance;
+            } else {
+                logger()->warning('OpenRoute API failed', ['status' => $response->status()]);
+            }
+        } catch (\Exception $e) {
+            logger()->error('OpenRoute API error', ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        }
+
+        return 0;
     }
 
 }

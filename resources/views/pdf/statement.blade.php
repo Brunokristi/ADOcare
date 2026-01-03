@@ -10,7 +10,7 @@
   </style>
 </head>
 <body>
-  <div class="title">SPRIEVODNÝ LIST</div>
+  <div class="title">SPRIEVODNÝ LIST | {{ $sheet['fileType'] }}</div>
 
   <table>
     <tr>
@@ -27,7 +27,13 @@
     <tr>
       <td>
         <strong>Obdobie:</strong><br>
-        {{ $sheet['periodFrom'] }} - {{ $sheet['periodTo'] }}
+        {{ \Carbon\Carbon::parse($sheet['periodFrom'])->format('d.m.Y') }} - {{ \Carbon\Carbon::parse($sheet['periodTo'])->format('d.m.Y') }}
+      </td>
+    </tr>
+    <tr>
+      <td style="border-bottom: none;">
+        <strong>Poisťovňa:</strong><br>
+        {{ $sheet['insuranceName'] }}
       </td>
     </tr>
   </table>
@@ -40,7 +46,7 @@
       </td>
       <td>
         <strong>Vykázané dňa:</strong><br>
-        {{ $sheet['performedDate'] }}
+        {{ \Carbon\Carbon::parse($sheet['performedDate'])->format('d.m.Y') }}
       </td>
     </tr>
     <tr>

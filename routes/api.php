@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\VisitTextController;
 use App\Http\Controllers\Api\GeocodeController;
 use \App\Http\Controllers\Api\MacroController;
+use App\Http\Controllers\Api\KilometersExportController;
 
 
 use Illuminate\Http\Request;
@@ -78,9 +79,13 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResource('visits', VisitController::class);
     Route::apiResource('visit-texts', VisitTextController::class);
 
-    Route::post('/batches/preview', [PointsExportController::class, 'preview']);
-    Route::post('/batches/download', [PointsExportController::class, 'download']);
-    Route::post('/batches/statement-pdf', [PointsExportController::class, 'statementPdf']);
+    Route::post('/batches/points/preview', [PointsExportController::class, 'preview']);
+    Route::post('/batches/points/download', [PointsExportController::class, 'download']);
+    Route::post('/batches/points/statement-pdf', [PointsExportController::class, 'statementPdf']);
+
+    Route::post('/batches/kilometers/preview', [KilometersExportController::class, 'preview']);
+    Route::post('/batches/kilometers/download', [KilometersExportController::class, 'download']);
+    Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf']);
 
     Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
 

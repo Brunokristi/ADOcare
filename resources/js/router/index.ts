@@ -11,10 +11,12 @@ import Macros from '@/partials/Settings/Macros.vue'
 import MacrosNew from '@/partials/Settings/MacrosNew.vue'
 import Data from '@/pages/Data.vue'
 import Points from '@/partials/Data/Points.vue'
+import Kilometers from '@/partials/Data/Kilometers.vue'
 import Patient from '@/pages/Patient.vue'
 import PatientPoints from '@/partials/Patient/Points.vue'
 import Document from '@/pages/Documents.vue'
 import DocumentPoints from '@/partials/Documents/Points.vue'
+import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
 import Patients from '@/pages/Patients.vue'
 
 
@@ -63,8 +65,8 @@ const routes = [
                 name: 'pointsdata',
                 component: Points,
                 meta: {
-                    title: 'Bodovanie',
-                    link: 'bodovanie',
+                    title: 'Body',
+                    link: 'body',
                     sidebar: true,
                     navbar: true,
                 },
@@ -73,12 +75,12 @@ const routes = [
             {
                 path: 'kilometers',
                 name: 'kilometersdata',
-                component: Points,
+                component: Kilometers,
                 meta: {
                     title: 'Kilometre',
                     link: 'kilometre',
-                    sidebar: false,
-                    navbar: false,
+                    sidebar: true,
+                    navbar: true,
                 },
             },
         ]
@@ -101,6 +103,17 @@ const routes = [
                 meta: {
                     title: 'Bodovanie',
                     link: 'bodovanie',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'kilometers',
+                name: 'kilometersdocument',
+                component: DocumentKilometers,
+                meta: {
+                    title: 'Kilometre',
+                    link: 'kilometre',
                     sidebar: false,
                     navbar: false,
                 },

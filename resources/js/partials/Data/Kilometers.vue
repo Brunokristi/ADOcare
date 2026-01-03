@@ -167,7 +167,7 @@ async function onSubmit() {
   loading.value = true;
 
   try {
-    const res = await api.post('/v1/batches/points/preview', {
+    const res = await api.post('/v1/batches/kilometers/preview', {
       batchNumber: batchNumber.value,
       batchType: { code: batchType.value.code },
       insurance: { id: insurance.value.id },
@@ -188,11 +188,12 @@ async function onSubmit() {
     }
 
     await router.push({
-      path: '/documents/points',
+      path: '/documents/kilometers',
       query: {
         batchNumber: sheet.batchNumber,
         fileName: sheet.fileName,
         amount: sheet.amount,
+        kilometers: sheet.kilometers,
         periodFrom: sheet.periodFrom,
         periodTo: sheet.periodTo,
         performedBy: sheet.performedBy,
@@ -203,7 +204,7 @@ async function onSubmit() {
         batchTypeCode: batchType.value.code,
         period0: periodFrom.toISOString(),
         period1: periodTo.toISOString(),
-        insuranceName: insurance.value.name,
+        insuranceName: sheet.insuranceName,
         patientIds: JSON.stringify(sheet.patients ?? []),
       },
     });
@@ -378,5 +379,13 @@ onMounted(() => {
         </Button>
       </div>
     </form>
+
+    <!-- Loader Overlay -->
+    <div v-if="loading" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+      <div class="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
+        <i class="bi bi-infinity animate-spin text-2xl text-accent"></i>
+        <p class="text-gray-700 font-medium">Generujem</p>
+      </div>
+    </div>
   </div>
 </template>
