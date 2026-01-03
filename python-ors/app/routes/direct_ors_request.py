@@ -17,4 +17,4 @@ def execute_direct_request() -> Response:
         return jsonify(response.to_dict()), response.get_ret_code()
 
     except Exception as e:
-        return jsonify(Bad_request().to_dict()), 400
+        return jsonify(Bad_request.to_dict()), 400
