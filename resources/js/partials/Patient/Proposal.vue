@@ -2,12 +2,13 @@
 import { ref } from 'vue'
 import api from '@/services/api'
 
-interface Procedure {
-  name: string
-  frequency: string
+interface Diagnosis {
+  id: number
+  code: string
+  description: string
 }
 
-interface Diagnosis {
+interface NurseDiagnosis {
   id: number
   code: string
   description: string
@@ -19,18 +20,26 @@ interface ProcedureOption {
   description: string
 }
 
+interface SelectedProcedure {
+  procedure: ProcedureOption | null
+  frequency: string
+}
+
 const medicalDiagnosis = ref<Diagnosis | null>(null)
-const nurseDiagnosis = ref<Diagnosis | null>(null)
-const date = ref(new Date())
+const nurseDiagnosis = ref<NurseDiagnosis | null>(null)
+
+const date = ref<Date>(new Date())
 const episodeDescription = ref('')
 const carePlan = ref('')
 const patientMobility = ref<string[]>([])
 const expectedDuration = ref('')
-const procedures = ref<Procedure[]>([
-  { name: '', frequency: '' }
+
+const procedures = ref<SelectedProcedure[]>([
+  { procedure: null, frequency: '' }
 ])
 
 const filteredDiagnoses = ref<Diagnosis[]>([])
+const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 const filteredProcedures = ref<ProcedureOption[]>([])
 
 const mobilityOptions = [
@@ -57,48 +66,92 @@ const frequencyOptions = [
   { label: 'Podľa potreby', value: 'as_needed' }
 ]
 
-async function searchDiagnoses(event: any) {
-  const query = event.query.toLowerCase()
+// helper to normalize API shapes
+function normalizeArray<T>(raw: any): T[] {
+  return (
+    (Array.isArray(raw) && raw) ||
+    (Array.isArray(raw?.data) && raw.data) ||
+    (Array.isArray(raw?.data?.items) && raw.data.items) ||
+    (Array.isArray(raw?.items) && raw.items) ||
+    []
+  )
+}
+
+async function searchDiagnoses(event: { query: string }) {
   try {
-    const res = await api.get('/v1/diagnoses', {
-      params: { paginate: 0 }
-    })
-    const items = (res.data?.data || []) as Diagnosis[]
-    filteredDiagnoses.value = items.filter(d =>
-      d.code?.toLowerCase().includes(query) ||
-      d.description?.toLowerCase().includes(query)
-    )
+    const q = event.query?.trim() ?? ''
+    if (!q) {
+      filteredDiagnoses.value = []
+      return
+    }
+
+    // Prefer server-side search if supported
+    const res = await api.get('/v1/diagnoses', { params: { q, paginate: 0 } })
+    const arr = normalizeArray<Diagnosis>(res.data)
+
+    filteredDiagnoses.value = arr.map(d => ({
+      id: d.id,
+      code: d.code ?? '',
+      description: d.description ?? ''
+    }))
   } catch (e) {
-    console.error('Failed to search diagnoses', e)
+    console.error('Failed to load diagnoses', e)
     filteredDiagnoses.value = []
   }
 }
 
-async function searchProcedures(event: any) {
-  const query = event.query.toLowerCase()
+async function searchNurseDiagnoses(event: { query: string }) {
   try {
-    const res = await api.get('/v1/procedures', {
-      params: { paginate: 0 }
-    })
-    const items = (res.data?.data || []) as ProcedureOption[]
-    filteredProcedures.value = items.filter(p =>
-      p.code?.toLowerCase().includes(query) ||
-      p.description?.toLowerCase().includes(query)
-    )
+    const q = event.query?.trim() ?? ''
+    if (!q) {
+      filteredNurseDiagnoses.value = []
+      return
+    }
+
+    // Prefer server-side search if supported
+    const res = await api.get('/v1/nurse-diagnoses', { params: { q, paginate: 0 } })
+    const arr = normalizeArray<NurseDiagnosis>(res.data)
+
+    filteredNurseDiagnoses.value = arr.map(d => ({
+      id: d.id,
+      code: d.code ?? '',
+      description: d.description ?? ''
+    }))
   } catch (e) {
-    console.error('Failed to search procedures', e)
+    console.error('Failed to load nurse diagnoses', e)
+    filteredNurseDiagnoses.value = []
+  }
+}
+
+async function searchProcedures(event: { query: string }) {
+  try {
+    const q = event.query?.trim() ?? ''
+    if (!q) {
+      filteredProcedures.value = []
+      return
+    }
+
+    // Prefer server-side search if supported
+    const res = await api.get('/v1/procedures', { params: { q, paginate: 0 } })
+    const arr = normalizeArray<ProcedureOption>(res.data)
+
+    filteredProcedures.value = arr.map(p => ({
+      id: p.id,
+      code: p.code ?? '',
+      description: p.description ?? ''
+    }))
+  } catch (e) {
+    console.error('Failed to load procedures', e)
     filteredProcedures.value = []
   }
 }
 
 function addProcedure() {
-  procedures.value.push({ name: '', frequency: '' })
+  procedures.value.push({ procedure: null, frequency: '' })
 }
 
 function removeProcedure(index: number) {
-  if (procedures.value.length > 1) {
-    procedures.value.splice(index, 1)
-  }
+  if (procedures.value.length > 1) procedures.value.splice(index, 1)
 }
 
 function generateDocument() {
@@ -110,7 +163,12 @@ function generateDocument() {
     carePlan: carePlan.value,
     patientMobility: patientMobility.value,
     expectedDuration: expectedDuration.value,
-    procedures: procedures.value
+    procedures: procedures.value.map(p => ({
+      procedure_id: p.procedure?.id ?? null,
+      procedure_code: p.procedure?.code ?? '',
+      procedure_description: p.procedure?.description ?? '',
+      frequency: p.frequency
+    }))
   })
 }
 </script>
@@ -119,7 +177,6 @@ function generateDocument() {
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
-        <!-- Top 3 fields row -->
         <div class="grid grid-cols-3 gap-4">
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
@@ -140,14 +197,15 @@ function generateDocument() {
               </template>
             </AutoComplete>
           </div>
+
           <div>
             <label class="block text-normal mb-2">Sesterská diagnóza</label>
             <AutoComplete
               v-model="nurseDiagnosis"
-              :suggestions="filteredDiagnoses"
+              :suggestions="filteredNurseDiagnoses"
               optionLabel="code"
               :minLength="1"
-              @complete="searchDiagnoses"
+              @complete="searchNurseDiagnoses"
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
             >
@@ -159,6 +217,7 @@ function generateDocument() {
               </template>
             </AutoComplete>
           </div>
+
           <div>
             <label class="block text-normal mb-2">Dátum</label>
             <DatePicker
@@ -171,29 +230,28 @@ function generateDocument() {
           </div>
         </div>
 
-        <!-- Episode description -->
         <div>
-          <label class="block text-normal mb-2">Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej starostlivosti</label>
+          <label class="block text-normal mb-2">
+            Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej starostlivosti
+          </label>
           <Textarea
             v-model="episodeDescription"
             class="w-full !border-none"
             rows="4"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none "
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
           />
         </div>
 
-        <!-- Care plan -->
         <div>
           <label class="block text-normal mb-2">Plán ošetrovateľskej starostlivosti</label>
           <Textarea
             v-model="carePlan"
             class="w-full !border-none"
             rows="4"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none "
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
           />
         </div>
 
-        <!-- Patient mobility -->
         <div>
           <label class="block text-normal mb-2">Mobilita pacienta</label>
           <div class="flex flex-col gap-2">
@@ -204,7 +262,6 @@ function generateDocument() {
           </div>
         </div>
 
-        <!-- Expected duration -->
         <div>
           <label class="block text-normal mb-2">Predpokladaná dĺžka ošetrovateľskej starostlivosti</label>
           <div class="flex flex-col gap-2">
@@ -215,15 +272,15 @@ function generateDocument() {
           </div>
         </div>
 
-        <!-- Procedures -->
         <div>
           <label class="block text-normal text-accent mb-2">Výkony a frekvencia realizácie</label>
-          <div v-for="(procedure, idx) in procedures" :key="idx" class="flex gap-4 items-end mb-2">
+
+          <div v-for="(row, idx) in procedures" :key="idx" class="flex gap-4 items-end mb-2">
             <div class="flex-1">
               <label :for="`procedure-${idx}`" class="block text-normal mb-1">Výkon</label>
               <AutoComplete
                 :id="`procedure-${idx}`"
-                v-model="procedure.name"
+                v-model="row.procedure"
                 :suggestions="filteredProcedures"
                 optionLabel="code"
                 :minLength="1"
@@ -244,7 +301,7 @@ function generateDocument() {
               <label :for="`frequency-${idx}`" class="block mb-1 text-normal">Frekvencia realizácie</label>
               <Select
                 :id="`frequency-${idx}`"
-                v-model="procedure.frequency"
+                v-model="row.frequency"
                 :options="frequencyOptions"
                 optionLabel="label"
                 optionValue="value"
@@ -253,6 +310,7 @@ function generateDocument() {
                 inputClass="!w-full !shadow-none focus:!ring-0 focus:!shadow-none"
               />
             </div>
+
             <Button
               v-if="idx === procedures.length - 1"
               icon="bi bi-plus"
@@ -271,16 +329,13 @@ function generateDocument() {
         </div>
       </section>
 
-      <!-- Generate button -->
       <div class="flex justify-end">
         <Button
           type="submit"
           class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100"
         >
           Generovať dokument
-          <i
-            class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent"
-          />
+          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>
       </div>
     </form>

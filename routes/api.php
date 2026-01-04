@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\GeocodeController;
 use \App\Http\Controllers\Api\MacroController;
 use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\DekurzController;
+use App\Http\Controllers\Api\NurseDiagnosisController;
 
 
 use Illuminate\Http\Request;
@@ -67,6 +68,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResource('insurance-companies', InsuranceCompanyController::class);
     Route::apiResource('diagnoses', DiagnosisController::class);
     Route::apiResource('procedures', ProcedureController::class);
+    Route::apiResource('nurse-diagnoses', NurseDiagnosisController::class);
     Route::apiResource('macros', MacroController::class);
 
     Route::apiResource('patient-points', PatientPointController::class);
