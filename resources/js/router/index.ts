@@ -18,6 +18,7 @@ import Document from '@/pages/Documents.vue'
 import DocumentPoints from '@/partials/Documents/Points.vue'
 import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
 import Patients from '@/pages/Patients.vue'
+import PatientProposal from '@/partials/Patient/Proposal.vue'
 
 
 
@@ -142,6 +143,18 @@ const routes = [
                     navbar: false,
                 },
             },
+            {
+                path: 'proposal',
+                name: 'proposal',
+                component: PatientProposal,
+                meta: {
+                    title: 'Návrh na poskytnutie ošetrovateľskej starostlivosti',
+                    link: 'návrh',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+
         ]
     },
 

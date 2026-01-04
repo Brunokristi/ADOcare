@@ -15,6 +15,10 @@ const emit = defineEmits<{
   (e: 'toggle-sidebar'): void
 }>()
 
+const props = defineProps<{
+  isSidebarOpen?: boolean
+}>()
+
 /* ------------ BASIC AUTH / USER ------------ */
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -376,7 +380,7 @@ watch(
       />
 
       <Button
-        icon="bi bi-list"
+        :icon="props.isSidebarOpen ? 'bi bi-x-lg' : 'bi bi-list'"
         text
         class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
         @click="toggleSidebar"

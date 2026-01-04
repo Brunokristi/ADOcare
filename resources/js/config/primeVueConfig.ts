@@ -203,10 +203,33 @@ export default {
             `,
             },
             icon: {
-                class: '!text-white',
+                class: '!text-darkgrey !fill-darkgrey',
             },
             input: { class: '!bg-darkgrey' },
-        }
+        },
+
+        radiobutton: {
+            root: {
+                class: `!shadow-none hover:!shadow-none ${baseNoOutline}`,
+                style: {
+                    '--p-radiobutton-icon-checked-color': '#2c3e50',
+                    '--p-radiobutton-icon-checked-hover-color': '#2c3e50'
+                }
+            },
+            box: {
+                class: `
+            !border-darkgrey
+            !border-2
+            data-[p-checked=true]:!bg-accent
+            data-[p-checked=true]:!border-accent
+            !bg-transparent
+            `,
+            },
+            icon: {
+                class: '!text-darkgrey !fill-darkgrey',
+            },
+            input: { class: '!bg-darkgrey' },
+        },
 
 
 

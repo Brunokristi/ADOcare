@@ -141,6 +141,13 @@ function openEditFromIncompleteModal() {
           bodovanie
         </RouterLink>
 
+        <RouterLink
+          :to="{ path: '/patient/proposal' }"
+          class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
+        >
+          návrh
+        </RouterLink>
+
         <button
           type="button"
           @click="openEdit"
@@ -148,6 +155,7 @@ function openEditFromIncompleteModal() {
         >
           upraviť
         </button>
+
 
         <button @click="closePatient" class="text-almostwhite cursor-pointer flex items-center ml-4">
           <i

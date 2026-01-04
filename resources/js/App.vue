@@ -75,7 +75,7 @@ function goToPricesPage() {
 
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
-    <Navbar class="flex-none" @toggle-sidebar="handleToggleSidebar" />
+    <Navbar class="flex-none" :isSidebarOpen="isSidebarOpen" @toggle-sidebar="handleToggleSidebar" />
 
     <TercialNavbar v-if="isLoggedIn" class="flex-none" />
 
