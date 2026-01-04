@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\VisitTextController;
 use App\Http\Controllers\Api\GeocodeController;
 use \App\Http\Controllers\Api\MacroController;
 use App\Http\Controllers\Api\KilometersExportController;
+use App\Http\Controllers\Api\DekurzController;
 
 
 use Illuminate\Http\Request;
@@ -70,6 +71,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('patient-points', PatientPointController::class);
 
+    Route::get('/dekurz/dates', [DekurzController::class, 'uniqueDates']);
+
     Route::apiResource('companies', CompanyController::class);
     Route::apiResource('doctors', DoctorController::class);
     Route::apiResource('report-months', ReportMonthController::class);
@@ -91,8 +94,4 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
-
-
-
-
 });
