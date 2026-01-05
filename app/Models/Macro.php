@@ -9,6 +9,8 @@ class Macro extends Model
 {
     use HasFactory;
 
+   protected $table = 'user_macros';
+
     protected $fillable = [
         'name',
         'abbreviation',

@@ -56,5 +56,8 @@ class DatabaseSeeder extends Seeder
         $this->call(ReportMonthSeeder::class);
         $this->call(VisitSeeder::class);
 
+        // macros
+        $this->call(MacroSeeder::class);
+
     }
 }
