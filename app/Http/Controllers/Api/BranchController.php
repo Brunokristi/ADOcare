@@ -38,8 +38,12 @@ class BranchController extends Controller
 
     public function doctors(Branch $branch)
     {
-        $doctors = Doctor::query()->get();
-        return DoctorResource::collection($doctors);
+        $query = Doctor::query()
+            ->whereHas('branches', function ($q) use ($branch) {
+                $q->where('branches.id', $branch->id);
+            });
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new DoctorCollection($results), 'Branch doctors retrieved');
     }
 
     public function store(\App\Http\Requests\StoreBranchRequest $request)
