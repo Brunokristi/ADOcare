@@ -53,7 +53,7 @@ export const useAuthStore = defineStore('auth', {
                 } else if (this.user?.branches.length) {
                     this.currentBranch = this.user.branches[0] ?? null;
                 }
-            } catch (error) {
+            } catch {
                 this.clearAuth();
                 this.user = null;
                 this.currentRole = null;

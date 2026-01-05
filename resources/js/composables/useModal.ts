@@ -35,7 +35,7 @@ export function openModal(component: Component, props: Record<string, any> = {},
 
 
 export function pushModal(component: any, props: Record<string, any> = {}, dialogOptions: Record<string, any> = {}) {
-    let id = Date.now() + Math.floor(Math.random() * 1000);
+    const id = Date.now() + Math.floor(Math.random() * 1000);
     return new Promise<any>((resolve) => {
         state.modals.push({ id, component, props, dialogOptions, visible: true, resolve });
     });
@@ -62,7 +62,7 @@ export function closeModal(id: number, result?: any) {
 
         try {
             item.resolve(result);
-        } catch (e) {
+        } catch {
             // ignore
         }
         state.modals.splice(idx, 1);

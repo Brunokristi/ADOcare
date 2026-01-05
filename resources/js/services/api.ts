@@ -35,7 +35,7 @@ api.interceptors.request.use((config) => {
             }
         }
 
-    } catch (e) {
+    } catch {
         // store may not be initialized yet in some contexts; fallback to localStorage
         const token = localStorage.getItem('api_token');
         if (token && config.headers) {

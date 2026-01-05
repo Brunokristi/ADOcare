@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import MacroForm from '@/partials/Settings/Macros/MacroForm.vue'
 import type { Macro } from '@/types/models'
-import type { DataTableOptions } from '@/types/datatable'
 import api from '@/services/api'
 
 // UI state for modal

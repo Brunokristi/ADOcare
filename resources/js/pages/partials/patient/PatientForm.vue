@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, toRef, computed } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import api from '@/services/api';
 import useAuthStore from '@/stores/auth';
 import type { Doctor, InsuranceCompany, Patient } from '@/types/models';
-import type { Map } from 'leaflet';
 import { LMap, LMarker, LTileLayer } from "@vue-leaflet/vue-leaflet";
 import type { AutoCompleteCompleteEvent, AutoCompleteOptionSelectEvent } from 'primevue/autocomplete';
 
@@ -35,7 +34,7 @@ watch(localPatient, (val) => {
         if (JSON.stringify(val) !== JSON.stringify(parentVal)) {
             emit('update:patient', { ...(val as Patient) });
         }
-    } catch (err) {
+    } catch {
         // fallback: still emit
         emit('update:patient', { ...(val as Patient) });
     }
@@ -71,7 +70,7 @@ onMounted(async () => {
 // -------------------- Map & GeoJSON --------------------
 
 
-const map = ref<Map | null>(null);
+// `map` reference removed — component uses center/zoom and LMap component
 const center = ref<[number, number]>([48.1486, 17.1077]); // Default to Bratislava
 const zoom = ref<number>(13);
 const lMapLayerOptions = ref<any>({

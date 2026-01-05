@@ -1,5 +1,4 @@
 <script setup lang="ts">
-/// <reference path="../../../types/ui.d.ts" />
 import { onMounted, ref } from 'vue';
 import { usePatientStore } from '@/stores/patientStore';
 import { type Patient } from '@/types/models';

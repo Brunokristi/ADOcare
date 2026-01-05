@@ -243,7 +243,7 @@ router.beforeEach(async (to, _from, next) => {
 
     try {
         await auth.waitUntilInitialized();
-    } catch (e) {
+    } catch {
         await auth.clearAuth?.();
     }
 

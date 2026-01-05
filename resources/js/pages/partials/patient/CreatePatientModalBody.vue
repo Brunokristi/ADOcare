@@ -1,9 +1,7 @@
 <script setup lang="ts">
-/// <reference path="../../../types/ui.d.ts" />
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { usePatientStore } from '@/stores/patientStore';
 import { type Patient } from '@/types/models';
-import api from '@/services/api';
 import { useToast } from 'primevue/usetoast';
 import PatientForm from './PatientForm.vue';
 import type { IModalContentProps } from '@/types/ui';
