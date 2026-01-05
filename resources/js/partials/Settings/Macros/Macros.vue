@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import MacroForm from '@/partials/Settings/Macros/MacroForm.vue'
 import type { Macro } from '@/types/models'
+import type { DataTableOptions } from '@/types/datatable'
+import api from '@/services/api'
 
 // UI state for modal
 const showMacroDialog = ref(false)
@@ -74,7 +76,7 @@ const options = ref<DataTableOptions<Macro>>({
       handler: async ({ remote, selectedRows }: any) => {
         try {
           for (const r of selectedRows ?? []) {
-            await fetch(`/v1/macros/${r.id}`, { method: 'DELETE' })
+            await api.delete(`/v1/macros/${r.id}`)
           }
         } catch (err) {
           console.error('Delete failed', err)

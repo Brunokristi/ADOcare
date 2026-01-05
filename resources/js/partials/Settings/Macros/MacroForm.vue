@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import api from '@/services/api'
 import type { Macro } from '@/types/models';
 
 const props = defineProps<{ macro: Partial<Macro> | null }>()
@@ -34,17 +35,9 @@ async function save() {
     }
 
     if (local.value.id) {
-      await fetch(`/v1/macros/${local.value.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      await api.put(`/v1/macros/${local.value.id}`, payload)
     } else {
-      await fetch('/v1/macros', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      await api.post('/v1/macros', payload)
     }
 
     toast.add({ severity: 'success', summary: 'Uložené', detail: 'Makro bolo uložené.', life: 3000 })
