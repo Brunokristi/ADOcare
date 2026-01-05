@@ -51,9 +51,23 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             render: (v) => formatBirthNumber(v),
         },
         {
-            field: 'sex',
-            header: 'Pohlavie',
-            render: (v) => (v === 'M' ? 'Muž' : 'Žena'),
+            field: 'adress',
+            header: 'Adresa',
+            render: (v) => {
+                if (!v) return '';
+                const parts = [];
+                if (v.street) parts.push(v.street);
+                if (v.city) parts.push(v.city);
+                if (v.zip_code) parts.push(v.zip_code);
+                return parts.join(', ');
+            },
+        },
+        { field: 'city', header: 'Mesto', sortable: true },
+        {
+            field: 'doctor',
+            header: 'Ošetrujúci lekár',
+            render: (v) => (v ? `${v.first_name} ${v.last_name}` : ''),
+            sortable: false,
         },
         {
             field: 'pin',
@@ -134,7 +148,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
 </script>
 
 <template>
-    <div>
+    <div class="h-full flex flex-col overflow-hidden min-h-0">
         <SecondaryNavbar />
 
         <!-- Only mount the table when branchId is ready -->

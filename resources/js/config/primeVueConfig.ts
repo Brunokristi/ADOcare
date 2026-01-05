@@ -46,6 +46,7 @@ export default {
             root: { class: 'rounded-md overflow-hidden' },
             table: { class: 'w-full border-collapse border-0!' },
             bodyrow: { class: '[&.p-row-odd]:bg-almostwhite! [&.p-row-odd:hover]:bg-lightgrey! hover:bg-lightgrey!' },
+            tbody: { class: 'overflow-auto' }
         },
 
         column: {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch, toRef, computed } from 'vue';
 import api from '@/services/api';
 import useAuthStore from '@/stores/auth';
 import type { Doctor, InsuranceCompany, Patient } from '@/types/models';
@@ -9,14 +9,37 @@ import type { AutoCompleteCompleteEvent, AutoCompleteOptionSelectEvent } from 'p
 
 const props = defineProps<{
     patient: Patient;
+    submitted?: boolean;
+    errors?: { [key: string]: string } | null;
 }>();
 
 const emit = defineEmits<{
     (e: 'update:patient', patient: Patient): void;
+    (e: 'clear-error', key: string): void;
 }>();
 
-const submitted = true;
-const errors = ref<{ [key: string]: string }>({});
+const submitted = computed(() => !!props.submitted);
+const errors = computed(() => props.errors ?? {});
+
+// local editable copy of the patient so we can emit updates instead of mutating props
+const localPatient = ref<Patient>({ ...(props.patient ?? {}) });
+watch(() => props.patient, (p) => {
+    localPatient.value = { ...(p ?? {}) };
+}, { immediate: true, deep: true });
+
+// propagate local changes up to parent
+watch(localPatient, (val) => {
+    try {
+        const parentVal = props.patient ?? {};
+        // only emit when changed to avoid recursive loops
+        if (JSON.stringify(val) !== JSON.stringify(parentVal)) {
+            emit('update:patient', { ...(val as Patient) });
+        }
+    } catch (err) {
+        // fallback: still emit
+        emit('update:patient', { ...(val as Patient) });
+    }
+}, { deep: true });
 
 const sexOptions = [
     { label: 'Muž', value: 'M' },
@@ -127,23 +150,23 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
         const sel = event?.value;
         if (!sel) return;
 
+        // update local patient and emit via watcher
+        // note: patient.street intentionally left to parent editing flow
+        localPatient.value.city = sel.city || '';
+        localPatient.value.zip = sel.zip || '';
 
-        // props.patient.street = sel.street || '';
-        props.patient.city = sel.city || '';
-        props.patient.zip = sel.zip || '';
+        mapLat.value = localPatient.value.latitude = sel.lat ?? null;
+        mapLng.value = localPatient.value.longitude = sel.lng ?? null;
 
-        mapLat.value = props.patient.latitude = sel.lat ?? null;
-        mapLng.value = props.patient.longitude = sel.lng ?? null;
-
-        center.value = [props.patient.latitude || 48.1486, props.patient.longitude || 17.1077];
+        center.value = [localPatient.value.latitude || 48.1486, localPatient.value.longitude || 17.1077];
 
         addressQuery.value = sel.label;
 
-        if (errors.value.street) delete errors.value.street;
-        if (errors.value.city) delete errors.value.city;
-        if (errors.value.zip) delete errors.value.zip;
-        if (errors.value.coordinates) delete errors.value.coordinates;
-
+        // tell parent to clear these validation errors
+        emit('clear-error', 'street');
+        emit('clear-error', 'city');
+        emit('clear-error', 'zip');
+        emit('clear-error', 'coordinates');
 
     } catch (err) {
         console.error('onAddressSelect error:', err);
@@ -164,38 +187,37 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
             </div>
             <div class="col-span-4">
                 <label class="block text-normal mb-1">Meno</label>
-                <InputText v-model.trim="patient.first_name" fluid :invalid="submitted && !patient.first_name" />
-                <small v-if="submitted && !patient.first_name" class="text-warning">
-                    Meno je povinné.
-                </small>
+                <InputText v-model.trim="localPatient.first_name" fluid :invalid="submitted && !localPatient.first_name" />
+                <small v-if="submitted && errors.first_name" class="text-warning">{{ errors.first_name }}</small>
             </div>
 
             <div class="col-span-4">
                 <label class="block text-normal mb-1">Priezvisko</label>
-                <InputText v-model.trim="patient.last_name" fluid :invalid="submitted && !patient.last_name" />
-                <small v-if="submitted && !patient.last_name" class="text-warning">
-                    Priezvisko je povinné.
-                </small>
+                <InputText v-model.trim="localPatient.last_name" fluid :invalid="submitted && !localPatient.last_name" />
+                <small v-if="submitted && errors.last_name" class="text-warning">{{ errors.last_name }}</small>
             </div>
 
             <div class="col-span-4">
                 <label class="block text-normal mb-1">Titul</label>
-                <InputText v-model.trim="patient.title" fluid />
+                <InputText v-model.trim="localPatient.title" fluid />
             </div>
 
             <div class="col-span-4">
                 <label class="block text-normal mb-1">Rodné číslo</label>
-                <InputText v-model.trim="patient.personal_number" maxlength="11" fluid />
+                <InputText v-model.trim="localPatient.personal_number" maxlength="11" fluid :invalid="submitted && !localPatient.personal_number" />
+                <small v-if="submitted && errors.personal_number" class="text-warning">{{ errors.personal_number }}</small>
             </div>
 
             <div class="col-span-4">
                 <label class="block text-normal mb-1">Pohlavie</label>
-                <Select v-model="patient.sex" :options="sexOptions" optionLabel="label" optionValue="value" fluid />
+                <Select v-model="localPatient.sex" :options="sexOptions" optionLabel="label" optionValue="value" fluid :invalid="submitted && !localPatient.sex" />
+                <small v-if="submitted && errors.sex" class="text-warning">{{ errors.sex }}</small>
             </div>
 
             <div class="col-span-4">
                 <label class="block text-normal mb-1">Kontakt</label>
-                <InputText v-model.trim="patient.contact" fluid />
+                <InputText v-model.trim="localPatient.contact" fluid />
+                <small v-if="submitted && errors.contact" class="text-warning">{{ errors.contact }}</small>
             </div>
         </div>
 
@@ -205,8 +227,8 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
             </div>
             <div class="col-span-6">
                 <label class="block text-normal mb-1">Lekár</label>
-                <Select v-model="patient.doctor_id" :options="doctorOptions" optionLabel="name" optionValue="id" fluid
-                    filter>
+                <Select v-model="localPatient.doctor_id" :options="doctorOptions" optionLabel="name" optionValue="id" fluid
+                    filter :invalid="submitted && !localPatient.doctor_id">
                     <template #footer>
                         <div class="p-2">
                             <Button label="Pridať" fluid variant="text" size="small" icon="bi bi-plus"
@@ -214,13 +236,15 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
                         </div>
                     </template>
                 </Select>
+                <small v-if="submitted && errors.doctor_id" class="text-warning">{{ errors.doctor_id }}</small>
 
             </div>
 
             <div class="col-span-6">
                 <label class="block text-normal mb-1">Poisťovňa</label>
-                <Select v-model="patient.insurance_company_id" :options="insuranceOptions" optionLabel="name"
-                    optionValue="id" fluid />
+                <Select v-model="localPatient.insurance_company_id" :options="insuranceOptions" optionLabel="name"
+                    optionValue="id" fluid :invalid="submitted && !localPatient.insurance_company_id" />
+                <small v-if="submitted && errors.insurance_company_id" class="text-warning">{{ errors.insurance_company_id }}</small>
             </div>
         </div>
 
@@ -239,13 +263,13 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
 
                 <div>
                     <label class="block text-normal mb-1">Mesto</label>
-                    <InputText v-model.trim="patient.city" fluid :invalid="submitted && !!errors.city" />
+                    <InputText v-model.trim="localPatient.city" fluid :invalid="submitted && !!errors.city" />
                     <small v-if="submitted && errors.city" class="text-warning">{{ errors.city }}</small>
                 </div>
 
                 <div>
                     <label class="block text-normal mb-1">PSČ</label>
-                    <InputText v-model.trim="patient.zip" fluid :invalid="submitted && !!errors.zip" />
+                    <InputText v-model.trim="localPatient.zip" fluid :invalid="submitted && !!errors.zip" />
                     <small v-if="submitted && errors.zip" class="text-warning">{{ errors.zip }}</small>
                 </div>
 
@@ -262,8 +286,8 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
                     <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" layer-type="base"
                         name="OpenStreetMap" v-bind="lMapLayerOptions" />
                     />
-                    <LMarker v-if="patient.latitude && patient.longitude"
-                        :lat-lng="[patient.latitude, patient.longitude]" />
+                    <LMarker v-if="localPatient.latitude && localPatient.longitude"
+                        :lat-lng="[localPatient.latitude, localPatient.longitude]" />
                 </LMap>
             </div>
         </div>

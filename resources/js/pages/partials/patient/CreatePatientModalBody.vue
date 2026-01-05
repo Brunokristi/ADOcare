@@ -14,6 +14,9 @@ const patientStore = usePatientStore();
 const props = defineProps<IModalContentProps & { patientId: number; }>();
 
 const patient = ref<Patient>({} as Patient);
+// validation handled by composable
+import usePatientFormValidation from '@/composables/usePatientFormValidation';
+const { submitted, errors, validateForm, clearError } = usePatientFormValidation(patient);
 
 
 const toast = useToast();
@@ -46,9 +49,9 @@ const createPatient = async () => {
 
 
 <template>
-    <PatientForm v-if="patient" v-model:patient="patient" />
+    <PatientForm v-if="patient" v-model:patient="patient" :submitted="submitted" :errors="errors" @clear-error="clearError" />
     <div class="mt-4 flex justify-end">
         <Button label="Uložiť" class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
-            @click="createPatient" />
+            @click="(async () => { submitted = true; if (!validateForm()) return; await createPatient(); })()" />
     </div>
 </template>

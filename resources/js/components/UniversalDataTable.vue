@@ -76,7 +76,7 @@ watch(selectedRows, (val) => {
 </script>
 
 <template>
-    <div>
+    <div class="h-full flex flex-col min-h-0 max-h-full overflow-auto">
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
 
             <template #end>
@@ -103,14 +103,17 @@ watch(selectedRows, (val) => {
             :totalRecords="remote.total.value" :lazy="true" :loading="remote.loading.value" :dataKey="rowKey"
             v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="(e) => onSort(e)" v-model:selection="selectedRows"
             :selectionMode="opt.selectable ? 'multiple' : undefined"
+            class="h-full min-h-0 max-h-full overflow-auto"
+            scrollable
+            scrollHeight="flex"
             :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]">
             <template #paginatorcontainer="state">
                 <div class="flex items-center justify-between w-full px-2">
-                    <div class="flex-1 text-xs">
-                        Zobraziť
-                        <Select class="text-xs!" labelClass="text-xs!" v-model="remote.per_page.value"
+                    <div class="flex items-center gap-2 flex-1 text-xs text-accent">
+                        <span>Zobraziť</span>
+                        <Select class="text-xs! p-0 h-auto!" labelClass="text-xs!" v-model="remote.per_page.value"
                             :options="opt.pageSizeOptions ?? [10, 25, 50]" />
-                        záznamov na stranu
+                         <span>záznamov na stranu</span>
                     </div>
                     <div class="flex-1">
                         <Paginator v-bind="state"
@@ -147,7 +150,7 @@ watch(selectedRows, (val) => {
     </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .text-muted {
     color: #6b7280
 }
