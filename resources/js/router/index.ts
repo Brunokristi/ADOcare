@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Dashboard from '@/pages/Dashboard.vue'
 import Login from '@/pages/Login.vue'
-import PatientsTest from '@/pages/PatientsTest.vue'
+import Patients from '@/pages/Patients.vue'
 import Settings from '@/pages/Settings.vue'
 import Procedures from '@/partials/Settings/Procedures.vue'
 import Diagnoses from '@/partials/Settings/Diagnoses.vue'
@@ -17,7 +17,7 @@ import PatientPoints from '@/partials/Patient/Points.vue'
 import Document from '@/pages/Documents.vue'
 import DocumentPoints from '@/partials/Documents/Points.vue'
 import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
-import Patients from '@/pages/Patients.vue'
+import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
 
 
@@ -42,11 +42,11 @@ const routes = [
         },
     },
     {
-        path: '/patients-test',
-        name: 'patients-test',
-        component: PatientsTest,
+        path: '/patients-old',
+        name: 'patients-old',
+        component: PatientsOld,
         meta: {
-            title: 'Pacienti Test',
+            title: 'Pacienti (old)',
             sidebar: false,
         },
     },
