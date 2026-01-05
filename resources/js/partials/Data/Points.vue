@@ -239,7 +239,7 @@ onMounted(() => {
               :useGrouping="false"
               :minFractionDigits="0"
               :maxFractionDigits="0"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
               fluid
             />
             <small
@@ -258,7 +258,7 @@ onMounted(() => {
               :options="batchTypes"
               optionLabel="name"
               fluid
-              class="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
             />
             <small v-if="submitted && !batchType" class="text-warning">
               Typ dávky je povinný.
@@ -273,7 +273,7 @@ onMounted(() => {
               :options="insurances"
               optionLabel="name"
               fluid
-              class="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
             />
             <small v-if="submitted && !insurance" class="text-warning">
               Poisťovňa je povinná.
@@ -288,7 +288,7 @@ onMounted(() => {
               view="month"
               dateFormat="MM yy"
               :manualInput="false"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
               fluid
             />
 
@@ -369,7 +369,7 @@ onMounted(() => {
       <div class="flex justify-end">
         <Button
           type="submit"
-          class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
         >
           Vygenerovať
           <i

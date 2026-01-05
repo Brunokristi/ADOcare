@@ -122,12 +122,12 @@ function goToPricesPage() {
             label="Neskôr"
             text
             @click="closePriceAlert"
-            class="!text-darkgrey"
+            class="text-darkgrey!"
           />
 
           <Button
             label="Otvoriť ceny"
-            class="!bg-accent !border-0 !text-white hover:!bg-darkgrey !px-3"
+            class="bg-accent! border-0! text-white! hover:bg-darkgrey! px-3!"
             @click="goToPricesPage"
           />
         </div>

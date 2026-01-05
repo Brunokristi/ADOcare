@@ -46,7 +46,7 @@ const sheet = computed<CoverSheet>(() => ({
   companyName: String(route.query.companyName ?? ''),
   branchName: String(route.query.branchName ?? ''),
   insuranceName: String(route.query.insuranceName ?? ''),
-  patients: patientIds.value, 
+  patients: patientIds.value,
 }));
 
 
@@ -148,9 +148,9 @@ function printPage() {
 
 
 <template>
-  <div class="flex flex-col gap-4 cover-sheet-page">
-      <div class="bg-tag3 justify-between flex items-center !p-3 rounded-md">
-      
+    <div class="flex flex-col gap-4 cover-sheet-page">
+      <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
+
       <div class="flex items-center gap-2">
         <i class="bi bi-file-earmark" />
         {{ sheet.fileName }}
@@ -158,14 +158,14 @@ function printPage() {
 
       <Button
         icon="bi bi-download"
-        class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !h-7"
+        class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
         @click="downloadTxt"
       />
     </div>
 
     <!-- Toolbar -->
     <Toolbar
-      class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between"
+      class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between"
     >
       <template #start>
         <span class="text-heading-accent">
@@ -177,13 +177,13 @@ function printPage() {
         <div class="flex items-center gap-2">
           <Button
             icon="bi bi-download"
-            class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !h-7"
+            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
             @click="downloadStatementPdf"
           />
 
           <Button
             icon="bi bi-printer"
-            class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !h-7"
+            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
             @click="printPage"
           />
         </div>
@@ -195,7 +195,7 @@ function printPage() {
         <div class="text-center font-bold text-lg mb-4">
           SPRIEVODNÝ LIST | vykázané kilometre
         </div>
-        
+
 
         <table class="w-full border-collapse border-b-0 text-sm">
           <tbody>

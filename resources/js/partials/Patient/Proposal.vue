@@ -187,7 +187,7 @@ function generateDocument() {
               :minLength="1"
               @complete="searchDiagnoses"
               class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
@@ -207,7 +207,7 @@ function generateDocument() {
               :minLength="1"
               @complete="searchNurseDiagnoses"
               class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
@@ -236,9 +236,9 @@ function generateDocument() {
           </label>
           <Textarea
             v-model="episodeDescription"
-            class="w-full !border-none"
+            class="w-full border-none!"
             rows="4"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
           />
         </div>
 
@@ -246,9 +246,9 @@ function generateDocument() {
           <label class="block text-normal mb-2">Plán ošetrovateľskej starostlivosti</label>
           <Textarea
             v-model="carePlan"
-            class="w-full !border-none"
+            class="w-full border-none!"
             rows="4"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+            inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
           />
         </div>
 
@@ -286,7 +286,7 @@ function generateDocument() {
                 :minLength="1"
                 @complete="searchProcedures"
                 class="w-full"
-                inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+                inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               >
                 <template #option="slotProps">
                   <div class="flex flex-col">
@@ -307,7 +307,7 @@ function generateDocument() {
                 optionValue="value"
                 placeholder="Vyberte frekvenciu"
                 class="w-full border-none!"
-                inputClass="!w-full !shadow-none focus:!ring-0 focus:!shadow-none"
+                inputClass="w-full! shadow-none! focus:ring-0! focus:shadow-none!"
               />
             </div>
 
@@ -315,14 +315,14 @@ function generateDocument() {
               v-if="idx === procedures.length - 1"
               icon="bi bi-plus"
               text
-              class="!bg-accent !text-white !h-7 !w-7 !p-0 rounded-md flex items-center justify-center"
+              class="bg-accent! text-white! h-7! w-7! p-0! rounded-md flex items-center justify-center"
               @click="addProcedure"
             />
             <Button
               v-else
               icon="bi bi-eraser"
               text
-              class="!bg-warning !text-white !h-7 !w-7 !p-0 rounded-md flex items-center justify-center"
+              class="bg-warning! text-white! h-7! w-7! p-0! rounded-md flex items-center justify-center"
               @click="removeProcedure(idx)"
             />
           </div>
@@ -332,7 +332,7 @@ function generateDocument() {
       <div class="flex justify-end">
         <Button
           type="submit"
-          class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
         >
           Generovať dokument
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />

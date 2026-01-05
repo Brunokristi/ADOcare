@@ -112,7 +112,7 @@ async function submit() {
                 <Button
                     type="submit"
                     :disabled="loading"
-                    class="relative w-full flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey"
+                    class="relative w-full flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey!"
                 >
                     Prihlásiť sa
                     <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />

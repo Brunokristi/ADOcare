@@ -176,7 +176,7 @@ const recordsInfo = computed(() => {
         <!-- Toast must be rendered somewhere for useToast() to work -->
         <Toast />
 
-        <Toolbar class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between">
+        <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
             <template #end>
                 <div class="flex items-center gap-2 ">
                     <IconField>
@@ -186,13 +186,13 @@ const recordsInfo = computed(() => {
                         </InputIcon>
                     </IconField>
 
-                    <Button icon="bi bi-plus" @click="openNew" class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey"/>
+                    <Button icon="bi bi-plus" @click="openNew" class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey!"/>
 
                     <Button
                         icon="bi bi-eraser"
                         @click="confirmDeleteSelected"
                         :disabled="!showRows || !showRows.length"
-                        class="!bg-warning !border-warning"
+                        class="bg-warning! border-warning!"
                     />
                 </div>
             </template>
@@ -208,7 +208,7 @@ const recordsInfo = computed(() => {
             removableSort
         >
             <Column selectionMode="multiple" style="width: 3rem" :exportable="false" />
-            
+
             <Column field="code" header="Kód" sortable />
             <Column field="price25" header="Cena poisťovňa 25" sortable />
             <Column field="price24" header="Cena poisťovňa 24" sortable disabled />
@@ -216,7 +216,7 @@ const recordsInfo = computed(() => {
             <Column field="description" header="Popis" />
             <Column :exportable="false" style="width: 3rem">
                 <template #body="slotProps">
-                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="!text-darkgrey hover:!bg-transparent !p-0 " />
+                    <Button icon="bi bi-pencil" @click="editProduct(slotProps.data)" variant="text" class="text-darkgrey! hover:bg-transparent! p-0!" />
                 </template>
             </Column>
         </DataTable>
@@ -293,7 +293,7 @@ const recordsInfo = computed(() => {
 
         <Dialog v-model:visible="deleteProductDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
             <div class="flex items-center gap-4">
-                <i class="pi pi-exclamation-triangle !text-3xl" />
+                <i class="pi pi-exclamation-triangle text-3xl!" />
                 <span v-if="product">
                     Are you sure you want to delete
                     <b>{{ product.code }}</b>?
@@ -314,7 +314,7 @@ const recordsInfo = computed(() => {
 
         <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
             <div class="flex items-center gap-4">
-                <i class="pi pi-exclamation-triangle !text-3xl" />
+                <i class="pi pi-exclamation-triangle text-3xl!" />
                 <span>Naozaj vymazať záznamy?</span>
             </div>
             <template #footer>

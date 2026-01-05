@@ -618,7 +618,7 @@ watch(
     <SecondaryNavbar class="flex-none" />
     <div class="flex-1 overflow-hidden">
       <div class="h-full flex flex-col overflow-hidden min-h-0">
-        <Toolbar class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between">
+        <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
           <template #end>
             <div class="flex items-center gap-2">
               <IconField>
@@ -631,14 +631,14 @@ watch(
               <Button
                 icon="bi bi-plus"
                 @click="openNew"
-                class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !text-white !h-7"
+                class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! text-white! h-7!"
               />
 
               <Button
                 icon="bi bi-eraser"
                 @click="confirmDeleteSelected"
                 :disabled="!selectedPatients || !selectedPatients.length"
-                class="!bg-warning !border-warning !text-white !h-7"
+                class="bg-warning! border-warning! text-white! h-7!"
               />
             </div>
           </template>
@@ -689,12 +689,12 @@ watch(
 
             <Column :exportable="false" style="width: 3rem">
               <template #body="{ data }">
-                <Button
-                  :icon="patientStore.current?.id === data.id ? 'bi bi-pin-fill' : 'bi bi-pin-angle'"
-                  @click.stop="selectPatient(data)"
-                  variant="text"
-                  class="!text-darkgrey hover:!bg-transparent !p-0"
-                />
+                  <Button
+                    :icon="patientStore.current?.id === data.id ? 'bi bi-pin-fill' : 'bi bi-pin-angle'"
+                    @click.stop="selectPatient(data)"
+                    variant="text"
+                    class="text-darkgrey! hover:bg-transparent! p-0!"
+                  />
               </template>
             </Column>
 
@@ -704,7 +704,7 @@ watch(
                   icon="bi bi-pencil"
                   @click.stop="editPatient(data)"
                   variant="text"
-                  class="!text-darkgrey hover:!bg-transparent !p-0"
+                  class="text-darkgrey! hover:bg-transparent! p-0!"
                 />
               </template>
             </Column>
@@ -797,7 +797,7 @@ watch(
                       variant="text"
                       size="small"
                       icon="bi bi-plus"
-                      class="!text-accent !bg-tag3 hover:!bg-accent hover:!text-white"
+                      class="text-accent! bg-tag3! hover:bg-accent! hover:text-white!"
                       @click="goToDoctorsSettings"
                     />
                   </div>
@@ -860,7 +860,7 @@ watch(
                   fluid
                   :invalid="submitted && !!errors.zip"
                   @input="patient.zip = sanitizeZip(patient.zip)"
-                />                
+                />
                 <small v-if="submitted && errors.zip" class="text-warning">{{ errors.zip }}</small>
               </div>
 
@@ -878,7 +878,7 @@ watch(
         <template #footer>
           <Button
             label="Uložiť"
-            class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+            class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
             @click="savePatient"
           />
         </template>
@@ -899,9 +899,9 @@ watch(
               label="Nie"
               text
               @click="deletePatientsDialog = false"
-              class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+              class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
             />
-            <Button label="Áno" text @click="deleteSelectedPatients" class="!bg-warning !px-md !text-white" />
+            <Button label="Áno" text @click="deleteSelectedPatients" class="bg-warning! px-md! text-white!" />
           </div>
         </div>
       </Dialog>

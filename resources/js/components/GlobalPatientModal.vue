@@ -522,7 +522,7 @@ watch(
     <template #footer>
       <Button
         label="Uložiť"
-        class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+        class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
         :loading="saving"
         @click="savePatient"
       />

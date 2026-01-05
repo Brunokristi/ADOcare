@@ -118,15 +118,15 @@ function openEditFromIncompleteModal() {
   <Menubar
     v-if="patient"
     v-bind="attrs"
-    class="!bg-tag2 !px-3 flex items-center py-2 justify-between"
+    class="bg-tag2! px-3! flex items-center py-2 justify-between"
   >
     <template #start>
       <div class="flex items-center">
-        <h2 class="!text-normal !pr-sm !text-almostwhite border-r !border-almostwhite">
+        <h2 class="text-normal! pr-sm! text-almostwhite! border-r border-almostwhite!">
           {{ patientName }}
         </h2>
 
-        <h2 class="!text-normal !px-sm !text-almostwhite">
+        <h2 class="text-normal! px-sm! text-almostwhite!">
           {{ patientPersonalNumber }}
         </h2>
       </div>
@@ -136,14 +136,14 @@ function openEditFromIncompleteModal() {
       <div class="flex items-center gap-2">
         <RouterLink
           :to="{ path: '/patient/points' }"
-          class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
         >
           bodovanie
         </RouterLink>
 
         <RouterLink
           :to="{ path: '/patient/proposal' }"
-          class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
         >
           návrh
         </RouterLink>
@@ -151,7 +151,7 @@ function openEditFromIncompleteModal() {
         <button
           type="button"
           @click="openEdit"
-          class="!text-mini underline !px-sm transition-colors !text-almostwhite hover:!text-accent"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
         >
           upraviť
         </button>
@@ -184,7 +184,7 @@ function openEditFromIncompleteModal() {
         <Button
           label="Upraviť teraz"
           @click="openEditFromIncompleteModal"
-          class="!bg-accent !border-0 !text-white hover:!bg-darkgrey !px-4"
+          class="bg-accent! border-0! text-white! hover:bg-darkgrey! px-4!"
         />
       </div>
     </div>

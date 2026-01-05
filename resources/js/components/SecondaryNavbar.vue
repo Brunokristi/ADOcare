@@ -52,21 +52,21 @@ const activeKey = computed(() => {
 
 function linkClass(key: string) {
   return [
-    '!text-mini !underline !px-sm transition-colors',
-    activeKey.value === key ? '!text-accent' : '!text-darkgrey hover:!text-accent'
+    'text-mini! underline! px-sm! transition-colors',
+    activeKey.value === key ? 'text-accent!' : 'text-darkgrey! hover:text-accent!'
   ]
 }
 </script>
 
 <template>
-  <Menubar 
+  <Menubar
   class="pb-2 justify-between flex items-center">
     <template #start>
       <div class="flex">
-        <h1 class="!text-heading-accent !border-r-2 !border-accent !pr-sm">
+        <h1 class="text-heading-accent! border-r-2! border-accent! pr-sm!">
           {{ h1Title }}
         </h1>
-        <h1 class="!text-heading-accent !text-darkgrey !px-sm !font-light">
+        <h1 class="text-heading-accent! text-darkgrey! px-sm! font-light!">
           {{ h2Title }}
         </h1>
       </div>

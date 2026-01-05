@@ -352,7 +352,7 @@ const recordsInfo = computed(() => {
 <template>
   <div class="h-full flex flex-col overflow-hidden min-h-0">
     <Toolbar
-      class="!bg-transparent !border-0 !p-0 !py-3 !shadow-none flex items-center justify-between"
+      class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between"
     >
       <template #end>
         <div class="flex items-center gap-2">
@@ -366,14 +366,14 @@ const recordsInfo = computed(() => {
           <Button
             icon="bi bi-plus"
             @click="openNew"
-            class="!bg-accent !border-accent hover:!bg-darkgrey hover:!border-darkgrey !text-white !h-7"
+            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! text-white! h-7!"
           />
 
           <Button
             icon="bi bi-eraser"
             @click="confirmDeleteSelected"
             :disabled="!showRows || !showRows.length"
-            class="!bg-warning !border-warning !text-white !h-7"
+            class="bg-warning! border-warning! text-white! h-7!"
           />
         </div>
       </template>
@@ -394,7 +394,7 @@ const recordsInfo = computed(() => {
         :first="first"
         :rows="perPage"
         :totalRecords="totalRecords"
-        
+
         @page="onPage"
 
         sortMode="single"
@@ -418,7 +418,7 @@ const recordsInfo = computed(() => {
             <Button
               icon="bi bi-pencil"
               variant="text"
-              class="!text-darkgrey hover:!bg-transparent !p-0"
+              class="text-darkgrey! hover:bg-transparent! p-0!"
               @click="editProduct(data)"
             />
           </template>
@@ -440,7 +440,7 @@ const recordsInfo = computed(() => {
             fluid
             :invalid="submitted && !product.code"
             :disabled="isEditing"
-            class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
+            class="disabled:bg-white! disabled:text-lightgrey! disabled:border-lightgrey! disabled:cursor-not-allowed!"
           />
           <small v-if="submitted && !product.code" class="text-warning">Kód je povinný.</small>
         </div>
@@ -497,7 +497,7 @@ const recordsInfo = computed(() => {
             fluid
             :invalid="submitted && !product.description"
             :disabled="isEditing"
-            class="disabled:!bg-white disabled:!text-lightgrey disabled:!border-lightgrey disabled:!cursor-not-allowed"
+            class="disabled:bg-white! disabled:text-lightgrey! disabled:border-lightgrey! disabled:cursor-not-allowed!"
           />
           <small v-if="submitted && !product.description" class="text-warning">Popis je povinný.</small>
         </div>
@@ -506,7 +506,7 @@ const recordsInfo = computed(() => {
       <template #footer>
         <Button
           label="Uložiť"
-          class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+          class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
           @click="saveProduct"
         />
       </template>
@@ -527,13 +527,13 @@ const recordsInfo = computed(() => {
             label="Nie"
             text
             @click="deleteProductsDialog = false"
-            class="!bg-accent !px-md !text-white hover:!bg-darkgrey !border-0"
+            class="bg-accent! px-md! text-white! hover:bg-darkgrey! border-0!"
           />
           <Button
             label="Áno"
             text
             @click="deleteshowRows"
-            class="!bg-warning !px-md !text-white"
+            class="bg-warning! px-md! text-white!"
           />
         </div>
       </div>

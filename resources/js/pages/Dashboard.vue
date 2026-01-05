@@ -30,7 +30,7 @@ const fullName = computed(() =>
             <div class="flex gap-4">
             <RouterLink to="/patients" class="block w-70">
                 <Button
-                    class="w-full h-12 !bg-darkgrey !border-0 text-white rounded-md flex !justify-between items-center !px-4 hover:!bg-accent"
+                    class="w-full h-12 bg-darkgrey! border-0! text-white rounded-md flex justify-between! items-center px-4! hover:bg-accent!"
                 >
                     <span>Pacienti</span>
                     <i class="bi bi-arrow-right text-lg"></i>
@@ -45,7 +45,7 @@ const fullName = computed(() =>
             <div class="flex gap-4">
             <RouterLink to="/data/points" class="block w-70">
                 <Button
-                    class="w-full h-12 !bg-darkgrey !border-0 text-white rounded-md flex !justify-between items-center !px-4 hover:!bg-accent"
+                    class="w-full h-12 bg-darkgrey! border-0! text-white rounded-md flex justify-between! items-center px-4! hover:bg-accent!"
                 >
                     <span>Dávka bodovanie</span>
                     <i class="bi bi-arrow-right text-lg"></i>

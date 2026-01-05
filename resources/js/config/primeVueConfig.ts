@@ -21,15 +21,15 @@ const ADOPreset = definePreset(Material, {
 });
 
 const baseField =
-    '!rounded-md !h-7 ' +
-    '!border-darkgrey !bg-white ' +
-    '!text-normal !text-darkgrey ' +
-    '!outline-none !ring-0 !shadow-none ' +
-    'focus:!outline-none focus:!ring-0 focus:!shadow-none';
+    'rounded-md! h-7! ' +
+    'border-darkgrey! bg-white! ' +
+    'text-normal! text-darkgrey! ' +
+    'outline-none! ring-0! shadow-none! ' +
+    'focus:outline-none! focus:ring-0! focus:shadow-none!';
 
 const baseNoOutline =
-    '!outline-none !ring-0 !shadow-none ' +
-    'focus:!outline-none focus:!ring-0 focus:!shadow-none';
+    'outline-none! ring-0! shadow-none! ' +
+    'focus:outline-none! focus:ring-0! focus:shadow-none!';
 
 export default {
     theme: {
@@ -44,24 +44,24 @@ export default {
     pt: {
         datatable: {
             root: { class: 'rounded-md overflow-hidden' },
-            table: { class: 'w-full border-collapse !border-0' },
-            bodyrow: { class: '[&.p-row-odd]:!bg-almostwhite [&.p-row-odd:hover]:!bg-lightgrey hover:!bg-lightgrey' },
+            table: { class: 'w-full border-collapse border-0!' },
+            bodyrow: { class: '[&.p-row-odd]:bg-almostwhite! [&.p-row-odd:hover]:bg-lightgrey! hover:bg-lightgrey!' },
         },
 
         column: {
-            headercell: { class: '!bg-darkgrey !text-white !text-heading !px-4 !py-2 !border-r !border-r-white last:!border-r-0' },
-            sortIcon: { class: '!text-white !flex !items-center !justify-center' },
-            columnTitle: { class: '!text-white !text-heading' },
+            headercell: { class: 'bg-darkgrey! text-white! text-heading! px-4! py-2! border-r! border-r-white! last:border-r-0!' },
+            sortIcon: { class: 'text-white! flex! items-center! justify-center!' },
+            columnTitle: { class: 'text-white! text-heading!' },
             pcheadercheckbox: {
-                box: { class: '!bg-darkgrey !border-white' },
-                root: { class: '!shadow-none hover:!shadow-none' },
+                box: { class: 'bg-darkgrey! border-white!' },
+                root: { class: 'shadow-none! hover:shadow-none!' },
             },
             pcrowcheckbox: {
-                box: { class: '!border-darkgrey' },
-                root: { class: '!shadow-none hover:!shadow-none' },
+                box: { class: 'border-darkgrey!' },
+                root: { class: 'shadow-none! hover:shadow-none!' },
             },
             bodycell: {
-                class: '!text-normal/5 !text-darkgrey !px-4 !py-1 !border-0 !border-r !border-r-white last:!border-r-0',
+                class: 'text-normal/5! text-darkgrey! px-4! py-1! border-0! border-r! border-r-white! last:border-r-0!',
             },
         },
 
@@ -72,123 +72,123 @@ export default {
         },
 
         textarea: {
-            root: { class: `${baseField} !h-auto !min-h-[5rem] !py-2` },
+            root: { class: `${baseField} h-auto! min-h-[5rem]! py-2!` },
         },
 
         /* ---------- BUTTON ---------- */
 
         button: {
-            root: { class: `!p-xs !rounded-md ${baseNoOutline}` },
+            root: { class: `p-xs! rounded-md! ${baseNoOutline}` },
         },
 
         /* ---------- MENU / MENUBAR / DIALOG / TOAST (unchanged look) ---------- */
 
         menubar: {
-            root: { class: '!border-0 !px-0 !rounded-none !content-center' },
+            root: { class: 'border-0! px-0! rounded-none! content-center!' },
         },
 
         menu: {
-            root: { class: '!border-0 !rounded-none' },
-            item: { class: 'hover:!bg-transparent focus:!bg-transparent !rounded-md !bg-transparent' },
-            itemContent: { class: 'hover:!bg-transparent focus:!bg-transparent !rounded-md !bg-transparent' },
+            root: { class: 'border-0! rounded-none!' },
+            item: { class: 'hover:bg-transparent! focus:bg-transparent! rounded-md! bg-transparent!' },
+            itemContent: { class: 'hover:bg-transparent! focus:bg-transparent! rounded-md! bg-transparent!' },
         },
 
         dialog: {
-            header: { class: '!text-darkgrey !text-heading-accent' },
-            root: { class: '!rounded-md' },
+            header: { class: 'text-darkgrey! text-heading-accent!' },
+            root: { class: 'rounded-md!' },
         },
 
         toast: {
-            root: { class: '!rounded-md' },
-            message: { class: '!rounded-md' },
-            messageContent: { class: '!text-dark !rounded-md' },
-            messageIcon: { class: '!hidden' },
-            detail: { class: '!text-dark' },
+            root: { class: 'rounded-md!' },
+            message: { class: 'rounded-md!' },
+            messageContent: { class: 'text-dark! rounded-md!' },
+            messageIcon: { class: 'hidden!' },
+            detail: { class: 'text-dark!' },
         },
 
         /* ---------- SELECT ---------- */
 
         select: {
-            root: { class: `${baseField} !flex !items-center !gap-1` },
-            dropdown: { class: `${baseNoOutline} !border-0 !bg-transparent !px-1` },
-            dropDownIcon: { class: '!text-sm' },
-            label: { class: '!text-normal !text-darkgrey !truncate' },
-            overlay: { class: '!rounded-md !border-0' },
-            header: { class: '!p-2' },
-            listContainer: { class: '!p-2 !gap-2' },
-            option: { class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white' },
+            root: { class: `${baseField} flex! items-center! gap-1!` },
+            dropdown: { class: `${baseNoOutline} border-0! bg-transparent! px-1!` },
+            dropDownIcon: { class: 'text-sm!' },
+            label: { class: 'text-normal! text-darkgrey! truncate!' },
+            overlay: { class: 'rounded-md! border-0!' },
+            header: { class: 'p-2!' },
+            listContainer: { class: 'p-2! gap-2!' },
+            option: { class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white!' },
         },
 
 
         autocomplete: {
             root: {
-                class: 'w-full flex flex-col items-stretch p-0 !border-0 bg-transparent'
+                class: 'w-full flex flex-col items-stretch p-0 border-0! bg-transparent!'
             },
 
             input: {
                 class: [
-                    'w-full h-full !border-0 bg-transparent',
-                    '!text-normal !text-darkgrey',
-                    '!outline-none !ring-0 !shadow-none',
-                    'focus:!outline-none focus:!ring-0 focus:!shadow-none'
+                    'w-full h-full border-0! bg-transparent!',
+                    'text-normal! text-darkgrey!',
+                    'outline-none! ring-0! shadow-none!',
+                    'focus:outline-none! focus:ring-0! focus:shadow-none!'
                 ].join(' ')
             },
 
             inputMultiple: {
                 class: [
                     'w-full',
-                    '!rounded-md !border-0 !bg-white',
-                    '!px-2 !py-2',
-                    '!flex !flex-wrap !items-start !content-center !gap-1',
+                    'rounded-md! border-0! bg-white!',
+                    'px-2! py-2!',
+                    'flex! flex-wrap! items-start! content-center! gap-1!',
                     'min-h-[2.5rem] max-h-40 overflow-y-auto',
-                    '!text-normal !text-darkgrey !outline-none !ring-0 !shadow-none',
-                    'focus:!outline-none focus:!ring-0 focus:!shadow-none'
+                    'text-normal! text-darkgrey! outline-none! ring-0! shadow-none!',
+                    'focus:outline-none! focus:ring-0! focus:shadow-none!'
                 ].join(' ')
             },
 
             overlay: {
-                class: '!rounded-md !p-2 w-auto border-0'
+                class: 'rounded-md! p-2! w-auto border-0!'
             },
 
             option: {
-                class: '!rounded-md hover:!bg-almostwhite !text-normal !p-2 !bg-white'
+                class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white!'
             }
         },
 
 
         datepicker: {
-            root: { class: `${baseField} !flex !items-center` },
+            root: { class: `${baseField} flex! items-center!` },
             input: {
-                class: '!w-full !h-full !border-0 !bg-transparent ' +
-                    '!text-normal !text-darkgrey ' +
-                    '!outline-none !ring-0 !shadow-none ' +
-                    'focus:!outline-none focus:!ring-0 focus:!shadow-none',
+                class: 'w-full! h-full! border-0! bg-transparent! ' +
+                    'text-normal! text-darkgrey! ' +
+                    'outline-none! ring-0! shadow-none! ' +
+                    'focus:outline-none! focus:ring-0! focus:shadow-none!',
             },
-            panel: { class: '!rounded-md !text-normal !text-darkgrey !border-0' },
-            selectMonth: { class: '!bg-darkgrey !text-normal !text-white hover:!bg-accent !rounded-md' },
-            selectYear: { class: '!bg-darkgrey !text-normal !text-white hover:!bg-accent !rounded-md' },
+            panel: { class: 'rounded-md! text-normal! text-darkgrey! border-0!' },
+            selectMonth: { class: 'bg-darkgrey! text-normal! text-white! hover:bg-accent! rounded-md!' },
+            selectYear: { class: 'bg-darkgrey! text-normal! text-white! hover:bg-accent! rounded-md!' },
             day: {
                 class: [
-                    '!text-normal !rounded-md hover:!bg-tag3',
-                    '[&.p-datepicker-day-selected]:!bg-accent [&.p-datepicker-day-selected]:!text-white',
-                    '[&.p-datepicker-day-selected-range]:!bg-accent [&.p-datepicker-day-selected-range]:!text-white'
+                    'text-normal! rounded-md! hover:bg-tag3!',
+                    '[&.p-datepicker-day-selected]:bg-accent! [&.p-datepicker-day-selected]:text-white!',
+                    '[&.p-datepicker-day-selected-range]:bg-accent! [&.p-datepicker-day-selected-range]:text-white!'
                 ].join(' ')
             },
-            weekDay: { class: '!text-heading !text-darkgrey' },
-            month: { class: '!text-normal !text-darkgrey [&.p-datepicker-month-selected]:!bg-accent [&.p-datepicker-month-selected]:!text-white' },
+            weekDay: { class: 'text-heading! text-darkgrey!' },
+            month: { class: 'text-normal! text-darkgrey! [&.p-datepicker-month-selected]:bg-accent! [&.p-datepicker-month-selected]:text-white!' },
         },
 
         paginator: {
-            root: { class: '!border-0 !rounded-none !text-mini !p-0 !bg-darkgrey !h-7 !align-middle' },
-            prevIcon: { class: '!bi !bi-chevron-left !text-white' },
-            prev: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
-            nextIcon: { class: '!bi !bi-chevron-right !text-white' },
-            next: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
-            firstIcon: { class: '!bi !bi-chevron-bar-left !text-white' },
-            first: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
-            lastIcon: { class: '!bi !bi-chevron-bar-right !text-white' },
-            last: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
-            page: { class: '!p-1 !rounded-md hover:!bg-tag2 !text-white !h-6' },
+            root: { class: 'border-0! rounded-none! text-mini! p-0! bg-darkgrey! h-7! align-middle!' },
+            prevIcon: { class: 'bi bi-chevron!-left text-white!' },
+            prev: { class: 'p-1! rounded-md! hover:bg-tag2! text-white! h-6!' },
+            nextIcon: { class: 'bi bi-chevron-right! text-white!' },
+            next: { class: 'p-1! rounded-md! hover:bg-tag2! text-white! h-6!' },
+            firstIcon: { class: 'bi bi-chevron-bar-left! text-white!' },
+            first: { class: 'p-1! rounded-md! hover:bg-tag2! text-white! h-6!' },
+            lastIcon: { class: 'bi bi-chevron-bar-right! text-white!' },
+            last: { class: 'p-1! rounded-md! hover:bg-tag2! text-white! h-6!' },
+            page: { class: 'p-1! rounded-md! hover:bg-tag2! text-white! h-6!' },
         },
 
         checkbox: {

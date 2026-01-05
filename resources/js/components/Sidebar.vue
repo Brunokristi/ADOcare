@@ -110,15 +110,15 @@ watch(
 </script>
 
 <template>
-  <aside class="flex flex-col w-64 h-full bg-tag3 !border-0 !text-darkgrey p-4 space-y-1">
+  <aside class="flex flex-col w-64 h-full bg-tag3 border-0! text-darkgrey! p-4 space-y-1">
     <!-- Loop through all sidebar items built from routes -->
     <template
       v-for="item in sidebarItems"
       :key="item.key"
     >
-      <RouterLink
+        <RouterLink
         v-if="!item.children || !item.children.length"
-        class="w-full text-left px-3 py-2 rounded-md hover:bg-almostwhite hover:!text-accent"
+        class="w-full text-left px-3 py-2 rounded-md hover:bg-almostwhite hover:text-accent!"
         :to="item.path"
       >
         {{ item.label }}
@@ -126,7 +126,7 @@ watch(
 
       <div v-else>
         <button
-          class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-almostwhite hover:!text-accent"
+          class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-almostwhite hover:text-accent!"
           @click="toggle(item.key)"
         >
           <span>{{ item.label }}</span>
@@ -143,7 +143,7 @@ watch(
           >
             <RouterLink
               :to="child.path"
-              class="block px-3 py-1 rounded-md hover:bg-almostwhite hover:!text-accent"
+              class="block px-3 py-1 rounded-md hover:bg-almostwhite hover:text-accent!"
             >
               {{ child.label }}
             </RouterLink>
