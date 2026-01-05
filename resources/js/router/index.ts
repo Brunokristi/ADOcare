@@ -7,8 +7,8 @@ import Settings from '@/pages/Settings.vue'
 import Procedures from '@/partials/Settings/Procedures.vue'
 import Diagnoses from '@/partials/Settings/Diagnoses.vue'
 import Doctors from '@/partials/Settings/Doctors.vue'
-import Macros from '@/partials/Settings/Macros.vue'
-import MacrosNew from '@/partials/Settings/MacrosNew.vue'
+import Macros from '@/partials/Settings/Macros/Macros.vue'
+import MacrosOld from '@/partials/Settings/Macros/MacrosOld.vue'
 import Data from '@/pages/Data.vue'
 import Points from '@/partials/Data/Points.vue'
 import Kilometers from '@/partials/Data/Kilometers.vue'
@@ -216,12 +216,12 @@ const routes = [
                 },
             },
             {
-                path: 'macros-new',
-                name: 'macros-new',
-                component: MacrosNew,
+                path: 'macros-old',
+                name: 'macros-old',
+                component: MacrosOld,
                 meta: {
-                    title: 'Makrá (new)',
-                    link: 'makrá-new',
+                    title: 'Makrá (old)',
+                    link: 'makrá-old',
                     sidebar: false,
                     navbar: false,
                 },
