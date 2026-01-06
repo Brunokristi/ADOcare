@@ -148,6 +148,20 @@ function openEditFromIncompleteModal() {
           návrh
         </RouterLink>
 
+        <RouterLink
+          :to="{ path: '/patient/agreement' }"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
+        >
+          dohoda
+        </RouterLink>
+
+        <RouterLink
+          :to="{ path: '/patient/record' }"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
+        >
+          ošetrovateľský záznam
+        </RouterLink>
+
         <button
           type="button"
           @click="openEdit"

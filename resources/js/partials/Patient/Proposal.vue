@@ -79,26 +79,35 @@ function normalizeArray<T>(raw: any): T[] {
 
 async function searchDiagnoses(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? ''
-    if (!q) {
-      filteredDiagnoses.value = []
-      return
+    const q = event.query?.trim() ?? '';
+
+    if (!q || q.length < 1) {
+      filteredDiagnoses.value = [];
+      return;
     }
 
-    // Prefer server-side search if supported
-    const res = await api.get('/v1/diagnoses', { params: { q, paginate: 0 } })
-    const arr = normalizeArray<Diagnosis>(res.data)
+    const res = await api.get('/v1/diagnoses', { params: { q } });
 
-    filteredDiagnoses.value = arr.map(d => ({
+    // normalize common API shapes
+    const raw = res.data;
+    const arr =
+      Array.isArray(raw) ? raw :
+      Array.isArray(raw?.data) ? raw.data :
+      Array.isArray(raw?.data?.items) ? raw.data.items :
+      Array.isArray(raw?.items) ? raw.items :
+      [];
+
+    filteredDiagnoses.value = (arr as Diagnosis[]).map((d) => ({
       id: d.id,
       code: d.code ?? '',
-      description: d.description ?? ''
-    }))
+      description: d.description ?? '',
+    }));
   } catch (e) {
-    console.error('Failed to load diagnoses', e)
-    filteredDiagnoses.value = []
+    console.error('Failed to load diagnoses', e);
+    filteredDiagnoses.value = [];
   }
 }
+
 
 async function searchNurseDiagnoses(event: { query: string }) {
   try {
