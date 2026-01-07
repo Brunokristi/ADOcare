@@ -10,13 +10,14 @@ class DoctorSeeder extends Seeder
 {
     public function run(): void
     {
+        Doctor::factory(20)->create();
 
         $companies = Company::all();
         foreach ($companies as $company) {
-            $doctors = Doctor::factory(rand(4, 10))->create();
+            $doctors = Doctor::inRandomOrder()->take(rand(1, 5))->get();
             foreach ($doctors as $doctor) {
                 $company->branches->each(function ($branch) use ($doctor) {
-                    $branch->doctors()->attach($doctor->id);
+                    $branch->favourite_doctors()->attach($doctor->id);
                 });
             }
         }

@@ -12,7 +12,6 @@ use Illuminate\Http\Response;
 
 class CompanyController extends Controller
 {
-    use ApiResponse;
     public function index(Request $request)
     {
         $query = Company::query();
@@ -22,7 +21,7 @@ class CompanyController extends Controller
 
     public function store(\App\Http\Requests\StoreCompanyRequest $request)
     {
-        $item = Company::create($request->all());
+        $item = Company::create($request->validated());
         return $this->success($item, 'Created', Response::HTTP_CREATED);
     }
 
@@ -33,7 +32,7 @@ class CompanyController extends Controller
 
     public function update(\App\Http\Requests\UpdateCompanyRequest $request, Company $company)
     {
-        $company->update($request->all());
+        $company->update($request->validated());
         return $this->success($company, 'Updated');
     }
 

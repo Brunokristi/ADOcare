@@ -1,5 +1,7 @@
 <?php
 
+// TODO: Move to Service and Form Request classes
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Responses\ApiResponse;
@@ -12,7 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PointsExportController extends Controller
 {
-    use ApiResponse;
+
 
     public function preview(Request $request)
     {
@@ -248,36 +250,36 @@ class PointsExportController extends Controller
                 $r->diagnosis_code ?? '',
                 $r->procedure_code ?? '',
                 $r->quantity ?? 1,
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
                 '',
                 '',
                 '',
                 'O',
                 $r->doctor_pzs ?? '',
-                $r->doctor_zpr ?? '', 
-                '', 
+                $r->doctor_zpr ?? '',
+                '',
                 '',
                 '',
                 $dateYmd,
                 '',
                 '',
-                '', 
-                '', 
-                '', 
                 '',
                 '',
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
-                '', 
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
                 '',
             ];
 

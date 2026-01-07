@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Filters\ApiQuery;
 use App\Models\PatientPoint;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -13,30 +14,16 @@ class PatientPointController extends Controller
     {
         $query = PatientPoint::query();
 
-        if ($request->filled('patient_id')) {
-            $query->where('patient_id', $request->integer('patient_id'));
-        }
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('date', '>=', $request->query('date_from'));
-        }
+        $results = ApiQuery::apply(
+            $request,
+            $query,
+            searchable: ['patient_name', 'patient_personal_number', 'diagnosis_code', 'procedure_code'],
+            allowedFilters: ['user_id', 'branch_id', 'doctor_id', 'date'],
+            defaults: ['sort' => '-date,id']
+        );
 
-        if ($request->filled('date_to')) {
-            $query->whereDate('date', '<=', $request->query('date_to'));
-        }
-
-        if ($request->boolean('paginate', true)) {
-            return $query
-                ->orderByDesc('date')
-                ->orderByDesc('id')
-                ->paginate(20);
-        }
-
-        return $query
-            ->orderByDesc('date')
-            ->orderByDesc('id')
-            ->limit(100)
-            ->get();
+        return $this->success($results, 'Patient points retrieved');
     }
 
     /**

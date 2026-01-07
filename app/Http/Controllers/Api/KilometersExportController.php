@@ -1,5 +1,7 @@
 <?php
 
+// TODO: Refactor into service class to reduce controller bloat and move validation into FormRequest classes
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Responses\ApiResponse;
@@ -13,8 +15,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class KilometersExportController extends Controller
 {
-    use ApiResponse;
-
     public function preview(Request $request)
     {
         $data = $request->validate([
@@ -80,7 +80,7 @@ class KilometersExportController extends Controller
                 'pcp.price'
             ])
             ->get();
-        
+
         $rows = $rows->sortBy('date');
         $visitedAddressesPerDay = [];
 
@@ -88,11 +88,11 @@ class KilometersExportController extends Controller
             if ($row->branch_lat && $row->branch_lng && $row->patient_lat && $row->patient_lng) {
                 $dateString = is_string($row->date) ? $row->date : (isset($row->date) ? $row->date->toDateString() : 'unknown');
                 $patientAddress = "{$row->patient_lat},{$row->patient_lng}";
-                
+
                 if (!isset($visitedAddressesPerDay[$dateString])) {
                     $visitedAddressesPerDay[$dateString] = [];
                 }
-                
+
                 if (in_array($patientAddress, $visitedAddressesPerDay[$dateString])) {
                     $distance = 0;
                 } else {
@@ -104,11 +104,11 @@ class KilometersExportController extends Controller
                     );
                     $visitedAddressesPerDay[$dateString][] = $patientAddress;
                 }
-                
+
                 $totalKilometers += $distance;
                 $amount += $distance * $row->price;
             } else {
-                
+
             }
         }
 
@@ -267,11 +267,11 @@ class KilometersExportController extends Controller
         foreach ($rows as $row) {
             $dateString = is_string($row->date) ? $row->date : (isset($row->date) ? $row->date->toDateString() : 'unknown');
             $patientAddress = "{$row->patient_lat},{$row->patient_lng}";
-            
+
             if (!isset($visitedAddressesPerDay[$dateString])) {
                 $visitedAddressesPerDay[$dateString] = [];
             }
-            
+
             if (!in_array($patientAddress, $visitedAddressesPerDay[$dateString])) {
                 $distance = $this->getDistanceFromOpenRoute(
                     $row->branch_lat,
@@ -334,7 +334,7 @@ class KilometersExportController extends Controller
                 round($kilometers, 0),
                 substr($r->branch_city ?? '', 0, 50),
                 substr($r->branch_address ?? '', 0, 50),
-                substr($r->patient_city ?? '', 0, 50), 
+                substr($r->patient_city ?? '', 0, 50),
                 substr($r->patient_address ?? '', 0, 50),
                 $i,
                 $userCar,
@@ -342,7 +342,7 @@ class KilometersExportController extends Controller
                 '',
                 'N',
                 $r->doctor_pzs ?? '',
-                $r->doctor_zpr ?? '', 
+                $r->doctor_zpr ?? '',
                 'SK',
                 '',
                 $r->sex ?? '',
@@ -422,18 +422,18 @@ class KilometersExportController extends Controller
             ->get();
 
         $rows = $rows->sortBy('date');
-        
+
         $visitedAddressesPerDay = [];
 
         foreach ($rows as $row) {
             if ($row->branch_lat && $row->branch_lng && $row->patient_lat && $row->patient_lng) {
                 $dateString = is_string($row->date) ? $row->date : (isset($row->date) ? $row->date->toDateString() : 'unknown');
                 $patientAddress = "{$row->patient_lat},{$row->patient_lng}";
-                
+
                 if (!isset($visitedAddressesPerDay[$dateString])) {
                     $visitedAddressesPerDay[$dateString] = [];
                 }
-                
+
                 if (in_array($patientAddress, $visitedAddressesPerDay[$dateString])) {
                     $distance = 0;
                 } else {
@@ -445,7 +445,7 @@ class KilometersExportController extends Controller
                     );
                     $visitedAddressesPerDay[$dateString][] = $patientAddress;
                 }
-                
+
                 $totalKilometers += $distance;
                 $amount += $distance * $row->price;
             }
@@ -493,7 +493,7 @@ class KilometersExportController extends Controller
     {
         try {
             $apiKey = config('services.ors.key');
-            
+
             if (!$apiKey) {
                 logger()->warning('OpenRoute API key not configured');
                 return 0;

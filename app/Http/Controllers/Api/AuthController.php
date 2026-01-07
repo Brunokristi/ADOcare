@@ -11,9 +11,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    use \App\Http\Responses\ApiResponse;
-
-
     /**
      * Create a new token for the user.
      * @param \App\Models\User $user

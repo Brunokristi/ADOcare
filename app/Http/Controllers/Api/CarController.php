@@ -14,8 +14,6 @@ use Illuminate\Routing\Controller;
 
 class CarController extends Controller
 {
-    use ApiResponse;
-
     public function index()
     {
         $query = Car::query();
@@ -25,49 +23,26 @@ class CarController extends Controller
         return $this->success(new CarCollection($results), 'Cars retrieved');
     }
 
-    public function store(StoreCarRequest $request)
-    {
-        $data = $request->validated();
-
-        $car = Car::create($data);
-
+    public function store(StoreCarRequest $request, Car $car)
+   {
+        $car = Car::create($request->validated());
         return $this->success(new CarResource($car), 'Created', 201);
     }
 
-    public function show($id)
+    public function show(Car $car)
     {
-        $car = Car::find($id);
-        if (!$car) {
-            return $this->error('Not found', 404);
-        }
-
         return $this->success(new CarResource($car), 'Car retrieved');
     }
 
-    public function update(UpdateCarRequest $request, $id)
+    public function update(UpdateCarRequest $request, Car $car)
     {
-        $data = $request->validated();
-
-        $car = Car::find($id);
-        if (!$car) {
-            return $this->error('Not found', 404);
-        }
-
-        $car->fill($data);
-        $car->save();
-
+        $car->update($request->validated());
         return $this->success(new CarResource($car), 'Updated');
     }
 
-    public function destroy($id)
+    public function destroy(Car $car)
     {
-        $car = Car::find($id);
-        if (!$car) {
-            return $this->error('Not found', 404);
-        }
-
         $car->delete();
-
         return $this->success(null, 'Deleted');
     }
 }

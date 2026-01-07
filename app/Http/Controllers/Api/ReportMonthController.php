@@ -12,7 +12,7 @@ use Illuminate\Http\Response;
 
 class ReportMonthController extends Controller
 {
-    use ApiResponse;
+
     public function index(Request $request)
     {
         $query = ReportMonth::query();
