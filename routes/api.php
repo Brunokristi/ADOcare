@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BranchDoctorController;
+use App\Http\Controllers\Api\BranchPatientController;
 use App\Http\Controllers\Api\CarController;
+use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\InsuranceCompanyController;
 use App\Http\Controllers\Api\DiagnosisController;
@@ -17,12 +20,7 @@ use App\Http\Controllers\Api\TextBlockController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\VisitTextController;
-use App\Http\Controllers\Api\GeocodeController;
-use \App\Http\Controllers\Api\MacroController;
-use App\Http\Controllers\Api\KilometersExportController;
-use App\Http\Controllers\Api\DekurzController;
-use App\Http\Controllers\Api\NurseDiagnosisController;
-
+use App\Http\Controllers\Api\MacroController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,45 +42,54 @@ Route::prefix('auth')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
     });
 });
-Route::middleware('auth:sanctum')->patch('/v1/users/me/last-branch', [AuthController::class, 'updateLastBranch']);
-
 
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
-    Route::apiResource('cars', CarController::class);
+    Route::macro('apiResourceComplete', function ($name, $controller) {
+        // register the normal resource routes
+        Route::apiResource($name, $controller);
+        // register a collection-level DELETE route for bulk deletions
+        Route::delete($name, [$controller, 'destroyMany']);
+    });
 
-    Route::apiResource('patients', PatientController::class);
-    Route::delete('patients', [PatientController::class, 'destroyMany']);
+
+    Route::apiResourceComplete('cars', CarController::class);
+
+    // Branch-scoped patient collection routes (explicit)
+    // Route::get('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'index']);
+    // Route::post('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'store']);
+    // Route::delete('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'destroyMany']);
+    Route::apiResourceComplete('branches/{branch}/patients', BranchPatientController::class);
+    Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::group(['prefix' => 'patients/{patient}'], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
         Route::get('doctor', [PatientController::class, 'doctor']);
         Route::get('diagnoses', [PatientController::class, 'diagnoses']);
         Route::get('procedures', [PatientController::class, 'procedures']);
-        Route::get('patient-points', [PatientController::class, 'patientPoints']);
-
+        Route::get('patient-points', [PatientController::class, 'points']);
     });
-    Route::apiResource('branches', BranchController::class);
-    Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
-    Route::get('/branches/{branch}/doctors', [BranchController::class, 'doctors']);
 
-    Route::apiResource('insurance-companies', InsuranceCompanyController::class);
-    Route::apiResource('diagnoses', DiagnosisController::class);
-    Route::apiResource('procedures', ProcedureController::class);
-    Route::apiResource('nurse-diagnoses', NurseDiagnosisController::class);
-    Route::apiResource('macros', MacroController::class);
+    Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
 
-    Route::apiResource('patient-points', PatientPointController::class);
+    // Newly added resources
+    Route::apiResourceComplete('branches', BranchController::class);
+    // (branch patients now handled by BranchPatientController)
+    Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors']);
+    Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);
+    Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
 
-    Route::get('/dekurz/dates', [DekurzController::class, 'uniqueDates']);
+    Route::apiResourceComplete('doctors', DoctorController::class);
 
-    Route::apiResource('companies', CompanyController::class);
-    Route::apiResource('doctors', DoctorController::class);
-    Route::apiResource('report-months', ReportMonthController::class);
-    Route::apiResource('roles', RoleController::class);
-    Route::apiResource('text-blocks', TextBlockController::class);
-    Route::apiResource('users', UserController::class);
-    Route::apiResource('visits', VisitController::class);
-    Route::apiResource('visit-texts', VisitTextController::class);
+    Route::apiResourceComplete('diagnoses', DiagnosisController::class);
+    Route::apiResourceComplete('macros', MacroController::class);
+    Route::apiResourceComplete('procedures', ProcedureController::class);
+    Route::apiResourceComplete('patient-points', PatientPointController::class);
+    Route::apiResourceComplete('report-months', ReportMonthController::class);
+    Route::apiResourceComplete('roles', RoleController::class);
+    Route::apiResourceComplete('text-blocks', TextBlockController::class);
+    Route::apiResourceComplete('users', UserController::class);
+    Route::apiResourceComplete('visits', VisitController::class);
+    Route::apiResourceComplete('visit-texts', VisitTextController::class);
 
     Route::post('/batches/points/preview', [PointsExportController::class, 'preview']);
     Route::post('/batches/points/download', [PointsExportController::class, 'download']);
