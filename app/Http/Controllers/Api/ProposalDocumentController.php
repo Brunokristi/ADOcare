@@ -1,0 +1,228 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Document;
+use App\Models\Patient;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+class ProposalDocumentController extends Controller
+{
+    /**
+     * Translate frequency from English to Slovak
+     */
+    private function translateFrequency($frequency)
+    {
+        $translations = [
+            'daily' => 'Denne',
+            'twice a day' => 'Dvakrát denne',
+            'three times a day' => 'Trikrát denne',
+            'every other day' => 'Každý druhý deň',
+            'weekly' => 'Týždenne',
+            'twice a week' => 'Dvakrát týždenne',
+            'three times a week' => 'Trikrát týždenne',
+            'monthly' => 'Mesačne',
+            'as needed' => 'Podľa potreby',
+            'once' => 'Raz',
+        ];
+        
+        return $translations[strtolower($frequency)] ?? $frequency;
+    }
+
+    /**
+     * Store a new proposal document
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'medical_diagnosis_id' => 'nullable|exists:diagnoses,id',
+            'nurse_diagnosis_id' => 'nullable|exists:nurse_diagnoses,id',
+            'date' => 'required|date',
+            'epicrisis_description' => 'required|string',
+            'care_plan' => 'required|string',
+            'patient_mobility' => 'nullable|array',
+            'expected_duration' => 'required|string',
+            'procedures' => 'nullable|array',
+            'procedures.*.procedure_id' => 'nullable|exists:procedures,id',
+            'procedures.*.frequency' => 'nullable|string',
+        ]);
+
+        $document = Document::create([
+            'patient_id' => $validated['patient_id'],
+            'user_id' => Auth::id(),
+            'type' => 'proposal',
+            'mime_type' => 'application/json',
+            'name' => 'navrh_' . now()->format('d.m.Y'),
+            'path' => 'proposals/' . 'navrh_' . now()->timestamp . '.json',
+        ]);
+
+        $patient = Patient::findOrFail($validated['patient_id']);
+        $user = Auth::user();
+        $company = $user->company;
+        $doctor = $patient->doctor;
+
+        $companyName = $company ? $company->name : '';
+        $companyAddress = $company ? $company->address : '';
+        $patientName = $patient->first_name . ' ' . $patient->last_name . ' ' . $patient->title;
+        $patientBirthNumber = $patient->personal_number;
+        $patientAddress = $patient->address . ', ' . $patient->city . ', ' . $patient->postal_code;
+        $insuranceCode = $patient->insuranceCompany->branch_code ?? '';
+        $userName = $user->first_name . ' ' . $user->last_name . ' ' . $user->title;
+        $doctorName = $doctor->first_name . ' ' . $doctor->last_name . ' ' . $doctor->title ?? '';
+
+        $diagnosis = null;
+        if (!empty($validated['medical_diagnosis_id'])) {
+            $diagnosis = \DB::table('diagnoses')->find((int) $validated['medical_diagnosis_id']);
+        }
+        $diagnosis = ($diagnosis) ? $diagnosis->code . ' - ' . $diagnosis->description : null;
+
+        $nurseDiagnosis = null;
+        if (!empty($validated['nurse_diagnosis_id'])) {
+            $nurseDiagnosis = \DB::table('nurse_diagnoses')->find((int) $validated['nurse_diagnosis_id']);
+        }
+        $nurseDiagnosis = ($nurseDiagnosis) ? $nurseDiagnosis->code . ' - ' . $nurseDiagnosis->description : null;
+
+        $epicrisis = $validated['epicrisis_description'];
+        $carePlan = $validated['care_plan'];
+        $mobility = $validated['patient_mobility'] ?? [];
+        $expectedDuration = $validated['expected_duration'];
+        $date = $validated['date'];
+
+        $procedures = [];
+        if (!empty($validated['procedures'])) {
+            foreach ($validated['procedures'] as $proc) {
+                if (!empty($proc['procedure_id'])) {
+                    $procedure = \DB::table('procedures')->find((int) $proc['procedure_id']);
+                    $procedures[] = [
+                        'code' => $procedure->code,
+                        'frequency' => $this->translateFrequency($proc['frequency'] ?? '')
+                    ];
+                }
+            }
+        }
+        
+        $proposalData = [
+            'company_address' => $companyAddress,
+            'company_name' => $companyName,
+            'user_name' => $userName,
+            'doctor_name' => $doctorName,
+            'patient_name' => $patientName,
+            'patient_birth_number' => $patientBirthNumber,
+            'patient_address' => $patientAddress,
+            'insurance_code' => $insuranceCode,
+            'diagnosis' => $diagnosis,
+            'nurse_diagnosis' => $nurseDiagnosis,
+            'epicrisis' => $epicrisis,
+            'care_plan' => $carePlan,
+            'mobility' => $mobility,
+            'expected_duration' => $expectedDuration,
+            'date' => $date,
+            'procedures' => $procedures,
+            'document_id' => $document->id,
+            'created_at' => now(),
+        ];
+
+        // Store the JSON data
+        $storagePath = storage_path('app/private/proposals');
+        if (!is_dir($storagePath)) {
+            mkdir($storagePath, 0755, true);
+        }
+
+        file_put_contents(
+            $storagePath . '/' . now()->timestamp . '.json',
+            json_encode($proposalData, JSON_PRETTY_PRINT)
+        );
+        
+        return response()->json([
+            'success' => true,
+            'document_id' => $document->id,
+            'message' => 'Návrh ošetrovateľskej starostlivosti bol úspešne vytvorený',
+        ], 201);
+    }
+
+    public function show($documentId)
+    {
+        $documentId = (int) $documentId;
+        $document = Document::with(['patient'])->findOrFail($documentId);
+
+        // Retrieve proposal data from file
+        $storagePath = storage_path('app/private/proposals');
+        $proposalFile = null;
+
+        // Find the proposal file (assuming filename is the timestamp)
+        $files = glob($storagePath . '/*.json');
+        foreach ($files as $file) {
+            $content = json_decode(file_get_contents($file), true);
+            if ($content['document_id'] === $documentId) {
+                $proposalFile = $content;
+                break;
+            }
+        }
+
+        if (!$proposalFile) {
+            return response()->json(['message' => 'Proposal data not found'], 404);
+        }
+
+        $responseData = [
+            'document' => $document,
+            'proposal_data' => $proposalFile,
+        ];
+
+        return response()->json($responseData);
+    }
+
+    public function latestByPatient($patientId)
+    {
+        $patientId = (int) $patientId;
+
+        $document = Document::where('patient_id', $patientId)
+            ->where('type', 'proposal')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$document) {
+            return response()->json(['message' => 'No proposal found'], 404);
+        }
+
+        $storagePath = storage_path('app/private/proposals');
+        $files = glob($storagePath . '/*.json');
+
+        $proposalFile = null;
+        foreach ($files as $file) {
+            $content = json_decode(file_get_contents($file), true);
+            if (($content['document_id'] ?? null) === $document->id) {
+                $proposalFile = $content;
+                break;
+            }
+        }
+
+        if (!$proposalFile) {
+            return response()->json(['message' => 'Proposal data not found'], 404);
+        }
+
+        return response()->json([
+            'document_id' => $document->id,
+            'proposal_data' => $proposalFile,
+        ]);
+    }
+
+
+    /**
+     * Get all proposals for a patient
+     */
+    public function getByPatient($patientId)
+    {
+        $patient = Patient::findOrFail($patientId);
+
+        $documents = Document::where('patient_id', $patientId)
+            ->where('type', 'proposal')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($documents);
+    }
+}

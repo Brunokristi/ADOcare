@@ -22,6 +22,8 @@ use \App\Http\Controllers\Api\MacroController;
 use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\DekurzController;
 use App\Http\Controllers\Api\NurseDiagnosisController;
+use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\ProposalDocumentController;
 
 
 use Illuminate\Http\Request;
@@ -96,4 +98,15 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
+
+    Route::apiResource('patients/{patient}/documents', DocumentController::class);
+    Route::get('patients/{patient}/documents/{type}/by-type', [DocumentController::class, 'getByType']);
+    Route::get('documents/{document}/download', [DocumentController::class, 'download']);
+
+    Route::post('/proposals', [ProposalDocumentController::class, 'store']);
+    Route::get('/proposals/{documentId}', [ProposalDocumentController::class, 'show']);
+    Route::get('/patients/{patientId}/proposals', [ProposalDocumentController::class, 'getByPatient']);
+    Route::get('/patients/{patientId}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
+
+    Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
 });
