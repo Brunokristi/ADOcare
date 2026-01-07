@@ -148,8 +148,11 @@ export default {
             },
 
             option: {
-                class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white!'
-            }
+                class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white! h-auto! !text-normal'
+            },
+
+            dropDown: { class: 'hidden!' },
+
         },
 
 

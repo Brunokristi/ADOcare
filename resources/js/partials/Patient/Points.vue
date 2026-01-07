@@ -67,7 +67,6 @@ const isLoading = ref(false);
 
 // MULTI DATE: changed from Date|null to Date[]
 const dates = ref<Date[]>([new Date()]);
-
 const referralDate = ref<Date | null>(null);
 
 const diagnosis = ref<Option | null>(null);
@@ -106,6 +105,41 @@ function formatDate(d: Date | null) {
   return d.toLocaleDateString('sk-SK');
 }
 
+function truncate(text: string, max = 60) {
+  if (!text) return '';
+  return text.length > max ? text.slice(0, max) + '…' : text;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  API helpers: your API is wrapped (success + BaseCollection)               */
+/* -------------------------------------------------------------------------- */
+
+function extractArray(raw: any): any[] {
+  // Supports:
+  //  - []
+  //  - { data: [] }
+  //  - { data: { items: [] } }
+  //  - { data: { data: [] } }                (Laravel paginator)
+  //  - { data: { data: { items: [] } } }     (extra wrapper)
+  if (Array.isArray(raw)) return raw;
+
+  const candidates = [
+    raw?.data,
+    raw?.data?.items,
+    raw?.data?.data,
+    raw?.data?.data?.items,
+    raw?.data?.data?.data,
+    raw?.items,
+    raw?.items?.data,
+  ];
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c;
+  }
+
+  return [];
+}
+
 /* -------------------------------------------------------------------------- */
 /*  API: Load existing patient points                                         */
 /* -------------------------------------------------------------------------- */
@@ -119,29 +153,23 @@ async function loadRecordsForPatient() {
   isLoading.value = true;
 
   try {
-    const { data } = await api.get<PatientPointApi[]>('/v1/patient-points', {
+    const { data } = await api.get('/v1/patient-points', {
       params: {
         patient_id: currentPatient.value.id,
         paginate: false,
       },
     });
 
-    records.value = data.map((row) => ({
+    const arr = extractArray(data);
+
+    records.value = (arr as PatientPointApi[]).map((row) => ({
       id: row.id,
       date: row.date ? new Date(row.date) : null,
       diagnosis: row.diagnosis_id
-        ? {
-            id: row.diagnosis_id,
-            code: row.diagnosis_code ?? '',
-            description: '',
-          }
+        ? { id: row.diagnosis_id, code: row.diagnosis_code ?? '', description: '' }
         : null,
       procedure: row.procedure_id
-        ? {
-            id: row.procedure_id,
-            code: row.procedure_code ?? '',
-            description: '',
-          }
+        ? { id: row.procedure_id, code: row.procedure_code ?? '', description: '' }
         : null,
       referralDate: row.reference_date ? new Date(row.reference_date) : null,
       quantity: row.quantity ?? null,
@@ -161,7 +189,7 @@ async function loadRecordsForPatient() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Fetch referal date from database                                          */
+/*  Fetch referral date from patient                                          */
 /* -------------------------------------------------------------------------- */
 
 function initReferenceDateFromPatient() {
@@ -170,38 +198,28 @@ function initReferenceDateFromPatient() {
     return;
   }
 
-  // currentPatient.reference_date is assumed YYYY-MM-DD
   const d = new Date(currentPatient.value.reference_date);
   referralDate.value = isNaN(d.getTime()) ? null : d;
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Lookup: Diagnoses & Procedures                                            */
+/*  Lookup: Diagnoses & Procedures (works for focus + typing)                 */
 /* -------------------------------------------------------------------------- */
 
 async function searchDiagnoses(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? '';
+    const q = (event.query ?? '').trim();
 
-    if (!q || q.length < 0) {
-      filteredDiagnoses.value = [];
-      return;
-    }
+    const res = await api.get('/v1/diagnoses', {
+      params: {
+        q, // can be ''
+        per_page: 25,
+        page: 1,
+        sort: 'code',
+      },
+    });
 
-    const res = await api.get('/v1/diagnoses', { params: { q } });
-
-    // normalize common API shapes
-    const raw = res.data;
-    const arr =
-      Array.isArray(raw)
-        ? raw
-        : Array.isArray(raw?.data)
-          ? raw.data
-          : Array.isArray(raw?.data?.items)
-            ? raw.data.items
-            : Array.isArray(raw?.items)
-              ? raw.items
-              : [];
+    const arr = extractArray(res.data);
 
     filteredDiagnoses.value = (arr as Diagnosis[]).map((d) => ({
       id: d.id,
@@ -216,27 +234,18 @@ async function searchDiagnoses(event: { query: string }) {
 
 async function searchProcedures(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? '';
+    const q = (event.query ?? '').trim();
 
-    if (!q || q.length < 1) {
-      filteredProcedures.value = [];
-      return;
-    }
+    const res = await api.get('/v1/procedures', {
+      params: {
+        q, // can be ''
+        per_page: 25,
+        page: 1,
+        sort: 'code',
+      },
+    });
 
-    const res = await api.get('/v1/procedures', { params: { q } });
-
-    // normalize common API shapes
-    const raw = res.data;
-    const arr =
-      Array.isArray(raw)
-        ? raw
-        : Array.isArray(raw?.data)
-          ? raw.data
-          : Array.isArray(raw?.data?.items)
-            ? raw.data.items
-            : Array.isArray(raw?.items)
-              ? raw.items
-              : [];
+    const arr = extractArray(res.data);
 
     filteredProcedures.value = (arr as Procedure[]).map((p) => ({
       id: p.id,
@@ -254,10 +263,7 @@ async function searchProcedures(event: { query: string }) {
 /* -------------------------------------------------------------------------- */
 
 function parseDateInput(raw: unknown): Date | null {
-  if (raw instanceof Date) {
-    return isNaN(raw.getTime()) ? null : raw;
-  }
-
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
   if (typeof raw !== 'string') return null;
 
   const value = raw.trim();
@@ -268,25 +274,15 @@ function parseDateInput(raw: unknown): Date | null {
 
   const [, dStr, mStr, yStr] = match as RegExpMatchArray;
 
-  if (!dStr || !mStr || !yStr) return null;
-
   const day = Number(dStr);
   const month = Number(mStr);
   let year = Number(yStr);
 
-  if (yStr.length === 2) {
-    year += 2000;
-  }
-
+  if (yStr!.length === 2) year += 2000;
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const result = new Date(year, month - 1, day);
-
-  if (
-    result.getFullYear() !== year ||
-    result.getMonth() !== month - 1 ||
-    result.getDate() !== day
-  ) {
+  if (result.getFullYear() !== year || result.getMonth() !== month - 1 || result.getDate() !== day) {
     return null;
   }
 
@@ -304,9 +300,7 @@ function normalizeSelectedDates(input: unknown): Date[] {
   const map = new Map<string, Date>();
   for (const d of normalized) {
     const dateStr = toApiDate(d);
-    if (dateStr) {
-      map.set(dateStr, d);
-    }
+    if (dateStr) map.set(dateStr, d);
   }
 
   return Array.from(map.entries())
@@ -317,9 +311,7 @@ function normalizeSelectedDates(input: unknown): Date[] {
 async function ensureDiagnosisSelected(): Promise<boolean> {
   const value = diagnosis.value as unknown;
 
-  if (value && typeof value === 'object' && 'id' in (value as any)) {
-    return true;
-  }
+  if (value && typeof value === 'object' && 'id' in (value as any)) return true;
 
   const raw = (value as string | undefined) ?? '';
   const code = raw.trim();
@@ -330,11 +322,12 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
   }
 
   try {
-    const { data } = await api.get<Diagnosis[]>('/v1/diagnoses', {
-      params: { q: code },
+    const res = await api.get('/v1/diagnoses', {
+      params: { q: code, per_page: 50, page: 1, sort: 'code' },
     });
 
-    const match = data.find((d) => (d.code ?? '').toLowerCase() === code.toLowerCase());
+    const arr = extractArray(res.data) as Diagnosis[];
+    const match = arr.find((d) => (d.code ?? '').toLowerCase() === code.toLowerCase());
 
     if (!match) {
       diagnosis.value = null;
@@ -358,9 +351,7 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
 async function ensureProcedureSelected(): Promise<boolean> {
   const value = procedure.value as unknown;
 
-  if (value && typeof value === 'object' && 'id' in (value as any)) {
-    return true;
-  }
+  if (value && typeof value === 'object' && 'id' in (value as any)) return true;
 
   const raw = (value as string | undefined) ?? '';
   const code = raw.trim();
@@ -371,11 +362,12 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 
   try {
-    const { data } = await api.get<Procedure[]>('/v1/procedures', {
-      params: { q: code },
+    const res = await api.get('/v1/procedures', {
+      params: { q: code, per_page: 50, page: 1, sort: 'code' },
     });
 
-    const match = data.find((p) => (p.code ?? '').toLowerCase() === code.toLowerCase());
+    const arr = extractArray(res.data) as Procedure[];
+    const match = arr.find((p) => (p.code ?? '').toLowerCase() === code.toLowerCase());
 
     if (!match) {
       procedure.value = null;
@@ -396,19 +388,12 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 }
 
-function truncate(text: string, max = 60) {
-  if (!text) return '';
-  return text.length > max ? text.slice(0, max) + '…' : text;
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Payload builders                                                          */
 /* -------------------------------------------------------------------------- */
 
 function buildPatientPointPayloadForDate(dateOverride: Date) {
-  if (!currentPatient.value) {
-    throw new Error('No patient selected');
-  }
+  if (!currentPatient.value) throw new Error('No patient selected');
 
   const patient = currentPatient.value;
   const doctor = patient.doctor;
@@ -440,9 +425,7 @@ function buildPatientPointPayloadForDate(dateOverride: Date) {
 }
 
 function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
-  if (!currentPatient.value) {
-    throw new Error('No patient selected');
-  }
+  if (!currentPatient.value) throw new Error('No patient selected');
 
   const patient = currentPatient.value;
   const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim();
@@ -481,7 +464,6 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
 async function onSubmit() {
   submitted.value = true;
 
-  // normalize dates
   dates.value = normalizeSelectedDates(dates.value as any);
   referralDate.value = parseDateInput(referralDate.value as any);
 
@@ -565,6 +547,9 @@ async function onSubmit() {
     }
 
     records.value.push(...createdRows);
+    if (createdRows.length > 0 && createdRows[0]) {
+      emit('submit', createdRows[0]);
+    }
 
     toast.add({
       severity: 'success',
@@ -644,9 +629,7 @@ async function savePoint() {
     });
 
     const idx = records.value.findIndex((r) => r.id === p.id);
-    if (idx !== -1) {
-      records.value[idx] = { ...p };
-    }
+    if (idx !== -1) records.value[idx] = { ...p };
 
     toast.add({
       severity: 'success',
@@ -740,16 +723,14 @@ async function duplicateSelected() {
       const payload = buildPayloadFromRow(original, today);
       const { data } = await api.post('/v1/patient-points', payload);
 
-      const cloned: RecordEntry = {
-        id: data.id,
+      createdRows.push({
+        id: data?.id ?? Date.now(),
         date: today,
         referralDate: today,
         diagnosis: original.diagnosis,
         procedure: original.procedure,
         quantity: original.quantity,
-      };
-
-      createdRows.push(cloned);
+      });
     }
 
     records.value.push(...createdRows);
@@ -827,17 +808,20 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="diagnosis"
               :suggestions="filteredDiagnoses"
-              optionLabel="code"
-              :minLength="1"
-              dropdown
               @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                  <span>{{ truncate(slotProps.option.description, 60) }}</span>
+                  <span class="">{{ truncate(slotProps.option.description, 40) }}</span>
                 </div>
               </template>
             </AutoComplete>
@@ -852,9 +836,13 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="procedure"
               :suggestions="filteredProcedures"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchProcedures"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
@@ -1064,16 +1052,18 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="editPoint.diagnosis"
               :suggestions="filteredDiagnoses"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
-                <span>
-                  {{ slotProps.option.code }} – {{ slotProps.option.description }}
-                </span>
+                <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
               </template>
             </AutoComplete>
             <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning">
@@ -1086,16 +1076,18 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="editPoint.procedure"
               :suggestions="filteredProcedures"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchProcedures"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
-                <span>
-                  {{ slotProps.option.code }} – {{ slotProps.option.description }}
-                </span>
+                <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
               </template>
             </AutoComplete>
             <small v-if="editSubmitted && !editPoint.procedure" class="text-warning">
