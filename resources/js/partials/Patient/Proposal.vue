@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
@@ -31,6 +31,9 @@ interface SelectedProcedure {
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
+
+// ensure patient is loaded similarly to your working page
+patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 
@@ -77,30 +80,41 @@ const frequencyOptions = [
   { label: 'Podľa potreby', value: 'as_needed' }
 ]
 
-// --- Helpers -------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  API helpers: mirror your working page (extractArray)                      */
+/* -------------------------------------------------------------------------- */
+function extractArray(raw: any): any[] {
+  if (Array.isArray(raw)) return raw
 
-function normalizeArray<T>(raw: any): T[] {
-  return (
-    (Array.isArray(raw) && raw) ||
-    (Array.isArray(raw?.data) && raw.data) ||
-    (Array.isArray(raw?.data?.items) && raw.data.items) ||
-    (Array.isArray(raw?.items) && raw.items) ||
-    []
-  )
+  const candidates = [
+    raw?.data,
+    raw?.data?.items,
+    raw?.data?.data,
+    raw?.data?.data?.items,
+    raw?.data?.data?.data,
+    raw?.items,
+    raw?.items?.data
+  ]
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c
+  }
+  return []
 }
 
-// "A130 - Aspirácia" -> "A130"
+/* -------------------------------------------------------------------------- */
+/*  Prefill from latest proposal                                              */
+/* -------------------------------------------------------------------------- */
+
+// stored JSON has strings like "A130 - Aspirácia"
 function parseCodeFromText(v: string): string {
   return (String(v ?? '').split(' - ')[0] ?? '').trim()
 }
 
-// Your backend stores Slovak labels in proposal JSON (because translateFrequency).
-// This maps them back to Select enum values.
-// If backend later stores enum directly, this keeps working (falls back to input).
+// your backend stored Slovak labels (because translateFrequency)
 const reverseFrequencyMap: Record<string, string> = {
   Denne: 'daily',
   'Každý druhý deň': 'every_other_day',
-  Trikrát: 'three_times_weekly', // (fallback if someone stores shortened)
   '3x týždenne': 'three_times_weekly',
   'Trikrát týždenne': 'three_times_weekly',
   '2x týždenne': 'twice_weekly',
@@ -121,29 +135,46 @@ function normalizeFrequencyToEnum(v: string): string {
 
 async function fetchDiagnosisByCode(code: string): Promise<Diagnosis | null> {
   if (!code) return null
-  const res = await api.get('/v1/diagnoses', { params: { q: code } })
-  const arr = normalizeArray<Diagnosis>(res.data)
-  const exact = arr.find(d => (d.code ?? '').toUpperCase() === code.toUpperCase())
-  return exact ?? arr[0] ?? null
+
+  // use same API shape as your working page: q can be ''
+  const res = await api.get('/v1/diagnoses', {
+    params: { q: code, per_page: 50, page: 1, sort: 'code' }
+  })
+
+  const arr = extractArray(res.data) as Diagnosis[]
+  const match = arr.find(d => (d.code ?? '').toLowerCase() === code.toLowerCase())
+  return match
+    ? { id: match.id, code: match.code ?? '', description: match.description ?? '' }
+    : null
 }
 
 async function fetchNurseDiagnosisByCode(code: string): Promise<NurseDiagnosis | null> {
   if (!code) return null
-  const res = await api.get('/v1/nurse-diagnoses', { params: { q: code, paginate: 0 } })
-  const arr = normalizeArray<NurseDiagnosis>(res.data)
-  const exact = arr.find(d => (d.code ?? '').toUpperCase() === code.toUpperCase())
-  return exact ?? arr[0] ?? null
+
+  const res = await api.get('/v1/nurse-diagnoses', {
+    params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 }
+  })
+
+  const arr = extractArray(res.data) as NurseDiagnosis[]
+  const match = arr.find(d => (d.code ?? '').toLowerCase() === code.toLowerCase())
+  return match
+    ? { id: match.id, code: match.code ?? '', description: match.description ?? '' }
+    : null
 }
 
 async function fetchProcedureByCode(code: string): Promise<ProcedureOption | null> {
   if (!code) return null
-  const res = await api.get('/v1/procedures', { params: { q: code, paginate: 0 } })
-  const arr = normalizeArray<ProcedureOption>(res.data)
-  const exact = arr.find(p => (p.code ?? '').toUpperCase() === code.toUpperCase())
-  return exact ?? arr[0] ?? null
-}
 
-// --- Prefill from latest proposal ----------------------------
+  const res = await api.get('/v1/procedures', {
+    params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 }
+  })
+
+  const arr = extractArray(res.data) as ProcedureOption[]
+  const match = arr.find(p => (p.code ?? '').toLowerCase() === code.toLowerCase())
+  return match
+    ? { id: match.id, code: match.code ?? '', description: match.description ?? '' }
+    : null
+}
 
 async function preloadFromLatestProposal() {
   if (!patientId.value) return
@@ -154,27 +185,22 @@ async function preloadFromLatestProposal() {
     const p = res.data?.proposal_data
     if (!p) return
 
-    // Date
     if (p.date) {
       const d = new Date(p.date)
       if (!isNaN(d.getTime())) date.value = d
     }
 
-    // Text fields
     epicrisisDescription.value = p.epicrisis ?? ''
     carePlan.value = p.care_plan ?? ''
-
-    // Mobility / duration
     patientMobility.value = Array.isArray(p.mobility) ? [...p.mobility] : []
     expectedDuration.value = p.expected_duration ?? ''
 
-    // Diagnoses (load real rows so we have ids for validation + payload)
     const medCode = parseCodeFromText(p.diagnosis ?? '')
     const nurCode = parseCodeFromText(p.nurse_diagnosis ?? '')
+
     medicalDiagnosis.value = await fetchDiagnosisByCode(medCode)
     nurseDiagnosis.value = await fetchNurseDiagnosisByCode(nurCode)
 
-    // Procedures
     if (Array.isArray(p.procedures) && p.procedures.length) {
       const mapped: SelectedProcedure[] = []
       for (const item of p.procedures) {
@@ -188,32 +214,31 @@ async function preloadFromLatestProposal() {
       procedures.value = mapped.length ? mapped : [{ procedure: null, frequency: '' }]
     }
   } catch (e: any) {
-    // 404 is expected when patient has no older proposal
-    if (e?.response?.status !== 404) {
-      console.error('Prefill failed:', e)
-    }
+    // 404 is fine (no previous proposal)
+    if (e?.response?.status !== 404) console.error('Prefill failed:', e)
   } finally {
     loadingPrefill.value = false
   }
 }
 
-onMounted(async () => {
-  // If patient is already selected, prefill immediately.
-  // If your patientStore loads async, call preload again when patientId becomes non-zero.
-  if (patientId.value) await preloadFromLatestProposal()
-})
-
-// --- Search --------------------------------------------------
+// auto prefill when patient changes / loads
+watch(
+  () => patientId.value,
+  async (id) => {
+    if (id) await preloadFromLatestProposal()
+  },
+  { immediate: true }
+)
 
 async function searchDiagnoses(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? ''
-    if (!q) {
-      filteredDiagnoses.value = []
-      return
-    }
-    const res = await api.get('/v1/diagnoses', { params: { q } })
-    const arr = normalizeArray<Diagnosis>(res.data)
+    const q = (event.query ?? '').trim()
+
+    const res = await api.get('/v1/diagnoses', {
+      params: { q, per_page: 25, page: 1, sort: 'code' }
+    })
+
+    const arr = extractArray(res.data) as Diagnosis[]
     filteredDiagnoses.value = arr.map(d => ({
       id: d.id,
       code: d.code ?? '',
@@ -227,13 +252,13 @@ async function searchDiagnoses(event: { query: string }) {
 
 async function searchNurseDiagnoses(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? ''
-    if (!q) {
-      filteredNurseDiagnoses.value = []
-      return
-    }
-    const res = await api.get('/v1/nurse-diagnoses', { params: { q, paginate: 0 } })
-    const arr = normalizeArray<NurseDiagnosis>(res.data)
+    const q = (event.query ?? '').trim()
+
+    const res = await api.get('/v1/nurse-diagnoses', {
+      params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 }
+    })
+
+    const arr = extractArray(res.data) as NurseDiagnosis[]
     filteredNurseDiagnoses.value = arr.map(d => ({
       id: d.id,
       code: d.code ?? '',
@@ -247,13 +272,13 @@ async function searchNurseDiagnoses(event: { query: string }) {
 
 async function searchProcedures(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? ''
-    if (!q) {
-      filteredProcedures.value = []
-      return
-    }
-    const res = await api.get('/v1/procedures', { params: { q, paginate: 0 } })
-    const arr = normalizeArray<ProcedureOption>(res.data)
+    const q = (event.query ?? '').trim()
+
+    const res = await api.get('/v1/procedures', {
+      params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 }
+    })
+
+    const arr = extractArray(res.data) as ProcedureOption[]
     filteredProcedures.value = arr.map(p => ({
       id: p.id,
       code: p.code ?? '',
@@ -265,8 +290,6 @@ async function searchProcedures(event: { query: string }) {
   }
 }
 
-// --- Procedures UI ------------------------------------------
-
 function addProcedure() {
   procedures.value.push({ procedure: null, frequency: '' })
 }
@@ -274,8 +297,6 @@ function addProcedure() {
 function removeProcedure(index: number) {
   if (procedures.value.length > 1) procedures.value.splice(index, 1)
 }
-
-// --- Validation + submit ------------------------------------
 
 function validateForm() {
   const e: Record<string, string> = {}
@@ -286,7 +307,6 @@ function validateForm() {
   if (!date.value) e.date = 'Dátum je povinný.'
   if (!epicrisisDescription.value?.trim()) e.epicrisisDescription = 'Epizóda a zdôvodnenie sú povinné.'
   if (!carePlan.value?.trim()) e.carePlan = 'Plán ošetrovateľskej starostlivosti je povinný.'
-  if (patientMobility.value.length === 0) e.patientMobility = 'Vyberte aspoň jednu kategóriu mobility pacienta.'
   if (!expectedDuration.value) e.expectedDuration = 'Predpokladaná dĺžka je povinná.'
   if (!procedures.value.some(p => p.procedure?.id)) e.procedures = 'Pridajte aspoň jeden výkon.'
 
@@ -298,12 +318,7 @@ async function generateDocument() {
   submitted.value = true
 
   if (!validateForm()) {
-    toast.add({
-      severity: 'error',
-      summary: 'Chyba validácie',
-      detail: 'Vyplňte všetky povinné polia.',
-      life: 3000
-    })
+    toast.add({ severity: 'error', summary: 'Chyba validácie', detail: 'Vyplňte všetky povinné polia.', life: 3000 })
     return
   }
 
@@ -363,9 +378,13 @@ async function generateDocument() {
             <AutoComplete
               v-model="medicalDiagnosis"
               :suggestions="filteredDiagnoses"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               :invalid="submitted && !!errors.medicalDiagnosis"
@@ -385,9 +404,13 @@ async function generateDocument() {
             <AutoComplete
               v-model="nurseDiagnosis"
               :suggestions="filteredNurseDiagnoses"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchNurseDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               :invalid="submitted && !!errors.nurseDiagnosis"
@@ -474,9 +497,13 @@ async function generateDocument() {
                 :id="`procedure-${idx}`"
                 v-model="row.procedure"
                 :suggestions="filteredProcedures"
-                optionLabel="code"
-                :minLength="1"
                 @complete="searchProcedures"
+                :virtualScrollerOptions="{ itemSize: 38 }"
+                optionLabel="code"
+                dropdown
+                dropdownMode="blank"
+                :minLength="0"
+                completeOnFocus
                 class="w-full"
                 inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               >
