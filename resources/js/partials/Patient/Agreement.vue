@@ -5,6 +5,10 @@ import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 import api from '@/services/api';
 import { usePatientStore } from '@/stores/patientStore';
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const { currentBranch } = storeToRefs(authStore)
 
 const router = useRouter();
 const toast = useToast();
@@ -54,6 +58,7 @@ async function generateDocument() {
     const payload = {
       patient_id: patientId.value,
       date: date.value ? new Date(date.value).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      branch_id: currentBranch.value?.id,
     };
 
     const res = await api.post('/v1/agreements', payload);

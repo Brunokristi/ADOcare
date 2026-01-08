@@ -13,6 +13,7 @@ class Branch extends Model
 
     protected $fillable = [
         'company_id',
+        'representative_id',
         'code',
         'identificator',
         'address',
@@ -27,6 +28,11 @@ class Branch extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function representative()
+    {
+        return $this->belongsTo(User::class, 'representative_id');
     }
 
     public function users()

@@ -112,7 +112,7 @@ function translateFrequency(value: string): string {
 }
 
 function formatProcedures(procs: any[]) {
-  return procs.map(p => `${p.code} – ${translateFrequency(p.frequency)}`).join('\n');
+  return procs.map(p => `${p.code} – ${translateFrequency(p.frequency)}`).join(', ');
 }
 
 function formatDate(v?: string) {
@@ -193,6 +193,11 @@ function printPage() {
                 </tr>
                 <tr>
                   <td class="border border-black p-2" colspan="3">
+                    Bydlisko prechodné:<br />
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2" colspan="3">
                     <strong>Kategória pacienta:</strong>
                     <div class="mt-2 flex flex-col gap-1">
                       <label class="line">
@@ -216,15 +221,13 @@ function printPage() {
             <table class="w-full border-collapse text-sm mb-2">
               <tbody>
                 <tr>
-                  <td class="border border-black p-2">
+                  <td class="border border-black p-2 w-1/2">
                     Lekárska diagnóza:<br />
-                    <strong>{{ documentData.doctorDiagnosis }}</strong>
+                    <strong>{{ documentData.doctorDiagnosis.split(' - ')[0]}}</strong>
                   </td>
-                </tr>
-                <tr>
-                  <td class="border border-black p-2">
+                  <td class="border border-black p-2 w-1/2">
                     Sesterská diagnóza:<br />
-                    <strong>{{ documentData.nurseDiagnosis }}</strong>
+                    <strong>{{ documentData.nurseDiagnosis.split(' - ')[0] }}</strong>
                   </td>
                 </tr>
               </tbody>
@@ -308,7 +311,7 @@ function printPage() {
               </div>
               <div class="text-center">
                 <div class="border-t-1 border-black mb-2"></div>
-                podpis odborného zástupcu
+                podpis odborného zástupcu poskytovateľa ošetrovateľskej starostlivosti a pečiatka
               </div>
             </div>
           </div>

@@ -16,6 +16,7 @@ class AgreementDocumentController extends Controller
         $validated = $request->validate([
             'date' => 'required|date',
             'patient_id' => 'required|exists:patients,id',
+            'branch_id' => 'required|exists:branches,id',
         ]);
 
         $document = Document::create([
@@ -30,6 +31,8 @@ class AgreementDocumentController extends Controller
         $patient = Patient::findOrFail($validated['patient_id']);
         $user = Auth::user();
         $company = $user->company;
+        $branch = $company->branches()->findOrFail($validated['branch_id']);
+        $user = $branch->representative;
 
         $companyName = $company ? $company->name : '';
         $companyAddress = $company ? $company->address : '';

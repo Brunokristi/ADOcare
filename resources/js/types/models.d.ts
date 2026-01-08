@@ -1,3 +1,23 @@
+export interface Document {
+  // columns
+  id: number
+  patient_id: number
+  user_id: number
+  type: string
+  mime_type: string
+  name: string
+  path: string
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patient: Patient
+  user: User
+  // counts
+  // exists
+  patient_exists: boolean
+  user_exists: boolean
+}
+
 export interface VisitText {
   // columns
   visit_id: number
@@ -200,6 +220,7 @@ export interface Branch {
   longitude: number | null
   created_at: string | null
   updated_at: string | null
+  representative_id: number | null
   // relations
   company: Company
   users: User[]

@@ -121,6 +121,16 @@ function printPage() {
                 <strong>{{ agreementData.patient_address }}</strong>
               </td>
             </tr>
+            <tr>
+              <td class="border border-black p-2 w-full" colspan="2">
+                Prechodný pobyt:
+              </td>
+            </tr>
+            <tr>
+              <td class="border border-black p-2 w-full" colspan="2">
+                Kontaktná osoba, zákonný zástupca:
+              </td>
+            </tr>
           </tbody>
         </table>
 
