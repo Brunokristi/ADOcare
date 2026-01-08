@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Filters\ApiQuery;
+use App\Http\Resources\BaseCollection;
 use App\Models\Document;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AgreementDocumentController extends Controller
 {
@@ -59,14 +62,9 @@ class AgreementDocumentController extends Controller
             'created_at' => now(),
         ];
 
-        // Store the JSON data
-        $storagePath = storage_path('app/private/agreements');
-        if (!is_dir($storagePath)) {
-            mkdir($storagePath, 0755, true);
-        }
-
-        file_put_contents(
-            $storagePath . '/' . now()->timestamp . '.json',
+        // Store the JSON data using local disk
+        Storage::disk('local')->put(
+            'agreements/' . now()->timestamp . '.json',
             json_encode($agreementData, JSON_PRETTY_PRINT)
         );
          
@@ -82,12 +80,11 @@ class AgreementDocumentController extends Controller
         $documentId = (int) $documentId;
         $document = Document::with(['patient'])->findOrFail($documentId);
 
-        $storagePath = storage_path('app/private/agreements');
         $agreementFile = null;
 
-        $files = glob($storagePath . '/*.json');
+        $files = Storage::disk('local')->files('agreements');
         foreach ($files as $file) {
-            $content = json_decode(file_get_contents($file), true);
+            $content = json_decode(Storage::disk('local')->get($file), true);
             if ($content['document_id'] === $documentId) {
                 $agreementFile = $content;
                 break;
@@ -104,18 +101,5 @@ class AgreementDocumentController extends Controller
         ];
 
         return response()->json($responseData);
-    }
-
-
-    public function getByPatient($patientId)
-    {
-        $patient = Patient::findOrFail($patientId);
-
-        $documents = Document::where('patient_id', $patientId)
-            ->where('type', 'agreement')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($documents);
     }
 }

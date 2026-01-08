@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Filters\ApiQuery;
+use App\Http\Resources\BaseCollection;
 use App\Models\Document;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ProposalDocumentController extends Controller
 {
@@ -102,14 +105,9 @@ class ProposalDocumentController extends Controller
             'created_at' => now(),
         ];
 
-        // Store the JSON data
-        $storagePath = storage_path('app/private/proposals');
-        if (!is_dir($storagePath)) {
-            mkdir($storagePath, 0755, true);
-        }
-
-        file_put_contents(
-            $storagePath . '/' . now()->timestamp . '.json',
+        // Store the JSON data using local disk
+        Storage::disk('local')->put(
+            'proposals/' . now()->timestamp . '.json',
             json_encode($proposalData, JSON_PRETTY_PRINT)
         );
         
@@ -125,12 +123,11 @@ class ProposalDocumentController extends Controller
         $documentId = (int) $documentId;
         $document = Document::with(['patient'])->findOrFail($documentId);
 
-        $storagePath = storage_path('app/private/proposals');
         $proposalFile = null;
 
-        $files = glob($storagePath . '/*.json');
+        $files = Storage::disk('local')->files('proposals');
         foreach ($files as $file) {
-            $content = json_decode(file_get_contents($file), true);
+            $content = json_decode(Storage::disk('local')->get($file), true);
             if ($content['document_id'] === $documentId) {
                 $proposalFile = $content;
                 break;
@@ -162,12 +159,11 @@ class ProposalDocumentController extends Controller
             return response()->json(['message' => 'No proposal found'], 404);
         }
 
-        $storagePath = storage_path('app/private/proposals');
-        $files = glob($storagePath . '/*.json');
-
         $proposalFile = null;
+        $files = Storage::disk('local')->files('proposals');
+
         foreach ($files as $file) {
-            $content = json_decode(file_get_contents($file), true);
+            $content = json_decode(Storage::disk('local')->get($file), true);
             if (($content['document_id'] ?? null) === $document->id) {
                 $proposalFile = $content;
                 break;
@@ -182,17 +178,5 @@ class ProposalDocumentController extends Controller
             'document_id' => $document->id,
             'proposal_data' => $proposalFile,
         ]);
-    }
-
-    public function getByPatient($patientId)
-    {
-        $patient = Patient::findOrFail($patientId);
-
-        $documents = Document::where('patient_id', $patientId)
-            ->where('type', 'proposal')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($documents);
     }
 }

@@ -11,8 +11,10 @@ use App\Models\Diagnosis;
 use App\Models\Patient;
 use App\Models\PatientPoint;
 use App\Models\Procedure;
+use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 
 class PatientController extends Controller
 {
@@ -194,4 +196,16 @@ class PatientController extends Controller
         $results = ApiQuery::apply($request, $query, searchable: ['reference_date', 'user_id', 'branch_id']);
         return $this->success(new BaseCollection($results), 'Patient points retrieved');
     }
+
+    public function documents(Request $request, Patient $patient)
+    {
+        $query = Document::where('patient_id', $patient->id)
+            ->orderByDesc('created_at');
+
+        $results = ApiQuery::apply($request, $query, searchable: ['name', 'type']);
+
+        return $this->success(new BaseCollection($results), 'Patient documents retrieved');
+    }
+
+    
 }

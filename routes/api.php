@@ -62,7 +62,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('diagnoses', [PatientController::class, 'diagnoses']);
         Route::get('procedures', [PatientController::class, 'procedures']);
         Route::get('patient-points', [PatientController::class, 'patientPoints']);
-
+        Route::get('documents', [PatientController::class, 'documents']);
     });
     Route::apiResource('branches', BranchController::class);
     Route::get('/branches/{branch}/patients', [BranchController::class, 'patients']);
@@ -100,10 +100,6 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
 
-    Route::apiResource('patients/{patient}/documents', DocumentController::class);
-    Route::get('patients/{patient}/documents/{type}/by-type', [DocumentController::class, 'getByType']);
-    Route::get('documents/{document}/download', [DocumentController::class, 'download']);
-
     Route::post('/proposals', [ProposalDocumentController::class, 'store']);
     Route::get('/proposals/{documentId}', [ProposalDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/proposals', [ProposalDocumentController::class, 'getByPatient']);
@@ -114,4 +110,5 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/patients/{patientId}/agreements', [AgreementDocumentController::class, 'getByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
+    Route::delete('/documents', [DocumentController::class, 'destroyMany']);
 });

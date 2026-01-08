@@ -41,7 +41,7 @@ class DocumentController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store("patients/{$patientId}/documents", 'private');
+        $path = $file->store("patients/{$patientId}/documents", 'local');
 
         $document = Document::create([
             'patient_id' => $patientId,
@@ -72,7 +72,7 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        return Storage::disk('private')->download($document->path, $document->name);
+        return Storage::disk('local')->download($document->path, $document->name);
     }
 
     /**
@@ -99,12 +99,40 @@ class DocumentController extends Controller
     {
         $this->authorize('delete', $document);
 
-        // Delete file from storage
-        Storage::disk('private')->delete($document->path);
+        // Try to delete file from both local and private storage
+        if (Storage::disk('local')->exists($document->path)) {
+            Storage::disk('local')->delete($document->path);
+        }
 
         $document->delete();
 
         return response()->json(['message' => 'Document deleted successfully']);
+    }
+
+    /**
+     * Delete multiple documents.
+     */
+    public function destroyMany(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        
+        if (empty($ids)) {
+            return response()->json(['message' => 'No IDs provided'], 400);
+        }
+        
+        $documents = Document::whereIn('id', $ids)->get();
+        
+        // Delete files from storage
+        foreach ($documents as $document) {
+            if (Storage::disk('local')->exists($document->path)) {
+                Storage::disk('local')->delete($document->path);
+            }
+        }
+        
+        // Delete documents from database
+        Document::whereIn('id', $ids)->delete();
+        
+        return response()->json(['message' => 'Documents deleted successfully']);
     }
 
     /**
