@@ -80,9 +80,6 @@ const frequencyOptions = [
   { label: 'Podľa potreby', value: 'as_needed' }
 ]
 
-/* -------------------------------------------------------------------------- */
-/*  API helpers: mirror your working page (extractArray)                      */
-/* -------------------------------------------------------------------------- */
 function extractArray(raw: any): any[] {
   if (Array.isArray(raw)) return raw
 
@@ -102,29 +99,18 @@ function extractArray(raw: any): any[] {
   return []
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Prefill from latest proposal                                              */
-/* -------------------------------------------------------------------------- */
-
-// stored JSON has strings like "A130 - Aspirácia"
 function parseCodeFromText(v: string): string {
   return (String(v ?? '').split(' - ')[0] ?? '').trim()
 }
 
-// your backend stored Slovak labels (because translateFrequency)
 const reverseFrequencyMap: Record<string, string> = {
-  Denne: 'daily',
+  'Denne': 'daily',
   'Každý druhý deň': 'every_other_day',
   '3x týždenne': 'three_times_weekly',
-  'Trikrát týždenne': 'three_times_weekly',
   '2x týždenne': 'twice_weekly',
-  'Dvakrát týždenne': 'twice_weekly',
   '1x týždenne': 'once_weekly',
-  Týždenne: 'once_weekly',
   '2x mesačne': 'twice_monthly',
-  'Dvakrát mesačne': 'twice_monthly',
   '1x mesačne': 'once_monthly',
-  Mesačne: 'once_monthly',
   'Podľa potreby': 'as_needed'
 }
 
@@ -214,14 +200,12 @@ async function preloadFromLatestProposal() {
       procedures.value = mapped.length ? mapped : [{ procedure: null, frequency: '' }]
     }
   } catch (e: any) {
-    // 404 is fine (no previous proposal)
     if (e?.response?.status !== 404) console.error('Prefill failed:', e)
   } finally {
     loadingPrefill.value = false
   }
 }
 
-// auto prefill when patient changes / loads
 watch(
   () => patientId.value,
   async (id) => {

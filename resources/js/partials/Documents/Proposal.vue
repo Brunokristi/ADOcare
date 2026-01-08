@@ -97,8 +97,22 @@ function mapExpectedDuration(v?: string): ExpectedDuration | undefined {
   return mapping[v ?? ''] ?? undefined;
 }
 
+function translateFrequency(value: string): string {
+  const frequencyMap: Record<string, string> = {
+    daily: 'Denne',
+    every_other_day: 'Každý druhý deň',
+    three_times_weekly: '3x týždenne',
+    twice_weekly: '2x týždenne',
+    once_weekly: '1x týždenne',
+    twice_monthly: '2x mesačne',
+    once_monthly: '1x mesačne',
+    as_needed: 'Podľa potreby',
+  };
+  return frequencyMap[value] ?? value;
+}
+
 function formatProcedures(procs: any[]) {
-  return procs.map(p => `${p.code} – ${p.frequency}`).join('\n');
+  return procs.map(p => `${p.code} – ${translateFrequency(p.frequency)}`).join('\n');
 }
 
 function formatDate(v?: string) {
@@ -138,140 +152,140 @@ function printPage() {
           NÁVRH NA POSKYTOVANIE OŠETROVATEĽSKEJ STAROSTLIVOSTI
         </div>
 
-        <!-- main layout: top fixed content + middle flexible + footer fixed -->
         <div class="sheet-grid">
-          <!-- TOP (fixed) -->
           <div class="top">
-            <!-- Facility -->
             <table class="w-full border-collapse text-sm mb-2">
-              <tr>
-                <td class="border border-black p-2 w-1/2">
-                  Zdravotnícke zariadenie:<br />
-                  <strong>{{ documentData.facilityName }}</strong>
-                </td>
-                <td class="border border-black p-2 w-1/2">
-                  so sídlom v:<br />
-                  <strong>{{ documentData.facilityAddress }}</strong>
-                </td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td class="border border-black p-2 w-1/2">
+                    Zdravotnícke zariadenie:<br />
+                    <strong>{{ documentData.facilityName }}</strong>
+                  </td>
+                  <td class="border border-black p-2 w-1/2">
+                    so sídlom v:<br />
+                    <strong>{{ documentData.facilityAddress }}</strong>
+                  </td>
+                </tr>
+              </tbody>
             </table>
 
-            <!-- Patient -->
             <table class="w-full border-collapse text-sm mb-2" style="table-layout: fixed;">
-              <tr>
-                <td class="border border-black p-2 w-1/2">
-                  Meno, priezvisko, titul pacienta/pacientky:<br />
-                  <strong>{{ documentData.patientName }}</strong>
-                </td>
-                <td class="border border-black p-2 w-1/4">
-                  Rodné číslo:<br />
-                  <strong>{{ documentData.patientIdNumber }}</strong>
-                </td>
-                <td class="border border-black p-2 w-1/4">
-                  Kód ZP:<br />
-                  <strong>{{ documentData.patientHealthCode }}</strong>
-                </td>
-              </tr>
-              <tr>
-                <td class="border border-black p-2" colspan="3">
-                  Bydlisko trvalé:<br />
-                  <strong class="clamp-1">{{ documentData.patientCurrentAddress }}</strong>
-                </td>
-              </tr>
-              <tr>
-                <td class="border border-black p-2" colspan="3">
-                  <strong>Kategória pacienta:</strong>
-                  <div class="mt-2 flex flex-col gap-1">
-                    <label class="line">
-                      <input type="checkbox" :checked="documentData.patientCategory==='H'" disabled />
-                      <span>H – pacient/pacientka s obmedzenou pohyblivosťou (50%)</span>
-                    </label>
-                    <label class="line">
-                      <input type="checkbox" :checked="documentData.patientCategory==='I'" disabled />
-                      <span>I – imobilný pacient/pacientka (75%)</span>
-                    </label>
-                    <label class="line">
-                      <input type="checkbox" :checked="documentData.patientCategory==='F'" disabled />
-                      <span>F – psychiatrická diagnóza / mentálne retardovaný (75%)</span>
-                    </label>
-                  </div>
-                </td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td class="border border-black p-2 w-1/2">
+                    Meno, priezvisko, titul pacienta/pacientky:<br />
+                    <strong>{{ documentData.patientName }}</strong>
+                  </td>
+                  <td class="border border-black p-2 w-1/4">
+                    Rodné číslo:<br />
+                    <strong>{{ documentData.patientIdNumber }}</strong>
+                  </td>
+                  <td class="border border-black p-2 w-1/4">
+                    Kód ZP:<br />
+                    <strong>{{ documentData.patientHealthCode }}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2" colspan="3">
+                    Bydlisko trvalé:<br />
+                    <strong class="clamp-1">{{ documentData.patientCurrentAddress }}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2" colspan="3">
+                    <strong>Kategória pacienta:</strong>
+                    <div class="mt-2 flex flex-col gap-1">
+                      <label class="line">
+                        <input type="checkbox" :checked="documentData.patientCategory==='H'" disabled />
+                        <span>H – pacient/pacientka s obmedzenou pohyblivosťou (50%)</span>
+                      </label>
+                      <label class="line">
+                        <input type="checkbox" :checked="documentData.patientCategory==='I'" disabled />
+                        <span>I – imobilný pacient/pacientka (75%)</span>
+                      </label>
+                      <label class="line">
+                        <input type="checkbox" :checked="documentData.patientCategory==='F'" disabled />
+                        <span>F – psychiatrická diagnóza / mentálne retardovaný (75%)</span>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
             </table>
 
-            <!-- Diagnoses -->
             <table class="w-full border-collapse text-sm mb-2">
-              <tr>
-                <td class="border border-black p-2">
-                  Lekárska diagnóza:<br />
-                  <strong>{{ documentData.doctorDiagnosis }}</strong>
-                </td>
-              </tr>
-              <tr>
-                <td class="border border-black p-2">
-                  Sesterská diagnóza:<br />
-                  <strong>{{ documentData.nurseDiagnosis }}</strong>
-                </td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td class="border border-black p-2">
+                    Lekárska diagnóza:<br />
+                    <strong>{{ documentData.doctorDiagnosis }}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2">
+                    Sesterská diagnóza:<br />
+                    <strong>{{ documentData.nurseDiagnosis }}</strong>
+                  </td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
-          <!-- MIDDLE (flexible, fills remaining height) -->
           <div class="middle">
-            <!-- Epicrisis -->
             <table class="w-full border-collapse text-sm block-table">
-              <tr>
-                <td class="border border-black p-2">
-                  <strong>Epikríza a zdôvodnenie:</strong>
-                  <div class="fill-box whitespace-pre-line">
-                    {{ documentData.prescriptionNote }}
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="border border-black p-2">
-                  <strong>Plán ošetrovateľskej starostlivosti:</strong>
-                  <div class="fill-box whitespace-pre-line">
-                    {{ documentData.carePlan }}
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="border border-black p-2">
-                  <strong>Výkony a frekvencia:</strong>
-                  <div class="fill-box whitespace-pre-line">
-                    {{ documentData.treatmentOutcomes }}
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="border border-black p-2">
-                  <strong>Predpokladaná dĺžka:</strong>
-                  <div class="mt-2 flex gap-3 flex-wrap">
-                    <label class="line">
-                      <input type="radio" :checked="documentData.expectedDuration==='do1mesiac'" disabled />
-                      <span>do 1 mesiaca</span>
-                    </label>
-                    <label class="line">
-                      <input type="radio" :checked="documentData.expectedDuration==='do3mesiacov'" disabled />
-                      <span>do 3 mesiacov</span>
-                    </label>
-                    <label class="line">
-                      <input type="radio" :checked="documentData.expectedDuration==='do6mesiacov'" disabled />
-                      <span>do 6 mesiacov</span>
-                    </label>
-                    <label class="line">
-                      <input type="radio" :checked="documentData.expectedDuration==='nad6mesiacov'" disabled />
-                      <span>nad 6 mesiacov</span>
-                    </label>
-                  </div>
-                </td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td class="border border-black p-2">
+                    <strong>Epikríza a zdôvodnenie:</strong>
+                    <div class="fill-box whitespace-pre-line">
+                      {{ documentData.prescriptionNote }}
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2">
+                    <strong>Plán ošetrovateľskej starostlivosti:</strong>
+                    <div class="fill-box whitespace-pre-line">
+                      {{ documentData.carePlan }}
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2">
+                    <strong>Výkony a frekvencia:</strong>
+                    <div class="fill-box whitespace-pre-line">
+                      {{ documentData.treatmentOutcomes }}
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-black p-2">
+                    <strong>Predpokladaná dĺžka:</strong>
+                    <div class="mt-2 flex gap-3 flex-wrap">
+                      <label class="line">
+                        <input type="radio" :checked="documentData.expectedDuration==='do1mesiac'" disabled />
+                        <span>do 1 mesiaca</span>
+                      </label>
+                      <label class="line">
+                        <input type="radio" :checked="documentData.expectedDuration==='do3mesiacov'" disabled />
+                        <span>do 3 mesiacov</span>
+                      </label>
+                      <label class="line">
+                        <input type="radio" :checked="documentData.expectedDuration==='do6mesiacov'" disabled />
+                        <span>do 6 mesiacov</span>
+                      </label>
+                      <label class="line">
+                        <input type="radio" :checked="documentData.expectedDuration==='nad6mesiacov'" disabled />
+                        <span>nad 6 mesiacov</span>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
           <div class="footer">
-
             <table class="w-full border-collapse text-sm">
               <tbody>
                 <tr>
@@ -287,14 +301,13 @@ function printPage() {
               </tbody>
             </table>
 
-            <!-- Signatures -->
-            <div class="mt-20 grid grid-cols-2 gap-12 text-sm">
+            <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
               <div class="text-center">
-                <div class="border-t-2 border-black mb-2"></div>
+                <div class="border-t-1 border-black mb-2"></div>
                 podpis lekára a pečiatka
               </div>
               <div class="text-center">
-                <div class="border-t-2 border-black mb-2"></div>
+                <div class="border-t-1 border-black mb-2"></div>
                 podpis odborného zástupcu
               </div>
             </div>
@@ -342,6 +355,10 @@ function printPage() {
   grid-template-rows: 1fr 1fr 1fr;
   gap: 6px;
   min-height: 0; /* important so children can shrink */
+}
+
+.footer {
+    min-height: 150px;
 }
 
 .block-table {

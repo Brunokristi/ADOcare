@@ -11,30 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class ProposalDocumentController extends Controller
 {
-    /**
-     * Translate frequency from English to Slovak
-     */
-    private function translateFrequency($frequency)
-    {
-        $translations = [
-            'daily' => 'Denne',
-            'twice a day' => 'Dvakrát denne',
-            'three times a day' => 'Trikrát denne',
-            'every other day' => 'Každý druhý deň',
-            'weekly' => 'Týždenne',
-            'twice a week' => 'Dvakrát týždenne',
-            'three times a week' => 'Trikrát týždenne',
-            'monthly' => 'Mesačne',
-            'as needed' => 'Podľa potreby',
-            'once' => 'Raz',
-        ];
-        
-        return $translations[strtolower($frequency)] ?? $frequency;
-    }
-
-    /**
-     * Store a new proposal document
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -72,7 +48,7 @@ class ProposalDocumentController extends Controller
         $patientAddress = $patient->address . ', ' . $patient->city . ', ' . $patient->postal_code;
         $insuranceCode = $patient->insuranceCompany->branch_code ?? '';
         $userName = $user->first_name . ' ' . $user->last_name . ' ' . $user->title;
-        $doctorName = $doctor->first_name . ' ' . $doctor->last_name . ' ' . $doctor->title ?? '';
+        $doctorName = ($doctor->title ?? '') . ' ' . $doctor->first_name . ' ' . $doctor->last_name;
 
         $diagnosis = null;
         if (!empty($validated['medical_diagnosis_id'])) {
@@ -99,7 +75,7 @@ class ProposalDocumentController extends Controller
                     $procedure = \DB::table('procedures')->find((int) $proc['procedure_id']);
                     $procedures[] = [
                         'code' => $procedure->code,
-                        'frequency' => $this->translateFrequency($proc['frequency'] ?? '')
+                        'frequency' => $proc['frequency'] ?? ''
                     ];
                 }
             }
@@ -149,11 +125,9 @@ class ProposalDocumentController extends Controller
         $documentId = (int) $documentId;
         $document = Document::with(['patient'])->findOrFail($documentId);
 
-        // Retrieve proposal data from file
         $storagePath = storage_path('app/private/proposals');
         $proposalFile = null;
 
-        // Find the proposal file (assuming filename is the timestamp)
         $files = glob($storagePath . '/*.json');
         foreach ($files as $file) {
             $content = json_decode(file_get_contents($file), true);
@@ -210,10 +184,6 @@ class ProposalDocumentController extends Controller
         ]);
     }
 
-
-    /**
-     * Get all proposals for a patient
-     */
     public function getByPatient($patientId)
     {
         $patient = Patient::findOrFail($patientId);
