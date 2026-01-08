@@ -18,6 +18,7 @@ import Document from '@/pages/Documents.vue'
 import DocumentPoints from '@/partials/Documents/Points.vue'
 import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
 import DocumentProposal from '@/partials/Documents/Proposal.vue'
+import DocumentAgreement from '@/partials/Documents/Agreement.vue'
 import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
@@ -129,6 +130,17 @@ const routes = [
                 meta: {
                     title: 'Návrh na poskytnutie ošetrovateľskej starostlivosti',
                     link: 'návrh',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'agreement/:documentId',
+                name: 'documents-agreement',
+                component: DocumentAgreement,
+                meta: {
+                    title: 'Dohoda o poskytnutí zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti',
+                    link: 'dohoda',
                     sidebar: false,
                     navbar: false,
                 },

@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\DekurzController;
 use App\Http\Controllers\Api\NurseDiagnosisController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\ProposalDocumentController;
+use App\Http\Controllers\Api\AgreementDocumentController;
 
 
 use Illuminate\Http\Request;
@@ -107,6 +108,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/proposals/{documentId}', [ProposalDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/proposals', [ProposalDocumentController::class, 'getByPatient']);
     Route::get('/patients/{patientId}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
+
+    Route::post('/agreements', [AgreementDocumentController::class, 'store']);
+    Route::get('/agreements/{documentId}', [AgreementDocumentController::class, 'show']);
+    Route::get('/patients/{patientId}/agreements', [AgreementDocumentController::class, 'getByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
 });
