@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\NurseDiagnosisController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\ProposalDocumentController;
 use App\Http\Controllers\Api\AgreementDocumentController;
+use App\Http\Controllers\Api\CPDocumentController;
 
 
 use Illuminate\Http\Request;
@@ -108,6 +109,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/agreements', [AgreementDocumentController::class, 'store']);
     Route::get('/agreements/{documentId}', [AgreementDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/agreements', [AgreementDocumentController::class, 'getByPatient']);
+
+    Route::post('/cps', [CPDocumentController::class, 'store']);
+    Route::get('/cps/{documentId}', [CPDocumentController::class, 'show']);
+
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);

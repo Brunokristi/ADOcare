@@ -1,7 +1,7 @@
 export interface Document {
   // columns
   id: number
-  patient_id: number
+  patient_id: number | null
   user_id: number
   type: string
   mime_type: string
@@ -223,6 +223,7 @@ export interface Branch {
   representative_id: number | null
   // relations
   company: Company
+  representative: User
   users: User[]
   report_months: ReportMonth[]
   cars: Car[]
@@ -236,6 +237,7 @@ export interface Branch {
   doctors_count: number
   // exists
   company_exists: boolean
+  representative_exists: boolean
   users_exists: boolean
   report_months_exists: boolean
   cars_exists: boolean
