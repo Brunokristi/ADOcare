@@ -37,7 +37,7 @@ class ApiQuery
     * - `all` => default for returning all records
     * - `with` => default relations to eager load (comma-separated string)
      */
-    public static function apply(Request $request, Builder $query, array $searchable = [], array $allowedFilters = [], array $defaults = [])
+    public static function apply(Request $request, Builder|\Illuminate\Database\Query\Builder $query, array|string $searchable = [], array|string $allowedFilters = 'all', array $defaults = [])
     {
 
         // Validate inputs
@@ -64,7 +64,7 @@ class ApiQuery
         $filters = $request->input('filter', $defaults['filter'] ?? []);
         if (is_array($filters)) {
             foreach ($filters as $key => $value) {
-                if (!empty($allowedFilters) && !in_array($key, $allowedFilters, true)) {
+                if (is_array($allowedFilters) && !in_array($key, $allowedFilters, true)) {
                     continue;
                 }
 
