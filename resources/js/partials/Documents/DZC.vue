@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 
@@ -31,6 +31,7 @@ type DailyRecord = {
 
 const route = useRoute()
 const loading = ref(false)
+const isPrinting = ref(false)
 
 const cpData = ref<CPData>({
   user_id: 0,
@@ -79,10 +80,6 @@ function formatDate(v?: string) {
   return new Date(v).toLocaleDateString('sk-SK')
 }
 
-function printPage() {
-  requestAnimationFrame(() => window.print())
-}
-
 function uniqueByAddress(list: PatientAddress[]) {
   const seen = new Set<string>()
   const out: PatientAddress[] = []
@@ -105,59 +102,107 @@ const dailyRecords = computed<DailyRecord[]>(() => {
 })
 
 /**
- * Pagination (dynamic pages)
- * We estimate how much vertical space each daily block takes.
- * - baseLines: header rows + labels inside the block
- * - plus one line per address (long addresses will still wrap; we approximate by "chars per line")
+ * DOM-based pagination (tight, non-overflowing)
+ * - measures real rendered heights
+ * - accounts for margins (mb-4), header (only page 1), footer (every page), and browser rounding
  */
-function estimateLinesForRecord(record: DailyRecord) {
-  const baseLines = 11 // date row + branch row + labels/paddings
-  const charsPerLine = 80 // tweak if you change font/width
-  let addrLines = 0
+const pagedRecords = ref<DailyRecord[][]>([])
 
-  for (const a of record.addresses) {
-    const len = (a.address || '').length
-    addrLines += Math.max(1, Math.ceil(len / charsPerLine))
-  }
+const measurePageInnerRef = ref<HTMLElement | null>(null)
+const measureHeaderRef = ref<HTMLElement | null>(null)
+const measureItemsWrapRef = ref<HTMLElement | null>(null)
+const measureFooterRef = ref<HTMLElement | null>(null)
 
-  return baseLines + addrLines
+function outerHeightWithMargins(el: HTMLElement) {
+  const style = window.getComputedStyle(el)
+  const mt = parseFloat(style.marginTop || '0')
+  const mb = parseFloat(style.marginBottom || '0')
+  return el.getBoundingClientRect().height + mt + mb
 }
 
-const pagedRecords = computed(() => {
-  const pages: DailyRecord[][] = []
+async function recalcPagination() {
+  await nextTick()
+  // Ensure layout is final (fonts/wrapping/table layout)
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
 
-  // Rough capacity for A4 with your padding + title + header.
-  // Tweak if you change font sizes/padding.
-  const pageCapacityLines = 58
+  const inner = measurePageInnerRef.value
+  const headerEl = measureHeaderRef.value
+  const itemsWrap = measureItemsWrapRef.value
+  const footerEl = measureFooterRef.value
+
+  if (!inner || !itemsWrap) {
+    pagedRecords.value = dailyRecords.value.length ? [dailyRecords.value] : []
+    return
+  }
+
+  // usable inner height (inside the page padding)
+  const innerHeight = inner.clientHeight
+
+  const footerHeight = footerEl ? outerHeightWithMargins(footerEl) : 0
+  const headerHeight = headerEl ? outerHeightWithMargins(headerEl) : 0
+
+  // safety buffer (prevents 1-2px overflow across browsers / scaling)
+  const SAFETY = 18
+
+  const firstPageCapacity = innerHeight - headerHeight - footerHeight - SAFETY
+  const otherPageCapacity = innerHeight - footerHeight - SAFETY
+
+  // Measure all record blocks (including their margins)
+  const itemEls = Array.from(itemsWrap.children) as HTMLElement[]
+  const heights = itemEls.map(el => outerHeightWithMargins(el))
+
+  const src = dailyRecords.value
+  const pages: DailyRecord[][] = []
 
   let current: DailyRecord[] = []
   let used = 0
+  let capacity = firstPageCapacity
 
-  for (const rec of dailyRecords.value) {
-    const need = estimateLinesForRecord(rec)
+  for (let i = 0; i < src.length; i++) {
+    const h = heights[i] ?? 0
+    const record = src[i]
 
-    // If a single record is huge, force it onto its own page
-    if (need > pageCapacityLines) {
-      if (current.length) pages.push(current)
-      pages.push([rec])
+    if (!record) continue
+
+    if (current.length && used + h > capacity) {
+      pages.push(current)
       current = []
       used = 0
-      continue
+      capacity = otherPageCapacity
     }
 
-    if (used + need > pageCapacityLines && current.length) {
-      pages.push(current)
-      current = [rec]
-      used = need
-    } else {
-      current.push(rec)
-      used += need
-    }
+    current.push(record)
+    used += h
   }
 
   if (current.length) pages.push(current)
-  return pages
-})
+  pagedRecords.value = pages
+}
+
+watch(
+  () => dailyRecords.value,
+  async () => {
+    await recalcPagination()
+  },
+  { deep: true, immediate: true }
+)
+
+async function printPage() {
+  // Ensure the pages shown on screen are the ones printed
+  isPrinting.value = true
+  await nextTick()
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+  window.print()
+}
+
+function handleAfterPrint() {
+  isPrinting.value = false
+}
+
+onMounted(() => window.addEventListener('afterprint', handleAfterPrint))
+onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint))
 </script>
 
 <template>
@@ -182,73 +227,132 @@ const pagedRecords = computed(() => {
     </div>
 
     <div v-else class="agreement-sheet-wrapper">
-      <!-- Dynamically created pages -->
-      <div
-        v-for="(page, pageIdx) in pagedRecords"
-        :key="pageIdx"
-        class="travel-page"
-      >
-        <div class="text-center font-bold text-lg mb-2">DENNÝ ZÁZNAM CIEST</div>
+      <!-- PRINTED CONTENT -->
+      <div id="print-root">
+        <div v-for="(page, pageIdx) in pagedRecords" :key="pageIdx" class="travel-page">
+          <!-- Header only on first page -->
+          <div v-if="pageIdx === 0">
+            <div class="text-center font-bold text-lg mb-2">DENNÝ ZÁZNAM CIEST</div>
 
-        <div class="grid grid-cols-2 gap-2 text-sm mb-2">
-          <div class="border border-black p-2">
-            <strong>Obdobie:</strong>
-            {{ cpData.month }}/{{ cpData.year }}
+            <div class="grid grid-cols-2 gap-2 text-sm mb-2">
+              <div class="border border-black p-2">
+                <strong>Obdobie:</strong>
+                {{ cpData.month }}/{{ cpData.year }}
+              </div>
+              <div class="border border-black p-2">
+                <strong>Pracovník:</strong>
+                {{ cpData.user_name }}
+              </div>
+            </div>
           </div>
-          <div class="border border-black p-2">
-            <strong>Pracovník:</strong>
-            {{ cpData.user_name }}
+
+          <div v-for="record in page" :key="record.date" class="mb-4 dzc-block">
+            <table class="w-full border-collapse text-xs">
+              <thead>
+                <tr>
+                  <td class="border border-black p-2 text-left w-[85px]">
+                    <strong>Dátum</strong><br />
+                    {{ formatDate(record.date) }}
+                  </td>
+                  <td class="border border-black p-2 text-left w-[150px]">
+                    <strong>Účel cesty</strong><br />
+                    Návšteva pacienta
+                  </td>
+                  <td class="border border-black p-2 text-left w-[95px]">
+                    <strong>Počet km</strong><br />
+                  </td>
+                  <td class="border border-black p-2 text-left w-[120px]">
+                    <strong>Odchod / Príchod</strong><br />
+                  </td>
+                  <td class="border border-black p-2 text-left w-[120px]">
+                    <strong>Prostriedok</strong><br />
+                    {{ cpData.car_model }}<br />
+                    {{ cpData.car_license_plate }}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="border border-black p-2 text-left w-full" colspan="5">
+                    <strong>Trasa</strong><br />
+                    <div v-for="(addr, idx) in record.addresses" :key="idx" class="mb-1">
+                      {{ addr.address }}
+                    </div>
+                  </td>
+                </tr>
+              </thead>
+            </table>
           </div>
-        </div>
 
-        <div v-for="record in page" :key="record.date" class="mb-4">
-          <table class="w-full border-collapse text-xs">
-            <thead>
-              <tr>
-                <td class="border border-black p-2 text-left w-[85px]">
-                  <strong>Dátum</strong><br />
-                  {{ formatDate(record.date) }}
-                </td>
-                <td class="border border-black p-2 text-left w-[150px]">
-                  <strong>Účel cesty</strong><br />
-                  Návšteva pacienta
-                </td>
-                <td class="border border-black p-2 text-left w-[95px]">
-                  <strong>Najazdené km</strong><br />
-                </td>
-                <td class="border border-black p-2 text-left w-[120px]">
-                  <strong>Odchod / Príchod</strong><br />
-                </td>
-                <td class="border border-black p-2 text-left w-[120px]">
-                  <strong>Prostriedok</strong><br />
-                  {{ cpData.car_model }}<br />
-                  {{ cpData.car_license_plate }}
-                </td>
-              </tr>
-
-              <tr>
-                <td class="border border-black p-2 text-left w-full" colspan="5">
-                  <strong>Východzia adresa</strong><br />
-                  {{ cpData.branch_address }}
-                </td>
-              </tr>
-
-              <tr>
-                <td class="border border-black p-2 text-left w-full" colspan="5">
-                  <strong>Trasa</strong><br />
-                  <div v-for="(addr, idx) in record.addresses" :key="idx" class="mb-1">
-                    {{ addr.address }}
-                  </div>
-                </td>
-              </tr>
-            </thead>
-          </table>
-        </div>
-
-        <div class="text-xs opacity-70 mt-2">
-          Strana {{ pageIdx + 1 }} / {{ pagedRecords.length }}
+          <div class="text-xs opacity-70 mt-2">
+            Strana {{ pageIdx + 1 }} / {{ pagedRecords.length }}
+          </div>
         </div>
       </div>
+
+      <!-- HIDDEN MEASURER (for accurate pagination) -->
+      <div id="measure-root" aria-hidden="true">
+        <div ref="measurePageRef" class="travel-page measure-page">
+          <div ref="measurePageInnerRef" class="page-inner">
+            <div ref="measureHeaderRef">
+              <div class="text-center font-bold text-lg mb-2">DENNÝ ZÁZNAM CIEST</div>
+              <div class="grid grid-cols-2 gap-2 text-sm mb-2">
+                <div class="border border-black p-2">
+                  <strong>Obdobie:</strong>
+                  {{ cpData.month }}/{{ cpData.year }}
+                </div>
+                <div class="border border-black p-2">
+                  <strong>Pracovník:</strong>
+                  {{ cpData.user_name }}
+                </div>
+              </div>
+            </div>
+
+            <div ref="measureItemsWrapRef">
+              <div v-for="record in dailyRecords" :key="record.date" class="mb-4 dzc-block">
+                <table class="w-full border-collapse text-xs">
+                  <thead>
+                    <tr>
+                      <td class="border border-black p-2 text-left w-[85px]">
+                        <strong>Dátum</strong><br />
+                        {{ formatDate(record.date) }}
+                      </td>
+                      <td class="border border-black p-2 text-left w-[150px]">
+                        <strong>Účel cesty</strong><br />
+                        Návšteva pacienta
+                      </td>
+                      <td class="border border-black p-2 text-left w-[95px]">
+                        <strong>Najazdené km</strong><br />
+                      </td>
+                      <td class="border border-black p-2 text-left w-[120px]">
+                        <strong>Odchod / Príchod</strong><br />
+                      </td>
+                      <td class="border border-black p-2 text-left w-[120px]">
+                        <strong>Prostriedok</strong><br />
+                        {{ cpData.car_model }}<br />
+                        {{ cpData.car_license_plate }}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td class="border border-black p-2 text-left w-full" colspan="5">
+                        <strong>Trasa</strong><br />
+                        <div v-for="(addr, idx) in record.addresses" :key="idx" class="mb-1">
+                          {{ addr.address }}
+                        </div>
+                      </td>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            </div>
+
+            <div ref="measureFooterRef" class="text-xs opacity-70 mt-2">
+              Strana 1 / 1
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /measurer -->
     </div>
   </div>
 </template>
@@ -266,6 +370,10 @@ const pagedRecords = computed(() => {
   overflow: hidden;
 }
 
+.page-inner {
+  height: 100%;
+}
+
 .agreement-sheet-wrapper {
   display: flex;
   justify-content: center;
@@ -274,40 +382,68 @@ const pagedRecords = computed(() => {
   flex-wrap: wrap;
 }
 
+/* Hide measurer but keep renderable */
+#measure-root {
+  position: absolute;
+  left: -99999px;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.measure-page {
+  opacity: 0;
+}
+
 @page {
   size: A4;
   margin: 0;
 }
 
 @media print {
-  body {
-    margin: 0;
-    padding: 0;
+  :global(html),
+  :global(body) {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  body * {
+
+  :global(body) * {
     visibility: hidden !important;
   }
 
-  .travel-page,
-  .travel-page * {
+  :global(#print-root),
+  :global(#print-root *) {
     visibility: visible !important;
   }
 
-  .travel-page {
-    position: relative;
-    margin: 0 auto;
-    box-shadow: none;
-    page-break-after: always;
-    break-after: page;
+  :global(#print-root) {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
   }
 
-  .travel-page:last-child {
-    page-break-after: auto;
-    break-after: auto;
+  :global(.travel-page) {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    break-after: page !important;
+    page-break-after: always !important;
   }
 
-  .no-print,
-  .p-toolbar {
+  :global(.travel-page:last-child) {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  :global(.no-print),
+  :global(.p-toolbar),
+  :global(#measure-root) {
     display: none !important;
   }
 }
