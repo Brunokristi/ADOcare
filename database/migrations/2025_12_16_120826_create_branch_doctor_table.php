@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('branch_doctor', function (Blueprint $table) {
+        Schema::create('branch_favourite_doctors', function (Blueprint $table) {
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('doctor_id');
 
@@ -29,6 +29,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('branch_doctor');
+        Schema::dropIfExists('branch_favourite_doctors');
     }
 };

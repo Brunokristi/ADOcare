@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PatientPointUniqueDatesRequest;
+use App\Http\Responses\ApiResponse;
+use App\Models\Patient;
 use App\Models\PatientPoint;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,22 +15,16 @@ class DekurzController extends Controller
     /**
      * Get unique dates for specific procedure codes
      * GET /v1/dekurz/dates
-     * 
-     * @param Request $request
+     *
+     * @param PatientPointUniqueDatesRequest $patient
      * @return \Illuminate\Http\JsonResponse
      */
-    public function uniqueDates(Request $request)
+    public function uniqueDates(PatientPointUniqueDatesRequest $request, Patient $patient)
     {
-        $validated = $request->validate([
-            'patient_id' => ['required', 'integer'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-        ]);
-
         $dates = PatientPoint::query()
-            ->where('patient_id', $validated['patient_id'])
-            ->whereDate('date', '>=', $validated['start_date'])
-            ->whereDate('date', '<=', $validated['end_date'])
+            ->where('patient_id', $patient->id)
+            ->whereDate('date', '>=', $request->input('start_date'))
+            ->whereDate('date', '<=', $request->input('end_date'))
             ->whereIn('procedure_code', ['3439', '3440'])
             ->distinct()
             ->pluck('date')
@@ -35,12 +32,14 @@ class DekurzController extends Controller
             ->sort()
             ->values();
 
-        return response()->json([
-            'patient_id' => $validated['patient_id'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
+        $res_data= [
+            'patient_id' => $patient->id,
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
             'dates' => $dates,
             'count' => $dates->count(),
-        ]);
+        ];
+
+        return $this->success($res_data, 'Unique dates retrieved');
     }
 }

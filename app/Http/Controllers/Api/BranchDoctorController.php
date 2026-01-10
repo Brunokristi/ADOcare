@@ -2,27 +2,37 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Filters\ApiQuery;
+use App\Http\Resources\DoctorCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Branch;
 use App\Models\Doctor;
-use Illuminate\Routing\Controller;
 
 class BranchDoctorController extends Controller
 {
-    use ApiResponse;
+    public function doctors(Branch $branch)
+    {
+        $query = Doctor::query()
+        ->whereHas('branches', function ($q) use ($branch) {
+            $q->where('branches.id', $branch->id);
+        });
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new DoctorCollection($results), 'Branch doctors retrieved');
+        }
 
     public function attach(Branch $branch, Doctor $doctor)
     {
-        // inserts into branch_doctor if not already there
-        $branch->doctors()->syncWithoutDetaching([$doctor->id]);
+        // inserts into branch_favourite_doctors if not already there
+        $branch->favourite_doctors()->syncWithoutDetaching([$doctor->id]);
 
         return $this->success(null, 'Doctor added to favourites');
     }
 
     public function detach(Branch $branch, Doctor $doctor)
     {
-        // deletes from branch_doctor
-        $branch->doctors()->detach($doctor->id);
+        // deletes from branch_favourite_doctors
+        $branch->favourite_doctors()->detach($doctor->id);
 
         return $this->success(null, 'Doctor removed from favourites');
     }

@@ -12,7 +12,7 @@ use Illuminate\Http\Response;
 
 class TextBlockController extends Controller
 {
-    use ApiResponse;
+
     public function index(Request $request)
     {
         $query = TextBlock::query();

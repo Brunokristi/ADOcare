@@ -103,7 +103,7 @@ async function loadDoctorsOptions() {
   if (!branchId.value) return
   try {
     const res = await api.get('/v1/doctors', {
-      params: { branch_id: branchId.value, favourites: 1, paginate: 0, limit: 500 },
+      params: { limit: 500 },
     })
     const items = res.data?.data?.items ?? res.data?.data ?? []
     doctorOptions.value = (items ?? []).map((d: any) => ({

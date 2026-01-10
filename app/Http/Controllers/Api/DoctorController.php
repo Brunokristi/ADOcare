@@ -2,70 +2,44 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Doctor;
+use DB;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Response;
 
 class DoctorController extends Controller
 {
-    use ApiResponse;
-
-    public function index(Request $request)
+    public function index()
     {
-        $branchId = (int) $request->query('branch_id');
 
-        if ($branchId <= 0) {
-            return $this->error('branch_id is required', 422);
+        $subquery = Doctor::query();
+
+        $branchId = request()->input('mark_favourites_for_branch_id');
+        if ($branchId) {
+            // Add is_favourite attribute via LEFT JOIN for better performance
+            $subquery->leftJoin('branch_favourite_doctors as bfd', function ($join) use ($branchId) {
+                $join->on('bfd.doctor_id', '=', 'doctors.id')
+                     ->where('bfd.branch_id', '=', $branchId);
+            })
+            ->selectRaw('doctors.*, (bfd.doctor_id IS NOT NULL) AS is_favourite');
         }
 
-        $query = Doctor::query()
-            ->withExists([
-                'branches as is_favourite' => fn ($q) => $q->where('branches.id', $branchId),
-            ]);
-
-        if ($request->boolean('favourites')) {
-            $query->whereHas('branches', fn ($q) => $q->where('branches.id', $branchId));
-        }
-
-        if (!$request->filled('sort')) {
-            $query->orderBy('last_name')->orderBy('first_name');
-        }
-
+        $query = DB::table(DB::raw("({$subquery->toSql()}) as doctors"))
+            ->mergeBindings($subquery->getQuery()) // Merge bindings from subquery
+            ->select('doctors.*');
 
         $results = ApiQuery::apply(
-            $request,
+            request(),
             $query,
-            searchable: ['first_name', 'last_name', 'zpr', 'pzs']
+            searchable: ['first_name', 'last_name', 'zpr', 'pzs'],
+            allowedFilters: ['first_name', 'last_name', 'title', 'zpr', 'pzs',  'is_favourite'],
         );
 
         return $this->success(new BaseCollection($results), 'Doctors retrieved');
-    }
-
-    public function favourites(Request $request)
-    {
-        $branchId = $request->user()->branch_id; // adjust if needed
-
-        $query = Doctor::query()
-            ->whereHas('branches', fn ($q) => $q->where('branches.id', $branchId))
-            ->withExists([
-                'branches as is_favourite' => fn ($q) => $q->where('branches.id', $branchId),
-            ]);
-
-        if (!$request->filled('sort')) {
-            $query->orderBy('last_name')->orderBy('first_name');
-        }
-
-        $results = ApiQuery::apply(
-            $request,
-            $query,
-            searchable: ['first_name', 'last_name', 'title', 'zpr', 'pzs']
-        );
-
-        return $this->success(new BaseCollection($results), 'Favourite doctors retrieved');
     }
 
     public function store(\App\Http\Requests\StoreDoctorRequest $request)

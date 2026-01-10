@@ -12,7 +12,7 @@ use Illuminate\Http\Response;
 
 class VisitTextController extends Controller
 {
-    use ApiResponse;
+
     public function index(Request $request)
     {
         $query = VisitText::query();

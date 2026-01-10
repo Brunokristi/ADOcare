@@ -3,83 +3,63 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
 use App\Http\Requests\PatientDeleteManyRequest;
+use App\Http\Requests\PatientStoreRequest;
+use App\Http\Requests\PatientUpdateRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\PatientResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\Branch;
 use App\Models\Diagnosis;
 use App\Models\Patient;
 use App\Models\PatientPoint;
+use App\Http\Requests\PatientPointIndexRequest;
 use App\Models\Procedure;
 use App\Models\Document;
+use App\Services\PatientService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 
 class PatientController extends Controller
 {
-    use ApiResponse;
+
+
+    private PatientService $service;
+
+    public function __construct(PatientService $service)
+    {
+        $this->service = $service;
+    }
 
     public function index(Request $request)
     {
         $user = $request->user();
         $branchId = (int) $request->input('branch_id');
-
-        $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
-            ->whereHas('assignedUsers', function ($q) use ($user, $branchId) {
-                $q->where('users.id', $user->id)
-                ->where('patient_branch_users.branch_id', $branchId);
-            });
-
-        if (!$request->filled('sort')) {
-            $query->orderBy('last_name')
-                ->orderBy('first_name');
+        $branch = Branch::find($branchId);
+        if (!$branch) {
+            return $this->success(new PatientCollection(collect([])), 'Patients retrieved');
         }
+
+        $query = $this->service->queryForUserBranch($user, $branch);
 
         $results = ApiQuery::apply(
             $request,
             $query,
             searchable: ['first_name', 'last_name', 'personal_number'],
-            allowedFilters: ['sex']
+            allowedFilters: ['sex'],
+            defaults:['sort' => 'last_name']
         );
 
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
 
 
-    public function store(Request $request)
+    public function store(PatientStoreRequest $request)
     {
-        $data = $request->validate([
-            'branch_id' => 'required|integer|exists:branches,id',
+        $data = $request->validated();
 
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'title' => 'nullable|string|max:255',
-            'personal_number' => 'nullable|string|max:255',
-            'sex' => 'nullable|in:M,F',
-            'contact' => 'nullable|string|max:255',
-
-            'doctor_id' => 'nullable|integer|exists:doctors,id',
-            'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
-
-            'address' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:255',
-            'zip' => 'nullable|string|max:50',
-
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-
-            'reference_date' => 'nullable|date',
-        ]);
-
-        $patient = Patient::create(collect($data)->except('branch_id')->toArray());
-
-        // Attach current user + branch in pivot (patient_branch_users)
-        $patient->assignedUsers()->syncWithoutDetaching([
-            $request->user()->id => ['branch_id' => (int) $data['branch_id']],
-        ]);
-
-        $patient->load(['doctor', 'visits', 'insuranceCompany']);
+        $patient = $this->service->create($data, $request->user(), (int) $data['branch_id']);
 
         return $this->success(new PatientResource($patient), 'Created', 201);
     }
@@ -96,46 +76,18 @@ class PatientController extends Controller
     }
 
 
-    public function update(Request $request, $id)
+    public function update(PatientUpdateRequest $request, $id)
     {
-        $data = $request->validate([
-            'branch_id' => 'sometimes|integer|exists:branches,id',
-
-            'first_name' => 'sometimes|required|string|max:255',
-            'last_name' => 'sometimes|required|string|max:255',
-            'title' => 'nullable|string|max:255',
-            'personal_number' => 'nullable|string|max:255',
-            'sex' => 'nullable|in:M,F',
-            'contact' => 'nullable|string|max:255',
-
-            'doctor_id' => 'nullable|integer|exists:doctors,id',
-            'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
-
-            'address' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:255',
-            'zip' => 'nullable|string|max:50',
-
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-
-            'reference_date' => 'nullable|date',
-        ]);
+        $data = $request->validated();
 
         $patient = Patient::find($id);
         if (!$patient) {
             return $this->error('Not found', 404);
         }
 
-        $patient->fill(collect($data)->except('branch_id')->toArray());
-        $patient->save();
+        $branchId = array_key_exists('branch_id', $data) ? (int) $data['branch_id'] : null;
 
-        if (array_key_exists('branch_id', $data)) {
-            $patient->assignedUsers()->syncWithoutDetaching([
-                $request->user()->id => ['branch_id' => (int) $data['branch_id']],
-            ]);
-        }
-
-        $patient->load(['doctor', 'visits', 'insuranceCompany']);
+        $patient = $this->service->update($patient, $data, $request->user(), $branchId);
 
         return $this->success(new PatientResource($patient), 'Updated');
     }
@@ -146,15 +98,15 @@ class PatientController extends Controller
         if (!$patient) {
             return $this->error('Not found', 404);
         }
-        // Soft delete
-        $patient->delete();
+
+        $this->service->delete($patient);
+
         return $this->success(null, 'Deleted');
     }
 
     public function destroyMany(PatientDeleteManyRequest $request)
     {
-
-        Patient::whereIn('id', $request->input('ids'))->delete();
+        $this->service->deleteManyByIds($request->input('ids'));
 
         return $this->success(null, 'Deleted');
     }
@@ -190,10 +142,24 @@ class PatientController extends Controller
         return $this->success(new BaseCollection($results), 'Procedures retrieved');
     }
 
-    public function patientPoints(Request $request, Patient $patient)
+    public function points(PatientPointIndexRequest $request, Patient $patient)
     {
+        $data = $request->validated();
+
         $query = PatientPoint::query()->where('patient_id', $patient->id);
-        $results = ApiQuery::apply($request, $query, searchable: ['reference_date', 'user_id', 'branch_id']);
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('reference_date', '>=', $data['date_from']);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('reference_date', '<=', $data['date_to']);
+        }
+
+        $results = ApiQuery::apply($request, $query, searchable: ['reference_date'],
+            allowedFilters: ['reference_date', 'branch_id'],
+            defaults: ['sort' => 'reference_date']
+    );
         return $this->success(new BaseCollection($results), 'Patient points retrieved');
     }
 
@@ -207,5 +173,5 @@ class PatientController extends Controller
         return $this->success(new BaseCollection($results), 'Patient documents retrieved');
     }
 
-    
+
 }

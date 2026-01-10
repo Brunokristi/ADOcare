@@ -17,7 +17,6 @@ use Illuminate\Http\Response;
 
 class BranchController extends Controller
 {
-    use ApiResponse;
     public function index(Request $request)
     {
         $query = Branch::query();
@@ -36,15 +35,6 @@ class BranchController extends Controller
         return $this->success(new PatientCollection($results), 'Branch patients retrieved');
     }
 
-    public function doctors(Branch $branch)
-    {
-        $query = Doctor::query()
-            ->whereHas('branches', function ($q) use ($branch) {
-                $q->where('branches.id', $branch->id);
-            });
-        $results = ApiQuery::apply(request(), $query);
-        return $this->success(new DoctorCollection($results), 'Branch doctors retrieved');
-    }
 
     public function store(\App\Http\Requests\StoreBranchRequest $request)
     {

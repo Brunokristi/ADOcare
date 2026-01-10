@@ -4,6 +4,7 @@ import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import MacroForm from '@/partials/Settings/Macros/MacroForm.vue'
 import type { Macro } from '@/types/models'
 import api from '@/services/api'
+import type { DataTableOptions } from '@/types/datatable'
 
 // UI state for modal
 const showMacroDialog = ref(false)

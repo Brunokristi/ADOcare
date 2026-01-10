@@ -5,8 +5,12 @@ type RemoteLoadResultLocal<T = any> = { items: T[]; total: number };
 
 export function useRemoteTable<T = any>(
   endpointUrl: string,
-  opts: { defaultPageSize?: number; extraParams?: Record<string, any> } = {}
+  customOptions: { defaultPageSize?: number; extraParams?: Record<string, any> } = {}
 ) {
+
+    const opts = customOptions || {};
+
+
   const loading = ref(false);
   const items = ref<T[]>([]);
   const total = ref<number>(0);
@@ -81,6 +85,17 @@ export function useRemoteTable<T = any>(
     per_page.value = n;
   }
 
+  function setExtraParams(p: Record<string, any>) {
+    opts.extraParams = p;
+  }
+
+  function setExtraParam(key: string, value: any) {
+    if (!opts.extraParams) {
+      opts.extraParams = {};
+    }
+    opts.extraParams[key] = value;
+  }
+
   return {
     loading,
     items,
@@ -94,5 +109,7 @@ export function useRemoteTable<T = any>(
     setSearch,
     setSort,
     setPerPage,
+    setExtraParams,
+    setExtraParam,
   };
 }

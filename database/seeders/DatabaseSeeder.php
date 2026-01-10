@@ -50,6 +50,7 @@ class DatabaseSeeder extends Seeder
         $this->call(InsuranceCompanySeeder::class);
         $this->call(DiagnosisSeeder::class);
         $this->call(ProcedureSeeder::class);
+        $this->call(ProcedureCompanyPricesSeeder::class);
 
         // reusable text blocks, report months and visits
         $this->call(TextBlockSeeder::class);
