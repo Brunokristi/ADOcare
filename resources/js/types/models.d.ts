@@ -128,6 +128,12 @@ export interface Procedure {
   description: string | null
   created_at: string | null
   updated_at: string | null
+  // relations
+  insurance_companies_prices: InsuranceCompany[]
+  // counts
+  insurance_companies_prices_count: number
+  // exists
+  insurance_companies_prices_exists: boolean
 }
 
 export interface NurseDiagnosis {
