@@ -13,13 +13,20 @@ import MacrosOld from '@/partials/Settings/Macros/MacrosOld.vue'
 import Data from '@/pages/Data.vue'
 import Points from '@/partials/Data/Points.vue'
 import Kilometers from '@/partials/Data/Kilometers.vue'
+import Routes from '@/partials/Data/Routes.vue'
 import Patient from '@/pages/Patient.vue'
 import PatientPoints from '@/partials/Patient/Points.vue'
 import Document from '@/pages/Documents.vue'
 import DocumentPoints from '@/partials/Documents/Points.vue'
 import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
+import DocumentProposal from '@/partials/Documents/Proposal.vue'
+import DocumentAgreement from '@/partials/Documents/Agreement.vue'
+import DocumentCP from '@/partials/Documents/CP.vue'
+import DocumentDZC from '@/partials/Documents/DZC.vue'
 import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
+import PatientAgreement from '@/partials/Patient/Agreement.vue'
+import PatientRecord from '@/partials/Patient/Record.vue'
 
 
 
@@ -120,6 +127,50 @@ const routes = [
                     navbar: false,
                 },
             },
+            {
+                path: 'proposal/:documentId',
+                name: 'documents-proposal',
+                component: DocumentProposal,
+                meta: {
+                    title: 'Návrh na poskytnutie ošetrovateľskej starostlivosti',
+                    link: 'návrh',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'agreement/:documentId',
+                name: 'documents-agreement',
+                component: DocumentAgreement,
+                meta: {
+                    title: 'Dohoda o poskytnutí zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti',
+                    link: 'dohoda',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'cp/:documentId',
+                name: 'documents-cp',
+                component: DocumentCP,
+                meta: {
+                    title: 'Cestovný príkaz',
+                    link: 'cestovný príkaz',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'dzc/:documentId',
+                name: 'documents-dzc',
+                component: DocumentDZC,
+                meta: {
+                    title: 'Denný záznam ciest',
+                    link: 'denný záznam ciest',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
         ]
     },
 
@@ -151,6 +202,28 @@ const routes = [
                 meta: {
                     title: 'Návrh na poskytnutie ošetrovateľskej starostlivosti',
                     link: 'návrh',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'agreement',
+                name: 'agreement',
+                component: PatientAgreement,
+                meta: {
+                    title: 'Dohoda o poskytnutí zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti',
+                    link: 'dohoda',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'record',
+                name: 'record',
+                component: PatientRecord,
+                meta: {
+                    title: 'Ošetrovateľský záznam',
+                    link: 'ošetrovateľský záznam',
                     sidebar: false,
                     navbar: false,
                 },
@@ -240,7 +313,33 @@ const routes = [
             },
         ],
     },
-]
+    {
+        path: '/accounting',
+        name: 'accounting',
+        component: Data,
+        redirect: { name: 'routes' },
+        meta: {
+            title: 'Účtovníctvo',
+            sectionRoot: 'accounting',
+            sidebar: true
+
+        },
+        children: [
+            {
+                path: 'routes',
+                name: 'routes',
+                component: Routes,
+                meta: {
+                    title: 'Cestovné',
+                    link: 'cestovné',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+        ]
+    },
+
+];
 
 const router = createRouter({
     history: createWebHistory(),

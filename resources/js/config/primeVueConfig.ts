@@ -69,20 +69,16 @@ export default {
         /* ---------- INPUTS / TEXTAREA ---------- */
 
         inputtext: {
-            root: { class: baseField },
+            root: { class: 'bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! outline-none! ring-0! shadow-none! focus:outline-none! focus:ring-0! focus:shadow-none!' },
         },
 
         textarea: {
-            root: { class: `${baseField} h-auto! min-h-[5rem]! py-2!` },
+            root: { class: 'bg-white! rounded-md! border-darkgrey! text-normal! text-darkgrey! outline-none! ring-0! shadow-none! focus:outline-none! focus:ring-0! focus:shadow-none!' },
         },
-
-        /* ---------- BUTTON ---------- */
 
         button: {
             root: { class: `p-xs! rounded-md! ${baseNoOutline}` },
         },
-
-        /* ---------- MENU / MENUBAR / DIALOG / TOAST (unchanged look) ---------- */
 
         menubar: {
             root: { class: 'border-0! px-0! rounded-none! content-center!' },
@@ -152,8 +148,11 @@ export default {
             },
 
             option: {
-                class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white!'
-            }
+                class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white! h-auto! !text-normal'
+            },
+
+            dropDown: { class: 'hidden!' },
+
         },
 
 

@@ -320,7 +320,7 @@ watch(
         :loading="patientsLoading"
         :placeholder="patientsLoading ? 'Načítavam pacientov...' : 'Vyberte pacienta'"
         dropdownIcon="bi bi-chevron-down !text-white"
-        class="w-60 h-7! flex items-center bg-tag2! border-none!"
+        class="w-60 h-7! flex items-center border-none! !bg-tag2",
       >
         <template #value>
           <span class="text-normal text-white">Vyberte pacienta</span>
