@@ -21,6 +21,7 @@ import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
 import DocumentProposal from '@/partials/Documents/Proposal.vue'
 import DocumentAgreement from '@/partials/Documents/Agreement.vue'
 import DocumentCP from '@/partials/Documents/CP.vue'
+import DocumentDZC from '@/partials/Documents/DZC.vue'
 import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
@@ -154,6 +155,17 @@ const routes = [
                 meta: {
                     title: 'Cestovný príkaz',
                     link: 'cestovný príkaz',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'dzc/:documentId',
+                name: 'documents-dzc',
+                component: DocumentDZC,
+                meta: {
+                    title: 'Denný záznam ciest',
+                    link: 'denný záznam ciest',
                     sidebar: false,
                     navbar: false,
                 },

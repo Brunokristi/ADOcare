@@ -90,7 +90,36 @@ async function onSubmit() {
     }
     
     else if (batchType.value.code === 'DZC') {
-        
+        try {
+            const res = await api.post('/v1/dzcs', {
+            start: formatLocalDate(startDate),
+            end: formatLocalDate(endDate),
+            branch_id: authStore.currentBranch?.id,
+            });
+
+            const documentId = res.data?.document_id;
+            
+            toast.add({
+            severity: 'success',
+            summary: 'Úspech',
+            detail: 'Denný záznam ciest bol úspešne vytvorený',
+            life: 3000,
+            });
+
+            await router.push({
+            path: `/documents/dzc/${documentId}`,
+            });
+        } catch (error) {
+            toast.add({
+            severity: 'error',
+            summary: 'Chyba',
+            detail: 'Nepodarilo sa vytvoriť denný záznam ciest',
+            life: 3000,
+            });
+            console.error('Preview or navigation failed', error);
+        } finally {
+            loading.value = false;
+        }
     }
 }
 </script>
