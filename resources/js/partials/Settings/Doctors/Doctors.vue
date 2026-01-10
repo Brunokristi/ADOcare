@@ -1,0 +1,160 @@
+<script setup lang="ts">
+import { markRaw, ref } from 'vue'
+import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import DoctorForm from '@/partials/Settings/Doctors/DoctorForm.vue'
+import type { Doctor } from '@/types/models'
+import api from '@/services/api'
+import useAuthStore from '@/stores/auth'
+import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import type { DataTableOptions } from '@/types/datatable'
+
+// UI state for modal
+const showDoctorDialog = ref(false)
+const editingDoctor = ref<Partial<Doctor> | null>(null)
+const actionRemote = ref<any>(null)
+let showFavouritesOnly = ref(false);
+
+// function openCreate(remote?: any) {
+//     editingDoctor.value = { first_name: '', last_name: '', title: '' }
+//     actionRemote.value = remote ?? null
+//     showDoctorDialog.value = true
+// }
+
+// function openEdit({ selectedRows, remote }: any) {
+//     const first = selectedRows?.[0] ?? null
+//     if (!first) return
+//     editingDoctor.value = { ...first }
+//     actionRemote.value = remote ?? null
+//     showDoctorDialog.value = true
+// }
+
+async function onSaveDoctor() {
+    try {
+        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
+    } finally {
+        showDoctorDialog.value = false
+        editingDoctor.value = null
+        actionRemote.value = null
+    }
+}
+
+async function onCloseDialog() {
+    showDoctorDialog.value = false
+    editingDoctor.value = null
+    actionRemote.value = null
+}
+
+const options = ref<DataTableOptions<Doctor>>({
+    rowKey: 'id',
+    endpointUrl: `v1/doctors`,
+    extraParams: {
+        // Pass branch ID to mark favourites
+        mark_favourites_for_branch_id: useAuthStore().currentBranch?.id ?? null,
+    },
+    defaultPageSize: 50,
+    pageSizeOptions: [25, 50, 100],
+    selectable: false,
+    columns: [
+        { field: 'first_name', header: 'Meno', sortable: true },
+        { field: 'last_name', header: 'Priezvisko', sortable: true },
+        { field: 'title', header: 'Titul' },
+        { field: 'zpr', header: 'ZPR' },
+        { field: 'pzs', header: 'PZS' },
+        {
+            field: 'is_favourite',
+            // header: 'Obľúbený',
+            width: '4rem',
+            component: markRaw(ActionButtons),
+            componentOptions: [
+                {
+                    type: 'toggle-icon',
+                    icon: (row: Doctor & {is_favourite:boolean}) => row.is_favourite ? 'bi bi-heart-fill' : 'bi bi-heart',
+                    tooltip: 'Označiť/odznačiť ako obľúbeného',
+                    async action(row: Doctor  & {is_favourite:boolean}) {
+                        const doctorId = row.id;
+
+                        const branchId = useAuthStore().currentBranch?.id
+                        if (!branchId) return
+
+                        const isFavourite = !row.is_favourite;
+
+                        const url = `/v1/branches/${branchId}/favourite-doctors/${doctorId}`
+                        if (isFavourite) {
+                            // add to favourites
+                            await api.post(url)
+                        } else {
+                            // remove from favourites
+                            await api.delete(url)
+                        }
+
+                        // update local state
+                        row.is_favourite = isFavourite
+
+
+                    },
+                },
+            ],
+
+        },
+    ],
+    actions: [
+    //     {
+    //         key: 'edit',
+    //         label: '',
+    //         icon: 'bi bi-pencil',
+    //         disabled: ({ selectedRows }) => !selectedRows || selectedRows.length !== 1,
+    //         handler: async (ctx: any) => openEdit(ctx),
+    //     },
+    //     {
+    //         key: 'delete',
+    //         label: '',
+    //         icon: 'bi bi-eraser',
+    //         disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
+    //         confirm: 'Naozaj vymazať vybraných lekárov?',
+    //         handler: async ({ remote, selectedRows }: any) => {
+    //             try {
+    //                 for (const r of selectedRows ?? []) {
+    //                     await api.delete(`/v1/doctors/${r.id}`)
+    //                 }
+    //             } catch (err) {
+    //                 console.error('Delete failed', err)
+    //             } finally {
+    //                 await remote.loadPage(1)
+    //             }
+    //         },
+    //     },
+    //     {
+    //         key: 'add',
+    //         label: '',
+    //         icon: 'bi bi-plus',
+    //         handler: async (ctx: any) => openCreate(ctx.remote),
+    //     },
+    {
+        key: 'show_favourites_only',
+        // label: 'Len obľúbení',
+        icon: (_params) => (showFavouritesOnly.value ? 'bi bi-heart-fill' : 'bi bi-heart'),
+        handler: async ({ remote }) => {
+            showFavouritesOnly.value = !showFavouritesOnly.value;
+            remote.setExtraParam('filter', showFavouritesOnly.value ? { is_favourite: true } : {});
+            console.log('Toggling favourites only:', showFavouritesOnly.value, remote.params.value);
+            await remote.loadPage(1);
+        }
+    },
+    ],
+})
+</script>
+
+<template>
+    <div class="h-full flex flex-col overflow-hidden min-h-0">
+        <UniversalDataTable :options="options" />
+
+        <DoctorForm v-if="showDoctorDialog" :doctor="editingDoctor" @save="onSaveDoctor" @close="onCloseDialog" />
+    </div>
+</template>
+
+<style scoped>
+.text-heading {
+    font-weight: 600;
+    font-size: 1.125rem
+}
+</style>

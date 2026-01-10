@@ -6,7 +6,8 @@ import Patients from '@/pages/Patients.vue'
 import Settings from '@/pages/Settings.vue'
 import Procedures from '@/partials/Settings/Procedures.vue'
 import Diagnoses from '@/partials/Settings/Diagnoses.vue'
-import Doctors from '@/partials/Settings/Doctors.vue'
+import Doctors from '@/partials/Settings/Doctors/Doctors.vue'
+import DoctorsOld from '@/partials/Settings/Doctors/DoctorsOld.vue'
 import Macros from '@/partials/Settings/Macros/Macros.vue'
 import MacrosOld from '@/partials/Settings/Macros/MacrosOld.vue'
 import Data from '@/pages/Data.vue'
@@ -180,6 +181,17 @@ const routes = [
                     link: 'lekári',
                     sidebar: true,
                     navbar: true,
+                },
+            },
+            {
+                path: 'doctors-old',
+                name: 'doctors-old',
+                component: DoctorsOld,
+                meta: {
+                    title: 'Lekári (old)',
+                    link: 'lekári-old',
+                    sidebar: false,
+                    navbar: false,
                 },
             },
             {
