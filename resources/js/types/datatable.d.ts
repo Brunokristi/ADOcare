@@ -1,10 +1,12 @@
 // Types for UniversalDataTable
-// A component may be a sync component (Component) or an async loader returning a
-// component. This union accepts either so callers can pass `defineAsyncComponent`
+
+import type { useRemoteTable } from "@/composables/useRemoteTable";
+
 // loaders or plain components.
 type VueComponent = Component | (() => Promise<Component>);
-
 type ValueFormatter<T = any> = (value: any, row: T) => string | number | null;
+
+type RemoteTableReturn = ReturnType<typeof useRemoteTable>;
 
 interface ColumnDef<T = any> {
     // key on the row object; optional if using custom slot/component
@@ -34,12 +36,12 @@ interface ActionDef<T = any> {
     key: string;
     label?: string;
     class?: string;
-    disabled?: boolean | ((params: { rows: T[], selectedRows: T[], remote: any }) => boolean);
-    icon?: string;
+    disabled?: boolean | ((params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => boolean);
+    icon?: string | ((params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => string);
     // optional confirm text or boolean
     confirm?: string | boolean;
     // handler may be provided here or via component prop mapping
-    handler?: (params: { rows: T[], selectedRows: T[], remote: any }) => Promise<void> | void;
+    handler?: (params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => Promise<void> | void;
 }
 
 interface DataTableOptions<T = any> {

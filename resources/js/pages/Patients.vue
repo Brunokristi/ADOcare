@@ -11,6 +11,7 @@ import useModal from '@/composables/useModal';
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 import api from '@/services/api';
 import CreatePatientModalBody from './partials/patient/CreatePatientModalBody.vue';
+import type { DataTableOptions } from '@/types/datatable';
 
 // Simple formatter
 function formatBirthNumber(value?: string) {
@@ -123,7 +124,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
                     },
                 });
 
-                await remote.loadPage(remote.page);
+                await remote.loadPage(remote.page.value);
             },
         },
         {
