@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { usePatientStore } from '@/stores/patientStore';
-import { type Patient } from '@/types/models';
 import api from '@/services/api';
 import { useToast } from 'primevue/usetoast';
 import PatientForm from './PatientForm.vue';
 import type { IModalContentProps } from '@/types/ui';
+import usePatientFormValidation from '@/composables/usePatientFormValidation';
+import type { Patient } from '@/types/models';
 
 
 const patientStore = usePatientStore();
 const props = defineProps<IModalContentProps & { patientId: number; }>();
 
 const patient = ref<any>({} as Patient);
-import usePatientFormValidation from '@/composables/usePatientFormValidation';
 const { submitted, errors, validateForm, clearError } = usePatientFormValidation(patient);
 
 onMounted(async () => {
