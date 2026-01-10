@@ -22,7 +22,6 @@ use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\VisitTextController;
 use App\Http\Controllers\Api\GeocodeController;
 use \App\Http\Controllers\Api\MacroController;
-use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\DekurzController;
 use App\Http\Controllers\Api\NurseDiagnosisController;
 use App\Http\Controllers\Api\DocumentController;
