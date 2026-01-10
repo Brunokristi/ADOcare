@@ -222,10 +222,9 @@ async function loadAllPatients() {
   try {
     patientsLoading.value = true
 
-    const res = await api.get('/v1/patients', {
+    const res = await api.get(`/v1/branches/${branchId}/patients`, {
       params: {
-        paginate: 0,
-        ...(branchId ? { branch_id: branchId } : {}),
+        paginate: 0
       },
     })
 
