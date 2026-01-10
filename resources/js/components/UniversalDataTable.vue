@@ -5,6 +5,7 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import { useRemoteTable } from '@/composables/useRemoteTable';
+import type { ActionDef, DataTableOptions } from '@/types/datatable';
 
 type IBaseModel = any;
 
@@ -90,7 +91,8 @@ watch(selectedRows, (val) => {
                     </IconField>
 
                     <template v-if="opt.actions?.length">
-                        <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="a.icon" :label="a.label"
+                        <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function' ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote }) : a.icon"
+                         :label="a.label"
                             :disabled="a.disabled && (typeof a.disabled == 'boolean' ? a.disabled : a.disabled({ rows: remote.items.value, selectedRows: selectedRows, remote }))"
                             class="border-none! hover:bg-darkgrey!" @click="onAction(a)" :class="a.class ?? ''" />
                     </template>

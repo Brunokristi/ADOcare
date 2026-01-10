@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, markRaw } from 'vue';
+import { computed, markRaw } from 'vue';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
 import type { Patient } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
@@ -11,6 +11,8 @@ import useModal from '@/composables/useModal';
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue';
 import api from '@/services/api';
 import CreatePatientModalBody from './partials/patient/CreatePatientModalBody.vue';
+import PatientDocumentsModalBody from './partials/patient/PatientDocumentsModalBody.vue';
+import type { DataTableOptions } from '@/types/datatable';
 
 // Simple formatter
 function formatBirthNumber(value?: string) {
@@ -88,6 +90,26 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             ],
         },
         {
+            field: 'documents',
+            header: '',
+            width: '3rem',
+            component: ActionButtons,
+            componentOptions: [
+                {
+                    icon: 'bi bi-folder',
+                    color: 'info',
+                    tooltip: 'Zobraziť dokumenty',
+                    action: (row: Patient) => {
+                        openModal(
+                            markRaw(PatientDocumentsModalBody),
+                            { title: 'Dokumenty pacienta', patientId: row.id },
+                            { style: { width: '90%' } }
+                        );
+                    },
+                },
+            ],
+        },
+        {
             field: 'edit',
             header: '',
             width: '3rem',
@@ -98,9 +120,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
                     color: 'info',
                     tooltip: 'Editovať pacienta',
                     action: (row: Patient) => {
-                        // open the edit dialog programmatically; the dialog component expects `patientId` prop
                         openModal(markRaw(EditPatientDialog), { title: 'Upraviť Pacienta', patientId: row.id }, { style: { width: "90%" } }).then(() => {
-                            // optionally handle result after close
                         });
                     },
                 },
@@ -117,25 +137,21 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             confirm: 'Delete selected?',
             handler: async ({ selectedRows, remote }) => {
 
-                const response = api.delete('v1/patients', {
+                await api.delete('v1/patients', {
                     data: {
                         ids: selectedRows.map((r) => r.id),
                     },
                 });
 
-                await remote.loadPage(remote.page);
+                await remote.loadPage(remote.page.value);
             },
         },
         {
             key: 'add',
             icon: 'bi bi-plus-lg',
             class: 'bg-accent!',
-            handler: async ({ remote }) => {
-                console.log('Add action triggered');
-
+            handler: async () => {
                 await openModal(markRaw(CreatePatientModalBody), { title: 'Pridať Pacienta' }, { style: { width: "90%" } });
-
-                // await remote.loadPage(1);
             },
         },
     ],

@@ -4,21 +4,30 @@ import Dashboard from '@/pages/Dashboard.vue'
 import Login from '@/pages/Login.vue'
 import Patients from '@/pages/Patients.vue'
 import Settings from '@/pages/Settings.vue'
-import Procedures from '@/partials/Settings/Procedures.vue'
+import Procedures from '@/partials/Settings/Procedures/Procedures.vue'
 import Diagnoses from '@/partials/Settings/Diagnoses.vue'
-import Doctors from '@/partials/Settings/Doctors.vue'
+import Doctors from '@/partials/Settings/Doctors/Doctors.vue'
+import DoctorsOld from '@/partials/Settings/Doctors/DoctorsOld.vue'
 import Macros from '@/partials/Settings/Macros/Macros.vue'
 import MacrosOld from '@/partials/Settings/Macros/MacrosOld.vue'
 import Data from '@/pages/Data.vue'
 import Points from '@/partials/Data/Points.vue'
 import Kilometers from '@/partials/Data/Kilometers.vue'
+import Routes from '@/partials/Data/Routes.vue'
 import Patient from '@/pages/Patient.vue'
 import PatientPoints from '@/partials/Patient/Points.vue'
 import Document from '@/pages/Documents.vue'
 import DocumentPoints from '@/partials/Documents/Points.vue'
 import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
+import DocumentProposal from '@/partials/Documents/Proposal.vue'
+import DocumentAgreement from '@/partials/Documents/Agreement.vue'
+import DocumentCP from '@/partials/Documents/CP.vue'
+import DocumentDZC from '@/partials/Documents/DZC.vue'
 import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
+import PatientAgreement from '@/partials/Patient/Agreement.vue'
+import PatientRecord from '@/partials/Patient/Record.vue'
+import ProceduresOld from '@/partials/Settings/Procedures/ProceduresOld.vue'
 
 
 
@@ -119,6 +128,50 @@ const routes = [
                     navbar: false,
                 },
             },
+            {
+                path: 'proposal/:documentId',
+                name: 'documents-proposal',
+                component: DocumentProposal,
+                meta: {
+                    title: 'Návrh na poskytnutie ošetrovateľskej starostlivosti',
+                    link: 'návrh',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'agreement/:documentId',
+                name: 'documents-agreement',
+                component: DocumentAgreement,
+                meta: {
+                    title: 'Dohoda o poskytnutí zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti',
+                    link: 'dohoda',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'cp/:documentId',
+                name: 'documents-cp',
+                component: DocumentCP,
+                meta: {
+                    title: 'Cestovný príkaz',
+                    link: 'cestovný príkaz',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'dzc/:documentId',
+                name: 'documents-dzc',
+                component: DocumentDZC,
+                meta: {
+                    title: 'Denný záznam ciest',
+                    link: 'denný záznam ciest',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
         ]
     },
 
@@ -154,6 +207,28 @@ const routes = [
                     navbar: false,
                 },
             },
+            {
+                path: 'agreement',
+                name: 'agreement',
+                component: PatientAgreement,
+                meta: {
+                    title: 'Dohoda o poskytnutí zdravotnej starostlivosti v rozsahu ošetrovateľskej starostlivosti',
+                    link: 'dohoda',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'record',
+                name: 'record',
+                component: PatientRecord,
+                meta: {
+                    title: 'Ošetrovateľský záznam',
+                    link: 'ošetrovateľský záznam',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
 
         ]
     },
@@ -183,12 +258,34 @@ const routes = [
                 },
             },
             {
+                path: 'doctors-old',
+                name: 'doctors-old',
+                component: DoctorsOld,
+                meta: {
+                    title: 'Lekári (old)',
+                    link: 'lekári-old',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
                 path: 'procedures',
                 name: 'procedures',
                 component: Procedures,
                 meta: {
                     title: 'Výkony',
                     link: 'výkony',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+            {
+                path: 'procedures-old',
+                name: 'procedures-old',
+                component: ProceduresOld,
+                meta: {
+                    title: 'Výkony (old)',
+                    link: 'výkony-old',
                     sidebar: true,
                     navbar: true,
                 },
@@ -228,7 +325,33 @@ const routes = [
             },
         ],
     },
-]
+    {
+        path: '/accounting',
+        name: 'accounting',
+        component: Data,
+        redirect: { name: 'routes' },
+        meta: {
+            title: 'Účtovníctvo',
+            sectionRoot: 'accounting',
+            sidebar: true
+
+        },
+        children: [
+            {
+                path: 'routes',
+                name: 'routes',
+                component: Routes,
+                meta: {
+                    title: 'Cestovné',
+                    link: 'cestovné',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+        ]
+    },
+
+];
 
 const router = createRouter({
     history: createWebHistory(),

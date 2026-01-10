@@ -11,20 +11,20 @@ class ProcedureCompanyPricesSeeder extends Seeder
     {
         $data = [];
 
-        for ($procedureId = 2; $procedureId <= 31; $procedureId++) {
-            for ($insuranceId = 1; $insuranceId <= 50; $insuranceId++) {
+        $procedures = DB::table('procedures')->pluck('id');
+        $companies = DB::table('insurance_companies')->pluck('id');
+
+        foreach ($procedures as $procedureId) {
+            foreach ($companies as $companyId) {
                 $data[] = [
-                    'procedure_id'          => $procedureId,
-                    'insurance_company_id'  => $insuranceId,
-                    'price'                 => 2.00,
-                    'created_at'            => now(),
-                    'updated_at'            => now(),
+                    'procedure_id' => $procedureId,
+                    'insurance_company_id' => $companyId,
+                    'price' => rand(50, 500), // Random price between 50 and 500
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
             }
         }
-
-        foreach (array_chunk($data, 1000) as $chunk) {
-            DB::table('procedure_company_prices')->insert($chunk);
-        }
+        DB::table('procedure_company_prices')->insert($data);
     }
 }

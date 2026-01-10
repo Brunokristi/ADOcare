@@ -13,4 +13,22 @@ class Procedure extends Model
         'code',
         'description',
     ];
+
+
+    // Procedure prices based on insurance companies
+    public function insuranceCompaniesPrices()
+    {
+        return $this->belongsToMany(InsuranceCompany::class, 'procedure_company_prices')
+                    ->withPivot('price')
+                    ->withTimestamps();
+    }
+
+    public function insuranceCompaniesPricesMinimal()
+    {
+        return $this->belongsToMany(InsuranceCompany::class, 'procedure_company_prices')
+                    ->select('insurance_companies.id')
+                    ->withPivot('price')
+                    ->withTimestamps();
+    }
+
 }

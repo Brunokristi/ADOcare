@@ -99,6 +99,26 @@ export interface Macro {
   user_exists: boolean
 }
 
+export interface Document {
+  // columns
+  id: number
+  patient_id: number | null
+  user_id: number
+  type: string
+  mime_type: string
+  name: string
+  path: string
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patient: Patient
+  user: User
+  // counts
+  // exists
+  patient_exists: boolean
+  user_exists: boolean
+}
+
 export interface Visit {
   // columns
   id: number
@@ -128,6 +148,15 @@ export interface Procedure {
   description: string | null
   created_at: string | null
   updated_at: string | null
+  // relations
+  insurance_companies_prices: InsuranceCompany[]
+  insurance_companies_prices_minimal: InsuranceCompany[]
+  // counts
+  insurance_companies_prices_count: number
+  insurance_companies_prices_minimal_count: number
+  // exists
+  insurance_companies_prices_exists: boolean
+  insurance_companies_prices_minimal_exists: boolean
 }
 
 export interface NurseDiagnosis {
@@ -211,8 +240,10 @@ export interface Branch {
   longitude: number | null
   created_at: string | null
   updated_at: string | null
+  representative_id: number | null
   // relations
   company: Company
+  representative: User
   users: User[]
   report_months: ReportMonth[]
   cars: Car[]
@@ -226,6 +257,7 @@ export interface Branch {
   favourite_doctors_count: number
   // exists
   company_exists: boolean
+  representative_exists: boolean
   users_exists: boolean
   report_months_exists: boolean
   cars_exists: boolean

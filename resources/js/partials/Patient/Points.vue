@@ -26,7 +26,7 @@ type RecordEntry = {
   diagnosis: Option | null;
   procedure: Option | null;
   referralDate: Date | null;
-  quantity: number | null; 
+  quantity: number | null;
 };
 
 type PatientPointApi = {
@@ -42,7 +42,7 @@ type PatientPointApi = {
   reference_date: string | null;
   user_id: number;
   branch_id: number;
-  quantity: number | null; 
+  quantity: number | null;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -57,8 +57,6 @@ const authStore = useAuthStore();
 const { current: currentPatient } = storeToRefs(patientStore);
 const { user, currentBranch } = storeToRefs(authStore);
 
-console.log('currentPatient', currentPatient.value);
-
 const emit = defineEmits<{
   (e: 'submit', payload: RecordEntry): void;
 }>();
@@ -67,7 +65,8 @@ const toast = useToast();
 
 const isLoading = ref(false);
 
-const date = ref<Date | null>(new Date());
+// MULTI DATE: changed from Date|null to Date[]
+const dates = ref<Date[]>([new Date()]);
 const referralDate = ref<Date | null>(null);
 
 const diagnosis = ref<Option | null>(null);
@@ -106,8 +105,40 @@ function formatDate(d: Date | null) {
   return d.toLocaleDateString('sk-SK');
 }
 
+function truncate(text: string, max = 60) {
+  if (!text) return '';
+  return text.length > max ? text.slice(0, max) + '…' : text;
+}
 
+/* -------------------------------------------------------------------------- */
+/*  API helpers: your API is wrapped (success + BaseCollection)               */
+/* -------------------------------------------------------------------------- */
 
+function extractArray(raw: any): any[] {
+  // Supports:
+  //  - []
+  //  - { data: [] }
+  //  - { data: { items: [] } }
+  //  - { data: { data: [] } }                (Laravel paginator)
+  //  - { data: { data: { items: [] } } }     (extra wrapper)
+  if (Array.isArray(raw)) return raw;
+
+  const candidates = [
+    raw?.data,
+    raw?.data?.items,
+    raw?.data?.data,
+    raw?.data?.data?.items,
+    raw?.data?.data?.data,
+    raw?.items,
+    raw?.items?.data,
+  ];
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c;
+  }
+
+  return [];
+}
 
 /* -------------------------------------------------------------------------- */
 /*  API: Load existing patient points                                         */
@@ -122,34 +153,27 @@ async function loadRecordsForPatient() {
   isLoading.value = true;
 
   try {
-    const { data } = await api.get<PatientPointApi[]>('/v1/patient-points', {
+    const { data } = await api.get('/v1/patient-points', {
       params: {
         patient_id: currentPatient.value.id,
         paginate: false,
       },
     });
 
-    records.value = data.map((row) => ({
+    const arr = extractArray(data);
+
+    records.value = (arr as PatientPointApi[]).map((row) => ({
       id: row.id,
       date: row.date ? new Date(row.date) : null,
       diagnosis: row.diagnosis_id
-        ? {
-            id: row.diagnosis_id,
-            code: row.diagnosis_code ?? '',
-            description: '',
-          }
+        ? { id: row.diagnosis_id, code: row.diagnosis_code ?? '', description: '' }
         : null,
       procedure: row.procedure_id
-        ? {
-            id: row.procedure_id,
-            code: row.procedure_code ?? '',
-            description: '',
-          }
+        ? { id: row.procedure_id, code: row.procedure_code ?? '', description: '' }
         : null,
       referralDate: row.reference_date ? new Date(row.reference_date) : null,
       quantity: row.quantity ?? null,
     }));
-
   } catch (e) {
     console.error('Failed to load patient points', e);
     toast.add({
@@ -164,9 +188,8 @@ async function loadRecordsForPatient() {
   }
 }
 
-
 /* -------------------------------------------------------------------------- */
-/*  Fetch referal date from database                                          */
+/*  Fetch referral date from patient                                          */
 /* -------------------------------------------------------------------------- */
 
 function initReferenceDateFromPatient() {
@@ -175,35 +198,28 @@ function initReferenceDateFromPatient() {
     return;
   }
 
-  // currentPatient.reference_date is assumed YYYY-MM-DD
   const d = new Date(currentPatient.value.reference_date);
   referralDate.value = isNaN(d.getTime()) ? null : d;
 }
 
-
 /* -------------------------------------------------------------------------- */
-/*  Lookup: Diagnoses & Procedures                                            */
+/*  Lookup: Diagnoses & Procedures (works for focus + typing)                 */
 /* -------------------------------------------------------------------------- */
 
 async function searchDiagnoses(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? '';
+    const q = (event.query ?? '').trim();
 
-    if (!q || q.length < 1) {
-      filteredDiagnoses.value = [];
-      return;
-    }
+    const res = await api.get('/v1/diagnoses', {
+      params: {
+        q, // can be ''
+        per_page: 25,
+        page: 1,
+        sort: 'code',
+      },
+    });
 
-    const res = await api.get('/v1/diagnoses', { params: { q } });
-
-    // normalize common API shapes
-    const raw = res.data;
-    const arr =
-      Array.isArray(raw) ? raw :
-      Array.isArray(raw?.data) ? raw.data :
-      Array.isArray(raw?.data?.items) ? raw.data.items :
-      Array.isArray(raw?.items) ? raw.items :
-      [];
+    const arr = extractArray(res.data);
 
     filteredDiagnoses.value = (arr as Diagnosis[]).map((d) => ({
       id: d.id,
@@ -216,26 +232,20 @@ async function searchDiagnoses(event: { query: string }) {
   }
 }
 
-
 async function searchProcedures(event: { query: string }) {
   try {
-    const q = event.query?.trim() ?? '';
+    const q = (event.query ?? '').trim();
 
-    if (!q || q.length < 1) {
-      filteredProcedures.value = [];
-      return;
-    }
+    const res = await api.get('/v1/procedures', {
+      params: {
+        q, // can be ''
+        per_page: 25,
+        page: 1,
+        sort: 'code',
+      },
+    });
 
-    const res = await api.get('/v1/procedures', { params: { q } });
-
-    // normalize common API shapes
-    const raw = res.data;
-    const arr =
-      Array.isArray(raw) ? raw :
-      Array.isArray(raw?.data) ? raw.data :
-      Array.isArray(raw?.data?.items) ? raw.data.items :
-      Array.isArray(raw?.items) ? raw.items :
-      [];
+    const arr = extractArray(res.data);
 
     filteredProcedures.value = (arr as Procedure[]).map((p) => ({
       id: p.id,
@@ -248,16 +258,12 @@ async function searchProcedures(event: { query: string }) {
   }
 }
 
-
 /* -------------------------------------------------------------------------- */
 /*  Normalization helpers                                                     */
 /* -------------------------------------------------------------------------- */
 
 function parseDateInput(raw: unknown): Date | null {
-  if (raw instanceof Date) {
-    return isNaN(raw.getTime()) ? null : raw;
-  }
-
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
   if (typeof raw !== 'string') return null;
 
   const value = raw.trim();
@@ -268,37 +274,44 @@ function parseDateInput(raw: unknown): Date | null {
 
   const [, dStr, mStr, yStr] = match as RegExpMatchArray;
 
-  if (!dStr || !mStr || !yStr) return null;
-
   const day = Number(dStr);
   const month = Number(mStr);
   let year = Number(yStr);
 
-  if (yStr.length === 2) {
-    year += 2000;
-  }
-
+  if (yStr!.length === 2) year += 2000;
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const result = new Date(year, month - 1, day);
-
-  if (
-    result.getFullYear() !== year ||
-    result.getMonth() !== month - 1 ||
-    result.getDate() !== day
-  ) {
+  if (result.getFullYear() !== year || result.getMonth() !== month - 1 || result.getDate() !== day) {
     return null;
   }
 
   return result;
 }
 
+function normalizeSelectedDates(input: unknown): Date[] {
+  const arr = Array.isArray(input) ? input : [];
+
+  const normalized = arr
+    .map((d) => parseDateInput(d as any))
+    .filter((d): d is Date => !!d)
+    .map((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()));
+
+  const map = new Map<string, Date>();
+  for (const d of normalized) {
+    const dateStr = toApiDate(d);
+    if (dateStr) map.set(dateStr, d);
+  }
+
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([, d]) => d);
+}
+
 async function ensureDiagnosisSelected(): Promise<boolean> {
   const value = diagnosis.value as unknown;
 
-  if (value && typeof value === 'object' && 'id' in (value as any)) {
-    return true;
-  }
+  if (value && typeof value === 'object' && 'id' in (value as any)) return true;
 
   const raw = (value as string | undefined) ?? '';
   const code = raw.trim();
@@ -309,13 +322,12 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
   }
 
   try {
-    const { data } = await api.get<Diagnosis[]>('/v1/diagnoses', {
-      params: { q: code },
+    const res = await api.get('/v1/diagnoses', {
+      params: { q: code, per_page: 50, page: 1, sort: 'code' },
     });
 
-    const match = data.find(
-      (d) => (d.code ?? '').toLowerCase() === code.toLowerCase(),
-    );
+    const arr = extractArray(res.data) as Diagnosis[];
+    const match = arr.find((d) => (d.code ?? '').toLowerCase() === code.toLowerCase());
 
     if (!match) {
       diagnosis.value = null;
@@ -339,9 +351,7 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
 async function ensureProcedureSelected(): Promise<boolean> {
   const value = procedure.value as unknown;
 
-  if (value && typeof value === 'object' && 'id' in (value as any)) {
-    return true;
-  }
+  if (value && typeof value === 'object' && 'id' in (value as any)) return true;
 
   const raw = (value as string | undefined) ?? '';
   const code = raw.trim();
@@ -352,13 +362,12 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 
   try {
-    const { data } = await api.get<Procedure[]>('/v1/procedures', {
-      params: { q: code },
+    const res = await api.get('/v1/procedures', {
+      params: { q: code, per_page: 50, page: 1, sort: 'code' },
     });
 
-    const match = data.find(
-      (p) => (p.code ?? '').toLowerCase() === code.toLowerCase(),
-    );
+    const arr = extractArray(res.data) as Procedure[];
+    const match = arr.find((p) => (p.code ?? '').toLowerCase() === code.toLowerCase());
 
     if (!match) {
       procedure.value = null;
@@ -379,19 +388,12 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 }
 
-function truncate(text: string, max = 60) {
-  if (!text) return '';
-  return text.length > max ? text.slice(0, max) + '…' : text;
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Payload builders                                                          */
 /* -------------------------------------------------------------------------- */
 
-function buildPatientPointPayload() {
-  if (!currentPatient.value) {
-    throw new Error('No patient selected');
-  }
+function buildPatientPointPayloadForDate(dateOverride: Date) {
+  if (!currentPatient.value) throw new Error('No patient selected');
 
   const patient = currentPatient.value;
   const doctor = patient.doctor;
@@ -399,7 +401,8 @@ function buildPatientPointPayload() {
   const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim();
 
   return {
-    date: toApiDate(date.value),
+    date: toApiDate(dateOverride),
+
     patient_personal_number: patient.personal_number,
     patient_name: fullName,
     patient_id: patient.id,
@@ -422,15 +425,13 @@ function buildPatientPointPayload() {
 }
 
 function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
-  if (!currentPatient.value) {
-    throw new Error('No patient selected');
-  }
+  if (!currentPatient.value) throw new Error('No patient selected');
 
   const patient = currentPatient.value;
   const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim();
 
   const doctorRel = (patient as any).doctor ?? null;
-  const doctorId = doctorRel?.id ?? patient.doctor_id ?? null;
+  const doctorId = doctorRel?.id ?? (patient as any).doctor_id ?? null;
 
   return {
     date: toApiDate(dateOverride),
@@ -452,26 +453,31 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
     reference_date: toApiDate(dateOverride),
     user_id: user.value?.id ?? null,
     branch_id: currentBranch.value!.id,
-    quantity: quantity.value,
+    quantity: row.quantity ?? quantity.value,
   };
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Form submit (create)                                                      */
+/*  Form submit (create) - MULTI CREATE                                       */
 /* -------------------------------------------------------------------------- */
 
 async function onSubmit() {
   submitted.value = true;
 
-  // normalize dates
-  date.value = parseDateInput(date.value as any);
+  dates.value = normalizeSelectedDates(dates.value as any);
   referralDate.value = parseDateInput(referralDate.value as any);
 
   const diagnosisOk = await ensureDiagnosisSelected();
   const procedureOk = await ensureProcedureSelected();
 
-  // just let <small> validation messages show
-  if (!date.value || !diagnosisOk || !procedureOk || !referralDate.value || !quantity.value || quantity.value! <= 0) {
+  if (
+    !dates.value.length ||
+    !diagnosisOk ||
+    !procedureOk ||
+    !referralDate.value ||
+    !quantity.value ||
+    quantity.value <= 0
+  ) {
     return;
   }
 
@@ -485,72 +491,81 @@ async function onSubmit() {
     return;
   }
 
-  let apiPayload;
   try {
-    apiPayload = buildPatientPointPayload();
-  } catch (e: any) {
-    toast.add({
-      severity: 'error',
-      summary: 'Chyba',
-      detail: e.message,
-      life: 3000,
+    // update patient's reference date once
+    const refDate = toApiDate(referralDate.value);
+
+    await api.put(`/v1/patients/${currentPatient.value.id}`, {
+      reference_date: refDate,
     });
-    return;
-  }
 
-  console.log('Sending payload:', apiPayload);
-
-  try {
-    if (currentPatient.value && referralDate.value) {
-      const refDate = toApiDate(referralDate.value);
-
-      await api.put(`/v1/patients/${currentPatient.value.id}`, {
-        reference_date: refDate,
-      });
-
-      const updatedPatient: Patient = {
-        ...(currentPatient.value as Patient),
-        reference_date: refDate,
-      };
-
-      patientStore.setPatient(updatedPatient); // 👈 this writes to localStorage
-    }
-
-
-
-    await api.post('/v1/patient-points', apiPayload);
-    const newId =
-      records.value.length > 0
-        ? Math.max(...records.value.map((r) => r.id)) + 1
-        : 1;
-
-    const entry: RecordEntry = {
-      id: newId,
-      date: date.value,
-      diagnosis: diagnosis.value,
-      procedure: procedure.value,
-      referralDate: referralDate.value,
-      quantity: quantity.value,
+    const updatedPatient: Patient = {
+      ...(currentPatient.value as Patient),
+      reference_date: refDate,
     };
 
-    records.value.push(entry);
-    emit('submit', entry);
+    patientStore.setPatient(updatedPatient);
+
+    // avoid duplicates in UI
+    const existingKeys = new Set(
+      records.value.map((r) => {
+        const d = r.date ? toApiDate(r.date) : '';
+        return `${d}|${r.diagnosis?.id ?? ''}|${r.procedure?.id ?? ''}|${r.quantity ?? ''}`;
+      }),
+    );
+
+    const createdRows: RecordEntry[] = [];
+
+    for (const d of dates.value) {
+      const payload = buildPatientPointPayloadForDate(d);
+
+      const key = `${payload.date}|${payload.diagnosis_id}|${payload.procedure_id}|${payload.quantity ?? ''}`;
+      if (existingKeys.has(key)) continue;
+
+      const { data } = await api.post('/v1/patient-points', payload);
+
+      createdRows.push({
+        id: data?.id ?? Date.now(),
+        date: d,
+        diagnosis: diagnosis.value,
+        procedure: procedure.value,
+        referralDate: referralDate.value,
+        quantity: quantity.value,
+      });
+
+      existingKeys.add(key);
+    }
+
+    if (!createdRows.length) {
+      toast.add({
+        severity: 'info',
+        summary: 'Nič nové',
+        detail: 'Vybrané dátumy už existujú v tabuľke.',
+        life: 3000,
+      });
+      return;
+    }
+
+    records.value.push(...createdRows);
+    if (createdRows.length > 0 && createdRows[0]) {
+      emit('submit', createdRows[0]);
+    }
 
     toast.add({
       severity: 'success',
       summary: 'Uložené',
-      detail: 'Záznam bol uložený.',
+      detail: `Uložené záznamy: ${createdRows.length}`,
       life: 3000,
     });
 
     // reset form
-    date.value = new Date();
+    dates.value = [new Date()];
     diagnosis.value = null;
     procedure.value = null;
     quantity.value = 1;
     submitted.value = false;
   } catch (error: any) {
-    console.error('422 error:', error.response?.data);
+    console.error('Create failed:', error);
 
     const msg =
       error.response?.data?.errors
@@ -560,12 +575,11 @@ async function onSubmit() {
     toast.add({
       severity: 'error',
       summary: 'Neuložené',
-      detail: msg ?? 'Záznam sa nepodarilo uložiť.',
+      detail: msg ?? 'Záznamy sa nepodarilo uložiť.',
       life: 6000,
     });
   }
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*  Edit dialog                                                               */
@@ -593,15 +607,13 @@ async function savePoint() {
 
   const p = editPoint.value;
 
-  // normalize dates coming from the dialog (Calendar or text)
   const normalizedDate = parseDateInput(p.date as any);
   const normalizedReferral = parseDateInput(p.referralDate as any);
 
   p.date = normalizedDate;
   p.referralDate = normalizedReferral;
 
-  // validation – no toast, just inline messages
-  if (!p.date || !p.diagnosis || !p.procedure || !p.referralDate || !p.quantity || p.quantity! <= 0) {
+  if (!p.date || !p.diagnosis || !p.procedure || !p.referralDate || !p.quantity || p.quantity <= 0) {
     return;
   }
 
@@ -617,10 +629,7 @@ async function savePoint() {
     });
 
     const idx = records.value.findIndex((r) => r.id === p.id);
-    if (idx !== -1) {
-      // make sure we store the normalized dates
-      records.value[idx] = { ...p };
-    }
+    if (idx !== -1) records.value[idx] = { ...p };
 
     toast.add({
       severity: 'success',
@@ -647,8 +656,6 @@ async function savePoint() {
   }
 }
 
-
-
 /* -------------------------------------------------------------------------- */
 /*  Delete selected                                                           */
 /* -------------------------------------------------------------------------- */
@@ -664,9 +671,7 @@ async function deleteSelected() {
   const idsToDelete = selectedRecords.value.map((r) => r.id);
 
   try {
-    await Promise.all(
-      idsToDelete.map((id) => api.delete(`/v1/patient-points/${id}`)),
-    );
+    await Promise.all(idsToDelete.map((id) => api.delete(`/v1/patient-points/${id}`)));
 
     const deleteSet = new Set(idsToDelete);
     records.value = records.value.filter((r) => !deleteSet.has(r.id));
@@ -682,9 +687,7 @@ async function deleteSelected() {
   } catch (error: any) {
     console.error('Failed to delete patient points', error);
 
-    const msg =
-      error?.response?.data?.message ??
-      'Niektoré záznamy sa nepodarilo vymazať.';
+    const msg = error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo vymazať.';
 
     toast.add({
       severity: 'error',
@@ -720,26 +723,22 @@ async function duplicateSelected() {
       const payload = buildPayloadFromRow(original, today);
       const { data } = await api.post('/v1/patient-points', payload);
 
-      const cloned: RecordEntry = {
-        id: data.id,
+      createdRows.push({
+        id: data?.id ?? Date.now(),
         date: today,
         referralDate: today,
         diagnosis: original.diagnosis,
         procedure: original.procedure,
         quantity: original.quantity,
-      };
-
-      createdRows.push(cloned);
+      });
     }
 
     records.value.push(...createdRows);
 
-
     toast.add({
       severity: 'success',
       summary: 'Duplikované',
-      detail:
-        'Vybrané záznamy boli duplikované s dnešným dátumom a uložené do databázy.',
+      detail: 'Vybrané záznamy boli duplikované s dnešným dátumom a uložené do databázy.',
       life: 3000,
     });
   } catch (error: any) {
@@ -748,8 +747,7 @@ async function duplicateSelected() {
     const msg =
       error?.response?.data?.errors
         ? (Object.values(error.response.data.errors).flat() as string[])[0]
-        : error?.response?.data?.message ??
-          'Niektoré záznamy sa nepodarilo duplikovať.';
+        : error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo duplikovať.';
 
     toast.add({
       severity: 'error',
@@ -782,24 +780,24 @@ watch(currentPatient, (newPatient) => {
 });
 </script>
 
-
 <template>
   <div class="flex flex-col gap-6">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <div class="grid grid-cols-15 gap-4">
-          <!-- Dátum -->
+          <!-- Dátum (MULTI) -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum</label>
             <DatePicker
-              v-model="date"
+              v-model="dates"
+              selectionMode="multiple"
               dateFormat="dd.mm.yy"
               :showIcon="false"
               class="w-full"
               :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small v-if="submitted && !date" class="text-warning">
+            <small v-if="submitted && (!dates || !dates.length)" class="text-warning">
               Dátum je povinný.
             </small>
           </div>
@@ -810,18 +808,20 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="diagnosis"
               :suggestions="filteredDiagnoses"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                  <span>
-                    {{ truncate(slotProps.option.description, 60) }}
-                  </span>
+                  <span class="">{{ truncate(slotProps.option.description, 40) }}</span>
                 </div>
               </template>
             </AutoComplete>
@@ -836,18 +836,20 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="procedure"
               :suggestions="filteredProcedures"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchProcedures"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                  <span>
-                    {{ truncate(slotProps.option.description, 60) }}
-                  </span>
+                  <span>{{ truncate(slotProps.option.description, 60) }}</span>
                 </div>
               </template>
             </AutoComplete>
@@ -856,21 +858,20 @@ watch(currentPatient, (newPatient) => {
             </small>
           </div>
 
+          <!-- Počet -->
           <div class="col-span-12 md:col-span-1">
             <label class="block text-normal mb-1">Počet</label>
             <InputNumber
               v-model.number="quantity"
               class="w-full"
-              :min="0" 
+              :min="0"
               :max="100"
-              
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small v-if="submitted && !quantity" class="text-warning">
+            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-warning">
               Počet je povinný.
             </small>
           </div>
-
 
           <!-- Dátum odporučenia -->
           <div class="col-span-12 md:col-span-3">
@@ -896,17 +897,13 @@ watch(currentPatient, (newPatient) => {
           class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100"
         >
           Pridať
-          <i
-            class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent"
-          />
+          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>
       </div>
     </form>
 
     <div>
-      <Toolbar
-        class="!bg-transparent !border-0 !shadow-none flex items-center justify-between py-3 !px-0"
-      >
+      <Toolbar class="!bg-transparent !border-0 !shadow-none flex items-center justify-between py-3 !px-0">
         <template #end>
           <div class="flex items-center gap-2">
             <IconField>
@@ -947,11 +944,7 @@ watch(currentPatient, (newPatient) => {
         :sortField="'date'"
         :sortOrder="-1"
       >
-        <Column
-          selectionMode="multiple"
-          headerStyle="width: 3rem"
-          :exportable="false"
-        />
+        <Column selectionMode="multiple" headerStyle="width: 3rem" :exportable="false" />
 
         <Column field="date" header="Dátum" sortable>
           <template #body="slotProps">
@@ -1013,9 +1006,7 @@ watch(currentPatient, (newPatient) => {
         header="Upozornenie"
       >
         <div class="flex items-center justify-between w-full">
-          <span class="text-heading">
-            Naozaj si prajete vymazať vybrané záznamy?
-          </span>
+          <span class="text-heading">Naozaj si prajete vymazať vybrané záznamy?</span>
 
           <div class="flex items-center gap-2">
             <Button
@@ -1061,16 +1052,18 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="editPoint.diagnosis"
               :suggestions="filteredDiagnoses"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
-                <span>
-                  {{ slotProps.option.code }} – {{ slotProps.option.description }}
-                </span>
+                <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
               </template>
             </AutoComplete>
             <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning">
@@ -1083,16 +1076,18 @@ watch(currentPatient, (newPatient) => {
             <AutoComplete
               v-model="editPoint.procedure"
               :suggestions="filteredProcedures"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchProcedures"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
-                <span>
-                  {{ slotProps.option.code }} – {{ slotProps.option.description }}
-                </span>
+                <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
               </template>
             </AutoComplete>
             <small v-if="editSubmitted && !editPoint.procedure" class="text-warning">
@@ -1115,21 +1110,17 @@ watch(currentPatient, (newPatient) => {
 
           <div class="col-span-12">
             <label class="block text-normal mb-1">Dátum odporučenia</label>
-            <datePicker
+            <DatePicker
               v-model="editPoint.referralDate"
               dateFormat="dd.mm.yy"
               :showIcon="false"
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small
-              v-if="editSubmitted && !editPoint.referralDate"
-              class="text-warning"
-            >
+            <small v-if="editSubmitted && !editPoint.referralDate" class="text-warning">
               Dátum odporučenia je povinný.
             </small>
           </div>
-
         </div>
 
         <template #footer>
