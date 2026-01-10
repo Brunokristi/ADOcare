@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, markRaw } from 'vue';
+import { computed, markRaw } from 'vue';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
 import type { Patient } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
@@ -117,7 +117,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             confirm: 'Delete selected?',
             handler: async ({ selectedRows, remote }) => {
 
-                const response = api.delete('v1/patients', {
+                await api.delete('v1/patients', {
                     data: {
                         ids: selectedRows.map((r) => r.id),
                     },
@@ -130,12 +130,8 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             key: 'add',
             icon: 'bi bi-plus-lg',
             class: 'bg-accent!',
-            handler: async ({ remote }) => {
-                console.log('Add action triggered');
-
+            handler: async () => {
                 await openModal(markRaw(CreatePatientModalBody), { title: 'Pridať Pacienta' }, { style: { width: "90%" } });
-
-                // await remote.loadPage(1);
             },
         },
     ],

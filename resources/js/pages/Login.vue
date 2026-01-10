@@ -42,7 +42,7 @@ async function submit() {
 
         const redirect = (route.query.redirect as string) || '/';
         router.push(redirect);
-    } catch (e: any) {
+    } catch {
         const message = "Nepodarilo sa prihlásiť. Skúste ešte raz."
 
         toast.add({
