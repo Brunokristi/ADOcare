@@ -22,6 +22,8 @@ const filteredDiagnoses = ref<Diagnosis[]>([])
 const recommendedPharmacy = ref('')
 const treatingDoctor = ref('')
 const admissionDate = ref<Date | null>(null)
+// Workplace of the treating doctor
+const doctorWorkplace = ref('')
 
 // Allergies
 const allergies = ref({
@@ -101,11 +103,13 @@ const healthPerception = ref('')
 
 const nursingAssessment = ref({
   caredRecommendedBy: '',
+  otherDoctor: false,
   otherDoctorName: '',
-  transferredFromFacility: '',
+  transferredFromOtherFacility: false,
+  transferredFacilityName: '',
   department: '',
-  lastHospitalizationFrom: null,
-  lastHospitalizationTo: null,
+  lastHospitalizationFrom: null as Date | null,
+  lastHospitalizationTo: null as Date | null,
   consciousness: '',
   consciousnessOtherNotes: '',
   orientation: '',
@@ -475,42 +479,18 @@ const deficiency = ref({
 
 
 
-// Learning needs
-const learningNeeds = ref({
-  needsExist: '',
-  learningAbility: '',
-  preferredMethod: '',
-  topicsOfInterest: '',
-  culturalConsiderations: '',
-  otherLearningNotes: ''
-})
-
-// Nursing diagnoses
-const nursingDiagnoses = ref({
-  diagnosis1: '',
-  diagnosis2: '',
-  diagnosis3: '',
-  diagnosis4: '',
-  diagnosis5: '',
-  additionalDiagnoses: ''
-})
-
-// Nursing plan
-const nursingPlan = ref({
-  priorityGoals: '',
-  interventions: '',
-  additionalNotes: ''
-})
-
-// Signature section
-const signatureSection = ref({
-  recordedDate: null,
-  recordedBy: '',
-  recordedByTitle: '',
-  supervisedDate: null,
-  supervisedBy: '',
-  supervisedByTitle: '',
-  notes: ''
+// Patient education and signatures (replaces removed learning needs, nursing diagnoses, nursing plan and signature section)
+const patientEducation = ref({
+  rightsAndDuties: false,
+  depositMoney: false,
+  householdRules: false,
+  noSmokingAlcoholDrugs: false,
+  deliveredItems: '',
+  patientDate: null as Date | null,
+  patientSignature: '',
+  nursingDiagnosesAdmission: '',
+  nurseDate: null as Date | null,
+  nurseSignature: ''
 })
 
 async function searchDiagnoses(event: { query: string }) {
@@ -541,18 +521,45 @@ async function searchDiagnoses(event: { query: string }) {
   }
 }
 
+/**
+ * Truncate text to a specified length, appending an ellipsis if needed.
+ * This utility is used in the AutoComplete option template.
+ */
+function truncate(text: string, length: number) {
+  if (!text) {
+    return ''
+  }
+  return text.length > length ? text.slice(0, length) + '…' : text
+}
+
 function submitForm() {
   console.log('Form submitted:', {
     patient: selectedPatient.value,
     medicalDiagnosis: medicalDiagnosis.value,
     recommendedPharmacy: recommendedPharmacy.value,
     treatingDoctor: treatingDoctor.value,
+    doctorWorkplace: doctorWorkplace.value,
     admissionDate: admissionDate.value,
     allergies: allergies.value,
     abuses: abuses.value,
     familyAnamnesis: familyAnamnesis.value,
     socialAnamnesis: socialAnamnesis.value,
-    healthPerception: healthPerception.value
+    healthPerception: healthPerception.value,
+    nursingAssessment: nursingAssessment.value,
+    circulation: circulation.value,
+    breathing: breathing.value,
+    nutrition: nutrition.value,
+    elimination: elimination.value,
+    sleep: sleep.value,
+    mobility: mobility.value,
+    skin: skin.value,
+    postpartum: postpartum.value,
+    pain: pain.value,
+    communication: communication.value,
+    learning: learning.value,
+    needs: needs.value,
+    deficiency: deficiency.value,
+    patientEducation: patientEducation.value
   })
 }
 </script>
@@ -562,28 +569,35 @@ function submitForm() {
     <form @submit.prevent="submitForm" class="flex flex-col gap-4">
       <!-- Medical Information Section -->
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+        <!-- Top row: diagnosis and admission date/time -->
         <div class="grid grid-cols-2 gap-4">
+          <!-- Diagnosis input with autocomplete -->
           <div class="flex flex-col gap-2">
             <label class="block text-normal">Lekárska diagnóza</label>
             <AutoComplete
               v-model="medicalDiagnosis"
               :suggestions="filteredDiagnoses"
-              optionLabel="code"
-              :minLength="1"
               @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
+              optionLabel="code"
+              dropdown
+              dropdownMode="blank"
+              :minLength="0"
+              completeOnFocus
               class="w-full"
-              inputClass="w-full! border-none!"
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
-                  <span class="shrink-0 text-accent">{{ slotProps.option.code }}</span>
-                  <span>{{ slotProps.option.description }}</span>
+                  <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
+                  <span>{{ truncate(slotProps.option.description, 40) }}</span>
                 </div>
               </template>
             </AutoComplete>
           </div>
+          <!-- Date and time of admission -->
           <div class="flex flex-col gap-2">
-            <label class="block text-normal">Dátum a čas posúdenia</label>
+            <label class="block text-normal">Dátum a čas prijatia do starostlivosti</label>
             <DatePicker
               v-model="admissionDate"
               dateFormat="dd.mm.yy"
@@ -591,18 +605,28 @@ function submitForm() {
               hourFormat="24"
               :showIcon="false"
               class="w-full"
-              inputClass="w-full! border-none!"
+              inputClass="!w-full border-none!"
             />
           </div>
         </div>
-
+        <!-- Doctor and workplace row -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="block text-normal">Ošetrujúci lekár</label>
+            <InputText v-model="treatingDoctor" type="text" class="w-full border-none!" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="block text-normal">Pracovisko</label>
+            <InputText v-model="doctorWorkplace" type="text" class="w-full border-none!" />
+          </div>
+        </div>
+        <!-- Recommended pharmacotherapy -->
         <div class="flex flex-col gap-2">
           <label class="block text-normal">Doporučená farmakoterapia</label>
           <Textarea
             v-model="recommendedPharmacy"
             class="w-full border-none!"
             rows="4"
-            inputClass="w-full!"
           />
         </div>
       </section>
@@ -2843,145 +2867,83 @@ function submitForm() {
 
 
 
-      <!-- Nursing Diagnoses Section -->
+      <!-- Patient Education & Signatures Section -->
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <h3 class="text-normal text-accent">Ošetrovateľské diagnózy</h3>
+        <h3 class="text-normal text-accent">Poučenie a podpisy</h3>
 
-        <div class="flex flex-col gap-4">
-          <div class="flex items-center gap-2">
-            <label class="text-normal whitespace-nowrap flex-shrink-0">1. Diagnóza:</label>
-            <InputText v-model="nursingDiagnoses.diagnosis1" type="text" class="flex-1 border-none!" />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label class="text-normal whitespace-nowrap flex-shrink-0">2. Diagnóza:</label>
-            <InputText v-model="nursingDiagnoses.diagnosis2" type="text" class="flex-1 border-none!" />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label class="text-normal whitespace-nowrap flex-shrink-0">3. Diagnóza:</label>
-            <InputText v-model="nursingDiagnoses.diagnosis3" type="text" class="flex-1 border-none!" />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label class="text-normal whitespace-nowrap flex-shrink-0">4. Diagnóza:</label>
-            <InputText v-model="nursingDiagnoses.diagnosis4" type="text" class="flex-1 border-none!" />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label class="text-normal whitespace-nowrap flex-shrink-0">5. Diagnóza:</label>
-            <InputText v-model="nursingDiagnoses.diagnosis5" type="text" class="flex-1 border-none!" />
-          </div>
-        </div>
-
+        <!-- Education checkboxes -->
         <div class="flex flex-col gap-2">
-          <label class="text-normal">Ďalšie diagnózy</label>
-          <Textarea v-model="nursingDiagnoses.additionalDiagnoses" rows="3" class="border-none! w-full" />
+          <label class="text-normal">Pacient/pacientka je poučený(á) o:</label>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex items-center gap-2">
+              <Checkbox v-model="patientEducation.rightsAndDuties" inputId="edu-rights" :binary="true" />
+              <label for="edu-rights" class="text-normal cursor-pointer">Právach a povinnostiach hospitalizovaných pacientov</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <Checkbox v-model="patientEducation.householdRules" inputId="edu-household" :binary="true" />
+              <label for="edu-household" class="text-normal cursor-pointer">Domácom poriadku</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <Checkbox v-model="patientEducation.depositMoney" inputId="edu-deposit" :binary="true" />
+              <label for="edu-deposit" class="text-normal cursor-pointer">Úschove peňazí/cenností</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <Checkbox v-model="patientEducation.noSmokingAlcoholDrugs" inputId="edu-nosmoke" :binary="true" />
+              <label for="edu-nosmoke" class="text-normal cursor-pointer">Zákaze fajčenia, užívania alkoholu, drog</label>
+            </div>
+          </div>
         </div>
-      </section>
 
-      <!-- Nursing Plan Section -->
-      <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <h3 class="text-normal text-accent">Ošetrovateľský plán</h3>
-
+        <!-- Delivered items -->
         <div class="flex flex-col gap-2">
-          <label class="text-normal">Prioritné ciele ošetrovania</label>
-          <Textarea v-model="nursingPlan.priorityGoals" rows="4" class="border-none! w-full" />
+          <label class="text-normal">Pacient/pacientka pri prijatí odovzdal(a):</label>
+          <Textarea v-model="patientEducation.deliveredItems" rows="3" class="w-full border-none!" />
         </div>
 
-        <div class="flex flex-col gap-2">
-          <label class="text-normal">Ošetrovateľské intervencie a opatrenia</label>
-          <Textarea v-model="nursingPlan.interventions" rows="5" class="border-none! w-full" />
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-normal">Dodatočné poznámky</label>
-          <Textarea v-model="nursingPlan.additionalNotes" rows="3" class="border-none! w-full" />
-        </div>
-      </section>
-
-      <!-- Signature Section -->
-      <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <h3 class="text-normal text-accent">Podpis a overenie záznamu</h3>
-
+        <!-- Patient signature -->
         <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-2">
-            <label class="text-normal text-accent">Zaznamenaný záznam</label>
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-2">
-                <label class="text-normal whitespace-nowrap">Dátum a čas:</label>
-                <DatePicker v-model="signatureSection.recordedDate" dateFormat="dd.mm.yy" :showIcon="false" class="flex-1" inputClass="!w-full border-none!" />
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-normal whitespace-nowrap">Sestra:</label>
-                <InputText v-model="signatureSection.recordedBy" type="text" class="flex-1 border-none!" />
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-normal whitespace-nowrap">Funkcia:</label>
-                <InputText v-model="signatureSection.recordedByTitle" type="text" class="flex-1 border-none!" />
-              </div>
-            </div>
+          <div class="flex items-center gap-2">
+            <label class="text-normal whitespace-nowrap">Dátum:</label>
+            <DatePicker
+              v-model="patientEducation.patientDate"
+              dateFormat="dd.mm.yy"
+              showTime
+              hourFormat="24"
+              :showIcon="false"
+              class="flex-1"
+              inputClass="!w-full border-none!"
+            />
           </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-normal text-accent">Overený záznam</label>
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-2">
-                <label class="text-normal whitespace-nowrap">Dátum a čas:</label>
-                <DatePicker v-model="signatureSection.supervisedDate" dateFormat="dd.mm.yy" :showIcon="false" class="flex-1" inputClass="!w-full border-none!" />
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-normal whitespace-nowrap">Sestra:</label>
-                <InputText v-model="signatureSection.supervisedBy" type="text" class="flex-1 border-none!" />
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-normal whitespace-nowrap">Funkcia:</label>
-                <InputText v-model="signatureSection.supervisedByTitle" type="text" class="flex-1 border-none!" />
-              </div>
-            </div>
+          <div class="flex items-center gap-2">
+            <label class="text-normal whitespace-nowrap">Podpis pacienta/pacientky:</label>
+            <InputText v-model="patientEducation.patientSignature" type="text" class="flex-1 border-none!" />
           </div>
         </div>
 
+        <!-- Nursing diagnoses at admission -->
         <div class="flex flex-col gap-2">
-          <label class="text-normal">Poznámky</label>
-          <Textarea v-model="signatureSection.notes" rows="3" class="border-none! w-full" />
+          <label class="text-normal">Stanovenie sesterských diagnóz pri príjme:</label>
+          <Textarea v-model="patientEducation.nursingDiagnosesAdmission" rows="4" class="w-full border-none!" />
         </div>
-      </section>
 
-      <!-- Additional Notes Section -->
-      <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <h3 class="text-normal text-accent">Dodatočné informácie a súhlas</h3>
-
-        <div class="flex flex-col gap-2">
-          <label class="block text-normal">Typ záznamu</label>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-              <Checkbox inputId="record-initial" value="initial" />
-              <label for="record-initial" class="text-normal cursor-pointer">Počiatočný záznam</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <Checkbox inputId="record-update" value="update" />
-              <label for="record-update" class="text-normal cursor-pointer">Aktualizácia</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <Checkbox inputId="record-discharge" value="discharge" />
-              <label for="record-discharge" class="text-normal cursor-pointer">Prepustenie</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <Checkbox inputId="record-emergency" value="emergency" />
-              <label for="record-emergency" class="text-normal cursor-pointer">Havarijný</label>
-            </div>
+        <!-- Nurse signature -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex items-center gap-2">
+            <label class="text-normal whitespace-nowrap">Dátum a čas:</label>
+            <DatePicker
+              v-model="patientEducation.nurseDate"
+              dateFormat="dd.mm.yy"
+              showTime
+              hourFormat="24"
+              :showIcon="false"
+              class="flex-1"
+              inputClass="!w-full border-none!"
+            />
           </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="block text-normal">Všeobecné poznámky</label>
-          <Textarea rows="4" class="border-none! w-full" />
-        </div>
-
-        <div class="flex items-center gap-2">
-          <Checkbox inputId="patient-consent" />
-          <label for="patient-consent" class="text-normal cursor-pointer">Pacient(ka) bol(a) informovaný(á) a vyjadril(a) súhlas so spracovaním osobných údajov a ošetrovateľskými opatreniami</label>
+          <div class="flex items-center gap-2">
+            <label class="text-normal whitespace-nowrap">Čitateľný podpis sestry/pôrodnej asistentky:</label>
+            <InputText v-model="patientEducation.nurseSignature" type="text" class="flex-1 border-none!" />
+          </div>
         </div>
       </section>
 
