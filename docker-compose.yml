@@ -9,7 +9,7 @@ services:
     volumes:
       - ./data-db:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
   adminer:
     image: adminer
@@ -18,23 +18,45 @@ services:
       ADMINER_DEFAULT_DB_DRIVER: pgsql
       ADMINER_DEFAULT_DB_HOST: postgres
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       - postgres
 
   ors:
     image: openrouteservice/openrouteservice:v8.0.0
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     volumes:
       - ./data-ors:/home/ors
     environment:
-      REBUILD_GRAPHS: True
+      REBUILD_GRAPHS: False   # turn off if graph already build for speed increase, and turn on for clean build!
       XMS: 1g
       XMX: 2g
-      ors.engine.source_file: /home/ors/files/slovakia-251030.osm.pbf
+      ors.engine.source_file: /home/ors/files/slovakia-260101.osm.pbf
       ors.engine.profiles.car.enabled: true
+
+    networks:
+      - ors-net
+
+  python-ors:
+    build: ./python-ors
+    container_name: python-ors
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:1515:1515"
+
+    networks:
+      - ors-net
+
+    depends_on:
+      - ors
 
 volumes:
   data-db:
   data-ors:
+
+networks:
+  ors-net:
+    driver: bridge
+
