@@ -142,6 +142,13 @@ function openEditFromIncompleteModal() {
         </RouterLink>
 
         <RouterLink
+          :to="{ path: '/patient/dekurz' }"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
+        >
+          dekurz
+        </RouterLink>
+
+        <RouterLink
           :to="{ path: '/patient/proposal' }"
           class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
         >

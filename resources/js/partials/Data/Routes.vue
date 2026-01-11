@@ -132,7 +132,7 @@ async function onSubmit() {
         <div class="grid grid-cols-12 gap-4">
           <!-- Typ -->
           <div class="col-span-12 md:col-span-6">
-            <label class="block text-normal mb-1">Typ dávky</label>
+            <label class="block text-normal mb-1">Typ dokumentu</label>
             <Select
               v-model="batchType"
               :options="batchTypes"

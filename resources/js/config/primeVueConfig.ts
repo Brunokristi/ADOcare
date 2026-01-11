@@ -231,7 +231,14 @@ export default {
             input: { class: '!bg-darkgrey' },
         },
 
-
-
+        carousel: {
+            root: { class: 'rounded-md! gap-2! align-items-center!' },
+            item: { class: 'bg-white! rounded-md! w-fit! flex-none! gap-2! align-items-center!' },
+            viewport: {
+                class: 'gap-2! align-items-center!'
+            },
+            content: { class: 'gap-2! align-items-center!' },
+            contentContainer: { class: 'gap-2! align-items-center!' },
+        }
     }
 } as PrimeVueConfiguration;

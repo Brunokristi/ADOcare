@@ -29,6 +29,10 @@ use App\Http\Controllers\Api\ProposalDocumentController;
 use App\Http\Controllers\Api\AgreementDocumentController;
 use App\Http\Controllers\Api\CPDocumentController;
 use App\Http\Controllers\Api\DZCDocumentController;
+use App\Http\Controllers\Api\DekurzDocumentController;
+use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
+use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
+
 
 
 use Illuminate\Http\Request;
@@ -128,6 +132,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/dzcs', [DZCDocumentController::class, 'store']);
     Route::get('/dzcs/{documentId}', [DZCDocumentController::class, 'show']);
+
+    Route::post('/dekurz', [DekurzDocumentController::class, 'store']);
+    Route::get('/dekurz/{documentId}', [DekurzDocumentController::class, 'show']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);

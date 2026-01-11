@@ -1,0 +1,308 @@
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/api'
+import { useToast } from 'primevue/usetoast'
+import { usePatientStore } from '@/stores/patientStore'
+
+type DekurzType = 'TP' | 'PHP'
+
+type DekurzSnippet = {
+  key: string
+  title: string
+  body: string
+}
+
+type DekurzSection = {
+  id: string
+  text: string
+  dates: Date[]
+}
+
+const router = useRouter()
+const toast = useToast()
+const patientStore = usePatientStore()
+
+patientStore.loadFromStorage?.()
+
+const patientId = computed(() => patientStore.current?.id ?? 0)
+
+// Top form fields
+const dekurzMonth = ref<Date | null>(new Date())
+const dekurzNumber = ref<string>('')
+const dekurzType = ref<DekurzType>('TP')
+
+// Allowed days for selected month (replace with API response)
+const allowedDaysInMonth = ref<number[]>([1, 2, 5, 12, 20])
+
+// Snippets for carousel buttons
+const snippets = ref<DekurzSnippet[]>([
+  { key: 'tp', title: 'TP', body: 'TP: ' },
+  { key: 'php', title: 'PHP', body: 'PHP: ' }
+])
+
+// Sections (each section has its own textarea + datepicker)
+const sections = ref<DekurzSection[]>([
+  { id: makeId(), text: '', dates: [] }
+])
+
+// validation
+const submitted = ref(false)
+const loading = ref(false)
+const errors = ref<Record<string, string>>({})
+
+// --- Month locking helpers ---
+const lockedMonth = computed(() => {
+  const d = dekurzMonth.value ?? new Date()
+  return { year: d.getFullYear(), month: d.getMonth() }
+})
+
+const monthStart = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month, 1))
+const monthEnd = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month + 1, 0))
+
+function makeId() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function isAllowedDate(date: Date) {
+  const { year, month } = lockedMonth.value
+  if (date.getFullYear() !== year || date.getMonth() !== month) return false
+  return allowedDaysInMonth.value.includes(date.getDate())
+}
+
+const disabledDates = computed(() => {
+  const { year, month } = lockedMonth.value
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  const allowed = new Set(allowedDaysInMonth.value)
+  const out: Date[] = []
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    if (!allowed.has(day)) out.push(new Date(year, month, day))
+  }
+  return out
+})
+
+function addSection() {
+  sections.value.push({ id: makeId(), text: '', dates: [] })
+}
+
+function removeSection(id: string) {
+  sections.value = sections.value.filter(s => s.id !== id)
+  // clean up any errors that belonged to this section
+  const next: Record<string, string> = {}
+  for (const [k, v] of Object.entries(errors.value)) {
+    if (k !== `sectionText-${id}` && k !== `sectionDates-${id}`) next[k] = v
+  }
+  errors.value = next
+}
+
+function appendToSectionText(sectionId: string, text: string) {
+  const s = sections.value.find(x => x.id === sectionId)
+  if (!s) return
+  const add = text ?? ''
+  if (!add) return
+  s.text = s.text?.trim() ? `${s.text}\n${add}` : add
+}
+
+function validateForm() {
+  const e: Record<string, string> = {}
+
+  if (!patientId.value || patientId.value === 0) e.patient = 'Pacient nie je vybratý.'
+  if (!dekurzMonth.value) e.dekurzMonth = 'Mesiac je povinný.'
+  if (!dekurzNumber.value.trim()) e.dekurzNumber = 'Číslo dekurzu je povinné.'
+
+  if (!sections.value.length) {
+    e.sections = 'Pridajte aspoň jednu sekciu.'
+  } else {
+    sections.value.forEach((s, idx) => {
+      if (!s.text.trim()) e[`sectionText-${s.id}`] = `Text v sekcii ${idx + 1} je povinný.`
+      if (!s.dates.length) e[`sectionDates-${s.id}`] = `Vyberte aspoň jeden deň v sekcii ${idx + 1}.`
+    })
+  }
+
+  errors.value = e
+  return Object.keys(e).length === 0
+}
+
+function isoDate(d: Date) {
+  const x = new Date(d)
+  const yyyy = x.getFullYear()
+  const mm = String(x.getMonth() + 1).padStart(2, '0')
+  const dd = String(x.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+watch(
+  () => dekurzMonth.value,
+  () => {
+    const { year, month } = lockedMonth.value
+    for (const s of sections.value) {
+      s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
+    }
+  },
+  { immediate: true }
+)
+
+async function generateDekurz() {
+  submitted.value = true
+  if (!validateForm()) {
+    toast.add({ severity: 'error', summary: 'Chyba validácie', detail: 'Vyplňte všetky povinné polia.', life: 3000 })
+    return
+  }
+
+  loading.value = true
+  try {
+    const month = dekurzMonth.value as Date
+
+    const payload = {
+      patient_id: patientId.value || null,
+      month: isoDate(new Date(month.getFullYear(), month.getMonth(), 1)),
+      dekurz_number: dekurzNumber.value.trim(),
+      type: dekurzType.value,
+      sections: sections.value.map(s => ({
+        text: s.text,
+        dates: (s.dates || []).map(isoDate).sort()
+      }))
+    }
+
+    const res = await api.post('/v1/dekurz', payload)
+
+    toast.add({ severity: 'success', summary: 'Úspešne', detail: 'Dekurz bol vygenerovaný.', life: 3000 })
+
+    if (res.data?.document_id) {
+      router.push({ name: 'documents-dekurz', params: { documentId: res.data.document_id } })
+    }
+  } catch (err: any) {
+    console.error('Failed to generate dekurz:', err)
+    const message = err?.response?.data?.message || err?.message || 'Chyba pri generovaní dekurzu'
+    toast.add({ severity: 'error', summary: 'Chyba', detail: message, life: 3500 })
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="flex flex-col gap-6">
+    <form @submit.prevent="generateDekurz" class="flex flex-col gap-6">
+      <section class="bg-tag3 p-6 rounded-md">
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-normal mb-2">Mesiac</label>
+            <DatePicker
+              v-model="dekurzMonth"
+              view="month"
+              dateFormat="mm.yy"
+              :showIcon="false"
+              class="w-full"
+              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+              :invalid="submitted && !!errors.dekurzMonth"
+            />
+            <small v-if="submitted && errors.dekurzMonth" class="text-warning">{{ errors.dekurzMonth }}</small>
+          </div>
+
+          <div>
+            <label class="block text-normal mb-2">Číslo dekurzu</label>
+            <InputText
+              v-model="dekurzNumber"
+              class="w-full !border-none"
+              inputClass="!w-full !border-none"
+              :invalid="submitted && !!errors.dekurzNumber"
+            />
+            <small v-if="submitted && errors.dekurzNumber" class="text-warning">{{ errors.dekurzNumber }}</small>
+          </div>
+        </div>
+      </section>
+
+      <div v-if="submitted && errors.sections" class="text-warning -mt-2">{{ errors.sections }}</div>
+
+      <section v-for="(section) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+        <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
+
+          <template #end>
+            <!-- ERASER deletes the section -->
+            <Button
+              icon="bi bi-eraser"
+              class="bg-warning! border-warning! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+              @click.prevent="removeSection(section.id)"
+            />
+          </template>
+        </Toolbar>
+
+        <div>
+          <label class="block text-normal mb-2">Text dekurzu</label>
+          <Textarea
+            v-model="section.text"
+            rows="8"
+            class="w-full border-none!"
+            inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+            :invalid="submitted && !!errors[`sectionText-${section.id}`]"
+          />
+          <small v-if="submitted && errors[`sectionText-${section.id}`]" class="text-warning">
+            {{ errors[`sectionText-${section.id}`] }}
+          </small>
+        </div>
+
+        <div class="w-full">
+          <Carousel :value="snippets" :numVisible="2" :numScroll="1" :circular="true" :showIndicators="false" class="w-full ">
+            <template #item="{ data }">
+              <button
+                type="button"
+                class="text-left px-3 py-2 rounded-md bg-white hover:opacity-90 mr-2 "
+                @click="appendToSectionText(section.id, data.body)"
+              >
+                <div class="font-medium text-accent w-fit">{{ data.title }}</div>
+              </button>
+            </template>
+          </Carousel>
+        </div>
+
+        <div class="w-full">
+          <label class="block text-normal mb-2">Dni (iba povolené)</label>
+
+          <DatePicker
+            v-model="section.dates"
+            selectionMode="multiple"
+            :minDate="monthStart"
+            :maxDate="monthEnd"
+            :disabledDates="disabledDates"
+            :showOtherMonths="false"
+            :showButtonBar="false"
+            :showIcon="false"
+            dateFormat="dd.mm.yy"
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+            placeholder="Vyberte povolené dni"
+            :invalid="submitted && !!errors[`sectionDates-${section.id}`]"
+          />
+
+          <small v-if="submitted && errors[`sectionDates-${section.id}`]" class="text-warning">
+            {{ errors[`sectionDates-${section.id}`] }}
+          </small>
+
+          <div v-if="section.dates?.length" class="mt-2 text-sm opacity-80">
+            Vybrané: {{ section.dates.map(d => d.toLocaleDateString('sk-SK')).join(', ') }}
+          </div>
+        </div>
+      </section>
+
+      <div class="bg-tag3 rounded-md h-12 flex items-center justify-center">
+        <Button type="button" text class="text-accent! border-0!" @click="addSection">
+          <i class="bi bi-plus text-2xl" />
+        </Button>
+      </div>
+
+      <div class="flex justify-end">
+        <Button
+          type="submit"
+          :loading="loading"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-6 py-2 rounded-md text-white min-w-[260px]"
+        >
+          Vygenerovať dekurz
+          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
+        </Button>
+      </div>
+    </form>
+  </div>
+</template>
