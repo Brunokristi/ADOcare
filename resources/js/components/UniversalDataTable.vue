@@ -81,10 +81,10 @@ watch(selectedRows, (val) => {
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
 
             <template #end>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
 
                     <IconField>
-                        <InputText v-model="remote.q.value" placeholder="Search..." class="w-64" />
+                        <InputText v-model="remote.q.value" class="w-64" />
                         <InputIcon>
                             <i class="bi bi-search text-darkgrey" />
                         </InputIcon>
@@ -94,7 +94,7 @@ watch(selectedRows, (val) => {
                         <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function' ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote }) : a.icon"
                          :label="a.label"
                             :disabled="a.disabled && (typeof a.disabled == 'boolean' ? a.disabled : a.disabled({ rows: remote.items.value, selectedRows: selectedRows, remote }))"
-                            class="border-none! hover:bg-darkgrey!" @click="onAction(a)" :class="a.class ?? ''" />
+                            class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)" :class="a.class ?? ''" />
                     </template>
                 </div>
             </template>
@@ -111,7 +111,7 @@ watch(selectedRows, (val) => {
             :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]">
             <template #paginatorcontainer="state">
                 <div class="flex items-center justify-between w-full px-2">
-                    <div class="flex items-center gap-2 flex-1 text-xs text-accent">
+                    <div class="flex items-center gap-2 flex-1 text-xs text-white">
                         <span>Zobraziť</span>
                         <Select class="text-xs! p-0 h-auto!" labelClass="text-xs!" v-model="remote.per_page.value"
                             :options="opt.pageSizeOptions ?? [10, 25, 50]" />
@@ -123,8 +123,8 @@ watch(selectedRows, (val) => {
                             v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="onSort"
                             v-model:selection="selectedRows" />
                     </div>
-                    <div class="flex-1 text-right text-xs text-accent">
-                        Výsledky od <b>{{ state.first }}</b> do <b>{{ state.last }}</b> z celkových <b>{{
+                    <div class="flex-1 text-right text-xs text-white">
+                        Výsledky {{ state.first }} - {{ state.last }} z celkových <b>{{
                             state.totalRecords }}</b> záznamov
                     </div>
 
