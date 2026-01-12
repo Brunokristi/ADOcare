@@ -52,8 +52,9 @@ const selectedRows = ref<IBaseModel[]>([]);
 let searchTimer: number | null = null;
 
 // initial load
-onMounted(() => {
-    remote.loadPage(1);
+onMounted(async () => {
+    await remote.loadPage(1);
+    opt.afterInit?.({ remote });
 });
 
 // debounce search: when remote.q changes, reload page 1
@@ -91,8 +92,9 @@ watch(selectedRows, (val) => {
                     </IconField>
 
                     <template v-if="opt.actions?.length">
-                        <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function' ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote }) : a.icon"
-                         :label="a.label"
+                        <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label"
+                            :icon="typeof a.icon === 'function' ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote }) : a.icon"
+                            :label="a.label"
                             :disabled="a.disabled && (typeof a.disabled == 'boolean' ? a.disabled : a.disabled({ rows: remote.items.value, selectedRows: selectedRows, remote }))"
                             class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)" :class="a.class ?? ''" />
                     </template>
@@ -104,18 +106,15 @@ watch(selectedRows, (val) => {
         <DataTable ref="dt" :value="remote.items.value" :paginator="true" :rows="remote.per_page.value"
             :totalRecords="remote.total.value" :lazy="true" :loading="remote.loading.value" :dataKey="rowKey"
             v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="(e) => onSort(e)" v-model:selection="selectedRows"
-            :selectionMode="opt.selectable ? 'multiple' : undefined"
-            class="h-full min-h-0 max-h-full overflow-auto"
-            scrollable
-            scrollHeight="flex"
-            :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]">
+            :selectionMode="opt.selectable ? 'multiple' : undefined" class="h-full min-h-0 max-h-full overflow-auto"
+            scrollable scrollHeight="flex" :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]">
             <template #paginatorcontainer="state">
                 <div class="flex items-center justify-between w-full px-2">
                     <div class="flex items-center gap-2 flex-1 text-xs text-white">
                         <span>Zobraziť</span>
                         <Select class="text-xs! p-0 h-auto!" labelClass="text-xs!" v-model="remote.per_page.value"
                             :options="opt.pageSizeOptions ?? [10, 25, 50]" />
-                         <span>záznamov na stranu</span>
+                        <span>záznamov na stranu</span>
                     </div>
                     <div class="flex-1">
                         <Paginator v-bind="state"

@@ -47,6 +47,7 @@ interface ActionDef<T = any> {
 interface DataTableOptions<T = any> {
     endpointUrl: string;
     columns: ColumnDef<T>[];
+    afterInit?: ({ remote: RemoteTableReturn }) => void;
     rowKey?: string;
     selectable?: boolean;
     actions?: ActionDef<T>[];
