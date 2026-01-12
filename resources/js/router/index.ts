@@ -27,6 +27,7 @@ import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
 import PatientRecord from '@/partials/Patient/Record.vue'
+import PatientDekurz from '@/partials/Patient/Dekurz.vue'
 import ProceduresOld from '@/partials/Settings/Procedures/ProceduresOld.vue'
 
 
@@ -192,6 +193,17 @@ const routes = [
                 meta: {
                     title: 'Bodovanie pacienta',
                     link: 'bodovanie',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'dekurz',
+                name: 'dekurz',
+                component: PatientDekurz,
+                meta: {
+                    title: 'Dekurz',
+                    link: 'dekurz',
                     sidebar: false,
                     navbar: false,
                 },

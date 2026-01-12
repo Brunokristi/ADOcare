@@ -22,7 +22,7 @@ const ADOPreset = definePreset(Material, {
 
 const baseField =
     'rounded-md! h-7! ' +
-    'border-darkgrey! bg-white! ' +
+    'border-darkgrey! ' +
     'text-normal! text-darkgrey! ' +
     'outline-none! ring-0! shadow-none! ' +
     'focus:outline-none! focus:ring-0! focus:shadow-none!';
@@ -97,11 +97,23 @@ export default {
 
         toast: {
             root: { class: 'rounded-md!' },
-            message: { class: 'rounded-md!' },
-            messageContent: { class: 'text-dark! rounded-md!' },
+
+            message: ({ props }: any) => ({
+                class: [
+                    'rounded-md!',
+                    'border-l-4',
+                    props?.message?.severity === 'success' && 'bg-success!',
+                    props?.message?.severity === 'error' && 'bg-warning!',
+                    props?.message?.severity === 'warn' && 'bg-warning!',
+                    props?.message?.severity === 'info' && 'bg-darkgrey!',
+                ],
+            }),
+
+            messageContent: { class: 'text-white! rounded-md! px-3 py-2' },
             messageIcon: { class: 'hidden!' },
-            detail: { class: 'text-dark!' },
+            detail: { class: 'text-white!' },
         },
+
 
         /* ---------- SELECT ---------- */
 
@@ -231,7 +243,14 @@ export default {
             input: { class: '!bg-darkgrey' },
         },
 
-
-
+        carousel: {
+            root: { class: 'rounded-md! gap-2! align-items-center!' },
+            item: { class: 'bg-white! rounded-md! w-fit! flex-none! gap-2! align-items-center!' },
+            viewport: {
+                class: 'gap-2! align-items-center!'
+            },
+            content: { class: 'gap-2! align-items-center!' },
+            contentContainer: { class: 'gap-2! align-items-center!' },
+        }
     }
 } as PrimeVueConfiguration;
