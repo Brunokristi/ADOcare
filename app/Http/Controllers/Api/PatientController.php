@@ -18,7 +18,7 @@ use App\Models\Procedure;
 use App\Models\Document;
 use App\Services\PatientService;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 
 class PatientController extends Controller
