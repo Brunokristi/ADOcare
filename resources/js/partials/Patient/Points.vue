@@ -153,13 +153,7 @@ async function loadRecordsForPatient() {
   isLoading.value = true;
 
   try {
-    const { data } = await api.get('/v1/patient-points', {
-      params: {
-        patient_id: currentPatient.value.id,
-        paginate: false,
-      },
-    });
-
+    const { data } = await api.get('/v1/patient-points', { params: { patient_id: currentPatient.value.id, paginate: false }});
     const arr = extractArray(data);
 
     records.value = (arr as PatientPointApi[]).map((row) => ({

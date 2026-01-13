@@ -14,12 +14,15 @@ class PatientPointController extends Controller
     {
         $query = PatientPoint::query();
 
+        if ($request->filled('patient_id')) {
+            $query->where('patient_id', $request->integer('patient_id'));
+        }
 
         $results = ApiQuery::apply(
             $request,
             $query,
             searchable: ['patient_name', 'patient_personal_number', 'diagnosis_code', 'procedure_code'],
-            allowedFilters: ['user_id', 'branch_id', 'doctor_id', 'date'],
+            allowedFilters: ['patient_id', 'user_id', 'branch_id', 'doctor_id', 'date'],
             defaults: ['sort' => '-date,id']
         );
 
