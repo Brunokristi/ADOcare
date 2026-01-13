@@ -9,6 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+use App\Models\PatientPoint;
+
+
 
 class DekurzDocumentController extends Controller
 {
@@ -115,5 +119,53 @@ class DekurzDocumentController extends Controller
             'dekurz_data' => $dekurzFile,
         ]);
     }
-    
+
+    public function availableDates(Request $request)
+    {
+        $data = $request->validate([
+            'patient_id' => 'required|integer|exists:patients,id',
+            'month'      => 'required|date',
+        ]);
+
+        $month = Carbon::parse($data['month'])->setTimezone('Europe/Bratislava');
+        $from  = $month->copy()->startOfMonth()->toDateString();
+        $to    = $month->copy()->endOfMonth()->toDateString();
+
+        $dates = PatientPoint::query()
+            ->where('patient_id', (int) $data['patient_id'])
+            ->whereBetween('date', [$from, $to])
+            ->orderBy('date')
+            ->distinct()
+            ->pluck('date');
+
+        $isoDates = $dates
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->unique()
+            ->values();
+
+        $days = $isoDates
+            ->map(fn ($d) => (int) Carbon::parse($d)->day)
+            ->unique()
+            ->sort()
+            ->values();
+
+        Log::info('Fetched available Dekurz dates', [
+            'patient_id' => (int) $data['patient_id'],
+            'month'      => $month->toDateString(),
+            'from'       => $from,
+            'to'         => $to,
+            'dates_count'=> $isoDates->count(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Available dates retrieved',
+            'data' => [
+                'month_from' => $from,
+                'month_to'   => $to,
+                'dates'      => $isoDates,
+                'days'       => $days,
+            ],
+        ]);
+    }
 }

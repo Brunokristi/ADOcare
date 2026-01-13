@@ -5,18 +5,23 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 
-type DekurzType = 'TP' | 'PHP'
-
-type DekurzSnippet = {
-  key: string
-  title: string
-  body: string
-}
-
 type DekurzSection = {
   id: string
   text: string
   dates: Date[]
+}
+
+type Macro = {
+  id: number
+  name: string | null
+  abbreviation: string | null
+  text: string | null
+}
+
+type MacroSnippet = {
+  key: string
+  title: string
+  body: string
 }
 
 const router = useRouter()
@@ -26,25 +31,21 @@ const patientStore = usePatientStore()
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
+const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?? '')
 
 // Top form fields
 const dekurzMonth = ref<Date | null>(new Date())
 const dekurzNumber = ref<string>('')
-const dekurzType = ref<DekurzType>('TP')
 
-// Allowed days for selected month (replace with API response)
-const allowedDaysInMonth = ref<number[]>([1, 2, 5, 12, 20])
+// Calendar allowed days
+const allowedDaysInMonth = ref<number[]>([])
 
-// Snippets for carousel buttons
-const snippets = ref<DekurzSnippet[]>([
-  { key: 'tp', title: 'TP', body: 'TP: ' },
-  { key: 'php', title: 'PHP', body: 'PHP: ' }
-])
+// Macros (replace TP/PHP)
+const macros = ref<MacroSnippet[]>([])
+const macrosLoading = ref(false)
 
 // Sections (each section has its own textarea + datepicker)
-const sections = ref<DekurzSection[]>([
-  { id: makeId(), text: '', dates: [] }
-])
+const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
 
 // validation
 const submitted = ref(false)
@@ -54,7 +55,7 @@ const errors = ref<Record<string, string>>({})
 // --- Month locking helpers ---
 const lockedMonth = computed(() => {
   const d = dekurzMonth.value ?? new Date()
-  return { year: d.getFullYear(), month: d.getMonth() }
+  return { year: d.getFullYear(), month: d.getMonth() } // month = 0..11
 })
 
 const monthStart = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month, 1))
@@ -62,6 +63,14 @@ const monthEnd = computed(() => new Date(lockedMonth.value.year, lockedMonth.val
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function isoDate(d: Date) {
+  const x = new Date(d)
+  const yyyy = x.getFullYear()
+  const mm = String(x.getMonth() + 1).padStart(2, '0')
+  const dd = String(x.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function isAllowedDate(date: Date) {
@@ -89,6 +98,7 @@ function addSection() {
 
 function removeSection(id: string) {
   sections.value = sections.value.filter(s => s.id !== id)
+
   // clean up any errors that belonged to this section
   const next: Record<string, string> = {}
   for (const [k, v] of Object.entries(errors.value)) {
@@ -100,7 +110,7 @@ function removeSection(id: string) {
 function appendToSectionText(sectionId: string, text: string) {
   const s = sections.value.find(x => x.id === sectionId)
   if (!s) return
-  const add = text ?? ''
+  const add = (text ?? '').trim()
   if (!add) return
   s.text = s.text?.trim() ? `${s.text}\n${add}` : add
 }
@@ -125,24 +135,63 @@ function validateForm() {
   return Object.keys(e).length === 0
 }
 
-function isoDate(d: Date) {
-  const x = new Date(d)
-  const yyyy = x.getFullYear()
-  const mm = String(x.getMonth() + 1).padStart(2, '0')
-  const dd = String(x.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
+async function fetchAllowedDays() {
+  if (!patientId.value || !dekurzMonth.value) {
+    allowedDaysInMonth.value = []
+    return
+  }
 
-watch(
-  () => dekurzMonth.value,
-  () => {
+  const d = dekurzMonth.value
+  const monthStartIso = isoDate(new Date(d.getFullYear(), d.getMonth(), 1))
+
+  try {
+    const res = await api.get('/v1/dekurz/available-dates', {
+      params: { patient_id: patientId.value, month: monthStartIso },
+    })
+
+    const days = (res.data?.data?.days ?? [])
+      .map((n: any) => Number(n))
+      .filter((n: number) => Number.isFinite(n))
+
+    allowedDaysInMonth.value = Array.from(new Set(days)).sort((a, b) => a - b)
+
+    // prune selected dates if month changed or allowed days changed
     const { year, month } = lockedMonth.value
     for (const s of sections.value) {
-      s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
+      s.dates = (s.dates || []).filter(dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt))
     }
-  },
-  { immediate: true }
-)
+  } catch (err: any) {
+    console.error('Failed to fetch allowed dates:', err)
+    allowedDaysInMonth.value = []
+    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať dostupné dni.', life: 3000 })
+  }
+}
+
+async function fetchMacros(q = '') {
+  macrosLoading.value = true
+  try {
+    const res = await api.get('/v1/macros', {
+      params: q ? { q } : undefined,
+    })
+
+    // Expected: { success, message, data: { data: [...] } }
+    const items: Macro[] = res.data?.data?.data ?? []
+
+    macros.value = items
+      .map(m => ({
+        key: String(m.id),
+        title: (m.abbreviation || m.name || `Macro #${m.id}`).trim(),
+        body: (m.text || '').trim(),
+      }))
+      .filter(m => m.body.length > 0)
+  } catch (err: any) {
+    console.error('Failed to fetch macros:', err)
+    macros.value = []
+    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať makrá.', life: 3000 })
+  } finally {
+    macrosLoading.value = false
+  }
+}
 
 async function generateDekurz() {
   submitted.value = true
@@ -159,11 +208,10 @@ async function generateDekurz() {
       patient_id: patientId.value || null,
       month: isoDate(new Date(month.getFullYear(), month.getMonth(), 1)),
       dekurz_number: dekurzNumber.value.trim(),
-      type: dekurzType.value,
       sections: sections.value.map(s => ({
         text: s.text,
-        dates: (s.dates || []).map(isoDate).sort()
-      }))
+        dates: (s.dates || []).map(isoDate).sort(),
+      })),
     }
 
     const res = await api.post('/v1/dekurz', payload)
@@ -181,6 +229,19 @@ async function generateDekurz() {
     loading.value = false
   }
 }
+
+// fetch allowed days whenever month or patient changes
+watch([() => dekurzMonth.value, () => patientId.value], async () => {
+  await fetchAllowedDays()
+}, { immediate: true })
+
+// prefill dekurz number from patient store if empty
+watch(patientDekurzNumber, (val) => {
+  if (!dekurzNumber.value.trim() && val) dekurzNumber.value = val
+}, { immediate: true })
+
+// fetch macros once (or you can refetch when user changes)
+fetchMacros()
 </script>
 
 <template>
@@ -193,7 +254,7 @@ async function generateDekurz() {
             <DatePicker
               v-model="dekurzMonth"
               view="month"
-              dateFormat="mm.yy"
+              dateFormat="M yy"
               :showIcon="false"
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
@@ -217,11 +278,13 @@ async function generateDekurz() {
 
       <div v-if="submitted && errors.sections" class="text-warning -mt-2">{{ errors.sections }}</div>
 
-      <section v-for="(section) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+      <section v-for="(section, index) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
+          <template #start>
+            <div class="font-medium text-lg">Sekcia {{ index + 1 }}</div>
+          </template>
 
           <template #end>
-            <!-- ERASER deletes the section -->
             <Button
               icon="bi bi-eraser"
               class="bg-warning! border-warning! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
@@ -245,21 +308,38 @@ async function generateDekurz() {
         </div>
 
         <div class="w-full">
-          <Carousel :value="snippets" :numVisible="2" :numScroll="1" :circular="true" :showIndicators="false" class="w-full ">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-normal">Makrá</label>
+            <small v-if="macrosLoading" class="opacity-70">Načítavam…</small>
+          </div>
+
+          <Carousel
+            :value="macros"
+            :numVisible="2"
+            :numScroll="1"
+            :circular="true"
+            :showIndicators="false"
+            class="w-full"
+          >
             <template #item="{ data }">
               <button
                 type="button"
-                class="text-left px-3 py-2 rounded-md bg-white hover:opacity-90 mr-2 "
+                class="text-left px-3 py-2 rounded-md bg-white hover:opacity-90 mr-2"
+                :disabled="macrosLoading"
                 @click="appendToSectionText(section.id, data.body)"
               >
                 <div class="font-medium text-accent w-fit">{{ data.title }}</div>
               </button>
             </template>
           </Carousel>
+
+          <div v-if="!macrosLoading && !macros.length" class="text-sm opacity-70 mt-2">
+            Nemáte uložené žiadne makrá.
+          </div>
         </div>
 
         <div class="w-full">
-          <label class="block text-normal mb-2">Dni (iba povolené)</label>
+          <label class="block text-normal mb-2">Dátumy</label>
 
           <DatePicker
             v-model="section.dates"
@@ -270,10 +350,10 @@ async function generateDekurz() {
             :showOtherMonths="false"
             :showButtonBar="false"
             :showIcon="false"
+            :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
             dateFormat="dd.mm.yy"
             class="w-full"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
-            placeholder="Vyberte povolené dni"
             :invalid="submitted && !!errors[`sectionDates-${section.id}`]"
           />
 
@@ -283,6 +363,10 @@ async function generateDekurz() {
 
           <div v-if="section.dates?.length" class="mt-2 text-sm opacity-80">
             Vybrané: {{ section.dates.map(d => d.toLocaleDateString('sk-SK')).join(', ') }}
+          </div>
+
+          <div v-else class="mt-2 text-sm opacity-70">
+            Vyberajte len dni, ktoré sú povolené (ostatné sú zablokované).
           </div>
         </div>
       </section>
