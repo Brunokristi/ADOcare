@@ -5,23 +5,16 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 
+type DekurzSnippet = {
+  key: string
+  title: string
+  body: string
+}
+
 type DekurzSection = {
   id: string
   text: string
   dates: Date[]
-}
-
-type Macro = {
-  id: number
-  name: string | null
-  abbreviation: string | null
-  text: string | null
-}
-
-type MacroSnippet = {
-  key: string
-  title: string
-  body: string
 }
 
 const router = useRouter()
@@ -37,14 +30,14 @@ const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?
 const dekurzMonth = ref<Date | null>(new Date())
 const dekurzNumber = ref<string>('')
 
-// Calendar allowed days
+// Allowed days for selected month (from API)
 const allowedDaysInMonth = ref<number[]>([])
 
-// Macros (replace TP/PHP)
-const macros = ref<MacroSnippet[]>([])
+// Macros -> snippets (chips)
+const snippets = ref<DekurzSnippet[]>([])
 const macrosLoading = ref(false)
 
-// Sections (each section has its own textarea + datepicker)
+// Sections
 const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
 
 // validation
@@ -52,10 +45,26 @@ const submitted = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
 
-// --- Month locking helpers ---
+// --- Chip scroller refs per section ---
+const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
+
+function setMacroScrollRef(sectionId: string) {
+  return (el: any) => {
+    macroScrollRefs.value[sectionId] = (el as HTMLElement) ?? null
+  }
+}
+
+function scrollMacros(sectionId: string, dir: -1 | 1) {
+  const el = macroScrollRefs.value[sectionId]
+  if (!el) return
+  const amount = Math.max(160, Math.floor(el.clientWidth * 0.7))
+  el.scrollBy({ left: dir * amount, behavior: 'smooth' })
+}
+
+// --- Month helpers ---
 const lockedMonth = computed(() => {
   const d = dekurzMonth.value ?? new Date()
-  return { year: d.getFullYear(), month: d.getMonth() } // month = 0..11
+  return { year: d.getFullYear(), month: d.getMonth() } // month 0-11
 })
 
 const monthStart = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month, 1))
@@ -99,7 +108,14 @@ function addSection() {
 function removeSection(id: string) {
   sections.value = sections.value.filter(s => s.id !== id)
 
-  // clean up any errors that belonged to this section
+  // cleanup scroll ref
+  const nextRefs: Record<string, HTMLElement | null> = {}
+  for (const [k, v] of Object.entries(macroScrollRefs.value)) {
+    if (k !== id) nextRefs[k] = v
+  }
+  macroScrollRefs.value = nextRefs
+
+  // cleanup errors
   const next: Record<string, string> = {}
   for (const [k, v] of Object.entries(errors.value)) {
     if (k !== `sectionText-${id}` && k !== `sectionDates-${id}`) next[k] = v
@@ -110,7 +126,7 @@ function removeSection(id: string) {
 function appendToSectionText(sectionId: string, text: string) {
   const s = sections.value.find(x => x.id === sectionId)
   if (!s) return
-  const add = (text ?? '').trim()
+  const add = (text ?? '').trimEnd()
   if (!add) return
   s.text = s.text?.trim() ? `${s.text}\n${add}` : add
 }
@@ -118,7 +134,7 @@ function appendToSectionText(sectionId: string, text: string) {
 function validateForm() {
   const e: Record<string, string> = {}
 
-  if (!patientId.value || patientId.value === 0) e.patient = 'Pacient nie je vybratý.'
+  if (!patientId.value) e.patient = 'Pacient nie je vybratý.'
   if (!dekurzMonth.value) e.dekurzMonth = 'Mesiac je povinný.'
   if (!dekurzNumber.value.trim()) e.dekurzNumber = 'Číslo dekurzu je povinné.'
 
@@ -149,44 +165,45 @@ async function fetchAllowedDays() {
       params: { patient_id: patientId.value, month: monthStartIso },
     })
 
-    const days = (res.data?.data?.days ?? [])
+    const rawDays = res.data?.data?.days ?? []
+    const days = (Array.isArray(rawDays) ? rawDays : [])
       .map((n: any) => Number(n))
-      .filter((n: number) => Number.isFinite(n))
+      .filter((n: number) => Number.isFinite(n) && n >= 1 && n <= 31)
 
     allowedDaysInMonth.value = Array.from(new Set(days)).sort((a, b) => a - b)
 
-    // prune selected dates if month changed or allowed days changed
     const { year, month } = lockedMonth.value
     for (const s of sections.value) {
-      s.dates = (s.dates || []).filter(dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt))
+      s.dates = (s.dates || []).filter(
+        dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt),
+      )
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Failed to fetch allowed dates:', err)
     allowedDaysInMonth.value = []
     toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať dostupné dni.', life: 3000 })
   }
 }
 
-async function fetchMacros(q = '') {
+async function fetchMacros() {
   macrosLoading.value = true
   try {
-    const res = await api.get('/v1/macros', {
-      params: q ? { q } : undefined,
-    })
+    const params: Record<string, any> = {}
+    params.per_page = 100
+    params.sort = 'name'
 
-    // Expected: { success, message, data: { data: [...] } }
-    const items: Macro[] = res.data?.data?.data ?? []
+    const res = await api.get('/v1/macros', { params })
+    const items = res.data?.data?.items ?? []
 
-    macros.value = items
-      .map(m => ({
-        key: String(m.id),
-        title: (m.abbreviation || m.name || `Macro #${m.id}`).trim(),
-        body: (m.text || '').trim(),
-      }))
-      .filter(m => m.body.length > 0)
+    snippets.value = items.map((m: any) => ({
+      key: String(m.id),
+      title: (m.abbreviation?.trim() ? m.abbreviation.trim() : m.name) ?? '',
+      body: m.text ?? '',
+    }))
   } catch (err: any) {
     console.error('Failed to fetch macros:', err)
-    macros.value = []
+    console.error('Response body:', err?.response?.data)
+    snippets.value = []
     toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať makrá.', life: 3000 })
   } finally {
     macrosLoading.value = false
@@ -205,7 +222,7 @@ async function generateDekurz() {
     const month = dekurzMonth.value as Date
 
     const payload = {
-      patient_id: patientId.value || null,
+      patient_id: patientId.value,
       month: isoDate(new Date(month.getFullYear(), month.getMonth(), 1)),
       dekurz_number: dekurzNumber.value.trim(),
       sections: sections.value.map(s => ({
@@ -230,18 +247,39 @@ async function generateDekurz() {
   }
 }
 
-// fetch allowed days whenever month or patient changes
-watch([() => dekurzMonth.value, () => patientId.value], async () => {
-  await fetchAllowedDays()
-}, { immediate: true })
+watch(
+  patientDekurzNumber,
+  val => {
+    if (!dekurzNumber.value.trim() && val) dekurzNumber.value = val
+  },
+  { immediate: true },
+)
 
-// prefill dekurz number from patient store if empty
-watch(patientDekurzNumber, (val) => {
-  if (!dekurzNumber.value.trim() && val) dekurzNumber.value = val
-}, { immediate: true })
+watch(
+  [() => dekurzMonth.value, () => patientId.value],
+  async () => {
+    await fetchAllowedDays()
+  },
+  { immediate: true },
+)
 
-// fetch macros once (or you can refetch when user changes)
-fetchMacros()
+watch(
+  () => dekurzMonth.value,
+  () => {
+    const { year, month } = lockedMonth.value
+    for (const s of sections.value) {
+      s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
+    }
+  },
+)
+
+watch(
+  () => patientId.value,
+  async () => {
+    await fetchMacros()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -278,10 +316,10 @@ fetchMacros()
 
       <div v-if="submitted && errors.sections" class="text-warning -mt-2">{{ errors.sections }}</div>
 
-      <section v-for="(section, index) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+      <section v-for="(section, idx) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
           <template #start>
-            <div class="font-medium text-lg">Sekcia {{ index + 1 }}</div>
+            <div class="font-medium text-lg">Text dekurzu</div>
           </template>
 
           <template #end>
@@ -307,34 +345,56 @@ fetchMacros()
           </small>
         </div>
 
+        <!-- MACROS as chips scroller -->
         <div class="w-full">
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-normal">Makrá</label>
-            <small v-if="macrosLoading" class="opacity-70">Načítavam…</small>
+          <div v-if="!macrosLoading && !snippets.length" class="opacity-70">
+            Nemáte žiadne makrá. Vytvorte ich v Nastaveniach.
           </div>
 
-          <Carousel
-            :value="macros"
-            :numVisible="2"
-            :numScroll="1"
-            :circular="true"
-            :showIndicators="false"
-            class="w-full"
-          >
-            <template #item="{ data }">
-              <button
-                type="button"
-                class="text-left px-3 py-2 rounded-md bg-white hover:opacity-90 mr-2"
-                :disabled="macrosLoading"
-                @click="appendToSectionText(section.id, data.body)"
-              >
-                <div class="font-medium text-accent w-fit">{{ data.title }}</div>
-              </button>
-            </template>
-          </Carousel>
+          <div v-else class="relative">
+            <button
+              type="button"
+              class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                     lex items-center justify-center"
+              @click.prevent="scrollMacros(section.id, -1)"
+              title="Doľava"
+            >
+              <i class="bi bi-chevron-left text-accent" />
+            </button>
 
-          <div v-if="!macrosLoading && !macros.length" class="text-sm opacity-70 mt-2">
-            Nemáte uložené žiadne makrá.
+            <button
+              type="button"
+              class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                     flex items-center justify-center"
+              @click.prevent="scrollMacros(section.id, 1)"
+              title="Doprava"
+            >
+              <i class="bi bi-chevron-right text-accent" />
+            </button>
+
+            <!-- chips row -->
+            <div
+              :ref="setMacroScrollRef(section.id)"
+              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-1 px-10"
+              style="scrollbar-width: thin;"
+            >
+              <button
+                v-for="snip in snippets"
+                :key="snip.key"
+                type="button"
+                class="shrink-0 px-3 py-1 rounded-md bg-white
+                       text-accent text-normal border border-transparent
+                       hover:cursor-pointer
+                       "
+                @pointerdown.stop
+                @mousedown.stop
+                @touchstart.stop
+                @click.prevent.stop="appendToSectionText(section.id, snip.body)"
+                :title="snip.body"
+              >
+                {{ snip.title }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -360,14 +420,6 @@ fetchMacros()
           <small v-if="submitted && errors[`sectionDates-${section.id}`]" class="text-warning">
             {{ errors[`sectionDates-${section.id}`] }}
           </small>
-
-          <div v-if="section.dates?.length" class="mt-2 text-sm opacity-80">
-            Vybrané: {{ section.dates.map(d => d.toLocaleDateString('sk-SK')).join(', ') }}
-          </div>
-
-          <div v-else class="mt-2 text-sm opacity-70">
-            Vyberajte len dni, ktoré sú povolené (ostatné sú zablokované).
-          </div>
         </div>
       </section>
 

@@ -10,7 +10,7 @@ import { default as ActionButtons, type ActionButtonOptions } from '@/components
 // UI state for modal
 const showMacroDialog = ref(false)
 const editingMacro = ref<Partial<Macro> | null>(null)
-const actionRemote = ref<any>(null) // remote controller passed from UniversalDataTable actions
+const actionRemote = ref<any>(null)
 
 function openCreate() {
     editingMacro.value = { name: '', abbreviation: '', text: '' }
