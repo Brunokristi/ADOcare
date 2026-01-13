@@ -14,7 +14,7 @@ import type { PropType } from 'vue';
 import { baseColumnProps } from './base/Props';
 
 
-interface ActionButtonOptions {
+export interface ActionButtonOptions {
     color: string;
     icon: string | ((row: Record<string, any>, column: Record<string, any>) => string);
     tooltip: string;
