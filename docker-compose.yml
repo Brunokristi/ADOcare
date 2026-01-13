@@ -32,7 +32,7 @@ services:
       REBUILD_GRAPHS: False   # turn off if graph already build for speed increase, and turn on for clean build!
       XMS: 1g
       XMX: 2g
-      ors.engine.source_file: /home/ors/files/slovakia-260101.osm.pbf
+      ors.engine.source_file: /home/ors/files/slovakia-260111.osm.pbf
       ors.engine.profiles.car.enabled: true
 
     networks:

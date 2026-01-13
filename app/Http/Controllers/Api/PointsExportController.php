@@ -100,7 +100,11 @@ class PointsExportController extends Controller
             'insuranceName'=> $insuranceName,
         ];
 
-        return $this->success(['sheet' => $sheet], 'Preview generated');
+        return response()->json([
+            'success' => true,
+            'message' => 'Preview generated',
+            'data' => ['sheet' => $sheet],
+        ]);
     }
 
     public function download(Request $request)

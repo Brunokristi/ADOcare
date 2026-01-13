@@ -1,5 +1,5 @@
 {
-    "base url" : "http://ors:8082",
-    "port" : 1515,
-    "optimization time limit" : 5
+    "base url": "http://ors:8082",
+    "port": 1515,
+    "optimization time limit": 1
 }
