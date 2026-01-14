@@ -26,6 +26,7 @@ class DekurzDocumentController extends Controller
             'sections.*.text' => 'required|string',
             'sections.*.dates' => 'required|array|min:1',
             'sections.*.dates.*' => 'required|date_format:Y-m-d',
+            'branch_id' => 'integer',
         ]);
 
         $patient = Patient::findOrFail($validated['patient_id']);
@@ -54,6 +55,28 @@ class DekurzDocumentController extends Controller
         })->values()->all();
 
         $month = $validated['month'] ?? null;
+
+        if ($month) {
+        $visitedAddresses = $this->buildMonthVisitedAddresses([
+            'month' => $month,
+            'user_id' => Auth::id(),
+            'branch_id' => $validated['branch_id'] ?? null,
+            'insurance_id' => $patient->insurance_company_id ?? null,
+            'patient_ids' => [$patient->id],
+        ]);
+
+        Log::info('Dekurz month visited addresses', [
+            'document_id' => $document->id,
+            'patient_id' => $patient->id,
+            'month' => $month,
+            'meta' => $visitedAddresses['meta'],
+            // careful: this can be large
+            'days_sample' => array_slice($visitedAddresses['days'], 0, 3),
+        ]);
+
+        // optionally store it in the JSON file
+        $dekurzData['visited_addresses'] = $visitedAddresses;
+    }
 
         $dekurzData = [
             'document_id' => $document->id,
@@ -167,5 +190,115 @@ class DekurzDocumentController extends Controller
                 'days'       => $days,
             ],
         ]);
+    }
+
+    private function buildMonthVisitedAddresses(array $params): array
+    {
+        $tz = 'Europe/Bratislava';
+
+        $month = Carbon::parse($params['month'])->setTimezone($tz);
+        $from = $month->copy()->startOfMonth()->toDateString();
+        $to   = $month->copy()->endOfMonth()->toDateString();
+        $userId   = (int) $params['user_id'];
+        $branchId = (int) $params['branch_id'];
+
+        $rows = \DB::table('patient_points as pp')
+            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
+            ->where('pp.user_id', $userId)
+            ->where('pp.branch_id', $branchId)
+            ->whereBetween('pp.date', [$from, $to])
+            ->whereIn('pp.procedure_code', ['3439', '3440'])
+            ->select([
+                'pp.date',
+                'pp.patient_id',
+                'p.first_name',
+                'p.last_name',
+                'p.city as patient_city',
+                'p.address as patient_address',
+                'p.latitude as patient_lat',
+                'p.longitude as patient_lng',
+            ])
+            ->orderBy('pp.date')
+            ->get();
+
+        Log::info($rows->count() . ' patient points fetched for Dekurz month address build', [
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'month' => $month->format('Y-m'),
+            'from' => $from,
+            'to' => $to,
+        ]);
+
+        $calendar = [];
+        for ($day = 1; $day <= $month->daysInMonth; $day++) {
+            $date = Carbon::create($month->year, $month->month, $day, 0, 0, 0, $tz)->toDateString();
+            $calendar[$date] = [
+                'date' => $date,
+                'addresses' => [],
+                '_addrIndex' => [],
+            ];
+        }
+
+        foreach ($rows as $r) {
+            $date = Carbon::parse($r->date)->toDateString();
+            if (!isset($calendar[$date])) continue;
+
+            $lat = $r->patient_lat;
+            $lng = $r->patient_lng;
+            $city = (string) $r->patient_city;
+            $addr = (string) $r->patient_address;
+
+            $addressKey = ($lat !== null && $lng !== null)
+                ? "{$lat},{$lng}"
+                : "{$city}|{$addr}";
+
+            if (!isset($calendar[$date]['_addrIndex'][$addressKey])) {
+                $calendar[$date]['addresses'][] = [
+                    'key' => $addressKey,
+                    'city' => $city,
+                    'address' => $addr,
+                    'latitude' => $lat,
+                    'longitude' => $lng,
+                    'patients' => [],
+                    '_seenPatients' => [],
+                ];
+                $calendar[$date]['_addrIndex'][$addressKey] =
+                    count($calendar[$date]['addresses']) - 1;
+            }
+
+            $idx = $calendar[$date]['_addrIndex'][$addressKey];
+            $pid = (int) $r->patient_id;
+
+            if (isset($calendar[$date]['addresses'][$idx]['_seenPatients'][$pid])) {
+                continue;
+            }
+
+            $calendar[$date]['addresses'][$idx]['_seenPatients'][$pid] = true;
+
+            $calendar[$date]['addresses'][$idx]['patients'][] = [
+                'patient_id' => $pid,
+                'patient_name' => trim("{$r->last_name} {$r->first_name}"),
+            ];
+        }
+
+        // Cleanup
+        $days = [];
+        foreach ($calendar as $bucket) {
+            foreach ($bucket['addresses'] as &$a) {
+                unset($a['_seenPatients']);
+            }
+            unset($bucket['_addrIndex']);
+            $days[] = $bucket;
+        }
+
+        return [
+            'meta' => [
+                'month' => $month->format('Y-m'),
+                'from' => $from,
+                'to' => $to,
+                'rows' => $rows->count(),
+            ],
+            'days' => $days,
+        ];
     }
 }

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
+import { useAuthStore } from '@/stores/auth'
 
 type DekurzSnippet = {
   key: string
@@ -20,24 +21,17 @@ type DekurzSection = {
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
+const auth = useAuthStore()
 
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?? '')
-
-// Top form fields
 const dekurzMonth = ref<Date | null>(new Date())
 const dekurzNumber = ref<string>('')
-
-// Allowed days for selected month (from API)
 const allowedDaysInMonth = ref<number[]>([])
-
-// Macros -> snippets (chips)
 const snippets = ref<DekurzSnippet[]>([])
 const macrosLoading = ref(false)
-
-// Sections
 const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
 
 // validation
@@ -229,7 +223,9 @@ async function generateDekurz() {
         text: s.text,
         dates: (s.dates || []).map(isoDate).sort(),
       })),
-    }
+      branch_id: auth.currentBranch?.id ?? null,}
+
+    console.log('Generating dekurz with payload:', payload)
 
     const res = await api.post('/v1/dekurz', payload)
 
@@ -316,7 +312,7 @@ watch(
 
       <div v-if="submitted && errors.sections" class="text-warning -mt-2">{{ errors.sections }}</div>
 
-      <section v-for="(section, idx) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+      <section v-for="(section) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
           <template #start>
             <div class="font-medium text-lg">Text dekurzu</div>
@@ -332,7 +328,6 @@ watch(
         </Toolbar>
 
         <div>
-          <label class="block text-normal mb-2">Text dekurzu</label>
           <Textarea
             v-model="section.text"
             rows="8"
@@ -347,6 +342,8 @@ watch(
 
         <!-- MACROS as chips scroller -->
         <div class="w-full">
+          <label class="block text-normal mb-2">Makrá</label>
+
           <div v-if="!macrosLoading && !snippets.length" class="opacity-70">
             Nemáte žiadne makrá. Vytvorte ich v Nastaveniach.
           </div>
@@ -382,8 +379,8 @@ watch(
                 v-for="snip in snippets"
                 :key="snip.key"
                 type="button"
-                class="shrink-0 px-3 py-1 rounded-md bg-white
-                       text-accent text-normal border border-transparent
+                class="shrink-0 px-3 py-1 rounded-md bg-accent
+                       text-white text-normal border border-transparent
                        hover:cursor-pointer
                        "
                 @pointerdown.stop
