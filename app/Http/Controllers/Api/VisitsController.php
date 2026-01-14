@@ -11,28 +11,25 @@ use Carbon\Carbon;
 
 class VisitsController extends \Illuminate\Routing\Controller
 {
-    /**
-     * POST /v1/visits/timeline
-     *
-     * Returns exact arrive/leave timestamps per patient visit for each day in a month,
-     * starting + ending at the branch.
-     *
-     * Handles multiple patients at the same coords by applying a tiny deterministic jitter
-     * to each stop so the solver can return an unambiguous order.
-     */
     public function monthTimeline(Request $request)
     {
         set_time_limit(300);
+
         $data = $request->validate([
-            'month' => 'required|date',                  // any date inside the month
+            'month' => 'required|date',
             'branch_id' => 'required|integer|exists:branches,id',
-            'user_id' => 'nullable|integer',             // default: current user
-            'start_time' => 'nullable|date_format:H:i',  // default: 07:00
+            'user_id' => 'nullable|integer',
+            'start_time' => 'nullable|date_format:H:i', // default 07:00
             'procedure_codes' => 'nullable|array',
             'procedure_codes.*' => 'string',
             'patients' => 'nullable|array',
             'patients.*' => 'integer',
+
+            // if true -> delete & reinsert in DB
+            'persist' => 'nullable|boolean',
         ]);
+
+        $persist = (bool)($data['persist'] ?? true);
 
         $tz = 'Europe/Bratislava';
 
@@ -44,11 +41,11 @@ class VisitsController extends \Illuminate\Routing\Controller
 
         $month = Carbon::parse($data['month'])->setTimezone($tz);
         $from = $month->copy()->startOfMonth()->toDateString();
-        $to = $month->copy()->endOfMonth()->toDateString();
+        $to   = $month->copy()->endOfMonth()->toDateString();
 
         $branch = DB::table('branches')
             ->where('id', $branchId)
-            ->select('id', 'latitude', 'longitude', 'per_location_time')
+            ->select('id', 'latitude', 'longitude', 'per_location_time', 'terrain_start_time', 'administrative_start_time')
             ->first();
 
         if (!$branch) {
@@ -62,9 +59,9 @@ class VisitsController extends \Illuminate\Routing\Controller
             ], 422);
         }
 
-        $perLocationSeconds = ((int) ($branch->per_location_time ?? 0)) * 60;
+        $perLocationSeconds = ((int)($branch->per_location_time ?? 0)) * 60;
         if ($perLocationSeconds <= 0) {
-            $perLocationSeconds = 10 * 60; // fallback: 10 minutes
+            $perLocationSeconds = 10 * 60; // fallback
         }
 
         // Load ALL visits for month (one row = one patient visit / patient_point)
@@ -98,6 +95,7 @@ class VisitsController extends \Illuminate\Routing\Controller
             'rows' => $rows->count(),
             'per_location_seconds' => $perLocationSeconds,
             'start_time' => $startTimeHHmm,
+            'persist' => $persist,
         ]);
 
         // Group visits per day (YYYY-MM-DD)
@@ -112,13 +110,28 @@ class VisitsController extends \Illuminate\Routing\Controller
         $days = [];
         for ($d = 1; $d <= $month->daysInMonth; $d++) {
             $date = Carbon::create($month->year, $month->month, $d, 0, 0, 0, $tz)->toDateString();
-
             $startUnix = Carbon::parse($date . ' ' . $startTimeHHmm . ':00', $tz)->timestamp;
 
             $dayVisits = $visitsByDay[$date] ?? [];
             $timeline = $this->solveDayTimeline($date, $dayVisits, $branch, $startUnix, $perLocationSeconds);
 
             $days[] = $timeline;
+        }
+
+        // ✅ Persist into visits table (delete + insert)
+        $inserted = 0;
+        if ($persist) {
+            $inserted = $this->persistMonthTimelinesIntoVisits(
+                from: $from,
+                to: $to,
+                userId: $userId,
+                branchId: $branchId,
+                startTimeHHmm: $startTimeHHmm,
+                branch: $branch,
+                days: $days,
+                tz: $tz,
+                perLocationSeconds: $perLocationSeconds
+            );
         }
 
         return response()->json([
@@ -132,97 +145,222 @@ class VisitsController extends \Illuminate\Routing\Controller
                     'branch_id' => $branchId,
                     'start_time' => $startTimeHHmm,
                     'per_location_seconds' => $perLocationSeconds,
+                    'persisted' => $persist,
+                    'inserted_rows' => $inserted,
                 ],
                 'days' => $days,
             ],
         ]);
     }
 
-    /**
-     * GET /v1/visits/patient-time?patient_id=..&date=YYYY-MM-DD&branch_id=..&user_id=..
-     *
-     * Fetch arrive/leave times for ONE patient on ONE day.
-     * This uses the cached timeline table if you add it (recommended),
-     * otherwise it can compute on demand by calling the month endpoint logic (heavy).
-     *
-     * This implementation computes on-demand for that day only.
-     */
-    public function patientTimeForDay(Request $request)
+    public function dayTotals(Request $request)
     {
         $data = $request->validate([
-            'patient_id' => 'required|integer|exists:patients,id',
             'date' => 'required|date_format:Y-m-d',
-            'branch_id' => 'required|integer|exists:branches,id',
             'user_id' => 'nullable|integer',
-            'start_time' => 'nullable|date_format:H:i',
-            'procedure_codes' => 'nullable|array',
-            'procedure_codes.*' => 'string',
+            'branch_id' => 'required|integer|exists:branches,id',
+            'include_on_location' => 'nullable|boolean',
         ]);
 
-        $tz = 'Europe/Bratislava';
-        $userId = (int) ($data['user_id'] ?? Auth::id());
-        $branchId = (int) $data['branch_id'];
-        $patientId = (int) $data['patient_id'];
+        $userId = (int)($data['user_id'] ?? Auth::id());
+        $branchId = (int)$data['branch_id'];
         $date = $data['date'];
-        $startTimeHHmm = $data['start_time'] ?? '07:00';
-        $procedureCodes = $data['procedure_codes'] ?? ['3439', '3440'];
+        $includeOnLocation = (bool)($data['include_on_location'] ?? true);
 
-        $branch = DB::table('branches')
-            ->where('id', $branchId)
-            ->select('id', 'latitude', 'longitude', 'per_location_time')
+        $agg = DB::table('visits')
+            ->where('user_id', $userId)
+            ->where('branch_id', $branchId)
+            ->where('date', $date)
+            ->selectRaw('
+                COUNT(*) as stops,
+                COALESCE(SUM(time_to_location), 0) as travel_seconds,
+                COALESCE(SUM(distance_to_location), 0) as distance_m,
+                COALESCE(SUM(time_on_location), 0) as on_location_seconds,
+                MIN(COALESCE(terrain_time, administrative_time)) as first_arrival,
+                MAX(COALESCE(terrain_time, administrative_time)) as last_arrival
+            ')
             ->first();
 
-        if (!$branch || $branch->latitude === null || $branch->longitude === null) {
-            return response()->json(['success' => false, 'message' => 'Invalid branch coords'], 422);
-        }
-
-        $perLocationSeconds = ((int) ($branch->per_location_time ?? 0)) * 60;
-        if ($perLocationSeconds <= 0) $perLocationSeconds = 10 * 60;
-
-        $visits = DB::table('patient_points as pp')
-            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
-            ->where('pp.user_id', $userId)
-            ->where('pp.branch_id', $branchId)
-            ->whereDate('pp.date', $date)
-            ->when(!empty($procedureCodes), fn ($q) => $q->whereIn('pp.procedure_code', $procedureCodes))
-            ->select([
-                'pp.id as patient_point_id',
-                'pp.date',
-                'pp.patient_id',
-                'p.first_name',
-                'p.last_name',
-                'p.city as patient_city',
-                'p.address as patient_address',
-                'p.latitude as patient_lat',
-                'p.longitude as patient_lng',
-            ])
-            ->orderBy('pp.id')
-            ->get();
-
-        $startUnix = Carbon::parse($date . ' ' . $startTimeHHmm . ':00', $tz)->timestamp;
-
-        $timeline = $this->solveDayTimeline($date, $visits->all(), $branch, $startUnix, $perLocationSeconds);
-
-        // Filter to requested patient (can have multiple stops that day)
-        $patientStops = array_values(array_filter($timeline['stops'] ?? [], fn ($s) => (int)($s['patient_id'] ?? 0) === $patientId));
+        $totalSeconds = (int)$agg->travel_seconds + ($includeOnLocation ? (int)$agg->on_location_seconds : 0);
 
         return response()->json([
             'success' => true,
             'data' => [
                 'date' => $date,
-                'patient_id' => $patientId,
-                'stops' => $patientStops, // each has arrive_unix/leave_unix
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'stops' => (int)$agg->stops,
+                'travel_seconds' => (int)$agg->travel_seconds,
+                'on_location_seconds' => (int)$agg->on_location_seconds,
+                'total_seconds' => $totalSeconds,
+                'distance_m' => (int)$agg->distance_m,
+                'distance_km' => round(((int)$agg->distance_m) / 1000, 2),
+                'first_arrival' => $agg->first_arrival,
+                'last_arrival' => $agg->last_arrival,
             ],
         ]);
     }
 
-    /**
-     * One day -> call solver -> parse stop timeline.
-     * Each visit is a separate stop (even same coords). We make stops unique via tiny jitter.
-     */
+    public function monthTotals(Request $request)
+    {
+        $data = $request->validate([
+            'month' => 'required|date', // any date within month
+            'user_id' => 'nullable|integer',
+            'branch_id' => 'required|integer|exists:branches,id',
+            'include_on_location' => 'nullable|boolean',
+        ]);
+
+        $tz = 'Europe/Bratislava';
+        $userId = (int)($data['user_id'] ?? Auth::id());
+        $branchId = (int)$data['branch_id'];
+        $includeOnLocation = (bool)($data['include_on_location'] ?? true);
+
+        $month = Carbon::parse($data['month'])->setTimezone($tz);
+        $from = $month->copy()->startOfMonth()->toDateString();
+        $to   = $month->copy()->endOfMonth()->toDateString();
+
+        $agg = DB::table('visits')
+            ->where('user_id', $userId)
+            ->where('branch_id', $branchId)
+            ->whereBetween('date', [$from, $to])
+            ->selectRaw('
+                COUNT(*) as stops,
+                COALESCE(SUM(time_to_location), 0) as travel_seconds,
+                COALESCE(SUM(distance_to_location), 0) as distance_m,
+                COALESCE(SUM(time_on_location), 0) as on_location_seconds,
+                MIN(date) as from_date,
+                MAX(date) as to_date
+            ')
+            ->first();
+
+        $totalSeconds = (int)$agg->travel_seconds + ($includeOnLocation ? (int)$agg->on_location_seconds : 0);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'month' => $month->format('Y-m'),
+                'from' => $from,
+                'to' => $to,
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'stops' => (int)$agg->stops,
+                'travel_seconds' => (int)$agg->travel_seconds,
+                'on_location_seconds' => (int)$agg->on_location_seconds,
+                'total_seconds' => $totalSeconds,
+                'distance_m' => (int)$agg->distance_m,
+                'distance_km' => round(((int)$agg->distance_m) / 1000, 2),
+            ],
+        ]);
+    }
+
+    private function persistMonthTimelinesIntoVisits(
+        string $from,
+        string $to,
+        int $userId,
+        int $branchId,
+        string $startTimeHHmm,
+        object $branch,
+        array $days,
+        string $tz,
+        int $perLocationSeconds
+    ): int {
+        // Decide which column we fill based on start_time.
+        // If the request start_time matches branch start time fields, we store accordingly.
+        $startTimeHHmm = substr($startTimeHHmm, 0, 5);
+        $terrainStart = isset($branch->terrain_start_time) ? substr((string)$branch->terrain_start_time, 0, 5) : null;
+        $adminStart   = isset($branch->administrative_start_time) ? substr((string)$branch->administrative_start_time, 0, 5) : null;
+
+        $mode = 'terrain'; // default
+        if ($adminStart && $startTimeHHmm === $adminStart) $mode = 'administrative';
+        if ($terrainStart && $startTimeHHmm === $terrainStart) $mode = 'terrain';
+
+        $now = now()->setTimezone($tz)->format('Y-m-d H:i:s');
+
+        return DB::transaction(function () use ($from, $to, $userId, $branchId, $days, $tz, $now, $mode, $perLocationSeconds) {
+            // Delete old rows
+            $deleted = DB::table('visits')
+                ->where('user_id', $userId)
+                ->where('branch_id', $branchId)
+                ->whereBetween('date', [$from, $to])
+                ->delete();
+
+            Log::info('Visits timeline delete before insert', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'from' => $from,
+                'to' => $to,
+                'deleted' => $deleted,
+                'mode' => $mode,
+            ]);
+
+            $buffer = [];
+            $inserted = 0;
+
+            foreach ($days as $day) {
+                $date = $day['date'] ?? null;
+                if (!$date) continue;
+
+                $stops = $day['stops'] ?? [];
+                if (!is_array($stops) || !count($stops)) continue;
+
+                foreach ($stops as $s) {
+                    $patientId = (int)($s['patient_id'] ?? 0);
+                    if ($patientId <= 0) continue;
+
+                    $arriveUnix = (int)($s['arrive_unix'] ?? 0);
+                    if ($arriveUnix <= 0) continue;
+
+                    $arriveTs = Carbon::createFromTimestamp($arriveUnix, $tz)->format('Y-m-d H:i:s');
+
+                    $row = [
+                        'date' => $date,
+                        'patient_id' => $patientId,
+                        'user_id' => $userId,
+                        'branch_id' => $branchId,
+
+                        // Fill exactly one of these based on mode
+                        'terrain_time' => $mode === 'terrain' ? $arriveTs : null,
+                        'administrative_time' => $mode === 'administrative' ? $arriveTs : null,
+
+                        'time_on_location' => (int)($s['spent_seconds'] ?? $perLocationSeconds),
+                        'distance_to_location' => (int)round((float)($s['travel_distance_m'] ?? 0)),
+                        'time_to_location' => (int)round((float)($s['travel_seconds'] ?? 0)),
+
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
+                    $buffer[] = $row;
+
+                    // bulk insert in chunks to avoid huge single query
+                    if (count($buffer) >= 1000) {
+                        DB::table('visits')->insert($buffer);
+                        $inserted += count($buffer);
+                        $buffer = [];
+                    }
+                }
+            }
+
+            if (count($buffer)) {
+                DB::table('visits')->insert($buffer);
+                $inserted += count($buffer);
+            }
+
+            Log::info('Visits timeline inserted', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'from' => $from,
+                'to' => $to,
+                'inserted' => $inserted,
+                'mode' => $mode,
+            ]);
+
+            return $inserted;
+        });
+    }
+
     private function solveDayTimeline(string $dateYmd, array $visits, object $branch, int $startUnix, int $perLocationSeconds): array
     {
-        // Filter invalid coords but keep a stable stop order
         $validVisits = array_values(array_filter($visits, function ($v) {
             return $v->patient_lat !== null && $v->patient_lng !== null;
         }));
@@ -240,12 +378,12 @@ class VisitsController extends \Illuminate\Routing\Controller
             ];
         }
 
-        // Build points with deterministic micro-jitter so duplicates become unique
         $points = [];
         $timeSpending = [];
         $metaBySentKey = [];
 
-        $baseEps = 0.000001; // tiny ~0.1m
+        $baseEps = 0.000001; // tiny jitter to keep stops unique even at same coords
+
         foreach ($validVisits as $i => $v) {
             $epsLat = $baseEps * (($i % 7) + 1);
             $epsLng = $baseEps * ((($i * 3) % 7) + 1);
@@ -259,13 +397,7 @@ class VisitsController extends \Illuminate\Routing\Controller
             $sentKey = sprintf('%.7f,%.7f', $lngJ, $latJ);
 
             $metaBySentKey[$sentKey] = [
-                'patient_point_id' => (int)$v->patient_point_id,
                 'patient_id' => (int)$v->patient_id,
-                'patient_name' => trim(($v->last_name ?? '') . ' ' . ($v->first_name ?? '')),
-                'city' => (string)($v->patient_city ?? ''),
-                'address' => (string)($v->patient_address ?? ''),
-                'original_lat' => (float)$v->patient_lat,
-                'original_lng' => (float)$v->patient_lng,
             ];
         }
 
@@ -282,28 +414,18 @@ class VisitsController extends \Illuminate\Routing\Controller
             'points_count' => count($points),
             'start_time_unix' => $startUnix,
             'per_location_seconds' => $perLocationSeconds,
-            'first_point' => $points[0] ?? null,
         ]);
 
         $json = $this->callTspSolver($payload, $dateYmd);
         if ($json === null) {
-            return [
-                'date' => $dateYmd,
-                'error' => 'TSP solver call failed',
-                'stops' => [],
-            ];
+            return ['date' => $dateYmd, 'error' => 'TSP solver call failed', 'stops' => []];
         }
 
         $legs = data_get($json, 'response', []);
         if (!is_array($legs) || !count($legs)) {
-            return [
-                'date' => $dateYmd,
-                'error' => 'TSP solver returned empty response',
-                'stops' => [],
-            ];
+            return ['date' => $dateYmd, 'error' => 'TSP solver returned empty response', 'stops' => []];
         }
 
-        // Parse legs: last leg ends at branch; all previous legs end at a patient stop
         $stops = [];
         $totalTravel = 0.0;
         $totalDistance = 0.0;
@@ -325,17 +447,10 @@ class VisitsController extends \Illuminate\Routing\Controller
             $meta = $sentKey ? ($metaBySentKey[$sentKey] ?? null) : null;
 
             $stops[] = [
-                'patient_point_id' => $meta['patient_point_id'] ?? null,
                 'patient_id' => $meta['patient_id'] ?? null,
-                'patient_name' => $meta['patient_name'] ?? null,
-                'city' => $meta['city'] ?? null,
-                'address' => $meta['address'] ?? null,
-                'original_lat' => $meta['original_lat'] ?? null,
-                'original_lng' => $meta['original_lng'] ?? null,
-
-                'leave_previous_unix' => (int) data_get($ts, 'leave_start_point', 0),
                 'arrive_unix' => (int) data_get($ts, 'arrive_end_point', 0),
                 'leave_unix' => (int) data_get($ts, 'leave_end_point', 0),
+                'leave_previous_unix' => (int) data_get($ts, 'leave_start_point', 0),
 
                 'travel_seconds' => (float)($leg['duration'] ?? 0),
                 'travel_distance_m' => (float)($leg['length'] ?? 0),
@@ -345,18 +460,6 @@ class VisitsController extends \Illuminate\Routing\Controller
 
         $startAt = (int) data_get($legs, '0.timestamps.leave_start_point', $startUnix);
         $endAt   = (int) data_get($legs, (string)(count($legs)-1).'.timestamps.leave_end_point', $startAt);
-
-        Log::info('TSP day parsed', [
-            'date' => $dateYmd,
-            'stops_count' => count($stops),
-            'summary' => [
-                'start_unix' => $startAt,
-                'end_unix' => $endAt,
-                'total_travel_seconds' => round($totalTravel, 2),
-                'total_distance_m' => round($totalDistance, 2),
-            ],
-            'first_stop' => $stops[0] ?? null,
-        ]);
 
         return [
             'date' => $dateYmd,
@@ -384,11 +487,6 @@ class VisitsController extends \Illuminate\Routing\Controller
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->withBody(json_encode($payload), 'application/json')
                 ->send('GET', $url);
-
-            Log::info('TSP HTTP response', [
-                'date' => $dateYmd,
-                'status' => $resp->status(),
-            ]);
 
             if (!$resp->successful()) {
                 Log::warning('TSP HTTP failed', [

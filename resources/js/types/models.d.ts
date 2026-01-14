@@ -313,12 +313,16 @@ export interface Visit {
   // columns
   id: number
   date: string | null
-  examination: string | null
-  statement: string | null
   patient_id: number | null
-  month_id: number | null
   created_at: string | null
   updated_at: string | null
+  user_id: number | null
+  branch_id: number | null
+  terrain_time: string | null
+  administrative_time: string | null
+  time_on_location: number | null
+  distance_to_location: number | null
+  time_to_location: number | null
   // relations
   patient: Patient
   month: ReportMonth
