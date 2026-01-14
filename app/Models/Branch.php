@@ -23,6 +23,9 @@ class Branch extends Model
         'email',
         'latitude',
         'longitude',
+        'terrain_start_time',
+        'administrative_start_time',
+        'representative_id',
     ];
 
     public function company()

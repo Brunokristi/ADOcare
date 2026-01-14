@@ -26,6 +26,7 @@ class Company extends Model
         'email',
         'latitude',
         'longitude',
+        'representative_id'
     ];
 
     public function branches()
@@ -42,4 +43,9 @@ class Company extends Model
     {
         return $this->hasManyThrough(User::class, Branch::class, 'company_id', 'id', 'id', 'id');
     }
+
+    public function representative()
+    {
+        return $this->belongsTo(User::class, 'representative_id');
+    }  
 }

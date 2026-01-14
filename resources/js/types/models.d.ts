@@ -219,6 +219,8 @@ export interface Branch {
   created_at: string | null
   updated_at: string | null
   representative_id: number | null
+  terrain_start_time: string | null
+  administrative_start_time: string | null
   // relations
   company: Company
   representative: User

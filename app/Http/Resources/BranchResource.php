@@ -22,6 +22,9 @@ class BranchResource extends JsonResource
             'longitude' => $this->longitude,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'representative_id' => $this->representative_id,
+            'terrain_start_time' => $this->terrain_start_time,
+            'administrative_start_time' => $this->administrative_start_time,
 
             'company' => $this->whenLoaded('company', function () {
                 return [
