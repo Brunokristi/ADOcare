@@ -18,8 +18,6 @@ use App\Http\Controllers\Api\ReportMonthController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TextBlockController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\VisitController;
-use App\Http\Controllers\Api\VisitTextController;
 use App\Http\Controllers\Api\GeocodeController;
 use \App\Http\Controllers\Api\MacroController;
 use App\Http\Controllers\Api\DekurzController;
@@ -32,6 +30,7 @@ use App\Http\Controllers\Api\DZCDocumentController;
 use App\Http\Controllers\Api\DekurzDocumentController;
 use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
+use App\Http\Controllers\Api\VisitsController;
 
 
 
@@ -102,8 +101,6 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('roles', RoleController::class);
     Route::apiResourceComplete('text-blocks', TextBlockController::class);
     Route::apiResourceComplete('users', UserController::class);
-    Route::apiResourceComplete('visits', VisitController::class);
-    Route::apiResourceComplete('visit-texts', VisitTextController::class);
 
     Route::post('/batches/points/preview', [PointsExportController::class, 'preview']);
     Route::post('/batches/points/download', [PointsExportController::class, 'download']);
@@ -139,4 +136,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
+
+    Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);
+    Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay']);
 });

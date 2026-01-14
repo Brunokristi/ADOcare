@@ -202,6 +202,12 @@ class DekurzDocumentController extends Controller
         $userId   = (int) $params['user_id'];
         $branchId = (int) $params['branch_id'];
 
+        $branch = Branch::findOrFail($branchId);
+        $branchLong = $branch->longitude;
+        $branchLat = $branch->latitude;
+        $startTime = $branch->start_time ?? '08:00:00';
+        $perLocationTime = $branch->per_location_time ?? 10;
+
         $rows = \DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->where('pp.user_id', $userId)
@@ -221,14 +227,6 @@ class DekurzDocumentController extends Controller
             ->orderBy('pp.date')
             ->get();
 
-        Log::info($rows->count() . ' patient points fetched for Dekurz month address build', [
-            'user_id' => $userId,
-            'branch_id' => $branchId,
-            'month' => $month->format('Y-m'),
-            'from' => $from,
-            'to' => $to,
-        ]);
-
         $calendar = [];
         for ($day = 1; $day <= $month->daysInMonth; $day++) {
             $date = Carbon::create($month->year, $month->month, $day, 0, 0, 0, $tz)->toDateString();
@@ -245,8 +243,6 @@ class DekurzDocumentController extends Controller
 
             $lat = $r->patient_lat;
             $lng = $r->patient_lng;
-            $city = (string) $r->patient_city;
-            $addr = (string) $r->patient_address;
 
             $addressKey = ($lat !== null && $lng !== null)
                 ? "{$lat},{$lng}"
@@ -255,8 +251,6 @@ class DekurzDocumentController extends Controller
             if (!isset($calendar[$date]['_addrIndex'][$addressKey])) {
                 $calendar[$date]['addresses'][] = [
                     'key' => $addressKey,
-                    'city' => $city,
-                    'address' => $addr,
                     'latitude' => $lat,
                     'longitude' => $lng,
                     'patients' => [],
@@ -281,7 +275,6 @@ class DekurzDocumentController extends Controller
             ];
         }
 
-        // Cleanup
         $days = [];
         foreach ($calendar as $bucket) {
             foreach ($bucket['addresses'] as &$a) {
