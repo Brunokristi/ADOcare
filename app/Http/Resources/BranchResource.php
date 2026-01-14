@@ -25,6 +25,7 @@ class BranchResource extends JsonResource
             'representative_id' => $this->representative_id,
             'terrain_start_time' => $this->terrain_start_time,
             'administrative_start_time' => $this->administrative_start_time,
+            'per_location_time' => $this->per_location_time,
 
             'company' => $this->whenLoaded('company', function () {
                 return [

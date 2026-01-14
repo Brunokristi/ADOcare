@@ -26,6 +26,7 @@ class Branch extends Model
         'terrain_start_time',
         'administrative_start_time',
         'representative_id',
+        'per_location_time',
     ];
 
     public function company()
