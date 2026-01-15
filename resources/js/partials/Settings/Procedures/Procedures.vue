@@ -62,6 +62,7 @@ onMounted(async () => {
         options.value.columns = [
             { field: 'code', header: 'Kód', sortable: true },
             { field: 'description', header: 'Popis' },
+            ...companyCols,
             {
                 field: 'edit', header: '', width: '3rem', component: markRaw(ActionButtons), componentOptions: [
                     {
@@ -72,7 +73,6 @@ onMounted(async () => {
                     }
                 ]
             },
-            ...companyCols,
         ]
     } catch (e) {
         console.error('Failed to load companies', e)
