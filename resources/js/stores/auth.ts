@@ -1,14 +1,15 @@
 import router from '@/router';
 import api from '@/services/api';
+import type { Branch, User } from '@/types/models';
 import { defineStore } from 'pinia';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         storeStatus: 'ready' as 'ready' | 'initializing',
         token: (localStorage.getItem('api_token') as string | null) || null,
-        user: null as null | IUser,
+        user: null as null | User,
         currentRole: null as null | string,
-        currentBranch: null as null | IBranch,
+        currentBranch: null as null | Branch,
     }),
     getters: {
         isAuthenticated: (state) => !!state.user,
@@ -40,10 +41,10 @@ export const useAuthStore = defineStore('auth', {
                 this.user = await this.fetchUserProfile();
 
                 const savedRole = localStorage.getItem('current_role');
-                if (savedRole && this.user?.roles_list.includes(savedRole)) {
+                if (savedRole && this.user?.role_names.includes(savedRole)) {
                     this.currentRole = savedRole;
-                } else if (this.user?.roles_list.length) {
-                    this.currentRole = this.user.roles_list[0] ?? null;
+                } else if (this.user?.role_names.length) {
+                    this.currentRole = this.user.role_names[0] ?? null;
                 }
 
                 const savedBranchId = localStorage.getItem('current_branch_id');
@@ -65,8 +66,8 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async fetchUserProfile() {
-            const user = await api.get('/auth/profile');
-            return user.data?.data;
+            const user = await api.fetchEntity<User>('/auth/profile');
+            return user;
         },
 
         async setAuth(token: string) {
@@ -81,9 +82,9 @@ export const useAuthStore = defineStore('auth', {
             localStorage.setItem('current_role', role);
         },
 
-        setCurrentBranch(branchId: number) {
+        setCurrentBranchById(branchId: number) {
             const branch = this.user?.branches.find(b => b.id === branchId);
-            if (!branch) return;
+            if (!branch) throw new Error('Branch not found');
             this.currentBranch = branch;
             localStorage.setItem('current_branch_id', branchId.toString());
 

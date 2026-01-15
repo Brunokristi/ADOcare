@@ -28,13 +28,10 @@ class UserResource extends JsonResource
             'role_names' => $this->role_names,
 
             'branches' => $this->whenLoaded('branches', function () {
-                return $this->branches->map(fn($b) => ['id' => $b->id, 'code' => $b->code]);
+                return $this->branches;
             }),
             'company' => $this->whenLoaded('company', function () {
-                return [
-                    'id' => $this->company->id,
-                    'name' => $this->company->name,
-                ];
+                return $this->company;
             }),
 
         ];
