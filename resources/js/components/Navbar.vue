@@ -53,23 +53,8 @@ const branchOptions = computed<BranchOption[]>(() => {
   return options
 })
 
-/**
- * Local v-model for the Branch <Select>.
- * We keep this in sync with authStore.currentBranch/currentRole.
- */
 const selectedBranchIdLocal = ref<number | null>(null)
 
-/* ------------ Persistence to DB ------------ */
-
-/**
- * Update user->last_branch in DB.
- * Change this endpoint to whatever you actually have.
- *
- * Examples you might have:
- * - PATCH /v1/users/me  { last_branch_id }
- * - PATCH /v1/me        { last_branch_id }
- * - PATCH /v1/profile   { last_branch_id }
- */
 async function saveLastBranchToDb(branchId: number) {
   try {
     await api.patch('/v1/users/me/last-branch', { last_branch_id: branchId })
@@ -81,7 +66,6 @@ async function saveLastBranchToDb(branchId: number) {
 /* ------------ Branch application logic ------------ */
 
 function getUserLastBranchId(u: any): number | null {
-  // support different shapes:
   return (
     (u?.last_branch_id ?? null) ||
     (u?.last_branch?.id ?? null) ||

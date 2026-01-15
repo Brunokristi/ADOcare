@@ -39,4 +39,11 @@ return [
         'key' => env('ORS_API_KEY'),
     ],
 
+    'route_service' => [
+        'base_url' => env('ROUTE_SERVICE_BASE_URL', 'http://127.0.0.1:1515'),
+        'endpoint' => env('ROUTE_SERVICE_DISTANCE_ENDPOINT', '/tsp-solver'),
+        'timeout' => env('ROUTE_SERVICE_TIMEOUT', 200),
+    ],
+
+
 ];

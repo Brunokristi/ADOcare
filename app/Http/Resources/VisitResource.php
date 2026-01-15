@@ -2,41 +2,31 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class VisitResource extends JsonResource
 {
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-            'date' => $this->date,
-            'examination' => $this->examination,
-            'statement' => $this->statement,
+            'date' => $this->date?->format('Y-m-d'),
+
             'patient_id' => $this->patient_id,
-            'month_id' => $this->month_id,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'user_id' => $this->user_id,
+            'branch_id' => $this->branch_id,
 
-            'patient' => $this->whenLoaded('patient', function () {
-                return [
-                    'id' => $this->patient?->id,
-                    'first_name' => $this->patient?->first_name,
-                    'last_name' => $this->patient?->last_name,
-                ];
-            }),
+            'terrain_time' => $this->terrain_time?->format('Y-m-d H:i:s'),
+            'administrative_time' => $this->administrative_time?->format('Y-m-d H:i:s'),
 
-            'month' => $this->whenLoaded('month', function () {
-                return [
-                    'id' => $this->month?->id,
-                    'month' => $this->month?->month,
-                    'year' => $this->month?->year,
-                ];
-            }),
+            'time_on_location' => $this->time_on_location,
+            'distance_to_location' => $this->distance_to_location,
+            'time_to_location' => $this->time_to_location,
 
-            'texts' => $this->whenLoaded('texts', function () {
-                return $this->texts->map(fn($t) => ['id' => $t->id, 'text' => $t->text, 'position' => $t->position]);
-            }),
+            'patient' => $this->whenLoaded('patient'),
+            'user' => $this->whenLoaded('user'),
+            'branch' => $this->whenLoaded('branch'),
         ];
     }
 }

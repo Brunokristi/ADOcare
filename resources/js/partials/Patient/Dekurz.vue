@@ -4,8 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
-
-type DekurzType = 'TP' | 'PHP'
+import { useAuthStore } from '@/stores/auth'
 
 type DekurzSnippet = {
   key: string
@@ -22,39 +21,44 @@ type DekurzSection = {
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
+const auth = useAuthStore()
 
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
-
-// Top form fields
+const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?? '')
 const dekurzMonth = ref<Date | null>(new Date())
 const dekurzNumber = ref<string>('')
-const dekurzType = ref<DekurzType>('TP')
-
-// Allowed days for selected month (replace with API response)
-const allowedDaysInMonth = ref<number[]>([1, 2, 5, 12, 20])
-
-// Snippets for carousel buttons
-const snippets = ref<DekurzSnippet[]>([
-  { key: 'tp', title: 'TP', body: 'TP: ' },
-  { key: 'php', title: 'PHP', body: 'PHP: ' }
-])
-
-// Sections (each section has its own textarea + datepicker)
-const sections = ref<DekurzSection[]>([
-  { id: makeId(), text: '', dates: [] }
-])
+const allowedDaysInMonth = ref<number[]>([])
+const snippets = ref<DekurzSnippet[]>([])
+const macrosLoading = ref(false)
+const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
 
 // validation
 const submitted = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
 
-// --- Month locking helpers ---
+// --- Chip scroller refs per section ---
+const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
+
+function setMacroScrollRef(sectionId: string) {
+  return (el: any) => {
+    macroScrollRefs.value[sectionId] = (el as HTMLElement) ?? null
+  }
+}
+
+function scrollMacros(sectionId: string, dir: -1 | 1) {
+  const el = macroScrollRefs.value[sectionId]
+  if (!el) return
+  const amount = Math.max(160, Math.floor(el.clientWidth * 0.7))
+  el.scrollBy({ left: dir * amount, behavior: 'smooth' })
+}
+
+// --- Month helpers ---
 const lockedMonth = computed(() => {
   const d = dekurzMonth.value ?? new Date()
-  return { year: d.getFullYear(), month: d.getMonth() }
+  return { year: d.getFullYear(), month: d.getMonth() } // month 0-11
 })
 
 const monthStart = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month, 1))
@@ -62,6 +66,14 @@ const monthEnd = computed(() => new Date(lockedMonth.value.year, lockedMonth.val
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function isoDate(d: Date) {
+  const x = new Date(d)
+  const yyyy = x.getFullYear()
+  const mm = String(x.getMonth() + 1).padStart(2, '0')
+  const dd = String(x.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function isAllowedDate(date: Date) {
@@ -89,7 +101,15 @@ function addSection() {
 
 function removeSection(id: string) {
   sections.value = sections.value.filter(s => s.id !== id)
-  // clean up any errors that belonged to this section
+
+  // cleanup scroll ref
+  const nextRefs: Record<string, HTMLElement | null> = {}
+  for (const [k, v] of Object.entries(macroScrollRefs.value)) {
+    if (k !== id) nextRefs[k] = v
+  }
+  macroScrollRefs.value = nextRefs
+
+  // cleanup errors
   const next: Record<string, string> = {}
   for (const [k, v] of Object.entries(errors.value)) {
     if (k !== `sectionText-${id}` && k !== `sectionDates-${id}`) next[k] = v
@@ -100,7 +120,7 @@ function removeSection(id: string) {
 function appendToSectionText(sectionId: string, text: string) {
   const s = sections.value.find(x => x.id === sectionId)
   if (!s) return
-  const add = text ?? ''
+  const add = (text ?? '').trimEnd()
   if (!add) return
   s.text = s.text?.trim() ? `${s.text}\n${add}` : add
 }
@@ -108,7 +128,7 @@ function appendToSectionText(sectionId: string, text: string) {
 function validateForm() {
   const e: Record<string, string> = {}
 
-  if (!patientId.value || patientId.value === 0) e.patient = 'Pacient nie je vybratý.'
+  if (!patientId.value) e.patient = 'Pacient nie je vybratý.'
   if (!dekurzMonth.value) e.dekurzMonth = 'Mesiac je povinný.'
   if (!dekurzNumber.value.trim()) e.dekurzNumber = 'Číslo dekurzu je povinné.'
 
@@ -125,24 +145,64 @@ function validateForm() {
   return Object.keys(e).length === 0
 }
 
-function isoDate(d: Date) {
-  const x = new Date(d)
-  const yyyy = x.getFullYear()
-  const mm = String(x.getMonth() + 1).padStart(2, '0')
-  const dd = String(x.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
+async function fetchAllowedDays() {
+  if (!patientId.value || !dekurzMonth.value) {
+    allowedDaysInMonth.value = []
+    return
+  }
 
-watch(
-  () => dekurzMonth.value,
-  () => {
+  const d = dekurzMonth.value
+  const monthStartIso = isoDate(new Date(d.getFullYear(), d.getMonth(), 1))
+
+  try {
+    const res = await api.get('/v1/dekurz/available-dates', {
+      params: { patient_id: patientId.value, month: monthStartIso },
+    })
+
+    const rawDays = res.data?.data?.days ?? []
+    const days = (Array.isArray(rawDays) ? rawDays : [])
+      .map((n: any) => Number(n))
+      .filter((n: number) => Number.isFinite(n) && n >= 1 && n <= 31)
+
+    allowedDaysInMonth.value = Array.from(new Set(days)).sort((a, b) => a - b)
+
     const { year, month } = lockedMonth.value
     for (const s of sections.value) {
-      s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
+      s.dates = (s.dates || []).filter(
+        dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt),
+      )
     }
-  },
-  { immediate: true }
-)
+  } catch (err) {
+    console.error('Failed to fetch allowed dates:', err)
+    allowedDaysInMonth.value = []
+    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať dostupné dni.', life: 3000 })
+  }
+}
+
+async function fetchMacros() {
+  macrosLoading.value = true
+  try {
+    const params: Record<string, any> = {}
+    params.per_page = 100
+    params.sort = 'name'
+
+    const res = await api.get('/v1/macros', { params })
+    const items = res.data?.data?.items ?? []
+
+    snippets.value = items.map((m: any) => ({
+      key: String(m.id),
+      title: (m.abbreviation?.trim() ? m.abbreviation.trim() : m.name) ?? '',
+      body: m.text ?? '',
+    }))
+  } catch (err: any) {
+    console.error('Failed to fetch macros:', err)
+    console.error('Response body:', err?.response?.data)
+    snippets.value = []
+    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať makrá.', life: 3000 })
+  } finally {
+    macrosLoading.value = false
+  }
+}
 
 async function generateDekurz() {
   submitted.value = true
@@ -156,15 +216,16 @@ async function generateDekurz() {
     const month = dekurzMonth.value as Date
 
     const payload = {
-      patient_id: patientId.value || null,
+      patient_id: patientId.value,
       month: isoDate(new Date(month.getFullYear(), month.getMonth(), 1)),
       dekurz_number: dekurzNumber.value.trim(),
-      type: dekurzType.value,
       sections: sections.value.map(s => ({
         text: s.text,
-        dates: (s.dates || []).map(isoDate).sort()
-      }))
-    }
+        dates: (s.dates || []).map(isoDate).sort(),
+      })),
+      branch_id: auth.currentBranch?.id ?? null,}
+
+    console.log('Generating dekurz with payload:', payload)
 
     const res = await api.post('/v1/dekurz', payload)
 
@@ -181,6 +242,40 @@ async function generateDekurz() {
     loading.value = false
   }
 }
+
+watch(
+  patientDekurzNumber,
+  val => {
+    if (!dekurzNumber.value.trim() && val) dekurzNumber.value = val
+  },
+  { immediate: true },
+)
+
+watch(
+  [() => dekurzMonth.value, () => patientId.value],
+  async () => {
+    await fetchAllowedDays()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => dekurzMonth.value,
+  () => {
+    const { year, month } = lockedMonth.value
+    for (const s of sections.value) {
+      s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
+    }
+  },
+)
+
+watch(
+  () => patientId.value,
+  async () => {
+    await fetchMacros()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -193,7 +288,7 @@ async function generateDekurz() {
             <DatePicker
               v-model="dekurzMonth"
               view="month"
-              dateFormat="mm.yy"
+              dateFormat="M yy"
               :showIcon="false"
               class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
@@ -219,9 +314,11 @@ async function generateDekurz() {
 
       <section v-for="(section) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
+          <template #start>
+            <div class="font-medium text-lg">Text dekurzu</div>
+          </template>
 
           <template #end>
-            <!-- ERASER deletes the section -->
             <Button
               icon="bi bi-eraser"
               class="bg-warning! border-warning! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
@@ -231,7 +328,6 @@ async function generateDekurz() {
         </Toolbar>
 
         <div>
-          <label class="block text-normal mb-2">Text dekurzu</label>
           <Textarea
             v-model="section.text"
             rows="8"
@@ -244,22 +340,63 @@ async function generateDekurz() {
           </small>
         </div>
 
+        <!-- MACROS as chips scroller -->
         <div class="w-full">
-          <Carousel :value="snippets" :numVisible="2" :numScroll="1" :circular="true" :showIndicators="false" class="w-full ">
-            <template #item="{ data }">
+          <label class="block text-normal mb-2">Makrá</label>
+
+          <div v-if="!macrosLoading && !snippets.length" class="opacity-70">
+            Nemáte žiadne makrá. Vytvorte ich v Nastaveniach.
+          </div>
+
+          <div v-else class="relative">
+            <button
+              type="button"
+              class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                     lex items-center justify-center"
+              @click.prevent="scrollMacros(section.id, -1)"
+              title="Doľava"
+            >
+              <i class="bi bi-chevron-left text-accent" />
+            </button>
+
+            <button
+              type="button"
+              class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                     flex items-center justify-center"
+              @click.prevent="scrollMacros(section.id, 1)"
+              title="Doprava"
+            >
+              <i class="bi bi-chevron-right text-accent" />
+            </button>
+
+            <!-- chips row -->
+            <div
+              :ref="setMacroScrollRef(section.id)"
+              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-1 px-10"
+              style="scrollbar-width: thin;"
+            >
               <button
+                v-for="snip in snippets"
+                :key="snip.key"
                 type="button"
-                class="text-left px-3 py-2 rounded-md bg-white hover:opacity-90 mr-2 "
-                @click="appendToSectionText(section.id, data.body)"
+                class="shrink-0 px-3 py-1 rounded-md bg-accent
+                       text-white text-normal border border-transparent
+                       hover:cursor-pointer
+                       "
+                @pointerdown.stop
+                @mousedown.stop
+                @touchstart.stop
+                @click.prevent.stop="appendToSectionText(section.id, snip.body)"
+                :title="snip.body"
               >
-                <div class="font-medium text-accent w-fit">{{ data.title }}</div>
+                {{ snip.title }}
               </button>
-            </template>
-          </Carousel>
+            </div>
+          </div>
         </div>
 
         <div class="w-full">
-          <label class="block text-normal mb-2">Dni (iba povolené)</label>
+          <label class="block text-normal mb-2">Dátumy</label>
 
           <DatePicker
             v-model="section.dates"
@@ -270,20 +407,16 @@ async function generateDekurz() {
             :showOtherMonths="false"
             :showButtonBar="false"
             :showIcon="false"
+            :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
             dateFormat="dd.mm.yy"
             class="w-full"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
-            placeholder="Vyberte povolené dni"
             :invalid="submitted && !!errors[`sectionDates-${section.id}`]"
           />
 
           <small v-if="submitted && errors[`sectionDates-${section.id}`]" class="text-warning">
             {{ errors[`sectionDates-${section.id}`] }}
           </small>
-
-          <div v-if="section.dates?.length" class="mt-2 text-sm opacity-80">
-            Vybrané: {{ section.dates.map(d => d.toLocaleDateString('sk-SK')).join(', ') }}
-          </div>
         </div>
       </section>
 

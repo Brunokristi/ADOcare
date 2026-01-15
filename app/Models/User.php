@@ -105,4 +105,9 @@ class User extends Authenticatable
         return $this->belongsTo(\App\Models\Branch::class, 'last_branch_id');
     }
 
+    public function representedCompanies()
+    {
+        return $this->hasMany(Company::class, 'representative_id');
+    }
+
 }
