@@ -13,6 +13,8 @@ export interface User {
   api_token?: string | null
   created_at: string | null
   updated_at: string | null
+  // overrides
+  role_names: string[]
   // relations
   cars: Car[]
   branches: Branch[]

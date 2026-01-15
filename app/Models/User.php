@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -50,6 +51,19 @@ class User extends Authenticatable
         'pin' => 'hashed',
     ];
 
+    /**
+     * Custom interface overrides for the model typer.
+     *
+     * This allows model:typer to emit a precise type for computed attributes / mutators.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    public $interfaces = [
+        'role_names' => [
+            'type' => 'string[]',
+            'nullable' => false,
+        ],
+    ];
 
 
     // Relations
@@ -73,7 +87,23 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
-    public function roleNames()
+
+    /**
+     * Summary of roleNames
+     * @return Attribute<string, array<string>>
+     */
+    protected function roleNames(): Attribute
+    {
+        return Attribute::make(
+
+            get: fn() => $this->roleNamesArray()
+        );
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function roleNamesArray(): array
     {
         return $this->roles()->pluck('position')->toArray();
     }
