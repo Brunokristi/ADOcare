@@ -2,6 +2,9 @@
 import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
+import { usePatientStore } from '@/stores/patientStore'
+
+const patientStore = usePatientStore()
 
 type DekurzDay = {
   date: string
@@ -14,18 +17,18 @@ type DekurzData = {
   document_id: number
   created_at: string
   user_id: number
+  user_name?: string
+  company_name?: string
+  company_address?: string
+  insurance_code?: string
+  patient_personal_number?: string
+  patient_address?: string
   patient_id: number
   patient_name: string
   dekurz_number: string
   month: string
   sections: { text: string; dates: string[] }[]
   days: DekurzDay[]
-}
-
-type DocumentPayload = {
-  id: number
-  user?: any
-  patient?: any
 }
 
 type DekurzRow = {
@@ -40,11 +43,16 @@ const route = useRoute()
 const loading = ref(false)
 const isPrinting = ref(false)
 
-const document = ref<DocumentPayload | null>(null)
 const dekurz = ref<DekurzData>({
   document_id: 0,
   created_at: '',
   user_id: 0,
+  user_name: '',
+  company_name: '',
+  company_address: '',
+  insurance_code: '',
+  patient_personal_number: '',
+  patient_address: '',
   patient_id: 0,
   patient_name: '',
   dekurz_number: '1',
@@ -61,7 +69,6 @@ async function loadDekurz(documentId: string) {
   loading.value = true
   try {
     const res = await api.get(`/v1/dekurz/${documentId}`)
-    document.value = res.data?.document ?? null
     dekurz.value = res.data?.dekurz_data ?? dekurz.value
   } catch (error) {
     console.error('Failed to load Dekurz:', error)
@@ -77,7 +84,7 @@ function formatDateSK(v?: string) {
 
 function formatTimeSKFromDatetime(v?: string) {
   if (!v) return ''
-  const parts = v.split(' ')
+  const parts = String(v).split(' ')
   if (parts.length < 2) return ''
   const timePart = parts[1] ?? ''
   const [hh, mm] = timePart.split(':')
@@ -89,47 +96,17 @@ function safeText(t?: string) {
   return (t ?? '').trim()
 }
 
-const nurseName = computed(() => {
-  const u = document.value?.user
-  return (
-    u?.full_name ??
-    u?.name ??
-    u?.username ??
-    u?.email ??
-    (dekurz.value.user_id ? `ID ${dekurz.value.user_id}` : '')
-  )
-})
-
-const patientPersonalNumber = computed(() => {
-  const p = document.value?.patient
-  return p?.personal_number ?? p?.rodne_cislo ?? p?.birth_number ?? ''
-})
-
-const patientAddress = computed(() => {
-  const p = document.value?.patient
-  return p?.address ?? [p?.street, p?.city, p?.country].filter(Boolean).join(', ') ?? ''
-})
-
-const insurerCode = computed(() => {
-  const p = document.value?.patient
-  return p?.insurance_company_code ?? p?.insurer_code ?? p?.insurance_code ?? ''
-})
-
-const providerBlock = computed(() => {
-  return {
-    name: 'Andramed, o.z.',
-    line1: 'SNP 8, Fiľakovo',
-    line2: 'ADOS',
-  }
-})
-
-const basePageNumber = computed(() => {
-  const n = Number(dekurz.value.dekurz_number ?? 1)
-  return Number.isFinite(n) && n > 0 ? n : 1
-})
-
+/**
+ * We still "compute" rows only for DISPLAY formatting:
+ * - date formatting
+ * - time formatting
+ * - newline normalization
+ *
+ * We DO NOT derive any business data from document/user/patient anymore.
+ */
 const rows = computed<DekurzRow[]>(() => {
   const src = [...(dekurz.value.days || [])].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+
   return src.map(d => {
     const left = d.terrain_time || d.administrative_time || `${d.date} 00:00:00`
     const right = d.administrative_time || d.terrain_time || `${d.date} 00:00:00`
@@ -139,7 +116,7 @@ const rows = computed<DekurzRow[]>(() => {
       leftDateTime: `${formatDateSK(d.date)}\n${formatTimeSKFromDatetime(left)}`,
       rightTime: formatTimeSKFromDatetime(right),
       text: safeText(d.text),
-      nurseName: nurseName.value,
+      nurseName: dekurz.value.user_name || '',
     }
   })
 })
@@ -148,8 +125,25 @@ const rows = computed<DekurzRow[]>(() => {
 const pagedRows = ref<DekurzRow[][]>([])
 
 const measurePageInnerRef = ref<HTMLElement | null>(null)
-const measureHeaderRef = ref<HTMLElement | null>(null) // header tbody
-const measureItemsWrapRef = ref<HTMLElement | null>(null) // items tbody
+const measureHeaderRef = ref<HTMLElement | null>(null) // header wrapper (tables + content header row)
+const measureItemsWrapRef = ref<HTMLElement | null>(null) // tbody containing ONLY item <tr>s
+
+const baseDekurzNumber = computed(() => {
+  const n = Number(dekurz.value.dekurz_number ?? 1)
+  return Number.isFinite(n) && n > 0 ? n : 1
+})
+
+function pageDekurzNumber(pageIdx: number) {
+  return baseDekurzNumber.value + pageIdx
+}
+
+const lastDekurzNumber = computed(() => {
+  const pages = pagedRows.value.length
+  if (!pages) return baseDekurzNumber.value
+  return baseDekurzNumber.value + (pages - 1)
+})
+
+
 
 function outerHeightWithMargins(el: HTMLElement) {
   const style = window.getComputedStyle(el)
@@ -164,7 +158,7 @@ async function recalcPagination() {
   await new Promise<void>(r => requestAnimationFrame(() => r()))
 
   const inner = measurePageInnerRef.value
-  const headerBody = measureHeaderRef.value
+  const headerWrap = measureHeaderRef.value
   const itemsBody = measureItemsWrapRef.value
 
   if (!inner || !itemsBody) {
@@ -173,9 +167,10 @@ async function recalcPagination() {
   }
 
   const innerHeight = inner.clientHeight
-  const headerHeight = headerBody ? outerHeightWithMargins(headerBody) : 0
+    const headerHeight = headerWrap ? outerHeightWithMargins(headerWrap) : 0
 
-  const SAFETY = 18
+  // You can reduce this if you want more entries per page.
+  const SAFETY = 8
   const capacity = innerHeight - headerHeight - SAFETY
 
   const itemEls = Array.from(itemsBody.querySelectorAll('tr')) as HTMLElement[]
@@ -206,6 +201,25 @@ async function recalcPagination() {
   pagedRows.value = pages
 }
 
+async function persistLastDekurzNumber() {
+  const patientId = dekurz.value.patient_id
+  if (!patientId) return
+
+  const valueToStore = String(lastDekurzNumber.value)
+
+  try {
+    // adjust URL to match your API routing
+    await api.put(`/v1/patients/${patientId}`, {
+      dekurz_number: valueToStore,
+    })
+    await patientStore.fetchPatient(patientId)
+
+  } catch (e) {
+    console.error('Failed to update patient dekurz_number:', e)
+  }
+}
+
+
 watch(
   () => rows.value,
   async () => {
@@ -219,8 +233,12 @@ async function printPage() {
   await nextTick()
   await new Promise<void>(r => requestAnimationFrame(() => r()))
   await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+  await persistLastDekurzNumber()
+
   window.print()
 }
+
 
 function handleAfterPrint() {
   isPrinting.value = false
@@ -254,12 +272,12 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
       <div id="print-root">
         <div v-for="(page, pageIdx) in pagedRows" :key="pageIdx" class="dekurz-page">
           <div class="page-inner">
-            <div class="text-center font-bold text-lg mb-2">
+            <div class="text-center font-bold text-lg">
               DEKURZ OŠETROVATEĽSKEJ STAROSTLIVOSTI
             </div>
 
-            <table class="w-full border-collapse dekurz-table table-fixed">
-              <!-- 4-column grid so w-*/colspan behaves consistently -->
+            <!-- HEADER TABLE -->
+            <table class="w-full border-collapse dekurz-table table-fixed mb-2">
               <colgroup>
                 <col class="w-1/4" />
                 <col class="w-1/4" />
@@ -268,35 +286,55 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
               </colgroup>
 
               <tbody>
-                <!-- Provider -->
                 <tr>
                   <td class="border border-black p-2" colspan="4">
-                    <div>{{ providerBlock.name }}</div>
-                    <div>{{ providerBlock.line1 }}</div>
-                    <div>{{ providerBlock.line2 }}</div>
+                    <div class="text-normal"><strong>{{ dekurz.company_name }}</strong></div>
+                    <div class="text-normal">{{ dekurz.company_address }}</div>
+                    <div class="text-normal">Agentúra domácej ošetrovateľskej starostlivosti</div>
                   </td>
                 </tr>
 
-                <!-- Patient row (2/4 + 1/4 + 1/4) -->
                 <tr>
                   <td class="border border-black p-2 align-top w-2/4" colspan="2">
-                    <div class="text-xs">Meno, priezvisko, titul pacienta/pacientky:</div>
-                    <div class="font-bold">{{ dekurz.patient_name }}</div>
-                    <div class="text-normal">{{ patientAddress }}</div>
+                    <div class="text-normal">Meno, priezvisko, titul pacienta/pacientky:</div>
+                    <div class="font-normal"><strong>{{ dekurz.patient_name }}</strong></div>
                   </td>
 
                   <td class="border border-black p-2 align-top w-1/4">
-                    <div class="text-xs">Rodné číslo:</div>
-                    <div class="font-bold">{{ patientPersonalNumber || '—' }}</div>
+                    <div class="text-normal">Rodné číslo:</div>
+                    <div class="font-normal"><strong>{{ dekurz.patient_personal_number || '—' }}</strong></div>
                   </td>
 
                   <td class="border border-black p-2 align-top w-1/4">
-                    <div class="text-xs">Poisťovňa:</div>
-                    <div class="font-bold">{{ insurerCode || '—' }}</div>
+                    <div class="text-normal">Poisťovňa:</div>
+                    <div class="font-normal"><strong>{{ dekurz.insurance_code || '—' }}</strong></div>
                   </td>
                 </tr>
 
-                <!-- Column headers -->
+                <tr>
+                  <td class="border border-black p-2 align-top w-3/4" colspan="3">
+                    <div class="text-normal">Adresa pacienta/pacientky:</div>
+                    <div class="font-normal"><strong>{{ dekurz.patient_address }}</strong></div>
+                  </td>
+
+                  <td class="border border-black p-2 align-top w-1/4">
+                    <div class="text-normal">Poradové číslo dekurzu:</div>
+                    <div class="font-normal"><strong>{{ pageDekurzNumber(pageIdx) }}</strong></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- CONTENT TABLE -->
+            <table class="w-full border-collapse dekurz-table table-fixed">
+              <colgroup>
+                <col class="w-1/4" />
+                <col class="w-1/4" />
+                <col class="w-1/4" />
+                <col class="w-1/4" />
+              </colgroup>
+
+              <tbody>
                 <tr>
                   <td class="border border-black p-2 align-top text-xs font-bold w-1/4">
                     Dátum a<br />
@@ -309,21 +347,19 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
                   </td>
                 </tr>
 
-                <!-- Entries -->
                 <tr v-for="row in page" :key="row.date">
                   <td class="border border-black p-2 align-top w-1/4">
-                    <div class="whitespace-pre-line text-xs">{{ row.leftDateTime }}</div>
+                    <div class="whitespace-pre-line text-normal">{{ row.leftDateTime }}</div>
                   </td>
 
                   <td class="border border-black p-2 align-top w-3/4" colspan="3">
-                    <div class="text-sm leading-snug">
+                    <div class="text-normal leading-snug">
                       <span class="font-normal">{{ row.rightTime }}: </span>
                       <span class="whitespace-pre-line">{{ row.text }}</span>
                     </div>
 
                     <div class="mt-2 flex items-end gap-4">
-                      <div class="font-bold">{{ row.nurseName }}</div>
-                      <div class="ml-auto whitespace-nowrap">Podpis:</div>
+                      <div class="font-normal"><strong>{{ row.nurseName }}</strong></div>
                     </div>
                   </td>
                 </tr>
@@ -333,102 +369,110 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
                 </tr>
               </tbody>
             </table>
-
-            <!-- Optional: page number display (if you want it visible) -->
-            <!--
-            <div class="text-xs mt-2 text-right">
-              Strana: <strong>{{ basePageNumber + pageIdx }}</strong>
-            </div>
-            -->
           </div>
         </div>
       </div>
 
-      <!-- HIDDEN MEASURER (must mirror table layout for correct pagination) -->
-      <div id="measure-root" aria-hidden="true">
+      <!-- HIDDEN MEASURER -->
+        <div id="measure-root" aria-hidden="true">
         <div class="dekurz-page measure-page">
-          <div ref="measurePageInnerRef" class="page-inner">
-            <div class="text-center font-bold text-lg mb-2">
-              DEKURZ OŠETROVATEĽSKEJ STAROSTLIVOSTI
+            <div ref="measurePageInnerRef" class="page-inner">
+            <div class="text-center font-bold text-lg">
+                DEKURZ OŠETROVATEĽSKEJ STAROSTLIVOSTI
             </div>
 
+            <!-- IMPORTANT: one table, header tbody + items tbody -->
             <table class="w-full border-collapse dekurz-table table-fixed">
-              <colgroup>
+                <colgroup>
                 <col class="w-1/4" />
                 <col class="w-1/4" />
                 <col class="w-1/4" />
                 <col class="w-1/4" />
-              </colgroup>
+                </colgroup>
 
-              <!-- Header rows measured together -->
-              <tbody ref="measureHeaderRef">
+                <!-- HEADER (provider/patient/address + column header row) -->
+                <tbody ref="measureHeaderRef">
                 <tr>
-                  <td class="border border-black p-2" colspan="4">
-                    <div>{{ providerBlock.name }}</div>
-                    <div>{{ providerBlock.line1 }}</div>
-                    <div>{{ providerBlock.line2 }}</div>
-                  </td>
+                    <td class="border border-black p-2" colspan="4">
+                    <div class="text-normal">{{ dekurz.company_name }}</div>
+                    <div class="text-normal">{{ dekurz.company_address }}</div>
+                    <div class="text-normal">Agentúra domácej ošetrovateľskej starostlivosti</div>
+                    </td>
                 </tr>
 
                 <tr>
-                  <td class="border border-black p-2 align-top w-2/4" colspan="2">
-                    <div class="text-xs">Meno, priezvisko, titul pacienta/pacientky:</div>
+                    <td class="border border-black p-2 align-top w-2/4" colspan="2">
+                    <div class="text-normal">Meno, priezvisko, titul pacienta/pacientky:</div>
                     <div class="font-bold">{{ dekurz.patient_name }}</div>
-                    <div class="text-normal">{{ patientAddress }}</div>
-                  </td>
+                    </td>
 
-                  <td class="border border-black p-2 align-top w-1/4">
-                    <div class="text-xs">Rodné číslo:</div>
-                    <div class="font-bold">{{ patientPersonalNumber || '—' }}</div>
-                  </td>
+                    <td class="border border-black p-2 align-top w-1/4">
+                    <div class="text-normal">Rodné číslo:</div>
+                    <div class="font-bold">{{ dekurz.patient_personal_number || '—' }}</div>
+                    </td>
 
-                  <td class="border border-black p-2 align-top w-1/4">
-                    <div class="text-xs">Poisťovňa:</div>
-                    <div class="font-bold">{{ insurerCode || '—' }}</div>
-                  </td>
+                    <td class="border border-black p-2 align-top w-1/4">
+                    <div class="text-normal">Poisťovňa:</div>
+                    <div class="font-bold">{{ dekurz.insurance_code || '—' }}</div>
+                    </td>
                 </tr>
 
                 <tr>
-                  <td class="border border-black p-2 align-top text-xs font-bold w-1/4">
+                    <td class="border border-black p-2 align-top w-3/4" colspan="3">
+                    <div class="text-normal">Adresa pacienta/pacientky:</div>
+                    <div class="font-bold">{{ dekurz.patient_address }}</div>
+                    </td>
+
+                    <td class="border border-black p-2 align-top w-1/4">
+                    <div class="text-normal">Poradové číslo dekurzu:</div>
+                    <div class="font-bold">{{ dekurz.dekurz_number }}</div>
+                    </td>
+                </tr>
+
+                <!-- Column headers (must be part of header measurement) -->
+                <tr>
+                    <td class="border border-black p-2 align-top text-xs font-bold w-1/4">
                     Dátum a<br />
                     čas zápisu:
-                  </td>
-                  <td class="border border-black p-2 align-top text-xs font-bold w-3/4" colspan="3">
+                    </td>
+
+                    <td class="border border-black p-2 align-top text-xs font-bold w-3/4" colspan="3">
                     Rozsah poskytnutej ZS a služieb súvisiacich s poskytnutím ZS, identifikácia
                     ošetrujúceho zdravotného pracovníka (meno, priezvisko, odtlačok pečiatky a podpis)
-                  </td>
+                    </td>
                 </tr>
-              </tbody>
+                </tbody>
 
-              <!-- Items measured per <tr> -->
-              <tbody ref="measureItemsWrapRef">
+                <!-- ITEMS (only these rows are measured individually) -->
+                <tbody ref="measureItemsWrapRef">
                 <tr v-for="row in rows" :key="row.date">
-                  <td class="border border-black p-2 align-top w-1/4">
-                    <div class="whitespace-pre-line text-xs">{{ row.leftDateTime }}</div>
-                  </td>
+                    <td class="border border-black p-2 align-top w-1/4">
+                    <div class="whitespace-pre-line text-normal">{{ row.leftDateTime }}</div>
+                    </td>
 
-                  <td class="border border-black p-2 align-top w-3/4" colspan="3">
-                    <div class="text-sm leading-snug">
-                      <span class="font-normal">{{ row.rightTime }}: </span>
-                      <span class="whitespace-pre-line">{{ row.text }}</span>
+                    <td class="border border-black p-2 align-top w-3/4" colspan="3">
+                    <div class="text-normal leading-snug">
+                        <span class="font-normal">{{ row.rightTime }}: </span>
+                        <span class="whitespace-pre-line">{{ row.text }}</span>
                     </div>
 
                     <div class="mt-2 flex items-end gap-4">
-                      <div class="font-bold">{{ row.nurseName }}</div>
-                      <div class="ml-auto whitespace-nowrap">Podpis:</div>
+                        <div class="font-normal"><strong>{{ row.nurseName }}</strong></div>
+                        <div class="ml-auto whitespace-nowrap">Podpis:</div>
                     </div>
-                  </td>
+                    </td>
                 </tr>
 
                 <tr v-if="!rows.length">
-                  <td class="border border-black p-4 text-sm" colspan="4">Žiadne záznamy.</td>
+                    <td class="border border-black p-4 text-sm" colspan="4">Žiadne záznamy.</td>
                 </tr>
-              </tbody>
+                </tbody>
             </table>
-          </div>
+            </div>
         </div>
-      </div>
-      <!-- /measurer -->
+        </div>
+        <!-- /measurer -->
+
     </div>
   </div>
 </template>

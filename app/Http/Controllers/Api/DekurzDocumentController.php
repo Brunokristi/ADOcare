@@ -71,7 +71,6 @@ class DekurzDocumentController extends Controller
             );
         }
 
-        // Now times should exist (or be best-effort), attach them:
         $daysWithTimes = $this->attachVisitTimesForPatient(
             dailyTexts: $dailyTexts,
             patientId: (int)$patient->id,
@@ -79,8 +78,6 @@ class DekurzDocumentController extends Controller
             branchId: (int)$validated['branch_id']
         );
 
-
-        // ✅ attach terrain + administrative times (if available in visits table)
         $daysWithTimes = $this->attachVisitTimesForPatient(
             dailyTexts: $dailyTexts,
             patientId: (int)$patient->id,
@@ -88,28 +85,36 @@ class DekurzDocumentController extends Controller
             branchId: (int)$validated['branch_id']
         );
 
-        Log::info('Dekurz daily texts combined', [
-            'document_id' => $document->id,
-            'patient_id' => $patient->id,
-            'branch_id' => (int)$validated['branch_id'],
-            'days_count' => count($daysWithTimes),
-            'sample' => array_slice($daysWithTimes, 0, 2),
-        ]);
+        $user = Auth::user();
+        $company = $user->company;
+        $branch = $company->branches()->findOrFail($validated['branch_id']);
+        $insurance = $patient->insuranceCompany;
+
+        $userName = trim(($user->title ?? '') . ' ' . ($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+        $companyName = $company ? $company->name : '';
+        $companyAddress = $company ? $company->address : '' . ', ' . ($company->city ?? '');
+        $insuranceCode = $insurance ? $insurance->branch_code : '';
+        $patinetAddress = trim(($patient->address ?? '') . ', ' . ($patient->city ?? '') . ', ' . ($patient->postal_code ?? ''));
+
+
 
         $dekurzData = [
             'document_id' => $document->id,
             'created_at' => now(),
             'user_id' => Auth::id(),
-
+            'user_name' => $userName,
+            'company_name' => $companyName,
+            'company_address' => $companyAddress,
+            'insurance_code' => $insuranceCode,
+            'patient_personal_number' => $patient->personal_number,
+            'patient_address' => $patinetAddress,
             'patient_id' => $patient->id,
             'patient_name' => trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')),
             'dekurz_number' => $validated['dekurz_number'],
             'month' => $month,
 
-            // keep original sections if you still want them
             'sections' => $sections,
 
-            // ✅ new: per-day merged text + times
             'days' => $daysWithTimes,
         ];
 
@@ -133,11 +138,9 @@ class DekurzDocumentController extends Controller
 
         $dekurzFile = null;
 
-        // Fast path: if the path exists on the document
         if ($document->path && Storage::disk('local')->exists($document->path)) {
             $dekurzFile = json_decode(Storage::disk('local')->get($document->path), true);
         } else {
-            // Fallback path scan (like your CP controller)
             $files = Storage::disk('local')->files('dekurz');
             foreach ($files as $file) {
                 $content = json_decode(Storage::disk('local')->get($file), true);
