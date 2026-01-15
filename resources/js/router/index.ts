@@ -23,6 +23,7 @@ import DocumentProposal from '@/partials/Documents/Proposal.vue'
 import DocumentAgreement from '@/partials/Documents/Agreement.vue'
 import DocumentCP from '@/partials/Documents/CP.vue'
 import DocumentDZC from '@/partials/Documents/DZC.vue'
+import DocumentDekurz from '@/partials/Documents/Dekurz.vue'
 import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
@@ -168,6 +169,17 @@ const routes = [
                 meta: {
                     title: 'Denný záznam ciest',
                     link: 'denný záznam ciest',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'dekurz/:documentId',
+                name: 'documents-dekurz',
+                component: DocumentDekurz,
+                meta: {
+                    title: 'Dekurz',
+                    link: 'dekurz',
                     sidebar: false,
                     navbar: false,
                 },
@@ -350,7 +362,6 @@ const routes = [
             },
         ]
     },
-
 ];
 
 const router = createRouter({

@@ -33,13 +33,10 @@ const allowedDaysInMonth = ref<number[]>([])
 const snippets = ref<DekurzSnippet[]>([])
 const macrosLoading = ref(false)
 const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
-
-// validation
+const draftLoaded = ref(false)
 const submitted = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
-
-// --- Chip scroller refs per section ---
 const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
 
 function setMacroScrollRef(sectionId: string) {
@@ -225,8 +222,6 @@ async function generateDekurz() {
       })),
       branch_id: auth.currentBranch?.id ?? null,}
 
-    console.log('Generating dekurz with payload:', payload)
-
     const res = await api.post('/v1/dekurz', payload)
 
     toast.add({ severity: 'success', summary: 'Úspešne', detail: 'Dekurz bol vygenerovaný.', life: 3000 })
@@ -242,6 +237,42 @@ async function generateDekurz() {
     loading.value = false
   }
 }
+
+async function loadLastDekurzDraft() {
+  if (!patientId.value) return
+  if (draftLoaded.value) return
+
+  try {
+    const res = await api.get('/v1/dekurz/last', {
+      params: { patient_id: patientId.value },
+    })
+
+    const d = res.data?.data
+
+    if (!d || !Array.isArray(d.sections) || d.sections.length === 0) {
+      draftLoaded.value = true
+      return
+    }
+
+    sections.value = d.sections.map((s: any) => ({
+      id: makeId(),
+      text: String(s?.text ?? ''),
+      dates: [],
+    }))
+
+    draftLoaded.value = true
+
+    toast.add({
+      severity: 'info',
+      summary: 'Načítané',
+      detail: 'Načítal som posledné uložené texty.',
+      life: 2500,
+    })
+  } catch (err) {
+    console.error('Failed to load last dekurz draft', err)
+  }
+}
+
 
 watch(
   patientDekurzNumber,
@@ -271,11 +302,15 @@ watch(
 
 watch(
   () => patientId.value,
-  async () => {
+  async (val) => {
+    if (!val) return
     await fetchMacros()
+    await loadLastDekurzDraft()
   },
   { immediate: true },
 )
+
+
 </script>
 
 <template>
@@ -430,6 +465,7 @@ watch(
         <Button
           type="submit"
           :loading="loading"
+          
           class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-6 py-2 rounded-md text-white min-w-[260px]"
         >
           Vygenerovať dekurz

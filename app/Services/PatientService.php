@@ -37,6 +37,16 @@ class PatientService
     public function update(Patient $patient, array $data, $user, ?int $branchId = null): Patient
     {
         return DB::transaction(function () use ($patient, $data, $user, $branchId) {
+
+            if (array_key_exists('dekurz_number', $data)) {
+                $incoming = (int) $data['dekurz_number'];
+                $current  = (int) ($patient->dekurz_number ?? 0);
+
+                if ($incoming <= $current) {
+                    unset($data['dekurz_number']);
+                }
+            }
+
             $patient->fill(collect($data)->except('branch_id')->toArray());
             $patient->save();
 
@@ -51,6 +61,7 @@ class PatientService
             return $patient;
         });
     }
+
 
     public function delete(Patient $patient): void
     {

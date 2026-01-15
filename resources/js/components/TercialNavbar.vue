@@ -16,7 +16,7 @@ const attrs = useAttrs()
 const router = useRouter()
 const patientStore = usePatientStore()
 const uiModals = useUiModalsStore()
-
+const patientId = computed(() => patientStore.current?.id ?? null)
 const patient = computed<Patient | null>(() => patientStore.current)
 
 const patientName = computed(() =>
@@ -31,12 +31,6 @@ const closePatient = () => {
   isHovered.value = false
   patientStore.clear()
   router.push('/patients')
-}
-
-const openEdit = () => {
-  const id = patient.value?.id
-  if (!id) return
-  uiModals.openPatientEdit(id)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -171,10 +165,19 @@ function openEditFromIncompleteModal() {
 
         <button
           type="button"
-          @click="openEdit"
-          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!"
+          @click="$router.replace({ query: { ...$route.query, editPatient: patientId } })"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent! cursor-pointer"
         >
           upraviť
+        </button>
+
+        <button
+          type="button"
+          @click="$router.replace({ query: { ...$route.query, patientDocuments: patientId } })"
+          class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent! cursor-pointer"
+
+        >
+          dokumenty
         </button>
 
 

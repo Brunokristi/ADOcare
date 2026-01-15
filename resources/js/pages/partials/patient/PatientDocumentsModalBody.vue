@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import api from '@/services/api';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
 import ActionButtons from '@/components/table-columns/ActionButtons.vue';
+import type { DataTableOptions } from '@/types/datatable'
 
 
 const props = defineProps<{ patientId: number }>();
@@ -44,6 +45,8 @@ const openDocument = (doc: PatientDocument) => {
         window.open(`/documents/proposal/${doc.id}`, '_blank');
     } else if (doc.type === 'agreement') {
         window.open(`/documents/agreement/${doc.id}`, '_blank');
+    } else if (doc.type === 'dekurz') {
+        window.open(`/documents/dekurz/${doc.id}`, '_blank');
     } else {
         const target = doc.url || doc.path;
         if (target) window.open(target, '_blank');
@@ -77,13 +80,13 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
             field: 'type', 
             header: 'Typ', 
             sortable: true,
-            render: (v) => formatDocumentType(v)
+            render: (v: string | undefined) => formatDocumentType(v)
         },
         { 
             field: 'created_at', 
             header: 'Dátum', 
             sortable: true,
-            render: (v) => v ? new Date(v).toLocaleDateString('sk-SK') : ''
+            render: (v: string | undefined) => v ? new Date(v).toLocaleDateString('sk-SK') : ''
         },
         {
             field: 'preview',
@@ -106,11 +109,11 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
     actions: [
         {
             key: 'delete',
-            disabled: ({ selectedRows }) => selectedRows.length === 0,
+            disabled: ({ selectedRows }: { selectedRows: PatientDocument[] }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
             class: 'bg-warning!',
             confirm: 'Delete selected?',
-            handler: async ({ selectedRows, remote }) => {
+            handler: async ({ selectedRows, remote }: { selectedRows: PatientDocument[]; remote: any }) => {
                 try {
                     await api.delete('v1/documents', {
                         data: {

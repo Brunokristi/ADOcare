@@ -34,6 +34,7 @@ class PatientUpdateRequest extends FormRequest
             'longitude' => 'nullable|numeric',
 
             'reference_date' => 'nullable|date',
+            'dekurz_number' => 'nullable|integer|min:1',
         ];
     }
 }
