@@ -33,12 +33,6 @@ const closePatient = () => {
   router.push('/patients')
 }
 
-const openEdit = () => {
-  const id = patient.value?.id
-  if (!id) return
-  uiModals.openPatientEdit(id)
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Incomplete info modal (small)                                             */
 /* -------------------------------------------------------------------------- */
@@ -171,7 +165,7 @@ function openEditFromIncompleteModal() {
 
         <button
           type="button"
-          @click="openEdit"
+          @click="$router.replace({ query: { ...$route.query, editPatient: patientId } })"
           class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent! cursor-pointer"
         >
           upraviť

@@ -1,3 +1,4 @@
+<!-- src/App.vue -->
 <script setup lang="ts">
 import { onMounted, computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -9,10 +10,9 @@ import TercialNavbar from './components/TercialNavbar.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import ModalProvider from './components/ModalProvider.vue'
-import GlobalPatientModal from '@/components/GlobalPatientModal.vue'
 
-// ✅ query-driven patient documents modal (global overlay)
 import PatientDocumentsModal from '@/pages/partials/patient/PatientDocumentsModal.vue'
+import PatientEditModal from '@/pages/partials/patient/PatientEditModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -39,27 +39,40 @@ function handleToggleSidebar() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Global: Patient documents modal controlled by query param                  */
-/*  Example: ?patientDocuments=123                                             */
+/*  Global overlays via query params                                           */
+/*  ?patientDocuments=123                                                      */
+/*  ?editPatient=123                                                           */
 /* -------------------------------------------------------------------------- */
 
 const showPatientDocuments = computed(() => {
   const v = route.query.patientDocuments
-  if (v === undefined || v === null) return false
-  // Accept "0" only if you want, otherwise treat it as false:
-  return String(v).length > 0
+  return v !== undefined && v !== null && String(Array.isArray(v) ? v[0] : v).length > 0
 })
-
 const patientDocumentsId = computed(() => {
   const v = route.query.patientDocuments
   const raw = Array.isArray(v) ? v[0] : v
   const id = Number(raw)
   return Number.isFinite(id) ? id : 0
 })
-
 function closePatientDocuments() {
   const q: Record<string, any> = { ...route.query }
   delete q.patientDocuments
+  router.replace({ query: q })
+}
+
+const showEditPatient = computed(() => {
+  const v = route.query.editPatient
+  return v !== undefined && v !== null && String(Array.isArray(v) ? v[0] : v).length > 0
+})
+const editPatientId = computed(() => {
+  const v = route.query.editPatient
+  const raw = Array.isArray(v) ? v[0] : v
+  const id = Number(raw)
+  return Number.isFinite(id) ? id : 0
+})
+function closeEditPatient() {
+  const q: Record<string, any> = { ...route.query }
+  delete q.editPatient
   router.replace({ query: q })
 }
 
@@ -74,10 +87,9 @@ watch(
   isLoggedIn,
   (loggedIn) => {
     if (!loggedIn) return
-
     const optedOut = localStorage.getItem(OPT_OUT_KEY) === '1'
     if (!optedOut) {
-      dontShowAgain.value = false // reset choice each time dialog opens
+      dontShowAgain.value = false
       showPriceAlert.value = true
     }
   },
@@ -104,11 +116,7 @@ function goToPricesPage() {
 
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
-    <Navbar
-      class="flex-none"
-      :isSidebarOpen="isSidebarOpen"
-      @toggle-sidebar="handleToggleSidebar"
-    />
+    <Navbar class="flex-none" :isSidebarOpen="isSidebarOpen" @toggle-sidebar="handleToggleSidebar" />
 
     <TercialNavbar v-if="isLoggedIn" class="flex-none" />
 
@@ -127,18 +135,23 @@ function goToPricesPage() {
 
     <Toast position="bottom-right" />
 
-    <!-- your existing global modals -->
+    <!-- existing global modals -->
     <ModalProvider />
-    <GlobalPatientModal />
 
-    <!-- ✅ global overlay modal that DOES NOT change the background route -->
+    <!-- ✅ global overlays (do not change background route) -->
     <PatientDocumentsModal
       v-if="showPatientDocuments && patientDocumentsId > 0"
       :patient-id="patientDocumentsId"
       @close="closePatientDocuments"
     />
 
-    <!-- you can keep this if you still use named modal routes elsewhere -->
+    <PatientEditModal
+      v-if="showEditPatient && editPatientId > 0"
+      :patient-id="editPatientId"
+      @close="closeEditPatient"
+    />
+
+    <!-- keep if you still use named modal routes anywhere else -->
     <router-view name="modal" />
 
     <Dialog
@@ -153,9 +166,7 @@ function goToPricesPage() {
 
         <div class="flex items-center gap-2">
           <Checkbox v-model="dontShowAgain" binary inputId="dontShowAgain" />
-          <label for="dontShowAgain" class="text-sm text-darkgrey">
-            Už viac nezobrazovať
-          </label>
+          <label for="dontShowAgain" class="text-sm text-darkgrey">Už viac nezobrazovať</label>
         </div>
 
         <div class="flex justify-end gap-2">
