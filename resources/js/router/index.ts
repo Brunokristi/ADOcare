@@ -28,7 +28,6 @@ import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
 import PatientRecord from '@/partials/Patient/Record.vue'
 import PatientDekurz from '@/partials/Patient/Dekurz.vue'
-import ProceduresOld from '@/partials/Settings/Procedures/ProceduresOld.vue'
 
 
 
@@ -287,17 +286,6 @@ const routes = [
                 meta: {
                     title: 'Výkony',
                     link: 'výkony',
-                    sidebar: true,
-                    navbar: true,
-                },
-            },
-            {
-                path: 'procedures-old',
-                name: 'procedures-old',
-                component: ProceduresOld,
-                meta: {
-                    title: 'Výkony (old)',
-                    link: 'výkony-old',
                     sidebar: true,
                     navbar: true,
                 },
