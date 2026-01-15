@@ -24,12 +24,18 @@ class UserResource extends JsonResource
             'roles' => $this->whenLoaded('roles', function () {
                 return $this->roles->map(fn($r) => ['id' => $r->id, 'position' => $r->position]);
             }),
+            'role_names' => $this->whenLoaded('roles', fn() => $this->roleNames()),
 
             'branches' => $this->whenLoaded('branches', function () {
                 return $this->branches->map(fn($b) => ['id' => $b->id, 'code' => $b->code]);
             }),
+            'company' => $this->whenLoaded('company', function () {
+                return [
+                    'id' => $this->company->id,
+                    'name' => $this->company->name,
+                ];
+            }),
 
-            'roles_list' => $this->when(isset($this->rolesStringList), fn() => $this->rolesStringList()),
         ];
     }
 }

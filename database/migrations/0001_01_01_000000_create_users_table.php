@@ -22,7 +22,6 @@ return new class extends Migration {
             $table->string('pin');
             $table->string('initials')->nullable();
             $table->string('api_token', 64)->nullable()->unique()->after('remember_token');
-            $table->unsignedBigInteger('last_branch')->nullable();
             $table->timestamps();
         });
 

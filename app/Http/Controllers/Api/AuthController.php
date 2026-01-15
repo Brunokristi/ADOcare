@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -34,78 +35,31 @@ class AuthController extends Controller
             'pin' => Hash::make($data['pin']),
         ]);
 
-        return $this->success($user, 'User registered successfully.', 201);
+        return $this->success(new UserResource($user), 'User registered successfully.', 201);
     }
 
     // User Login API
     public function login(LoginRequest $request)
-{
-    $data = $request->validated();
+    {
+        $data = $request->validated();
 
-    $user = User::where('code', $data['login'])
-        ->orWhere('login', $data['login'])
-        ->first();
+        $user = User::where('code', $data['login'])
+            ->orWhere('login', $data['login'])
+            ->first();
 
-    if (!$user || !Hash::check($data['pin'], $user->pin)) {
-        return $this->error('Invalid login/code or pin.', 401);
-    }
-
-    // Load relationships needed by frontend
-    $user->load(['branches', 'company', 'lastBranch']);
-
-    // If no last_branch yet, pick first available branch and save it
-        if (!$user->last_branch) {
-            $firstBranchId = $user->branches->first()?->id;
-            if ($firstBranchId) {
-                $user->last_branch = $firstBranchId;
-                $user->save();
-                $user->load('lastBranch');
-            }
-        } else {
-            // If last_branch is set but user no longer has access, fix it
-            $hasAccess = $user->branches->contains('id', $user->last_branch);
-            if (!$hasAccess) {
-                $fallbackId = $user->branches->first()?->id;
-                $user->last_branch = $fallbackId;
-                $user->save();
-                $user->load('lastBranch');
-            }
+        if (!$user || !Hash::check($data['pin'], $user->pin)) {
+            return $this->error('Invalid login/code or pin.', 401);
         }
 
-        $user->roles_list = $user->rolesStringList();
+        // Load relationships needed by frontend
+        $user->load(['branches', 'company', 'roles']);
 
         $token = $this->createToken($user);
 
         return $this->success([
             'token' => $token,
             'user' => $user,
-            'last_branch' => $user->last_branch, // handy for FE
         ], 'Login successful.');
-    }
-
-    public function updateLastBranch(Request $request)
-    {
-        $data = $request->validate([
-            'last_branch_id' => ['required', 'integer'],
-        ]);
-
-        $user = $request->user();
-
-        $allowed = $user->branches()
-            ->where('branches.id', $data['last_branch_id'])
-            ->exists();
-
-        if (!$allowed) {
-            return $this->error('Branch not allowed for this user.', 403);
-        }
-
-        $user->last_branch = $data['last_branch_id'];
-        $user->save();
-
-        $user->load(['branches', 'company', 'lastBranch']);
-        $user->roles_list = $user->rolesStringList();
-
-        return $this->success($user, 'Last branch updated');
     }
 
 
@@ -116,12 +70,10 @@ class AuthController extends Controller
 
         $user = User::query()
             ->where('id', $userId)
-            ->with(['branches', 'company', 'lastBranch'])
+            ->with(['branches', 'company', 'roles'])
             ->first();
 
-        $user->roles_list = $user->rolesStringList();
-
-        return $this->success($user, 'Profile retrieved');
+        return $this->success(new UserResource($user), 'Profile retrieved');
     }
 
 

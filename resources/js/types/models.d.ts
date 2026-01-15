@@ -11,7 +11,6 @@ export interface User {
   pin?: string
   initials: string | null
   api_token?: string | null
-  last_branch: number | null
   created_at: string | null
   updated_at: string | null
   // relations
@@ -21,7 +20,6 @@ export interface User {
   roles: Role[]
   report_months: ReportMonth[]
   patients: Patient[]
-  last_branch: Branch
   represented_companies: Company[]
   tokens: PersonalAccessToken[]
   notifications: DatabaseNotification[]
@@ -41,7 +39,6 @@ export interface User {
   roles_exists: boolean
   report_months_exists: boolean
   patients_exists: boolean
-  last_branch_exists: boolean
   represented_companies_exists: boolean
   tokens_exists: boolean
   notifications_exists: boolean

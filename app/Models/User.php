@@ -28,7 +28,6 @@ class User extends Authenticatable
         'login',
         'code',
         'pin',
-        'last_branch',
     ];
 
     /**
@@ -74,7 +73,7 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
-    public function rolesStringList()
+    public function roleNames()
     {
         return $this->roles()->pluck('position')->toArray();
     }
@@ -97,12 +96,7 @@ class User extends Authenticatable
     public function patients()
     {
         return $this->belongsToMany(Patient::class, 'patient_branch_user')
-                    ->withPivot('branch_id');
-    }
-
-    public function lastBranch()
-    {
-        return $this->belongsTo(\App\Models\Branch::class, 'last_branch_id');
+            ->withPivot('branch_id');
     }
 
     public function representedCompanies()
