@@ -1,44 +1,40 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, markRaw } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ProcedureForm from '@/partials/Settings/Procedures/ProcedureForm.vue'
 import type { ColumnDef, DataTableOptions } from '@/types/datatable'
 import api from '@/services/api'
 import type { InsuranceCompany, Procedure } from '@/types/models'
+import useModal from '@/composables/useModal'
+import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 
-const showDialog = ref(false)
+const { openModal } = useModal()
 const editing = ref<any | null>(null)
 const actionRemote = ref<any | null>(null)
 
-function openCreate(remote?: any) {
-    editing.value = null
-    actionRemote.value = remote ?? null
-    showDialog.value = true
-}
-
-function openEdit({ selectedRows, remote }: any) {
-    const first = selectedRows?.[0] ?? null
-    if (!first) return
-    editing.value = { ...first }
-    actionRemote.value = remote ?? null
-    showDialog.value = true
-}
-
-async function onSave() {
+async function openCreate() {
     try {
-        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
-    } finally {
-        showDialog.value = false
-        editing.value = null
-        actionRemote.value = null
+        const res = await openModal(markRaw(ProcedureForm), { procedure: null }, { header: 'Procedúra', style: { width: '760px' }, closable: false })
+        if (res?.changed && actionRemote.value?.loadPage) {
+            await actionRemote.value.loadPage(1)
+        }
+    } catch (e) {
+        // ignore
     }
 }
 
-async function onClose() {
-    showDialog.value = false
-    editing.value = null
-    actionRemote.value = null
+async function openEdit(row: Procedure) {
+    try {
+        const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Procedúra', style: { width: '760px' }, closable: false })
+        if (res?.changed && actionRemote.value?.loadPage) {
+            await actionRemote.value.loadPage(1)
+        }
+    } catch (e) {
+        // ignore
+    }
 }
+
+// table remote reference will be set via `afterInit` so we can reload after modals
 
 // normalizeRow removed — will use per-column render functions instead
 
@@ -53,9 +49,9 @@ onMounted(async () => {
                 field: `price_${c.id}`,
                 header: c.name ?? c.code ?? String(c.id),
                 width: '120px',
-                render: (value,row) => {
+                render: (_value, row) => {
                     const existing = row.insurance_companies_prices_minimal ?? []
-                    const found = existing.find((p: any) => Number(p.id) === Number(c.id))
+                    const found: any = existing.find((p: any) => Number(p.id) === Number(c.id))
                     const price = found ? (found.pivot?.price ?? null) : null
                     return price === null || price === undefined ? '-' : String(price)
                 }
@@ -67,6 +63,16 @@ onMounted(async () => {
             { field: 'code', header: 'Kód', sortable: true },
             { field: 'description', header: 'Popis' },
             ...companyCols,
+            {
+                field: 'edit', header: '', width: '3rem', component: markRaw(ActionButtons), componentOptions: [
+                    {
+                        color: 'info',
+                        icon: 'bi bi-pencil',
+                        tooltip: 'Upraviť',
+                        action: (row: Procedure) => openEdit(row),
+                    }
+                ]
+            },
         ]
     } catch (e) {
         console.error('Failed to load companies', e)
@@ -85,14 +91,9 @@ const options = ref<DataTableOptions<any>>({
         { field: 'description', header: 'Popis' },
         { field: 'prices_summary', header: 'Ceny', width: '30%' },
     ],
+    afterInit: ({ remote }) => { actionRemote.value = remote },
     actions: [
-        {
-            key: 'edit',
-            label: '',
-            icon: 'bi bi-pencil',
-            disabled: ({ selectedRows }: any) => !selectedRows || selectedRows.length !== 1,
-            handler: async (ctx: any) => openEdit(ctx),
-        },
+        // edit handled by per-row column button
         {
             key: 'delete',
             label: '',
@@ -115,7 +116,7 @@ const options = ref<DataTableOptions<any>>({
             key: 'add',
             label: '',
             icon: 'bi bi-plus',
-            handler: async (ctx: any) => openCreate(ctx.remote),
+            handler: async () => openCreate(),
         },
     ],
     // no normalizeRow — use column.render to display company prices
@@ -126,7 +127,6 @@ const options = ref<DataTableOptions<any>>({
     <div class="h-full flex flex-col overflow-hidden min-h-0">
         <UniversalDataTable :options="options" />
 
-        <ProcedureForm v-if="showDialog" :procedure="editing" @save="onSave" @close="onClose" />
     </div>
 </template>
 

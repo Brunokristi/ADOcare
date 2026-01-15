@@ -36,8 +36,9 @@ class ProcedureController extends Controller
             $query,
             searchable: ['code', 'description'],
             allowedFilters: [],
-            defaults: ['sort' => 'code',
-                'with' =>'insuranceCompaniesPricesMinimal',
+            defaults: [
+                'sort' => 'code',
+                'with' => 'insuranceCompaniesPricesMinimal',
 
             ]
         );
@@ -51,7 +52,7 @@ class ProcedureController extends Controller
      *
      * Creates procedure + writes prices for insurers 25/24/27 into procedure_company
      */
-    public function store(Request $request)
+    public function store(ProcedureStoreRequest $request)
     {
         $data = $request->validated();
 
@@ -74,7 +75,7 @@ class ProcedureController extends Controller
      *
      * Updates prices (and optionally code/description if you ever allow it)
      */
-    public function update(Request $request, Procedure $procedure)
+    public function update(ProcedureUpdateRequest $request, Procedure $procedure)
     {
         $data = $request->validated();
 

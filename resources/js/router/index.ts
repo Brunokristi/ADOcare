@@ -5,7 +5,7 @@ import Login from '@/pages/Login.vue'
 import Patients from '@/pages/Patients.vue'
 import Settings from '@/pages/Settings.vue'
 import Procedures from '@/partials/Settings/Procedures/Procedures.vue'
-import Diagnoses from '@/partials/Settings/Diagnoses.vue'
+import Diagnoses from '@/partials/Settings/Diagnoses/Diagnoses.vue'
 import Doctors from '@/partials/Settings/Doctors/Doctors.vue'
 import DoctorsOld from '@/partials/Settings/Doctors/DoctorsOld.vue'
 import Macros from '@/partials/Settings/Macros/Macros.vue'
@@ -29,7 +29,6 @@ import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
 import PatientRecord from '@/partials/Patient/Record.vue'
 import PatientDekurz from '@/partials/Patient/Dekurz.vue'
-import ProceduresOld from '@/partials/Settings/Procedures/ProceduresOld.vue'
 
 
 
@@ -299,17 +298,6 @@ const routes = [
                 meta: {
                     title: 'Výkony',
                     link: 'výkony',
-                    sidebar: true,
-                    navbar: true,
-                },
-            },
-            {
-                path: 'procedures-old',
-                name: 'procedures-old',
-                component: ProceduresOld,
-                meta: {
-                    title: 'Výkony (old)',
-                    link: 'výkony-old',
                     sidebar: true,
                     navbar: true,
                 },

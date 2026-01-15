@@ -7,10 +7,9 @@ import api from '@/services/api'
 import useAuthStore from '@/stores/auth'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
+import useModal from '@/composables/useModal'
 
-// UI state for modal
-const showDoctorDialog = ref(false)
-const editingDoctor = ref<Partial<Doctor> | null>(null)
+const { openModal } = useModal()
 const actionRemote = ref<any>(null)
 let showFavouritesOnly = ref(false);
 
@@ -28,20 +27,20 @@ let showFavouritesOnly = ref(false);
 //     showDoctorDialog.value = true
 // }
 
-async function onSaveDoctor() {
+async function openCreate(remote?: any) {
     try {
-        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
+        await openModal(markRaw(DoctorForm), { doctor: null }, { header: 'Lekár', style: { width: '640px' }, closable: false })
     } finally {
-        showDoctorDialog.value = false
-        editingDoctor.value = null
-        actionRemote.value = null
+        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
     }
 }
 
-async function onCloseDialog() {
-    showDoctorDialog.value = false
-    editingDoctor.value = null
-    actionRemote.value = null
+async function openEdit(row: Doctor) {
+    try {
+        await openModal(markRaw(DoctorForm), { doctor: row }, { header: 'Lekár', style: { width: '640px' }, closable: false })
+    } finally {
+        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
+    }
 }
 
 const options = ref<DataTableOptions<Doctor>>({
@@ -68,9 +67,9 @@ const options = ref<DataTableOptions<Doctor>>({
             componentOptions: [
                 {
                     type: 'toggle-icon',
-                    icon: (row: Doctor & {is_favourite:boolean}) => row.is_favourite ? 'bi bi-heart-fill' : 'bi bi-heart',
+                    icon: (row: Doctor & { is_favourite: boolean }) => row.is_favourite ? 'bi bi-heart-fill' : 'bi bi-heart',
                     tooltip: 'Označiť/odznačiť ako obľúbeného',
-                    async action(row: Doctor  & {is_favourite:boolean}) {
+                    async action(row: Doctor & { is_favourite: boolean }) {
                         const doctorId = row.id;
 
                         const branchId = useAuthStore().currentBranch?.id
@@ -98,48 +97,48 @@ const options = ref<DataTableOptions<Doctor>>({
         },
     ],
     actions: [
-    //     {
-    //         key: 'edit',
-    //         label: '',
-    //         icon: 'bi bi-pencil',
-    //         disabled: ({ selectedRows }) => !selectedRows || selectedRows.length !== 1,
-    //         handler: async (ctx: any) => openEdit(ctx),
-    //     },
-    //     {
-    //         key: 'delete',
-    //         label: '',
-    //         icon: 'bi bi-eraser',
-    //         disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
-    //         confirm: 'Naozaj vymazať vybraných lekárov?',
-    //         handler: async ({ remote, selectedRows }: any) => {
-    //             try {
-    //                 for (const r of selectedRows ?? []) {
-    //                     await api.delete(`/v1/doctors/${r.id}`)
-    //                 }
-    //             } catch (err) {
-    //                 console.error('Delete failed', err)
-    //             } finally {
-    //                 await remote.loadPage(1)
-    //             }
-    //         },
-    //     },
-    //     {
-    //         key: 'add',
-    //         label: '',
-    //         icon: 'bi bi-plus',
-    //         handler: async (ctx: any) => openCreate(ctx.remote),
-    //     },
-    {
-        key: 'show_favourites_only',
-        // label: 'Len obľúbení',
-        icon: (_params) => (showFavouritesOnly.value ? 'bi bi-heart-fill' : 'bi bi-heart'),
-        handler: async ({ remote }) => {
-            showFavouritesOnly.value = !showFavouritesOnly.value;
-            remote.setExtraParam('filter', showFavouritesOnly.value ? { is_favourite: true } : {});
-            console.log('Toggling favourites only:', showFavouritesOnly.value, remote.params.value);
-            await remote.loadPage(1);
-        }
-    },
+        //     {
+        //         key: 'edit',
+        //         label: '',
+        //         icon: 'bi bi-pencil',
+        //         disabled: ({ selectedRows }) => !selectedRows || selectedRows.length !== 1,
+        //         handler: async (ctx: any) => openEdit(ctx),
+        //     },
+        //     {
+        //         key: 'delete',
+        //         label: '',
+        //         icon: 'bi bi-eraser',
+        //         disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
+        //         confirm: 'Naozaj vymazať vybraných lekárov?',
+        //         handler: async ({ remote, selectedRows }: any) => {
+        //             try {
+        //                 for (const r of selectedRows ?? []) {
+        //                     await api.delete(`/v1/doctors/${r.id}`)
+        //                 }
+        //             } catch (err) {
+        //                 console.error('Delete failed', err)
+        //             } finally {
+        //                 await remote.loadPage(1)
+        //             }
+        //         },
+        //     },
+        //     {
+        //         key: 'add',
+        //         label: '',
+        //         icon: 'bi bi-plus',
+        //         handler: async (ctx: any) => openCreate(ctx.remote),
+        //     },
+        {
+            key: 'show_favourites_only',
+            // label: 'Len obľúbení',
+            icon: (_params) => (showFavouritesOnly.value ? 'bi bi-heart-fill' : 'bi bi-heart'),
+            handler: async ({ remote }) => {
+                showFavouritesOnly.value = !showFavouritesOnly.value;
+                remote.setExtraParam('filter', showFavouritesOnly.value ? { is_favourite: true } : {});
+                console.log('Toggling favourites only:', showFavouritesOnly.value, remote.params.value);
+                await remote.loadPage(1);
+            }
+        },
     ],
 })
 </script>
@@ -148,7 +147,7 @@ const options = ref<DataTableOptions<Doctor>>({
     <div class="h-full flex flex-col overflow-hidden min-h-0">
         <UniversalDataTable :options="options" />
 
-        <DoctorForm v-if="showDoctorDialog" :doctor="editingDoctor" @save="onSaveDoctor" @close="onCloseDialog" />
+        <!-- Modal opened via provider; no inline form component here -->
     </div>
 </template>
 

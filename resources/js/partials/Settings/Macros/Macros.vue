@@ -6,38 +6,28 @@ import type { Macro } from '@/types/models'
 import api from '@/services/api'
 import type { DataTableOptions } from '@/types/datatable'
 import { default as ActionButtons, type ActionButtonOptions } from '@/components/table-columns/ActionButtons.vue'
+import useModal from '@/composables/useModal'
 
-// UI state for modal
-const showMacroDialog = ref(false)
-const editingMacro = ref<Partial<Macro> | null>(null)
+const { openModal } = useModal()
 const actionRemote = ref<any>(null)
 
-function openCreate() {
-    editingMacro.value = { name: '', abbreviation: '', text: '' }
-    showMacroDialog.value = true
-}
-
-function openEdit(row: Macro) {
-    editingMacro.value = { ...row }
-    showMacroDialog.value = true
-}
-
-async function onSaveMacro() {
-    // after save, reload table if remote provided
+async function openCreate() {
     try {
-        if (actionRemote.value?.loadPage) {
-            await actionRemote.value.loadPage(1)
-        }
+        await openModal(markRaw(MacroForm), { macro: null }, { header: 'Makro', style: { width: '640px' }, closable: false })
     } finally {
-        showMacroDialog.value = false
-        editingMacro.value = null
+        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
     }
 }
 
-async function onCloseDialog() {
-    showMacroDialog.value = false
-    editingMacro.value = null
+async function openEdit(row: Macro) {
+    try {
+        await openModal(markRaw(MacroForm), { macro: row }, { header: 'Makro', style: { width: '640px' }, closable: false })
+    } finally {
+        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
+    }
 }
+
+// onSave/onClose handled by modal resolve and openCreate/openEdit's finally block
 
 // typed options for macros table
 const options = ref<DataTableOptions<Macro>>({
@@ -102,8 +92,6 @@ const options = ref<DataTableOptions<Macro>>({
     <div class="h-full flex flex-col overflow-hidden min-h-0">
 
         <UniversalDataTable :options="options" />
-
-        <MacroForm v-if="showMacroDialog" :macro="editingMacro" @save="onSaveMacro" @close="onCloseDialog" />
     </div>
 </template>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, markRaw } from 'vue';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
-import type { Patient } from '@/types/models';
+import type { Doctor, Patient } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
 import ActionButtons from '@/components/table-columns/ActionButtons.vue';
 import { usePatientStore } from '@/stores/patientStore';
@@ -68,7 +68,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
         {
             field: 'doctor',
             header: 'Ošetrujúci lekár',
-            render: (v) => (v ? `${v.first_name} ${v.last_name}` : ''),
+            render: (v: Doctor) => (v ? `${v.title} ${v.first_name} ${v.last_name}` : ''),
             sortable: false,
         },
         {
@@ -113,7 +113,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             field: 'edit',
             header: '',
             width: '3rem',
-            component: ActionButtons,
+            component: markRaw(ActionButtons),
             componentOptions: [
                 {
                     icon: 'bi bi-pencil',
