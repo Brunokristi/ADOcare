@@ -19,7 +19,6 @@ class VisitsController extends \Illuminate\Routing\Controller
             'month' => 'required|date',
             'branch_id' => 'required|integer|exists:branches,id',
             'user_id' => 'nullable|integer',
-            'start_time' => 'nullable|date_format:H:i', // default 07:00
             'procedure_codes' => 'nullable|array',
             'procedure_codes.*' => 'string',
             'patients' => 'nullable|array',
@@ -35,7 +34,6 @@ class VisitsController extends \Illuminate\Routing\Controller
 
         $userId = (int) ($data['user_id'] ?? Auth::id());
         $branchId = (int) $data['branch_id'];
-        $startTimeHHmm = $data['start_time'] ?? '07:00';
         $procedureCodes = $data['procedure_codes'] ?? ['3439', '3440'];
         $filterPatientIds = array_values(array_filter(array_map('intval', $data['patients'] ?? [])));
 
@@ -64,7 +62,15 @@ class VisitsController extends \Illuminate\Routing\Controller
             $perLocationSeconds = 10 * 60; // fallback
         }
 
-        // Load ALL visits for month (one row = one patient visit / patient_point)
+        $startTimeHHmm = $branch->terrain_start_time
+            ? substr((string)$branch->terrain_start_time, 0, 5)
+            : '08:00';
+
+        $administrativeStartTimeHHmm = $branch->administrative_start_time
+            ? substr((string)$branch->administrative_start_time, 0, 5)
+            : null;
+
+
         $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->where('pp.user_id', $userId)
@@ -118,15 +124,15 @@ class VisitsController extends \Illuminate\Routing\Controller
             $days[] = $timeline;
         }
 
-        // ✅ Persist into visits table (delete + insert)
         $inserted = 0;
         if ($persist) {
-            $inserted = $this->persistMonthTimelinesIntoVisits(
+           $inserted = $this->persistMonthTimelinesIntoVisits(
                 from: $from,
                 to: $to,
                 userId: $userId,
                 branchId: $branchId,
                 startTimeHHmm: $startTimeHHmm,
+                administrativeStartTimeHHmm: $administrativeStartTimeHHmm, // ✅ add
                 branch: $branch,
                 days: $days,
                 tz: $tz,
@@ -259,38 +265,38 @@ class VisitsController extends \Illuminate\Routing\Controller
         int $userId,
         int $branchId,
         string $startTimeHHmm,
+        ?string $administrativeStartTimeHHmm,
         object $branch,
         array $days,
         string $tz,
         int $perLocationSeconds
     ): int {
-        // Decide which column we fill based on start_time.
-        // If the request start_time matches branch start time fields, we store accordingly.
-        $startTimeHHmm = substr($startTimeHHmm, 0, 5);
-        $terrainStart = isset($branch->terrain_start_time) ? substr((string)$branch->terrain_start_time, 0, 5) : null;
-        $adminStart   = isset($branch->administrative_start_time) ? substr((string)$branch->administrative_start_time, 0, 5) : null;
-
-        $mode = 'terrain'; // default
-        if ($adminStart && $startTimeHHmm === $adminStart) $mode = 'administrative';
-        if ($terrainStart && $startTimeHHmm === $terrainStart) $mode = 'terrain';
-
         $now = now()->setTimezone($tz)->format('Y-m-d H:i:s');
 
-        return DB::transaction(function () use ($from, $to, $userId, $branchId, $days, $tz, $now, $mode, $perLocationSeconds) {
-            // Delete old rows
+        return DB::transaction(function () use (
+            $from,
+            $to,
+            $userId,
+            $branchId,
+            $days,
+            $tz,
+            $now,
+            $perLocationSeconds,
+            $administrativeStartTimeHHmm
+        ) {
+            // 1) delete existing month rows
             $deleted = DB::table('visits')
                 ->where('user_id', $userId)
                 ->where('branch_id', $branchId)
                 ->whereBetween('date', [$from, $to])
                 ->delete();
 
-            Log::info('Visits timeline delete before insert', [
+            Log::info('Visits persist: deleted old month rows', [
                 'user_id' => $userId,
                 'branch_id' => $branchId,
                 'from' => $from,
                 'to' => $to,
                 'deleted' => $deleted,
-                'mode' => $mode,
             ]);
 
             $buffer = [];
@@ -303,14 +309,48 @@ class VisitsController extends \Illuminate\Routing\Controller
                 $stops = $day['stops'] ?? [];
                 if (!is_array($stops) || !count($stops)) continue;
 
+                // Sort by actual visit order (terrain arrival)
+                usort($stops, fn ($a, $b) => ((int)($a['arrive_unix'] ?? 0)) <=> ((int)($b['arrive_unix'] ?? 0)));
+
+                // 2) build afternoon paperwork timeline cursor
+                $adminCursor = null;
+                if ($administrativeStartTimeHHmm) {
+                    $adminCursor = Carbon::parse($date . ' ' . $administrativeStartTimeHHmm . ':00', $tz);
+                }
+
+                Log::info('Visits persist: day start', [
+                    'date' => $date,
+                    'stops' => count($stops),
+                    'admin_start' => $administrativeStartTimeHHmm,
+                    'admin_cursor' => $adminCursor?->format('Y-m-d H:i:s'),
+                ]);
+
                 foreach ($stops as $s) {
                     $patientId = (int)($s['patient_id'] ?? 0);
-                    if ($patientId <= 0) continue;
-
                     $arriveUnix = (int)($s['arrive_unix'] ?? 0);
-                    if ($arriveUnix <= 0) continue;
 
-                    $arriveTs = Carbon::createFromTimestamp($arriveUnix, $tz)->format('Y-m-d H:i:s');
+                    if ($patientId <= 0 || $arriveUnix <= 0) {
+                        continue;
+                    }
+
+                    // Terrain arrival time (from solver)
+                    $terrainTime = Carbon::createFromTimestamp($arriveUnix, $tz);
+
+                    // Administrative paperwork time in afternoon (sequential)
+                    $administrativeTime = null;
+
+                    if ($adminCursor) {
+                        // paperwork duration 3..6 min
+                        $paperSeconds = $this->paperworkSecondsForPatient($date, $patientId, $userId, $branchId);
+
+                        // store the time when papers for that patient are done/recorded
+                        // If you want "start time", keep as-is.
+                        // If you want "finish time", store $adminCursor->copy()->addSeconds($paperSeconds) instead.
+                        $administrativeTime = $adminCursor->copy();
+
+                        // advance cursor for next patient
+                        $adminCursor->addSeconds($paperSeconds);
+                    }
 
                     $row = [
                         'date' => $date,
@@ -318,9 +358,8 @@ class VisitsController extends \Illuminate\Routing\Controller
                         'user_id' => $userId,
                         'branch_id' => $branchId,
 
-                        // Fill exactly one of these based on mode
-                        'terrain_time' => $mode === 'terrain' ? $arriveTs : null,
-                        'administrative_time' => $mode === 'administrative' ? $arriveTs : null,
+                        'terrain_time' => $terrainTime->format('Y-m-d H:i:s'),
+                        'administrative_time' => $administrativeTime?->format('Y-m-d H:i:s'),
 
                         'time_on_location' => (int)($s['spent_seconds'] ?? $perLocationSeconds),
                         'distance_to_location' => (int)round((float)($s['travel_distance_m'] ?? 0)),
@@ -332,7 +371,6 @@ class VisitsController extends \Illuminate\Routing\Controller
 
                     $buffer[] = $row;
 
-                    // bulk insert in chunks to avoid huge single query
                     if (count($buffer) >= 1000) {
                         DB::table('visits')->insert($buffer);
                         $inserted += count($buffer);
@@ -346,13 +384,12 @@ class VisitsController extends \Illuminate\Routing\Controller
                 $inserted += count($buffer);
             }
 
-            Log::info('Visits timeline inserted', [
+            Log::info('Visits persist: inserted rows', [
                 'user_id' => $userId,
                 'branch_id' => $branchId,
                 'from' => $from,
                 'to' => $to,
                 'inserted' => $inserted,
-                'mode' => $mode,
             ]);
 
             return $inserted;
@@ -505,5 +542,11 @@ class VisitsController extends \Illuminate\Routing\Controller
             ]);
             return null;
         }
+    }
+
+    private function paperworkSecondsForPatient(string $dateYmd, int $patientId, int $userId, int $branchId): int
+    {
+        $seed = crc32($dateYmd . '|' . $patientId . '|' . $userId . '|' . $branchId);
+        return 180 + ($seed % 181);
     }
 }

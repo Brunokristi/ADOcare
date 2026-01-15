@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\PatientPoint;
-
+use App\Http\Controllers\Api\VisitsController;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 
 class DekurzDocumentController extends Controller
@@ -26,7 +28,7 @@ class DekurzDocumentController extends Controller
             'sections.*.text' => 'required|string',
             'sections.*.dates' => 'required|array|min:1',
             'sections.*.dates.*' => 'required|date_format:Y-m-d',
-            'branch_id' => 'integer',
+            'branch_id' => 'required|integer|exists:branches,id',
         ]);
 
         $patient = Patient::findOrFail($validated['patient_id']);
@@ -40,6 +42,7 @@ class DekurzDocumentController extends Controller
             'path' => 'dekurz/' . 'dekurz_' . now()->timestamp . '.json',
         ]);
 
+        // normalize sections
         $sections = collect($validated['sections'])->map(function ($s) {
             $dates = collect($s['dates'])
                 ->map(fn ($d) => date('Y-m-d', strtotime($d)))
@@ -55,28 +58,43 @@ class DekurzDocumentController extends Controller
         })->values()->all();
 
         $month = $validated['month'] ?? null;
+        $dailyTexts = $this->buildDailyTexts($sections);
+        $neededDates = array_keys($dailyTexts);
 
         if ($month) {
-        $visitedAddresses = $this->buildMonthVisitedAddresses([
-            'month' => $month,
-            'user_id' => Auth::id(),
-            'branch_id' => $validated['branch_id'] ?? null,
-            'insurance_id' => $patient->insurance_company_id ?? null,
-            'patient_ids' => [$patient->id],
-        ]);
+            $this->ensureMonthTimelineExistsOrCreate(
+                monthYmd: $month,
+                branchId: (int)$validated['branch_id'],
+                userId: (int)Auth::id(),
+                patientId: (int)$patient->id,
+                neededDates: $neededDates
+            );
+        }
 
-        Log::info('Dekurz month visited addresses', [
+        // Now times should exist (or be best-effort), attach them:
+        $daysWithTimes = $this->attachVisitTimesForPatient(
+            dailyTexts: $dailyTexts,
+            patientId: (int)$patient->id,
+            userId: (int)Auth::id(),
+            branchId: (int)$validated['branch_id']
+        );
+
+
+        // ✅ attach terrain + administrative times (if available in visits table)
+        $daysWithTimes = $this->attachVisitTimesForPatient(
+            dailyTexts: $dailyTexts,
+            patientId: (int)$patient->id,
+            userId: (int)Auth::id(),
+            branchId: (int)$validated['branch_id']
+        );
+
+        Log::info('Dekurz daily texts combined', [
             'document_id' => $document->id,
             'patient_id' => $patient->id,
-            'month' => $month,
-            'meta' => $visitedAddresses['meta'],
-            // careful: this can be large
-            'days_sample' => array_slice($visitedAddresses['days'], 0, 3),
+            'branch_id' => (int)$validated['branch_id'],
+            'days_count' => count($daysWithTimes),
+            'sample' => array_slice($daysWithTimes, 0, 2),
         ]);
-
-        // optionally store it in the JSON file
-        $dekurzData['visited_addresses'] = $visitedAddresses;
-    }
 
         $dekurzData = [
             'document_id' => $document->id,
@@ -88,15 +106,12 @@ class DekurzDocumentController extends Controller
             'dekurz_number' => $validated['dekurz_number'],
             'month' => $month,
 
+            // keep original sections if you still want them
             'sections' => $sections,
-        ];
 
-        Log::info('Creating Dekurz Document', [
-            'document_id' => $document->id,
-            'patient_id' => $patient->id,
-            'dekurz_number' => $validated['dekurz_number'],
-            'sections_count' => count($sections),
-        ]);
+            // ✅ new: per-day merged text + times
+            'days' => $daysWithTimes,
+        ];
 
         Storage::disk('local')->put(
             $document->path,
@@ -140,6 +155,37 @@ class DekurzDocumentController extends Controller
         return response()->json([
             'document' => $document,
             'dekurz_data' => $dekurzFile,
+        ]);
+    }
+
+    public function last(Request $request)
+    {
+        $data = $request->validate([
+            'patient_id' => 'required|integer|exists:patients,id',
+        ]);
+
+        $doc = Document::query()
+            ->where('type', 'dekurz')
+            ->where('patient_id', (int)$data['patient_id'])
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$doc) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+
+        if (!$doc->path || !Storage::disk('local')->exists($doc->path)) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+
+        $json = json_decode(Storage::disk('local')->get($doc->path), true);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'document_id' => $doc->id,
+                'sections' => $json['sections'] ?? [],
+            ],
         ]);
     }
 
@@ -192,106 +238,153 @@ class DekurzDocumentController extends Controller
         ]);
     }
 
-    private function buildMonthVisitedAddresses(array $params): array
+    private function buildDailyTexts(array $sections): array
     {
-        $tz = 'Europe/Bratislava';
+        // Returns: ['2026-01-01' => "combined text...", ...]
+        $byDate = [];
 
-        $month = Carbon::parse($params['month'])->setTimezone($tz);
-        $from = $month->copy()->startOfMonth()->toDateString();
-        $to   = $month->copy()->endOfMonth()->toDateString();
-        $userId   = (int) $params['user_id'];
-        $branchId = (int) $params['branch_id'];
+        foreach ($sections as $s) {
+            $text = trim((string)($s['text'] ?? ''));
+            $dates = $s['dates'] ?? [];
 
-        $branch = Branch::findOrFail($branchId);
-        $branchLong = $branch->longitude;
-        $branchLat = $branch->latitude;
-        $startTime = $branch->start_time ?? '08:00:00';
-        $perLocationTime = $branch->per_location_time ?? 10;
-
-        $rows = \DB::table('patient_points as pp')
-            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
-            ->where('pp.user_id', $userId)
-            ->where('pp.branch_id', $branchId)
-            ->whereBetween('pp.date', [$from, $to])
-            ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->select([
-                'pp.date',
-                'pp.patient_id',
-                'p.first_name',
-                'p.last_name',
-                'p.city as patient_city',
-                'p.address as patient_address',
-                'p.latitude as patient_lat',
-                'p.longitude as patient_lng',
-            ])
-            ->orderBy('pp.date')
-            ->get();
-
-        $calendar = [];
-        for ($day = 1; $day <= $month->daysInMonth; $day++) {
-            $date = Carbon::create($month->year, $month->month, $day, 0, 0, 0, $tz)->toDateString();
-            $calendar[$date] = [
-                'date' => $date,
-                'addresses' => [],
-                '_addrIndex' => [],
-            ];
-        }
-
-        foreach ($rows as $r) {
-            $date = Carbon::parse($r->date)->toDateString();
-            if (!isset($calendar[$date])) continue;
-
-            $lat = $r->patient_lat;
-            $lng = $r->patient_lng;
-
-            $addressKey = ($lat !== null && $lng !== null)
-                ? "{$lat},{$lng}"
-                : "{$city}|{$addr}";
-
-            if (!isset($calendar[$date]['_addrIndex'][$addressKey])) {
-                $calendar[$date]['addresses'][] = [
-                    'key' => $addressKey,
-                    'latitude' => $lat,
-                    'longitude' => $lng,
-                    'patients' => [],
-                    '_seenPatients' => [],
-                ];
-                $calendar[$date]['_addrIndex'][$addressKey] =
-                    count($calendar[$date]['addresses']) - 1;
-            }
-
-            $idx = $calendar[$date]['_addrIndex'][$addressKey];
-            $pid = (int) $r->patient_id;
-
-            if (isset($calendar[$date]['addresses'][$idx]['_seenPatients'][$pid])) {
+            if ($text === '' || !is_array($dates) || !count($dates)) {
                 continue;
             }
 
-            $calendar[$date]['addresses'][$idx]['_seenPatients'][$pid] = true;
+            foreach ($dates as $d) {
+                $date = Carbon::parse($d)->toDateString();
 
-            $calendar[$date]['addresses'][$idx]['patients'][] = [
-                'patient_id' => $pid,
-                'patient_name' => trim("{$r->last_name} {$r->first_name}"),
+                // append in a nice way
+                if (!isset($byDate[$date])) {
+                    $byDate[$date] = $text;
+                } else {
+                    // separate blocks cleanly
+                    $byDate[$date] .= "\n\n" . $text;
+                }
+            }
+        }
+
+        // normalize whitespace a bit
+        foreach ($byDate as $date => $txt) {
+            $byDate[$date] = preg_replace("/\n{3,}/", "\n\n", trim($txt));
+        }
+
+        ksort($byDate);
+
+        return $byDate;
+    }
+
+    private function attachVisitTimesForPatient(array $dailyTexts, int $patientId, int $userId, int $branchId): array
+    {
+        if (!$branchId) {
+            // no branch => cannot match visits reliably
+            return array_map(fn ($text, $date) => [
+                'date' => $date,
+                'text' => $text,
+                'terrain_time' => null,
+                'administrative_time' => null,
+            ], $dailyTexts, array_keys($dailyTexts));
+        }
+
+        $dates = array_keys($dailyTexts);
+
+        $rows = DB::table('visits')
+            ->where('patient_id', $patientId)
+            ->where('user_id', $userId)
+            ->where('branch_id', $branchId)
+            ->whereIn('date', $dates)
+            ->select(['date', 'terrain_time', 'administrative_time'])
+            ->get()
+            ->keyBy('date');
+
+        $out = [];
+        foreach ($dailyTexts as $date => $text) {
+            $row = $rows[$date] ?? null;
+
+            $out[] = [
+                'date' => $date,
+                'text' => $text,
+
+                // if missing (timeline not generated), these will be null
+                'terrain_time' => $row->terrain_time ?? null,
+                'administrative_time' => $row->administrative_time ?? null,
             ];
         }
 
-        $days = [];
-        foreach ($calendar as $bucket) {
-            foreach ($bucket['addresses'] as &$a) {
-                unset($a['_seenPatients']);
-            }
-            unset($bucket['_addrIndex']);
-            $days[] = $bucket;
+        return $out;
+    }
+
+    private function ensureMonthTimelineExistsOrCreate(
+        string $monthYmd,
+        int $branchId,
+        int $userId,
+        int $patientId,
+        array $neededDates // array of 'Y-m-d'
+    ): void {
+        $tz = 'Europe/Bratislava';
+
+        $month = Carbon::parse($monthYmd)->setTimezone($tz);
+        $from = $month->copy()->startOfMonth()->toDateString();
+        $to   = $month->copy()->endOfMonth()->toDateString();
+
+        // If no dates needed, skip
+        $neededDates = array_values(array_unique(array_filter($neededDates)));
+        if (!count($neededDates)) {
+            return;
         }
 
-        return [
-            'meta' => [
-                'month' => $month->format('Y-m'),
-                'from' => $from,
-                'to' => $to,
-                'rows' => $rows->count(),
-            ],
-            'days' => $days,
-        ];
+        // Check if we already have ALL needed dates for this patient with both times filled
+        $existingDates = DB::table('visits')
+            ->where('user_id', $userId)
+            ->where('branch_id', $branchId)
+            ->where('patient_id', $patientId)
+            ->whereIn('date', $neededDates)
+            ->whereNotNull('terrain_time')
+            ->whereNotNull('administrative_time')
+            ->distinct()
+            ->pluck('date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->all();
+
+        $missingDates = array_values(array_diff($neededDates, $existingDates));
+
+        Log::info('Dekurz timeline check', [
+            'month' => $month->format('Y-m'),
+            'from' => $from,
+            'to' => $to,
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'patient_id' => $patientId,
+            'needed_dates_count' => count($neededDates),
+            'existing_dates_count' => count($existingDates),
+            'missing_dates_count' => count($missingDates),
+            'missing_dates_sample' => array_slice($missingDates, 0, 10),
+        ]);
+
+        if (!count($missingDates)) {
+            return; // all good
+        }
+
+        // ✅ Recalculate whole month timeline (persist to DB)
+        // We'll call your VisitsController method directly (no HTTP roundtrip).
+        $req = Request::create('/v1/visits/timeline', 'POST', [
+            'month' => $month->toDateString(),
+            'branch_id' => $branchId,
+            'user_id' => $userId,
+            'persist' => true,
+        ]);
+
+        // Make sure Auth::id() inside controller isn't needed (we pass user_id anyway)
+        $controller = app(VisitsController::class);
+        $resp = $controller->monthTimeline($req);
+
+        Log::info('Dekurz triggered month timeline recalculation', [
+            'month' => $month->format('Y-m'),
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'http_status' => method_exists($resp, 'status') ? $resp->status() : null,
+        ]);
     }
+
+
 }

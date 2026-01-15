@@ -132,6 +132,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/dekurz', [DekurzDocumentController::class, 'store']);
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates']);
+    Route::get('/dekurz/last', [DekurzDocumentController::class, 'last']);
     Route::get('/dekurz/{documentId}', [DekurzDocumentController::class, 'show']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
