@@ -166,6 +166,8 @@ const options = computed<DataTableOptions<Patient>>(() => ({
 <template>
     <div class="h-full flex flex-col overflow-hidden min-h-0">
         <SecondaryNavbar />
+        <router-view name="modal" />
+
 
         <!-- Only mount the table when branchId is ready -->
         <UniversalDataTable v-if="options.endpointUrl" :key="tableKey" :options="options" ref="tableEl"

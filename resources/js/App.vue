@@ -1,81 +1,114 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import Navbar from '@/components/Navbar.vue';
-import Footer from '@/components/Footer.vue';
-import Sidebar from '@/components/Sidebar.vue';
-import TercialNavbar from './components/TercialNavbar.vue';
-import { useAuthStore } from '@/stores/auth';
-import ModalProvider from './components/ModalProvider.vue';
-import GlobalPatientModal from '@/components/GlobalPatientModal.vue';
+import { onMounted, computed, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
-const router = useRouter();
-const auth = useAuthStore();
+import Navbar from '@/components/Navbar.vue'
+import Footer from '@/components/Footer.vue'
+import Sidebar from '@/components/Sidebar.vue'
+import TercialNavbar from './components/TercialNavbar.vue'
 
-auth.init();
+import { useAuthStore } from '@/stores/auth'
+import ModalProvider from './components/ModalProvider.vue'
+import GlobalPatientModal from '@/components/GlobalPatientModal.vue'
 
-const OPT_OUT_KEY = 'price_check_alert_dont_show';     // ✅ only key we care about
-const OLD_SEEN_KEY = 'price_check_alert_seen';         // ✅ clean old key if it exists
+// ✅ query-driven patient documents modal (global overlay)
+import PatientDocumentsModal from '@/pages/partials/patient/PatientDocumentsModal.vue'
+
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+
+auth.init()
+
+const OPT_OUT_KEY = 'price_check_alert_dont_show'
+const OLD_SEEN_KEY = 'price_check_alert_seen'
 
 onMounted(() => {
-  // ✅ migration: remove old “seen once” key so it doesn’t block you
-  localStorage.removeItem(OLD_SEEN_KEY);
+  localStorage.removeItem(OLD_SEEN_KEY)
 
   window.addEventListener('unauthenticated', () => {
-    router.push({ name: 'login' });
-  });
-});
+    router.push({ name: 'login' })
+  })
+})
 
-const isLoggedIn = computed(() => auth.isAuthenticated);
+const isLoggedIn = computed(() => auth.isAuthenticated)
 
-const isSidebarOpen = ref(false);
+const isSidebarOpen = ref(false)
 function handleToggleSidebar() {
-  isSidebarOpen.value = !isSidebarOpen.value;
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Global: Patient documents modal controlled by query param                  */
+/*  Example: ?patientDocuments=123                                             */
+/* -------------------------------------------------------------------------- */
+
+const showPatientDocuments = computed(() => {
+  const v = route.query.patientDocuments
+  if (v === undefined || v === null) return false
+  // Accept "0" only if you want, otherwise treat it as false:
+  return String(v).length > 0
+})
+
+const patientDocumentsId = computed(() => {
+  const v = route.query.patientDocuments
+  const raw = Array.isArray(v) ? v[0] : v
+  const id = Number(raw)
+  return Number.isFinite(id) ? id : 0
+})
+
+function closePatientDocuments() {
+  const q: Record<string, any> = { ...route.query }
+  delete q.patientDocuments
+  router.replace({ query: q })
 }
 
 /* -------------------------------------------------------------------------- */
 /*  Login alert (every login unless opted out)                                 */
 /* -------------------------------------------------------------------------- */
 
-const showPriceAlert = ref(false);
-const dontShowAgain = ref(false);
+const showPriceAlert = ref(false)
+const dontShowAgain = ref(false)
 
 watch(
   isLoggedIn,
   (loggedIn) => {
-    if (!loggedIn) return;
+    if (!loggedIn) return
 
-    const optedOut = localStorage.getItem(OPT_OUT_KEY) === '1';
+    const optedOut = localStorage.getItem(OPT_OUT_KEY) === '1'
     if (!optedOut) {
-      dontShowAgain.value = false;   // reset choice each time dialog opens
-      showPriceAlert.value = true;
+      dontShowAgain.value = false // reset choice each time dialog opens
+      showPriceAlert.value = true
     }
   },
   { immediate: true },
-);
+)
 
 function persistOptOutIfChecked() {
   if (dontShowAgain.value) {
-    localStorage.setItem(OPT_OUT_KEY, '1');
+    localStorage.setItem(OPT_OUT_KEY, '1')
   }
 }
 
 function closePriceAlert() {
-  persistOptOutIfChecked();
-  showPriceAlert.value = false;
+  persistOptOutIfChecked()
+  showPriceAlert.value = false
 }
 
 function goToPricesPage() {
-  persistOptOutIfChecked();
-  showPriceAlert.value = false;
-  router.push('/settings/procedures');
+  persistOptOutIfChecked()
+  showPriceAlert.value = false
+  router.push('/settings/procedures')
 }
 </script>
 
-
 <template>
   <div class="h-screen flex flex-col bg-darkgrey">
-    <Navbar class="flex-none" :isSidebarOpen="isSidebarOpen" @toggle-sidebar="handleToggleSidebar" />
+    <Navbar
+      class="flex-none"
+      :isSidebarOpen="isSidebarOpen"
+      @toggle-sidebar="handleToggleSidebar"
+    />
 
     <TercialNavbar v-if="isLoggedIn" class="flex-none" />
 
@@ -94,8 +127,19 @@ function goToPricesPage() {
 
     <Toast position="bottom-right" />
 
+    <!-- your existing global modals -->
     <ModalProvider />
     <GlobalPatientModal />
+
+    <!-- ✅ global overlay modal that DOES NOT change the background route -->
+    <PatientDocumentsModal
+      v-if="showPatientDocuments && patientDocumentsId > 0"
+      :patient-id="patientDocumentsId"
+      @close="closePatientDocuments"
+    />
+
+    <!-- you can keep this if you still use named modal routes elsewhere -->
+    <router-view name="modal" />
 
     <Dialog
       v-model:visible="showPriceAlert"
@@ -105,11 +149,8 @@ function goToPricesPage() {
       :style="{ width: '520px', maxWidth: '95vw' }"
     >
       <div class="flex flex-col gap-4">
-        <p class="text-normal">
-          Skontrolujte ceny úhrady zdravotnej starostlivosti
-        </p>
+        <p class="text-normal">Skontrolujte ceny úhrady zdravotnej starostlivosti</p>
 
-        <!-- ✅ don't show again -->
         <div class="flex items-center gap-2">
           <Checkbox v-model="dontShowAgain" binary inputId="dontShowAgain" />
           <label for="dontShowAgain" class="text-sm text-darkgrey">
@@ -118,12 +159,7 @@ function goToPricesPage() {
         </div>
 
         <div class="flex justify-end gap-2">
-          <Button
-            label="Neskôr"
-            text
-            @click="closePriceAlert"
-            class="text-darkgrey!"
-          />
+          <Button label="Neskôr" text @click="closePriceAlert" class="text-darkgrey!" />
 
           <Button
             label="Otvoriť ceny"
