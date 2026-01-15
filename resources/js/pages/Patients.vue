@@ -113,7 +113,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             field: 'edit',
             header: '',
             width: '3rem',
-            component: ActionButtons,
+            component: markRaw(ActionButtons),
             componentOptions: [
                 {
                     icon: 'bi bi-pencil',
