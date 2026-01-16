@@ -98,6 +98,7 @@ const options = ref<DataTableOptions<any>>({
             key: 'delete',
             label: '',
             icon: 'bi bi-eraser',
+            class: 'bg-warning!',
             disabled: ({ selectedRows }: any) => !selectedRows || selectedRows.length === 0,
             confirm: 'Naozaj vymazať vybrané záznamy?',
             handler: async ({ remote, selectedRows }: any) => {

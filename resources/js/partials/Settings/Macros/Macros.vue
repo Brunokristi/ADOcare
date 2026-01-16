@@ -62,6 +62,7 @@ const options = ref<DataTableOptions<Macro>>({
             key: 'delete',
             label: '',
             icon: 'bi bi-eraser',
+            class: 'bg-warning!',
             disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
             confirm: 'Naozaj vymazať vybrané makrá?',
             handler: async ({ remote, selectedRows }: any) => {
