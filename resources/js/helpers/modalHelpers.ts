@@ -1,0 +1,28 @@
+import { openModal } from "@/composables/useModal"
+import PriceAlertModalBody from "@/pages/partials/PriceAlertModalBody.vue"
+import useAuthStore from "@/stores/auth"
+import { markRaw } from "vue"
+
+export async function openPriceAlertModal() {
+
+    const user = useAuthStore().user
+    if (!user) return
+
+
+    const OPT_OUT_KEY = 'price_check_alert_dont_show'
+
+    const dontShow = localStorage.getItem(OPT_OUT_KEY)
+    if (dontShow === '1') {
+        return
+    }
+
+
+    const dontShowAgain = await openModal(markRaw(PriceAlertModalBody), {}, {
+        header: 'Upozornenie na ceny',
+        style: { width: '400px' },
+    })
+
+    if (dontShowAgain) {
+        localStorage.setItem(OPT_OUT_KEY, '1')
+    }
+}
