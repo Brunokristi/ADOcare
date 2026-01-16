@@ -101,6 +101,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('roles', RoleController::class);
     Route::apiResourceComplete('text-blocks', TextBlockController::class);
     Route::apiResourceComplete('users', UserController::class);
+    Route::apiResourceComplete('companies', CompanyController::class);
+
+
 
     Route::post('/batches/points/preview', [PointsExportController::class, 'preview']);
     Route::post('/batches/points/download', [PointsExportController::class, 'download']);
@@ -111,6 +114,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf']);
 
     Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
+
+
+    Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
+
 
     Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
