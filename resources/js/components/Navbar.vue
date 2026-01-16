@@ -35,6 +35,7 @@ const fullName = computed(() =>
 
 /* ------------ BRANCH SELECT OPTIONS ------------ */
 
+const selectedBranchId = ref<number | null>(authStore.currentBranch?.id ?? (authStore.currentRole === 'manager' ? -1 : null))
 type BranchOption = { id: number; label: string; isManager: boolean }
 
 const branchOptions = computed<BranchOption[]>(() => {
@@ -67,11 +68,14 @@ async function applyBranchSelection(id: number) {
     if (opt.isManager) {
         authStore.setCurrentRole('manager')
         authStore.clearCurrentBranch();
+        selectedBranchId.value = -1
         return
     }
 
     authStore.setCurrentRole('nurse')
     authStore.setCurrentBranchById(id)
+    selectedBranchId.value = id;
+
 }
 
 /* ------------ PATIENT SELECT ------------ */
@@ -87,10 +91,19 @@ const patientOptions = ref<PatientOption[]>([])
 const selectedPatient = ref<PatientOption | null>(null)
 const patientsLoading = ref(false)
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
+const companyId = computed(() => authStore.user?.company.id ?? null)
+const currentRole = computed(() => authStore.currentRole ?? null)
+const fetchPatientsURL = computed(() => {
+    console.log('Computed fetchPatientsURL for branchId', branchId.value, companyId.value)
 
+    if (currentRole.value == 'manager') return `/v1/companies/${companyId.value}/patients`
+    return branchId.value ? `/v1/branches/${branchId.value}/patients` : ''
+});
 async function fetchPatients(page: number) {
     try {
-        const res = await api.fetchEntitiesPaginated<Patient>(`/v1/branches/${branchId.value}/patients`, {
+        console.log(isAuthenticated.value, fetchPatientsURL.value)
+        if (!isAuthenticated.value || !fetchPatientsURL.value) throw new Error('Niečo zlýhalo pri načítaní pacientov. Error 001.')
+        const res = await api.fetchEntitiesPaginated<Patient>(fetchPatientsURL.value, {
             per_page: 20,
             page: page,
             q: patientFilterString.value.trim() || undefined,
@@ -262,9 +275,8 @@ watch(
             <!-- Branch select -->
             <Select @change="(e) => applyBranchSelection(e.value)" :options="branchOptions" optionLabel="label"
                 optionValue="id" placeholder="Vyberte pobočku" labelClass="text-white!"
-                dropdownIcon="bi bi-chevron-down text-white!"
-                :value="authStore.currentBranch?.id ?? (authStore.currentRole === 'manager' ? -1 : null)"
-                class="w-60 h-7! flex items-center bg-tag2! border-none!" />
+                dropdownIcon="bi bi-chevron-down text-white!" :key="authStore.currentBranch?.id ?? ''"
+                v-model="selectedBranchId" class="w-60 h-7! flex items-center bg-tag2! border-none!" />
 
             <!-- Company name -->
             <span v-if="companyName" class="h-7 flex items-center rounded-md bg-tag2 text-lightgrey px-3 text-normal">
