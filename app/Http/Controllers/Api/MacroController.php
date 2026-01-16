@@ -7,7 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Http\Requests\MacroRequest;
 use App\Models\Macro;
 use Illuminate\Http\Request;
-use App\Http\Requests\BulkDeleteRequest;
+use App\Http\Requests\DestroyManyRequest;
 use Illuminate\Http\Response;
 use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
@@ -15,7 +15,8 @@ use App\Http\Resources\BaseCollection;
 
 class MacroController extends Controller
 {
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('api.auth')->only(['index']);
     }
 
@@ -34,8 +35,8 @@ class MacroController extends Controller
         $results = ApiQuery::apply(
             request(),
             $query,
-             ['name', 'abbreviation', 'text'],
-             ['name', 'abbreviation', 'created_at'],
+            ['name', 'abbreviation', 'text'],
+            ['name', 'abbreviation', 'created_at'],
             ['name' => 'asc']
         );
 
@@ -94,7 +95,7 @@ class MacroController extends Controller
      * POST /v1/macros/bulk-delete
      * body: { ids: number[] }
      */
-    public function destroyMany(BulkDeleteRequest $request)
+    public function destroyMany(DestroyManyRequest $request)
     {
         $userId = (int) ($request->user()?->id);
         $validated = $request->validated();

@@ -7,7 +7,7 @@ use App\Http\Resources\BaseCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 

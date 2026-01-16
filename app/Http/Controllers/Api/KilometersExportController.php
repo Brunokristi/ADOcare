@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use \App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -30,17 +30,17 @@ class KilometersExportController extends Controller
         ]);
 
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to   = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $userId      = (int) $data['user']['id'];
-        $branchId    = (int) $data['branch']['id'];
-        $companyId   = (int) $data['company']['id'];
+        $userId = (int) $data['user']['id'];
+        $branchId = (int) $data['branch']['id'];
+        $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => $id > 0)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
             ->values()
             ->all();
 
@@ -62,7 +62,7 @@ class KilometersExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->select([
                 'pp.id',
                 'pp.date',
@@ -126,22 +126,22 @@ class KilometersExportController extends Controller
                 Log::info('Calling route service for distance', [
                     'pp_id' => $row->id,
                     'date' => $dateString,
-                    'from' => [(float)$row->branch_lng, (float)$row->branch_lat],
-                    'to' => [(float)$row->patient_lng, (float)$row->patient_lat],
+                    'from' => [(float) $row->branch_lng, (float) $row->branch_lat],
+                    'to' => [(float) $row->patient_lng, (float) $row->patient_lat],
                 ]);
 
                 $distanceKm = $this->getDistanceFromRouteService(
-                    (float)$row->branch_lat,
-                    (float)$row->branch_lng,
-                    (float)$row->patient_lat,
-                    (float)$row->patient_lng
+                    (float) $row->branch_lat,
+                    (float) $row->branch_lng,
+                    (float) $row->patient_lat,
+                    (float) $row->patient_lng
                 );
 
                 $visitedAddressesPerDay[$dateString][] = $patientAddressKey;
             }
 
             $totalKilometers += $distanceKm;
-            $amount += $distanceKm * (float)$row->price;
+            $amount += $distanceKm * (float) $row->price;
         }
 
         Log::info('Kilometers preview: loop summary', [
@@ -167,17 +167,17 @@ class KilometersExportController extends Controller
             ->value('name');
 
         $sheet = [
-            'batchNumber'   => $data['batchNumber'],
-            'fileName'      => "davka.{$data['batchNumber']}.txt",
-            'amount'        => (string) $amount,
-            'kilometers'    => round($totalKilometers, 2),
-            'periodFrom'    => $from,
-            'periodTo'      => $to,
-            'performedBy'   => $performedBy ?: "User #{$userId}",
+            'batchNumber' => $data['batchNumber'],
+            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'amount' => (string) $amount,
+            'kilometers' => round($totalKilometers, 2),
+            'periodFrom' => $from,
+            'periodTo' => $to,
+            'performedBy' => $performedBy ?: "User #{$userId}",
             'performedDate' => now()->setTimezone('Europe/Bratislava')->toDateString(),
-            'companyName'   => $companyName,
-            'branchName'    => $branchName,
-            'patients'      => $patientIds,
+            'companyName' => $companyName,
+            'branchName' => $branchName,
+            'patients' => $patientIds,
             'insuranceName' => $insuranceName,
         ];
 
@@ -209,13 +209,13 @@ class KilometersExportController extends Controller
         ]);
 
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to   = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $type        = $data['batchType']['code']; // N or O
+        $type = $data['batchType']['code']; // N or O
         $batchNumber = (int) $data['batchNumber'];
-        $userId      = (int) $data['user']['id'];
-        $branchId    = (int) $data['branch']['id'];
-        $companyId   = (int) $data['company']['id'];
+        $userId = (int) $data['user']['id'];
+        $branchId = (int) $data['branch']['id'];
+        $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
@@ -279,7 +279,7 @@ class KilometersExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->orderBy('pp.date')
             ->select([
                 'pp.date',
@@ -305,7 +305,7 @@ class KilometersExportController extends Controller
             ])
             ->get();
 
-        
+
         $visitedAddressesPerDay = [];
         $kilometersPerRow = [];
 
@@ -355,7 +355,7 @@ class KilometersExportController extends Controller
             $branch->identificator ?? '',
             $branch->code ?? '',
             $user->code ?? '',
-            number_format((float)$workingTime, 2, '.', ''),
+            number_format((float) $workingTime, 2, '.', ''),
             $termYYYYMM,
             $batchNumber,
             'EUR',
@@ -366,7 +366,7 @@ class KilometersExportController extends Controller
         $i = 1;
 
         foreach ($rows as $idx => $r) {
-            $dayDD   = Carbon::parse($r->date)->format('d');
+            $dayDD = Carbon::parse($r->date)->format('d');
             $patientName = trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? ''));
             $kilometers = $kilometersPerRow[$idx] ?? 0.0;
 
@@ -427,11 +427,11 @@ class KilometersExportController extends Controller
         ]);
 
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to   = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $userId      = (int) $data['user']['id'];
-        $branchId    = (int) $data['branch']['id'];
-        $companyId   = (int) $data['company']['id'];
+        $userId = (int) $data['user']['id'];
+        $branchId = (int) $data['branch']['id'];
+        $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
@@ -455,7 +455,7 @@ class KilometersExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->select([
                 'pp.id',
                 'pp.date',
@@ -513,18 +513,18 @@ class KilometersExportController extends Controller
             ->value('name');
 
         $sheet = [
-            'batchNumber'   => $data['batchNumber'],
-            'fileName'      => "davka.{$data['batchNumber']}.txt",
-            'amount'        => (string) $amount,
-            'kilometers'    => round($totalKilometers, 2),
-            'periodFrom'    => $from,
-            'periodTo'      => $to,
-            'performedBy'   => $performedBy ?: "User #{$userId}",
+            'batchNumber' => $data['batchNumber'],
+            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'amount' => (string) $amount,
+            'kilometers' => round($totalKilometers, 2),
+            'periodFrom' => $from,
+            'periodTo' => $to,
+            'performedBy' => $performedBy ?: "User #{$userId}",
             'performedDate' => now()->setTimezone('Europe/Bratislava')->toDateString(),
-            'companyName'   => $companyName,
-            'branchName'    => $branchName,
+            'companyName' => $companyName,
+            'branchName' => $branchName,
             'insuranceName' => $insuranceName,
-            'fileType'      => 'vykázané kilometre',
+            'fileType' => 'vykázané kilometre',
         ];
 
         $pdf = Pdf::loadView('pdf.statement', ['sheet' => $sheet])->setPaper('a4');
@@ -536,15 +536,15 @@ class KilometersExportController extends Controller
     private function getDistanceFromRouteService($startLat, $startLng, $endLat, $endLng): float
     {
         try {
-            $baseUrl  = rtrim(config('services.route_service.base_url'), '/');
+            $baseUrl = rtrim(config('services.route_service.base_url'), '/');
             $endpoint = ltrim(config('services.route_service.endpoint', '/tsp-solver'), '/');
-            $timeout  = (int) config('services.route_service.timeout', 8);
+            $timeout = (int) config('services.route_service.timeout', 8);
 
             $url = "{$baseUrl}/{$endpoint}";
 
             $payload = [
-                'start_location'   => [(float) $startLng, (float) $startLat], // [lng, lat]
-                'end_location'     => [(float) $endLng, (float) $endLat],
+                'start_location' => [(float) $startLng, (float) $startLat], // [lng, lat]
+                'end_location' => [(float) $endLng, (float) $endLat],
                 'points_locations' => [
                 ],
             ];

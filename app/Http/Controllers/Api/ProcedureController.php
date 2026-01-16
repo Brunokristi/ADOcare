@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
-use App\Http\Requests\BulkDeleteRequest;
+use App\Http\Requests\DestroyManyRequest;
 use App\Http\Requests\ProcedureDeleteManyRequest;
 use App\Http\Requests\ProcedureStoreRequest;
 use App\Http\Requests\ProcedureUpdateRequest;
@@ -98,7 +98,7 @@ class ProcedureController extends Controller
      * POST /v1/procedures/bulk-delete
      * body: { ids: number[] }
      */
-    public function destroyMany(BulkDeleteRequest $request)
+    public function destroyMany(DestroyManyRequest $request)
     {
         $ids = $request->validated()['ids'];
 

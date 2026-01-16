@@ -7,7 +7,7 @@ use App\Http\Resources\BaseCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Role;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 
 class RoleController extends Controller

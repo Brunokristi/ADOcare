@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
 use App\Http\Requests\BranchPatientStoreRequest;
-use App\Http\Requests\BulkDeleteRequest;
+use App\Http\Requests\DestroyManyRequest;
 use App\Http\Requests\BranchPatientUpdateRequest;
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\PatientResource;
@@ -52,7 +52,7 @@ class BranchPatientController extends Controller
         return $this->success(new PatientResource($patient), 'Created', 201);
     }
 
-    public function destroyMany(BulkDeleteRequest $request, Branch $branch)
+    public function destroyMany(DestroyManyRequest $request, Branch $branch)
     {
         $ids = $request->validated()['ids'];
 

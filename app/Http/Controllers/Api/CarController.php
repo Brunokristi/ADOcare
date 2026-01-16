@@ -10,7 +10,7 @@ use App\Http\Requests\UpdateCarRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Car;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use \App\Http\Controllers\Controller;
 
 class CarController extends Controller
 {
@@ -24,7 +24,7 @@ class CarController extends Controller
     }
 
     public function store(StoreCarRequest $request, Car $car)
-   {
+    {
         $car = Car::create($request->validated());
         return $this->success(new CarResource($car), 'Created', 201);
     }

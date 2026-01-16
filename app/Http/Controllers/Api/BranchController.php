@@ -12,7 +12,7 @@ use App\Models\Branch;
 use App\Models\Patient;
 use App\Models\Doctor;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 
 class BranchController extends Controller

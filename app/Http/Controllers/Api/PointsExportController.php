@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use \App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -40,15 +40,15 @@ class PointsExportController extends Controller
         $to = Carbon::parse($data['period'][1])
             ->setTimezone('Europe/Bratislava')
             ->toDateString();
-        $userId      = (int) $data['user']['id'];
-        $branchId    = (int) $data['branch']['id'];
-        $companyId   = (int) $data['company']['id'];
+        $userId = (int) $data['user']['id'];
+        $branchId = (int) $data['branch']['id'];
+        $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => $id > 0)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
             ->values()
             ->all();
 
@@ -67,7 +67,7 @@ class PointsExportController extends Controller
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->selectRaw('COALESCE(SUM(pp.quantity * pcp.price), 0) as total')
             ->value('total');
 
@@ -87,17 +87,17 @@ class PointsExportController extends Controller
             ->value('name');
 
         $sheet = [
-            'batchNumber'   => $data['batchNumber'],
-            'fileName'      => "davka.{$data['batchNumber']}.txt",
-            'amount'        => (string) $amount,
-            'periodFrom'    => $from,
-            'periodTo'      => $to,
-            'performedBy'   => $performedBy ?: "User #{$userId}",
+            'batchNumber' => $data['batchNumber'],
+            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'amount' => (string) $amount,
+            'periodFrom' => $from,
+            'periodTo' => $to,
+            'performedBy' => $performedBy ?: "User #{$userId}",
             'performedDate' => now()->toDateString(),
-            'companyName'   => $companyName,
-            'branchName'    => $branchName,
-            'patients'      => $patientIds,
-            'insuranceName'=> $insuranceName,
+            'companyName' => $companyName,
+            'branchName' => $branchName,
+            'patients' => $patientIds,
+            'insuranceName' => $insuranceName,
         ];
 
         return response()->json([
@@ -125,13 +125,13 @@ class PointsExportController extends Controller
         ]);
 
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to   = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $type        = $data['batchType']['code']; // N or O
+        $type = $data['batchType']['code']; // N or O
         $batchNumber = (int) $data['batchNumber'];
-        $userId      = (int) $data['user']['id'];
-        $branchId    = (int) $data['branch']['id'];
-        $companyId   = (int) $data['company']['id'];
+        $userId = (int) $data['user']['id'];
+        $branchId = (int) $data['branch']['id'];
+        $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
@@ -192,7 +192,7 @@ class PointsExportController extends Controller
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->orderBy('pp.date')
             ->select([
                 'pp.date',
@@ -228,7 +228,7 @@ class PointsExportController extends Controller
             $branch->identificator ?? '',
             $branch->code ?? '',
             $user->code ?? '',
-            number_format((float)$workingTime, 2, '.', ''),
+            number_format((float) $workingTime, 2, '.', ''),
             $termYYYYMM,
             '850',
             $batchNumber,
@@ -241,7 +241,7 @@ class PointsExportController extends Controller
         $i = 1;
 
         foreach ($rows as $r) {
-            $dayDD   = Carbon::parse($r->date)->format('d');
+            $dayDD = Carbon::parse($r->date)->format('d');
             $dateYmd = Carbon::parse($r->date)->format('Ymd');
 
             $patientName = trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? ''));
@@ -317,11 +317,11 @@ class PointsExportController extends Controller
         ]);
 
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to   = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $userId      = (int) $data['user']['id'];
-        $branchId    = (int) $data['branch']['id'];
-        $companyId   = (int) $data['company']['id'];
+        $userId = (int) $data['user']['id'];
+        $branchId = (int) $data['branch']['id'];
+        $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
@@ -337,7 +337,7 @@ class PointsExportController extends Controller
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->selectRaw('COALESCE(SUM(pp.quantity * pcp.price), 0) as total')
             ->value('total');
 
@@ -357,17 +357,17 @@ class PointsExportController extends Controller
             ->value('name');
 
         $sheet = [
-            'batchNumber'   => $data['batchNumber'],
-            'fileName'      => "davka.{$data['batchNumber']}.txt",
-            'amount'        => (string) $amount,
-            'periodFrom'    => $from,
-            'periodTo'      => $to,
-            'performedBy'   => $performedBy ?: "User #{$userId}",
+            'batchNumber' => $data['batchNumber'],
+            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'amount' => (string) $amount,
+            'periodFrom' => $from,
+            'periodTo' => $to,
+            'performedBy' => $performedBy ?: "User #{$userId}",
             'performedDate' => now()->setTimezone('Europe/Bratislava')->toDateString(),
-            'companyName'   => $companyName,
-            'branchName'    => $branchName,
-            'insuranceName'=> $insuranceName,
-            'fileType'     =>  "vykázané body",
+            'companyName' => $companyName,
+            'branchName' => $branchName,
+            'insuranceName' => $insuranceName,
+            'fileType' => "vykázané body",
         ];
 
         $pdf = Pdf::loadView('pdf.statement', ['sheet' => $sheet])

@@ -39,6 +39,11 @@ class Company extends Model
         return $this->hasMany(Car::class);
     }
 
+    public function patients()
+    {
+        return $this->hasManyThrough(Patient::class, Branch::class, 'company_id', 'id', 'id', 'id');
+    }
+
     public function users()
     {
         return $this->hasManyThrough(User::class, Branch::class, 'company_id', 'id', 'id', 'id');
@@ -47,5 +52,5 @@ class Company extends Model
     public function representative()
     {
         return $this->belongsTo(User::class, 'representative_id');
-    }  
+    }
 }
