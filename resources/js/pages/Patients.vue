@@ -13,6 +13,7 @@ import api from '@/services/api'
 import CreatePatientModalBody from './partials/patient/CreatePatientModalBody.vue'
 import type { DataTableOptions } from '@/types/datatable'
 import useModal from '@/composables/useModal'
+import { openPatientDocumentsModal } from '@/helpers/modalHelpers'
 
 
 // Simple formatter
@@ -36,7 +37,7 @@ const tableKey = computed(() => `patients-${branchId.value ?? 'none'}`)
 const route = useRoute()
 
 function openPatientDocuments(patientId: number) {
-    router.replace({ query: { ...route.query, patientDocuments: String(patientId) } })
+    void openPatientDocumentsModal(patientId)
 }
 
 function openEditPatient(patientId: number) {
@@ -44,15 +45,14 @@ function openEditPatient(patientId: number) {
 }
 
 const endpointUrl = computed(() => {
-    switch (true) {
-        case branchId.value !== null:
-            return `v1/branches/${branchId.value}/patients`
-        case companyId.value !== null:
-            return `v1/companies/${companyId.value}/patients`
-        default:
-            return null
+    if (branchId.value) {
+        return `v1/branches/${branchId.value}/patients`
+    } else if (companyId.value) {
+        return `v1/companies/${companyId.value}/patients`
+    } else {
+        return null
     }
-});
+})
 
 const options = computed<DataTableOptions<Patient>>(() => ({
     rowKey: 'id',
@@ -72,12 +72,12 @@ const options = computed<DataTableOptions<Patient>>(() => ({
         {
             field: 'adress',
             header: 'Adresa',
-            render: (_v, row) => {
-                if (!row) return ''
+            render: (v) => {
+                if (!v) return ''
                 const parts = []
-                if (row.address) parts.push(row.address)
-                if (row.city) parts.push(row.city)
-                if (row.zip) parts.push(row.zip)
+                if (v.street) parts.push(v.street)
+                if (v.city) parts.push(v.city)
+                if (v.zip_code) parts.push(v.zip_code)
                 return parts.join(', ')
             },
         },
