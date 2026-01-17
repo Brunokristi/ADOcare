@@ -9,34 +9,17 @@ import useModal from '@/composables/useModal'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 
 const { openModal } = useModal()
-const editing = ref<any | null>(null)
 const actionRemote = ref<any | null>(null)
-
-async function openCreate() {
-    try {
-        const res = await openModal(markRaw(ProcedureForm), { procedure: null }, { header: 'Procedúra', style: { width: '760px' }, closable: false })
-        if (res?.changed && actionRemote.value?.loadPage) {
-            await actionRemote.value.loadPage(1)
-        }
-    } catch (e) {
-        // ignore
-    }
-}
 
 async function openEdit(row: Procedure) {
     try {
-        const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Procedúra', style: { width: '760px' }, closable: false })
+        const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Výkon', style: { width: '760px' }, closable: true })
         if (res?.changed && actionRemote.value?.loadPage) {
             await actionRemote.value.loadPage(1)
         }
     } catch (e) {
-        // ignore
     }
 }
-
-// table remote reference will be set via `afterInit` so we can reload after modals
-
-// normalizeRow removed — will use per-column render functions instead
 
 const companies = ref<InsuranceCompany[]>([])
 
@@ -47,7 +30,7 @@ onMounted(async () => {
         const companyCols = companies.value.map((c) => {
             const ret: ColumnDef<Procedure> = {
                 field: `price_${c.id}`,
-                header: c.name ?? c.code ?? String(c.id),
+                header: (c.name ?? c.code ?? String(c.id)).split(' ')[0],
                 width: '120px',
                 render: (_value, row) => {
                     const existing = row.insurance_companies_prices_minimal ?? []
@@ -85,7 +68,7 @@ const options = ref<DataTableOptions<any>>({
     endpointUrl: 'v1/procedures',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
-    selectable: true,
+    selectable: false,
     columns: [
         { field: 'code', header: 'Kód', sortable: true },
         { field: 'description', header: 'Popis' },
@@ -94,33 +77,32 @@ const options = ref<DataTableOptions<any>>({
     afterInit: ({ remote }) => { actionRemote.value = remote },
     actions: [
         // edit handled by per-row column button
-        {
-            key: 'delete',
-            label: '',
-            icon: 'bi bi-eraser',
-            class: 'bg-warning!',
-            disabled: ({ selectedRows }: any) => !selectedRows || selectedRows.length === 0,
-            confirm: 'Naozaj vymazať vybrané záznamy?',
-            handler: async ({ remote, selectedRows }: any) => {
-                try {
-                    for (const r of selectedRows ?? []) {
-                        await api.delete(`/v1/procedures/${r.id}`)
-                    }
-                } catch (err) {
-                    console.error('Delete failed', err)
-                } finally {
-                    await remote.loadPage(1)
-                }
-            },
-        },
-        {
-            key: 'add',
-            label: '',
-            icon: 'bi bi-plus',
-            handler: async () => openCreate(),
-        },
+        // {
+        //     key: 'delete',
+        //     label: '',
+        //     icon: 'bi bi-eraser',
+        //     class: 'bg-warning!',
+        //     disabled: ({ selectedRows }: any) => !selectedRows || selectedRows.length === 0,
+        //     confirm: 'Naozaj vymazať vybrané záznamy?',
+        //     handler: async ({ remote, selectedRows }: any) => {
+        //         try {
+        //             for (const r of selectedRows ?? []) {
+        //                 await api.delete(`/v1/procedures/${r.id}`)
+        //             }
+        //         } catch (err) {
+        //             console.error('Delete failed', err)
+        //         } finally {
+        //             await remote.loadPage(1)
+        //         }
+        //     },
+        // },
+        // {
+        //     key: 'add',
+        //     label: '',
+        //     icon: 'bi bi-plus',
+        //     handler: async () => openCreate(),
+        // },
     ],
-    // no normalizeRow — use column.render to display company prices
 })
 </script>
 

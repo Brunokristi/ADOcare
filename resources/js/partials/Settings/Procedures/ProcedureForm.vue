@@ -17,12 +17,10 @@ const model = ref({
     id: null,
     code: '',
     description: '',
-    // one entry per insurance company (filled after companies are loaded)
     prices: [] as Array<{ insurance_company_id: number; price: number }>,
 })
 
 onMounted(async () => {
-    // fetch insurance companies for the fixed rows
     try {
         insuranceCompanies.value = await api.fetchEntities('v1/insurance-companies')
     } catch (e) {
@@ -57,8 +55,6 @@ function close() {
     }
 }
 
-// no add/remove — we show fixed rows for all insurance companies
-
 async function save() {
     loading.value = true
     try {
@@ -74,7 +70,6 @@ async function save() {
             await api.post('/v1/procedures', payload)
         }
 
-        // build current snapshot and compare to original to detect changes
         const snapshot = JSON.stringify({
             code: model.value.code,
             description: model.value.description,
@@ -83,7 +78,6 @@ async function save() {
 
         const changed = _originalSnapshot.value !== null ? _originalSnapshot.value !== snapshot : true
 
-        // Resolve modal if opened via provider, otherwise emit event
         if (props.modalResolve) {
             try { props.modalResolve({ changed, model: model.value }) } catch (e) { }
         } else {
@@ -101,31 +95,22 @@ async function save() {
     <div class="p-4">
         <div class="flex flex-col gap-4">
             <div class="col-span-6">
-                <label class="block text-normal mb-1">Kód</label>
-                <InputText v-model.trim="model.code" class="w-full" />
+                <label class="block text-normal text-lightgrey mb-1">Kód</label>
+                <InputText v-model.trim="model.code" class="w-full border-lightgrey! text-lightgrey!" disabled />
             </div>
             <div class="col-span-6">
-                <label class="block text-normal mb-1">Popis</label>
-                <Textarea v-model.trim="model.description" :rows="3" autoResize class="w-full" />
+                <label class="block text-normal text-lightgrey mb-1">Popis</label>
+                <Textarea v-model.trim="model.description" :rows="3" autoResize class="w-full border-lightgrey! text-lightgrey!" disabled />
             </div>
         </div>
 
         <div class="mt-4">
-            <label class="block text-normal mb-2">Ceny (poisťovne)</label>
             <div class="overflow-auto">
                 <table class="w-full table-auto">
-                    <thead>
-                        <tr>
-                            <th class="text-left p-2">Poisťovňa</th>
-                            <th width="100px" class="text-left p-2">Kód</th>
-                            <th class="text-left p-2">Cena (€)</th>
-                        </tr>
-                    </thead>
                     <tbody>
-                        <tr v-for="(ic, idx) in insuranceCompanies" :key="ic.id" class="border-t">
-                            <td class="p-2">{{ ic.name ?? ic.id }}</td>
-                            <td class="p-2">{{ ic.code ?? '-' }}</td>
-                            <td class="p-2">
+                        <tr v-for="(ic, idx) in insuranceCompanies" :key="ic.id">
+                            <td class="p-2 pl-0 text-normal">{{ ic.name ?? ic.id }}</td>
+                            <td class="p-2 pr-0 flex justify-end">
                                 <InputNumber v-model="model.prices[idx]!.price" :min="0" :step="0.01" mode="decimal"
                                     :useGrouping="false" />
                             </td>
@@ -136,8 +121,8 @@ async function save() {
         </div>
 
         <div class="mt-4 flex justify-end gap-2">
-            <Button label="Zrušiť" text class="p-button-text" @click="close" />
-            <Button label="Uložiť" class="p-button-success" @click="save" :loading="loading" />
+            <Button label="Zrušiť" text class="text-accent! px-2!" @click="close" />
+            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! " @click="save" :loading="loading" />
         </div>
     </div>
 </template>

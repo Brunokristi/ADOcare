@@ -44,9 +44,6 @@ function onSort(e: any) {
     remote.loadPage(1);
 }
 
-// refs
-const dt = ref<typeof DataTable>();
-
 const selectedRows = ref<IBaseModel[]>([]);
 
 let searchTimer: number | null = null;
@@ -95,6 +92,7 @@ watch(selectedRows, (val) => {
                         <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label"
                             :icon="typeof a.icon === 'function' ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote }) : a.icon"
                             :label="a.label"
+                            :title="a.tooltip"
                             :disabled="a.disabled && (typeof a.disabled == 'boolean' ? a.disabled : a.disabled({ rows: remote.items.value, selectedRows: selectedRows, remote }))"
                             class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)" :class="a.class ?? ''" />
                     </template>

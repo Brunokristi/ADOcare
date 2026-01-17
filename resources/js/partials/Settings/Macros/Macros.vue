@@ -13,7 +13,7 @@ const actionRemote = ref<any>(null)
 
 async function openCreate() {
     try {
-        await openModal(markRaw(MacroForm), { macro: null }, { header: 'Makro', style: { width: '640px' }, closable: false })
+        await openModal(markRaw(MacroForm), { macro: null }, { header: 'Makro', style: { width: '640px' }, closable: true })
     } finally {
         if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
     }
@@ -21,7 +21,7 @@ async function openCreate() {
 
 async function openEdit(row: Macro) {
     try {
-        await openModal(markRaw(MacroForm), { macro: row }, { header: 'Makro', style: { width: '640px' }, closable: false })
+        await openModal(markRaw(MacroForm), { macro: row }, { header: 'Makro', style: { width: '640px' }, closable: true })
     } finally {
         if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
     }
@@ -63,6 +63,7 @@ const options = ref<DataTableOptions<Macro>>({
             label: '',
             icon: 'bi bi-eraser',
             class: 'bg-warning!',
+            tooltip: 'Vymazať vybrané makrá',
             disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
             confirm: 'Naozaj vymazať vybrané makrá?',
             handler: async ({ remote, selectedRows }: any) => {
@@ -80,7 +81,9 @@ const options = ref<DataTableOptions<Macro>>({
         {
             key: 'add',
             label: '',
+            tooltip: 'Pridať nové makro',
             icon: 'bi bi-plus',
+            class: 'bg-accent!',
             handler: async () => {
                 openCreate()
             },

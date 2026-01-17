@@ -251,6 +251,11 @@ export default {
             },
             content: { class: 'gap-2! align-items-center!' },
             contentContainer: { class: 'gap-2! align-items-center!' },
-        }
+        },
+
+        tooltip: {
+            root: { class: '!rounded-md !bg-darkgrey !text-white !text-mini !p-1' },
+            text: { class: '!text-white !text-mini' },
+        },
     }
 } as PrimeVueConfiguration;

@@ -67,7 +67,7 @@ async function save() {
             <InputText v-model.trim="local.name" fluid />
         </div>
 
-        <div class="col-span-4">
+        <div class="col-span-12">
             <label class="block text-normal mb-1">Skratka</label>
             <InputText v-model.trim="local.abbreviation" fluid />
         </div>
@@ -78,9 +78,9 @@ async function save() {
         </div>
 
         <div class="col-span-12 mt-4 flex items-center justify-end gap-2">
-            <Button label="Zrušiť" text @click="close" />
+            <Button label="Zrušiť" text @click="close" class="text-accent! px-2!" />
             <Button :label="local.id ? 'Upraviť' : 'Vytvoriť'" :loading="saving" @click="save"
-                class="bg-accent! text-white!" />
+                class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! " />
         </div>
     </div>
 </template>
