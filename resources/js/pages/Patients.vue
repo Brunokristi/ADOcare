@@ -14,15 +14,6 @@ import CreatePatientModalBody from './partials/patient/CreatePatientModalBody.vu
 import type { DataTableOptions } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 
-
-// Simple formatter
-function formatBirthNumber(value?: string) {
-    const digits = (value || '').replace(/\D/g, '')
-    const first = digits.slice(0, 6)
-    const last = digits.slice(6, 10)
-    return last.length ? `${first}/${last}` : first
-}
-
 const patientStore = usePatientStore()
 
 // still used for Edit/Create
@@ -67,7 +58,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             field: 'personal_number',
             header: 'Rodné číslo',
             sortable: false,
-            render: (v) => formatBirthNumber(v),
+            render: (v) => v,
         },
         {
             field: 'adress',
@@ -76,8 +67,6 @@ const options = computed<DataTableOptions<Patient>>(() => ({
                 if (!row) return ''
                 const parts = []
                 if (row.address) parts.push(row.address)
-                if (row.city) parts.push(row.city)
-                if (row.zip) parts.push(row.zip)
                 return parts.join(', ')
             },
         },
@@ -176,9 +165,6 @@ const options = computed<DataTableOptions<Patient>>(() => ({
 
         <UniversalDataTable v-if="options.endpointUrl" :key="tableKey" :options="options" ref="tableEl"
             @action="(key, payload) => console.log('action emitted', key, payload)">
-            <template #col-personal_number="{ value }">
-                <span class="text-muted">{{ formatBirthNumber(value) }}</span>
-            </template>
         </UniversalDataTable>
 
         <div v-else class="p-4 text-darkgrey">
