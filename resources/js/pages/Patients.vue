@@ -15,15 +15,6 @@ import type { DataTableOptions } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
 
-
-// Simple formatter
-function formatBirthNumber(value?: string) {
-    const digits = (value || '').replace(/\D/g, '')
-    const first = digits.slice(0, 6)
-    const last = digits.slice(6, 10)
-    return last.length ? `${first}/${last}` : first
-}
-
 const patientStore = usePatientStore()
 
 // still used for Edit/Create
@@ -66,8 +57,8 @@ const options = computed<DataTableOptions<Patient>>(() => ({
         {
             field: 'personal_number',
             header: 'Rodné číslo',
-            sortable: false,
-            render: (v) => formatBirthNumber(v),
+            sortable: true,
+            render: (v) => v,
         },
         {
             field: 'adress',
@@ -75,9 +66,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
             render: (v) => {
                 if (!v) return ''
                 const parts = []
-                if (v.street) parts.push(v.street)
-                if (v.city) parts.push(v.city)
-                if (v.zip_code) parts.push(v.zip_code)
+                if (v.address) parts.push(v.address)
                 return parts.join(', ')
             },
         },
@@ -176,9 +165,6 @@ const options = computed<DataTableOptions<Patient>>(() => ({
 
         <UniversalDataTable v-if="options.endpointUrl" :key="tableKey" :options="options" ref="tableEl"
             @action="(key, payload) => console.log('action emitted', key, payload)">
-            <template #col-personal_number="{ value }">
-                <span class="text-muted">{{ formatBirthNumber(value) }}</span>
-            </template>
         </UniversalDataTable>
 
         <div v-else class="p-4 text-darkgrey">

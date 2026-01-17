@@ -7,7 +7,6 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 
 import { usePatientStore } from '@/stores/patientStore'
-import { useUiModalsStore } from '@/stores/uiModals'
 import type { Patient } from '@/types/models'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
 
@@ -16,7 +15,6 @@ const attrs = useAttrs()
 
 const router = useRouter()
 const patientStore = usePatientStore()
-const uiModals = useUiModalsStore()
 const patientId = computed(() => patientStore.current?.id ?? null)
 const patient = computed<Patient | null>(() => patientStore.current)
 
@@ -41,41 +39,26 @@ const closePatient = () => {
 const showIncompleteModal = ref(false)
 const incompletePatientId = ref<number | null>(null)
 
-function sanitizeZip(value: unknown) {
-    return String(value ?? '').replace(/\D/g, '').slice(0, 5)
-}
 
 function patientIsComplete(p: Patient | null) {
     if (!p) return true
 
-    const first = String(p.first_name ?? '').trim()
-    const last = String(p.last_name ?? '').trim()
-    const pn = String(p.personal_number ?? '').trim()
+  const first = String(p.first_name ?? '').trim()
+  const last = String(p.last_name ?? '').trim()
+  const pn = String(p.personal_number ?? '').trim()
+  const sex = (p as any).sex ?? null
+  const doctorId = (p as any).doctor_id ?? null
+  const insuranceId = (p as any).insurance_company_id ?? null
+  const street = String((p as any).address ?? '').trim()
+  const city = String((p as any).city ?? '').trim()
+  const zip = String((p as any).zip ?? '').trim()
+  const lat = (p as any).latitude
+  const lng = (p as any).longitude
 
-    const sex = (p as any).sex ?? null
-    const doctorId = (p as any).doctor_id ?? null
-    const insuranceId = (p as any).insurance_company_id ?? null
-
-    const street = String((p as any).address ?? '').trim()
-    const city = String((p as any).city ?? '').trim()
-    const zip = sanitizeZip((p as any).zip)
-
-    const lat = (p as any).latitude
-    const lng = (p as any).longitude
-
-    if (!first) return false
-    if (!last) return false
-    if (!pn || !/^\d{9,10}$/.test(pn)) return false
-
-    if (!sex) return false
-    if (!doctorId) return false
-    if (!insuranceId) return false
-
-    if (!street) return false
-    if (!city) return false
-    if (!zip || !/^\d{5}$/.test(zip)) return false
-
-    if (lat == null || lng == null) return false
+  // Check if all required fields are filled (not empty)
+  if (!first || !last || !pn || !sex || !doctorId || !insuranceId) return false
+  if (!street || !city || !zip) return false
+  if (lat == null || lng == null) return false
 
     return true
 }
@@ -99,28 +82,19 @@ watch(
     },
     { immediate: true, deep: true }
 )
-
-function openEditFromIncompleteModal() {
-    const id = incompletePatientId.value
-    if (!id) return
-    void openPatientEditModal(id)
-}
-
-function openPatientDocuments() {
-    const id = patientId.value
-    if (!id) return
-    void openPatientDocumentsModal(id)
-}
 </script>
 
 <template>
-    <!-- ✅ Forward parent attrs (class, style, etc.) onto Menubar -->
-    <Menubar v-if="patient" v-bind="attrs" class="bg-tag2! px-3! flex items-center py-2 justify-between">
-        <template #start>
-            <div class="flex items-center">
-                <h2 class="text-normal! pr-sm! text-almostwhite! border-r border-almostwhite!">
-                    {{ patientName }}
-                </h2>
+  <Menubar
+    v-if="patient"
+    v-bind="attrs"
+    class="bg-tag2! px-3! flex items-center py-2 justify-between"
+  >
+    <template #start>
+      <div class="flex items-center">
+        <h2 class="text-normal! pr-sm! text-almostwhite! border-r border-almostwhite!">
+          {{ patientName }}
+        </h2>
 
                 <h2 class="text-normal! px-sm! text-almostwhite!">
                     {{ patientPersonalNumber }}
@@ -180,10 +154,13 @@ function openPatientDocuments() {
                 Zdá sa, že informácie o tomto pacientovi nie sú kompletné alebo správne.
             </p>
 
-            <div class="flex justify-end gap-2">
-                <Button label="Upraviť teraz" @click="openEditFromIncompleteModal"
-                    class="bg-accent! border-0! text-white! hover:bg-darkgrey! px-4!" />
-            </div>
-        </div>
-    </Dialog>
+      <div class="flex justify-end gap-2">
+        <Button
+          label="Upraviť teraz"
+          @click="$router.replace({ query: { ...$route.query, editPatient: patientId } })"
+          class="bg-accent! border-0! text-white! hover:bg-darkgrey! px-4!"
+        />
+      </div>
+    </div>
+  </Dialog>
 </template>

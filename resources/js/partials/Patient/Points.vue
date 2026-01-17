@@ -444,7 +444,7 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
     doctor_zpr: doctorRel?.zpr ?? null,
     doctor_id: doctorId,
 
-    reference_date: toApiDate(dateOverride),
+    reference_date: toApiDate(row.referralDate),
     user_id: user.value?.id ?? null,
     branch_id: currentBranch.value!.id,
     quantity: row.quantity ?? quantity.value,
@@ -456,13 +456,14 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
 /* -------------------------------------------------------------------------- */
 
 async function onSubmit() {
-  submitted.value = true;
+  submitted.value = true
 
-  dates.value = normalizeSelectedDates(dates.value as any);
-  referralDate.value = parseDateInput(referralDate.value as any);
+  // normalize inputs
+  dates.value = normalizeSelectedDates(dates.value as any)
+  referralDate.value = parseDateInput(referralDate.value as any)
 
-  const diagnosisOk = await ensureDiagnosisSelected();
-  const procedureOk = await ensureProcedureSelected();
+  const diagnosisOk = await ensureDiagnosisSelected()
+  const procedureOk = await ensureProcedureSelected()
 
   if (
     !dates.value.length ||
@@ -472,7 +473,7 @@ async function onSubmit() {
     !quantity.value ||
     quantity.value <= 0
   ) {
-    return;
+    return
   }
 
   if (!currentPatient.value) {
@@ -481,99 +482,83 @@ async function onSubmit() {
       summary: 'Chýbajúci pacient',
       detail: 'Najprv vyberte pacienta.',
       life: 3000,
-    });
-    return;
+    })
+    return
   }
 
   try {
-    // update patient's reference date once
-    const refDate = toApiDate(referralDate.value);
+    // 1) update patient's reference date once
+    const refDate = toApiDate(referralDate.value)
 
     await api.put(`/v1/patients/${currentPatient.value.id}`, {
       reference_date: refDate,
-    });
+    })
 
-    const updatedPatient: Patient = {
+    patientStore.setPatient({
       ...(currentPatient.value as Patient),
       reference_date: refDate,
-    };
+    })
 
-    patientStore.setPatient(updatedPatient);
-
-    // avoid duplicates in UI
+    // 2) build a set of existing keys so we skip duplicates in UI + backend calls
     const existingKeys = new Set(
       records.value.map((r) => {
-        const d = r.date ? toApiDate(r.date) : '';
-        return `${d}|${r.diagnosis?.id ?? ''}|${r.procedure?.id ?? ''}|${r.quantity ?? ''}`;
+        const d = r.date ? toApiDate(r.date) : ''
+        return `${d}|${r.diagnosis?.id ?? ''}|${r.procedure?.id ?? ''}|${r.quantity ?? ''}`
       }),
-    );
+    )
 
-    const createdRows: RecordEntry[] = [];
+    // 3) create records (no per-date reload)
+    let createdCount = 0
 
     for (const d of dates.value) {
-      const payload = buildPatientPointPayloadForDate(d);
+      const payload = buildPatientPointPayloadForDate(d)
 
-      const key = `${payload.date}|${payload.diagnosis_id}|${payload.procedure_id}|${payload.quantity ?? ''}`;
-      if (existingKeys.has(key)) continue;
+      const key = `${payload.date}|${payload.diagnosis_id}|${payload.procedure_id}|${payload.quantity ?? ''}`
+      if (existingKeys.has(key)) continue
 
-      const { data } = await api.post('/v1/patient-points', payload);
-
-      createdRows.push({
-        id: data?.id ?? Date.now(),
-        date: d,
-        diagnosis: diagnosis.value,
-        procedure: procedure.value,
-        referralDate: referralDate.value,
-        quantity: quantity.value,
-      });
-
-      existingKeys.add(key);
+      await api.post('/v1/patient-points', payload)
+      existingKeys.add(key)
+      createdCount++
     }
 
-    if (!createdRows.length) {
-      toast.add({
-        severity: 'info',
-        summary: 'Nič nové',
-        detail: 'Vybrané dátumy už existujú v tabuľke.',
-        life: 3000,
-      });
-      return;
-    }
-
-    records.value.push(...createdRows);
-    if (createdRows.length > 0 && createdRows[0]) {
-      emit('submit', createdRows[0]);
+    // 4) reload ONCE so table always has correct ids + order
+    if (createdCount > 0) {
+      await loadRecordsForPatient()
+      emit('submit', records.value[0] ?? ({} as any))
     }
 
     toast.add({
-      severity: 'success',
-      summary: 'Uložené',
-      detail: `Uložené záznamy: ${createdRows.length}`,
+      severity: createdCount > 0 ? 'success' : 'info',
+      summary: createdCount > 0 ? 'Uložené' : 'Nič nové',
+      detail:
+        createdCount > 0
+          ? `Uložené záznamy: ${createdCount}`
+          : 'Vybrané dátumy už existujú v tabuľke.',
       life: 3000,
-    });
+    })
 
-    // reset form
-    dates.value = [new Date()];
-    diagnosis.value = null;
-    procedure.value = null;
-    quantity.value = 1;
-    submitted.value = false;
+    // 5) reset form
+    dates.value = [new Date()]
+    procedure.value = null
+    quantity.value = 1
+    submitted.value = false
   } catch (error: any) {
-    console.error('Create failed:', error);
+    console.error('Create failed:', error)
 
     const msg =
-      error.response?.data?.errors
-        ? Object.values(error.response.data.errors).flat()[0]
-        : error.response?.data?.message;
+      error?.response?.data?.errors
+        ? (Object.values(error.response.data.errors).flat() as any[])[0]
+        : error?.response?.data?.message
 
     toast.add({
       severity: 'error',
       summary: 'Neuložené',
       detail: msg ?? 'Záznamy sa nepodarilo uložiť.',
       life: 6000,
-    });
+    })
   }
 }
+
 
 /* -------------------------------------------------------------------------- */
 /*  Edit dialog                                                               */
@@ -710,29 +695,18 @@ async function duplicateSelected() {
   }
 
   const today = new Date();
-  const createdRows: RecordEntry[] = [];
 
   try {
     for (const original of selectedRecords.value) {
       const payload = buildPayloadFromRow(original, today);
-      const { data } = await api.post('/v1/patient-points', payload);
-
-      createdRows.push({
-        id: data?.id ?? Date.now(),
-        date: today,
-        referralDate: today,
-        diagnosis: original.diagnosis,
-        procedure: original.procedure,
-        quantity: original.quantity,
-      });
+      await api.post('/v1/patient-points', payload);
+      await loadRecordsForPatient()
     }
-
-    records.value.push(...createdRows);
 
     toast.add({
       severity: 'success',
       summary: 'Duplikované',
-      detail: 'Vybrané záznamy boli duplikované s dnešným dátumom a uložené do databázy.',
+      detail: 'Vybrané záznamy boli duplikované.',
       life: 3000,
     });
   } catch (error: any) {

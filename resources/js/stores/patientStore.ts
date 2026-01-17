@@ -40,19 +40,39 @@ export const usePatientStore = defineStore('patient', {
                 });
         },
 
-        async persistPatientData(patient: Patient) {
+        async persistPatientData(patient: Patient, branchId?: number) {
             try {
-                await api.put(`/v1/patients/${patient.id}`, patient);
-                const fresh = await this.fetchPatient(patient.id);
-                return fresh;
+                const isNew = !patient.id
+
+                if (isNew) {
+                    // create
+                    const response = await api.post('/v1/patients', {
+                        ...patient,
+                        ...(branchId ? { branch_id: branchId } : {}),
+                    })
+
+                    const created = response.data.data as Patient
+                    return created
+                }
+
+                // update
+                await api.put(`/v1/patients/${patient.id}`, patient)
+
+                // optional: reload fresh from backend
+                const fresh = await this.fetchPatient(patient.id)
+                return fresh
             } catch (error) {
-                throw new Error('Failed to save patient: ' + error);
+                throw new Error('Failed to save patient: ' + error)
             }
         },
 
+
         async createPatient(patient: Patient, branchId: number) {
             try {
-                const response = await api.post(`/v1/patients`, { ...patient, branch_id: branchId });
+                const response = await api.post(`/v1/branches/${branchId}/patients`, {
+                    ...patient,
+                    dekurz_number: patient.dekurz_number || 1
+                });
                 const created = response.data.data as Patient;
                 // this.setPatient(created);
                 return created;
