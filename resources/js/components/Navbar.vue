@@ -30,7 +30,7 @@ const user = computed<User | null>(() => authStore.user as User | null)
 
 const companyName = computed(() => user.value?.company?.name ?? '')
 const fullName = computed(() =>
-    user.value ? `${user.value.first_name ?? ''} ${user.value.last_name ?? ''}`.trim() : ''
+    user.value ? `${user.value.title ?? ''} ${user.value.first_name ?? ''} ${user.value.last_name ?? ''}`.trim() : ''
 )
 
 /* ------------ BRANCH SELECT OPTIONS ------------ */

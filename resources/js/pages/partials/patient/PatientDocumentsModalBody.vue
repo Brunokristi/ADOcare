@@ -63,6 +63,14 @@ const formatDocumentType = (type?: string) => {
     return typeMap[type || ''] || type || '';
 };
 
+const formatDateWithTime = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const datePart = date.toLocaleDateString('sk-SK');
+    const timePart = date.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return `${datePart} ${timePart}`;
+};
+
 const options = computed<DataTableOptions<PatientDocument>>(() => ({
     rowKey: 'id',
     endpointUrl: `v1/patients/${props.patientId}/documents`,
@@ -85,9 +93,9 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
         },
         { 
             field: 'created_at', 
-            header: 'Dátum', 
+            header: 'Dátum a čas vytvorenia', 
             sortable: true,
-            render: (v: string | undefined) => v ? new Date(v).toLocaleDateString('sk-SK') : ''
+            render: (v: string | undefined) => formatDateWithTime(v)
         },
         {
             field: 'preview',
