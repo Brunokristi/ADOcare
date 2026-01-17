@@ -13,7 +13,7 @@ import api from '@/services/api'
 import CreatePatientModalBody from './partials/patient/CreatePatientModalBody.vue'
 import type { DataTableOptions } from '@/types/datatable'
 import useModal from '@/composables/useModal'
-import { openPatientDocumentsModal } from '@/helpers/modalHelpers'
+import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
 
 
 // Simple formatter
@@ -133,7 +133,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
                     color: 'info',
                     tooltip: 'Editovať pacienta',
                     action: (row: Patient) => {
-                        openEditPatient(row.id)
+                        openPatientEditModal(row.id)
                     },
                 },
             ],

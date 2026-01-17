@@ -9,7 +9,7 @@ import Button from 'primevue/button'
 import { usePatientStore } from '@/stores/patientStore'
 import { useUiModalsStore } from '@/stores/uiModals'
 import type { Patient } from '@/types/models'
-import { openPatientDocumentsModal } from '@/helpers/modalHelpers'
+import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
 
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
@@ -103,8 +103,7 @@ watch(
 function openEditFromIncompleteModal() {
     const id = incompletePatientId.value
     if (!id) return
-    showIncompleteModal.value = false
-    uiModals.openPatientEdit(id)
+    void openPatientEditModal(id)
 }
 
 function openPatientDocuments() {
@@ -156,7 +155,7 @@ function openPatientDocuments() {
                     ošetrovateľský záznam
                 </RouterLink>
 
-                <button type="button" @click="$router.replace({ query: { ...$route.query, editPatient: patientId } })"
+                <button type="button" @click="openPatientEditModal(patient?.id)"
                     class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">
                     upraviť
                 </button>

@@ -11,8 +11,6 @@ import TercialNavbar from './components/TercialNavbar.vue'
 import { useAuthStore } from '@/stores/auth'
 import ModalProvider from './components/ModalProvider.vue'
 
-import PatientEditModal from '@/pages/partials/patient/PatientEditModal.vue'
-
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
@@ -30,27 +28,6 @@ const isSidebarOpen = ref(false)
 function handleToggleSidebar() {
     isSidebarOpen.value = !isSidebarOpen.value
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Global overlays via query params                                           */
-/*  ?editPatient=123                                                           */
-/* -------------------------------------------------------------------------- */
-const showEditPatient = computed(() => {
-    const v = route.query.editPatient
-    return v !== undefined && v !== null && String(Array.isArray(v) ? v[0] : v).length > 0
-})
-const editPatientId = computed(() => {
-    const v = route.query.editPatient
-    const raw = Array.isArray(v) ? v[0] : v
-    const id = Number(raw)
-    return Number.isFinite(id) ? id : 0
-})
-function closeEditPatient() {
-    const q: Record<string, any> = { ...route.query }
-    delete q.editPatient
-    router.replace({ query: q })
-}
-
 
 </script>
 
@@ -75,10 +52,6 @@ function closeEditPatient() {
 
         <!-- existing global modals -->
         <ModalProvider />
-
-        <!-- ✅ global overlays (do not change background route) -->
-        <PatientEditModal v-if="showEditPatient && editPatientId > 0" :patient-id="editPatientId"
-            @close="closeEditPatient" />
 
         <!-- keep if you still use named modal routes anywhere else -->
         <router-view name="modal" />
