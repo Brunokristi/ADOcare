@@ -35,7 +35,7 @@ const fullName = computed(() =>
 
 /* ------------ BRANCH SELECT OPTIONS ------------ */
 
-const selectedBranchId = ref<number | null>(authStore.currentBranch?.id ?? (authStore.currentRole === 'manager' ? -1 : null))
+const selectedBranchId = ref<number | null>(null)
 type BranchOption = { id: number; label: string; isManager: boolean }
 
 const branchOptions = computed<BranchOption[]>(() => {
@@ -199,7 +199,8 @@ onMounted(() => {
 watch(
     () => authStore.currentBranch?.id,
     () => {
-        loadPatients()
+        loadPatients();
+        selectedBranchId.value = authStore.currentBranch?.id ?? (authStore.currentRole === 'manager' ? -1 : null)
     }
 )
 
