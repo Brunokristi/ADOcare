@@ -36,6 +36,7 @@ interface ActionDef<T = any> {
     key: string;
     label?: string;
     class?: string;
+    tooltip?: string;
     disabled?: boolean | ((params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => boolean);
     icon?: string | ((params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => string);
     // optional confirm text or boolean

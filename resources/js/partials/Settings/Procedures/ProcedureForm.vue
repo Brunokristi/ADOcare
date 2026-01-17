@@ -121,8 +121,8 @@ async function save() {
         </div>
 
         <div class="mt-4 flex justify-end gap-2">
-            <Button label="Zrušiť" text class="text-accent!" @click="close" />
-            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-accent-dark!" @click="save" :loading="loading" />
+            <Button label="Zrušiť" text class="text-accent! px-2!" @click="close" />
+            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! " @click="save" :loading="loading" />
         </div>
     </div>
 </template>

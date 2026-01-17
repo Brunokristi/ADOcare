@@ -8,6 +8,7 @@ import { usePatientStore } from '@/stores/patientStore';
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
+import Tooltip from 'primevue/tooltip';
 
 import { skLocale } from './locales/sk';
 import primeVueConfig from './config/primeVueConfig';
@@ -30,6 +31,7 @@ app.use(
 app.use(pinia);
 app.use(router);
 app.use(ToastService);
+app.directive('tooltip', Tooltip);
 
 app.config.globalProperties.$api = api;
 

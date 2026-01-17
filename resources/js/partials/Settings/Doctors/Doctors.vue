@@ -1,47 +1,13 @@
 <script setup lang="ts">
 import { markRaw, ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
-import DoctorForm from '@/partials/Settings/Doctors/DoctorForm.vue'
 import type { Doctor } from '@/types/models'
 import api from '@/services/api'
 import useAuthStore from '@/stores/auth'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
-import useModal from '@/composables/useModal'
 
-const { openModal } = useModal()
-const actionRemote = ref<any>(null)
 let showFavouritesOnly = ref(false);
-
-// function openCreate(remote?: any) {
-//     editingDoctor.value = { first_name: '', last_name: '', title: '' }
-//     actionRemote.value = remote ?? null
-//     showDoctorDialog.value = true
-// }
-
-// function openEdit({ selectedRows, remote }: any) {
-//     const first = selectedRows?.[0] ?? null
-//     if (!first) return
-//     editingDoctor.value = { ...first }
-//     actionRemote.value = remote ?? null
-//     showDoctorDialog.value = true
-// }
-
-async function openCreate(remote?: any) {
-    try {
-        await openModal(markRaw(DoctorForm), { doctor: null }, { header: 'Lekár', style: { width: '640px' }, closable: false })
-    } finally {
-        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
-    }
-}
-
-async function openEdit(row: Doctor) {
-    try {
-        await openModal(markRaw(DoctorForm), { doctor: row }, { header: 'Lekár', style: { width: '640px' }, closable: false })
-    } finally {
-        if (actionRemote.value?.loadPage) await actionRemote.value.loadPage(1)
-    }
-}
 
 const options = ref<DataTableOptions<Doctor>>({
     rowKey: 'id',
@@ -130,8 +96,9 @@ const options = ref<DataTableOptions<Doctor>>({
         //     },
         {
             key: 'show_favourites_only',
-            // label: 'Len obľúbení',
             icon: (_params) => (showFavouritesOnly.value ? 'bi bi-heart-fill' : 'bi bi-heart'),
+            class: 'bg-accent!',
+            tooltip: 'Zobraziť len obľúbených',
             handler: async ({ remote }) => {
                 showFavouritesOnly.value = !showFavouritesOnly.value;
                 remote.setExtraParam('filter', showFavouritesOnly.value ? { is_favourite: true } : {});

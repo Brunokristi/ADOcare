@@ -13,7 +13,7 @@ const actionRemote = ref<any | null>(null)
 
 async function openEdit(row: Procedure) {
     try {
-        const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Procedúra', style: { width: '760px' }, closable: true })
+        const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Výkon', style: { width: '760px' }, closable: true })
         if (res?.changed && actionRemote.value?.loadPage) {
             await actionRemote.value.loadPage(1)
         }
