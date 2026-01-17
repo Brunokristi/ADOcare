@@ -23,6 +23,33 @@ body {
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--c-accent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--c-accent) 80%, black);
+    background-clip: content-box;
+}
+
+* {
+    scrollbar-width: auto;
+    scrollbar-color: var(--c-accent) transparent;
+}
+
 /* 1) Make the ACTUAL scroll container transparent */
 .p-datatable-wrapper,
 .p-datatable-table-container {

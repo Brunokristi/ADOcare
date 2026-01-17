@@ -99,9 +99,10 @@ class DocumentController extends Controller
     {
         $this->authorize('delete', $document);
 
-        // Try to delete file from both local and private storage
-        if (Storage::disk('local')->exists($document->path)) {
-            Storage::disk('local')->delete($document->path);
+        // Delete file from storage using unlink
+        $fullPath = storage_path('app/' . $document->path);
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
         }
 
         $document->delete();
@@ -122,10 +123,11 @@ class DocumentController extends Controller
         
         $documents = Document::whereIn('id', $ids)->get();
         
-        // Delete files from storage
+        // Delete files from storage using unlink
         foreach ($documents as $document) {
-            if (Storage::disk('local')->exists($document->path)) {
-                Storage::disk('local')->delete($document->path);
+            $fullPath = storage_path('app/' . $document->path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
             }
         }
         

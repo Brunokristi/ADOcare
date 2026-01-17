@@ -40,5 +40,5 @@ export async function openPatientEditModal(patientId?: number) {
     if (!patientId) return
 
     // open via modal provider
-    await openModal(markRaw(EditPatientModalBody), { patientId }, { header: 'Úpraviť pacienta', style: { width: '90%' } });
+    await openModal(markRaw(EditPatientModalBody), { patientId }, { header: 'Upraviť pacienta', style: { width: '90%' } });
 }

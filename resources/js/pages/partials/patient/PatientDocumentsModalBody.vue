@@ -57,6 +57,7 @@ const formatDocumentType = (type?: string) => {
     const typeMap: Record<string, string> = {
         'proposal': 'Návrh',
         'agreement': 'Dohoda',
+        'dekurz': 'Dekurz',
         'other': 'Iné'
     };
     return typeMap[type || ''] || type || '';

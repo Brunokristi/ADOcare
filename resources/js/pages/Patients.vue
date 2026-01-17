@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, markRaw } from 'vue'
-import { useRoute } from 'vue-router'
 
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Doctor, Patient } from '@/types/models'
@@ -25,14 +24,12 @@ const branchId = computed(() => authStore.currentBranch?.id ?? null)
 const companyId = computed(() => authStore.user?.company?.id ?? null)
 const tableKey = computed(() => `patients-${branchId.value ?? 'none'}`)
 
-const route = useRoute()
-
 function openPatientDocuments(patientId: number) {
     void openPatientDocumentsModal(patientId)
 }
 
 function openEditPatient(patientId: number) {
-    router.replace({ query: { ...route.query, editPatient: String(patientId) } })
+    void openPatientEditModal(patientId)
 }
 
 const endpointUrl = computed(() => {
@@ -48,6 +45,7 @@ const endpointUrl = computed(() => {
 const options = computed<DataTableOptions<Patient>>(() => ({
     rowKey: 'id',
     endpointUrl: endpointUrl.value || '',
+    defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,
 
@@ -63,11 +61,11 @@ const options = computed<DataTableOptions<Patient>>(() => ({
         {
             field: 'adress',
             header: 'Adresa',
-            render: (v) => {
-                if (!v) return ''
+            render: (_v, row) => {
+                if (!row) return ''
                 const parts = []
-                if (v.address) parts.push(v.address)
-                return parts.join(', ')
+                if (row.address) parts.push(row.address)
+                return parts.join(', ') || ''
             },
         },
         { field: 'city', header: 'Mesto', sortable: true },
@@ -122,7 +120,7 @@ const options = computed<DataTableOptions<Patient>>(() => ({
                     color: 'info',
                     tooltip: 'Editovať pacienta',
                     action: (row: Patient) => {
-                        openPatientEditModal(row.id)
+                        openEditPatient(row.id)
                     },
                 },
             ],

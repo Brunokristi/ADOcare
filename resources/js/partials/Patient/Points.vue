@@ -452,6 +452,53 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Date picker button helpers                                                */
+/* -------------------------------------------------------------------------- */
+
+function selectWorkingDays() {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const selectedDates: Date[] = [];
+
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  for (let day = 1; day <= lastDay; day++) {
+    const date = new Date(currentYear, currentMonth, day);
+    const dayOfWeek = date.getDay();
+    
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      selectedDates.push(date);
+    }
+  }
+
+  dates.value = selectedDates;
+}
+
+function selectMondayWednesdayFriday() {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const selectedDates: Date[] = [];
+
+  // Get the last day of the month
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Iterate through all days in the month
+  for (let day = 1; day <= lastDay; day++) {
+    const date = new Date(currentYear, currentMonth, day);
+    const dayOfWeek = date.getDay();
+    
+    // Select Monday (1), Wednesday (3), Friday (5)
+    if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
+      selectedDates.push(date);
+    }
+  }
+
+  dates.value = selectedDates;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Form submit (create) - MULTI CREATE                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -474,6 +521,24 @@ async function onSubmit() {
     quantity.value <= 0
   ) {
     return
+  }
+
+  // Check if referral date is older than submission dates
+  if (referralDate.value) {
+    const referralDateOnly = new Date(referralDate.value.getFullYear(), referralDate.value.getMonth(), referralDate.value.getDate())
+    
+    for (const d of dates.value) {
+      const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+      if (referralDateOnly >= dateOnly) {
+        toast.add({
+          severity: 'error',
+          summary: 'Neplatný dátum',
+          detail: 'Dátum referálu musí byť staršie ako dátumy výkonov.',
+          life: 3000,
+        })
+        return
+      }
+    }
   }
 
   if (!currentPatient.value) {
@@ -761,10 +826,23 @@ watch(currentPatient, (newPatient) => {
               selectionMode="multiple"
               dateFormat="dd.mm.yy"
               :showIcon="false"
+              showButtonBar
               class="w-full"
               :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            />
+            >
+              <template #buttonbar="{ clearCallback }">
+                <div class="flex justify-between w-full gap-2">
+                  <div class="flex gap-2">
+                    <Button size="small" label="Pracovné dni" class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!" @click="selectWorkingDays" />
+                    <Button size="small" label="Pon, Str, Pia" class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!" @click="selectMondayWednesdayFriday" />
+                  </div>
+                  <div class="flex gap-2">
+                    <Button size="small" label="Zrušiť výber" severity="danger" class="bg-warning! border-transparent! text-white! text-mini! px-2!" @click="clearCallback" />
+                  </div>
+                </div>
+              </template>
+            </DatePicker>
             <small v-if="submitted && (!dates || !dates.length)" class="text-warning">
               Dátum je povinný.
             </small>
