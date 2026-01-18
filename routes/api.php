@@ -84,16 +84,14 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
 
-    // Newly added resources
     Route::apiResourceComplete('branches', BranchController::class);
-    // (branch patients now handled by BranchPatientController)
     Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors']);
     Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
-
+    
     Route::apiResourceComplete('doctors', DoctorController::class);
-
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
+    Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class);
     Route::apiResourceComplete('macros', MacroController::class);
     Route::apiResourceComplete('procedures', ProcedureController::class);
     Route::apiResourceComplete('patient-points', PatientPointController::class);
@@ -115,9 +113,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
 
-
     Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
-
 
     Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
