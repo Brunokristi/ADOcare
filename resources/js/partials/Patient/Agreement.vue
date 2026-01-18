@@ -112,7 +112,7 @@ onMounted(() => {
 
         <div>
           <label class="block text-normal mb-2">
-            Dátum <span class="text-warning">*</span>
+            Dátum
           </label>
           <DatePicker
             v-model="date"

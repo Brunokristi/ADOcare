@@ -174,7 +174,7 @@ async function pollCalculationStatus(periodFrom: Date) {
         clearInterval(interval);
         // Dismiss the info toast
         if (calculationToastId) {
-          toast.remove(calculationToastId);
+          toast.removeGroup(calculationToastId);
         }
         console.log('Calculation completed! Showing success toast.');
         toast.add({
@@ -185,9 +185,8 @@ async function pollCalculationStatus(periodFrom: Date) {
         });
       } else if (status === 'failed') {
         clearInterval(interval);
-        // Dismiss the info toast
         if (calculationToastId) {
-          toast.remove(calculationToastId);
+          toast.removeGroup(calculationToastId);
         }
         const errorMsg = res.data?.data?.error_message || 'Neznáma chyba';
         console.log('Calculation failed:', errorMsg);
@@ -201,7 +200,7 @@ async function pollCalculationStatus(periodFrom: Date) {
         clearInterval(interval);
         // Dismiss the info toast
         if (calculationToastId) {
-          toast.remove(calculationToastId);
+          toast.removeGroup(calculationToastId);
         }
         console.log('Polling timeout');
         toast.add({
@@ -217,7 +216,7 @@ async function pollCalculationStatus(periodFrom: Date) {
         clearInterval(interval);
         // Dismiss the info toast on error
         if (calculationToastId) {
-          toast.remove(calculationToastId);
+          toast.removeGroup(calculationToastId);
         }
       }
     }
@@ -285,11 +284,11 @@ async function onSubmit() {
         // Show persistent info toast (no auto-dismiss)
         calculationToastId = 'calculation-in-progress';
         toast.add({
-          id: calculationToastId,
+          group: calculationToastId,
           severity: 'info',
           summary: 'Výpočet v progrese',
           detail: 'Časová os návštev sa počíta na pozadí.',
-          sticky: true,
+          life: 0,
         });
 
         // Start polling for completion
