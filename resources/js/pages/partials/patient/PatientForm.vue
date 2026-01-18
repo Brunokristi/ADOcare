@@ -114,6 +114,7 @@ onMounted(async () => {
 // -------------------- Map --------------------
 const center = ref<[number, number]>([48.1486, 17.1077])
 const zoom = ref<number>(13)
+const mapRef = ref<any>(null)
 const lMapLayerOptions = ref<any>({
   attributionControl: false,
   maxZoom: 19,
@@ -129,6 +130,13 @@ function initMap() {
 
   center.value = [lat, lng]
   zoom.value = 15
+
+  // Attach click listener to the Leaflet map after it's initialized
+  setTimeout(() => {
+    if (mapRef.value?.leafletObject) {
+      mapRef.value.leafletObject.on('click', onMapClick)
+    }
+  }, 100)
 }
 
 function onPersonalNumberInput(e: Event) {
@@ -229,6 +237,73 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
     emit('clear-error', 'coordinates')
   } catch (err) {
     console.error('onAddressSelect error:', err)
+  }
+}
+
+// -------------------- Reverse Geocoding (Map Click) --------------------
+async function onMapClick(e: any) {
+  try {
+    console.log('Map click event received:', e)
+    
+    // Leaflet click event has latlng object
+    const lat = e.latlng?.lat ?? e.latlng?._lat
+    const lng = e.latlng?.lng ?? e.latlng?._lng
+    
+    console.log('Extracted coordinates - lat:', lat, 'lng:', lng)
+    
+    if (lat === undefined || lng === undefined || lat === null || lng === null) {
+      console.warn('Invalid coordinates from click event')
+      return
+    }
+    
+    console.log('Map clicked at:', lat, lng)
+    
+    // Update marker position
+    localPatient.value.latitude = lat
+    localPatient.value.longitude = lng
+    
+    console.log('Updated patient lat/lng:', localPatient.value.latitude, localPatient.value.longitude)
+    
+    // Reverse geocode to get address details
+    const res = await api.get('/v1/geocode/reverse', {
+      params: { lat, lon: lng },
+    })
+    
+    console.log('Reverse geocoding response:', res.data)
+    
+    const features = res.data?.features ?? []
+    if (features.length === 0) {
+      console.warn('No reverse geocoding results found')
+      return
+    }
+    
+    const feature = features[0]
+    const p = feature.properties ?? {}
+    
+    // Extract address components
+    const streetOnly = [p.street, p.housenumber].filter(Boolean).join(' ').trim() || p.name || ''
+    const city = p.locality || p.county || p.region || ''
+    const zip = p.postalcode || ''
+    
+    console.log('Parsed address components:', { streetOnly, city, zip })
+    
+    // Update form fields
+    ;(localPatient.value as any).address = streetOnly || ''
+    localPatient.value.city = city || ''
+    localPatient.value.zip = zip || ''
+    addressQuery.value = streetOnly || ''
+    
+    center.value = [lat, lng]
+    zoom.value = 15
+    
+    emit('clear-error', 'address')
+    emit('clear-error', 'city')
+    emit('clear-error', 'zip')
+    emit('clear-error', 'coordinates')
+    
+    console.log('Reverse geocoding result:', { streetOnly, city, zip, lat, lng })
+  } catch (err) {
+    console.error('Reverse geocoding error:', err)
   }
 }
 </script>
@@ -342,9 +417,9 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
             @item-select="onAddressSelect"
             @blur="revertAddressToStored"
             fluid
-            :invalid="submitted && !!errors.address"
+            :invalid="submitted && !!errors.street"
           />
-          <small v-if="submitted && errors.address" class="text-warning">{{ errors.address }}</small>
+          <small v-if="submitted && errors.street" class="text-warning">{{ errors.street }}</small>
         </div>
 
         <div>
@@ -365,7 +440,13 @@ function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
       </div>
 
       <div class="col-span-8">
-        <LMap :center="center" :zoom="zoom" :useGlobalLeaflet="false" class="w-full h-full rounded-md overflow-hidden">
+        <LMap 
+          ref="mapRef"
+          :center="center" 
+          :zoom="zoom" 
+          :useGlobalLeaflet="false" 
+          class="w-full h-full rounded-md overflow-hidden"
+        >
           <l-tile-layer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             layer-type="base"
