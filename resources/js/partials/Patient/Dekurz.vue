@@ -387,11 +387,11 @@ watch(
             <button
               type="button"
               class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
-                     lex items-center justify-center cusror-pointer"
+                     flex items-center justify-center cursor-pointer"
               @click.prevent="scrollMacros(section.id, -1)"
               title="Doľava"
             >
-              <i class="bi bi-chevron-left text-accent" />
+              <i class="bi bi-chevron-left text-darkgrey" />
             </button>
 
             <button
@@ -401,13 +401,13 @@ watch(
               @click.prevent="scrollMacros(section.id, 1)"
               title="Doprava"
             >
-              <i class="bi bi-chevron-right text-accent" />
+              <i class="bi bi-chevron-right text-darkgrey" />
             </button>
 
             <!-- chips row -->
             <div
               :ref="setMacroScrollRef(section.id)"
-              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-1 px-10"
+              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-3 px-10 mb-2"
               style="scrollbar-width: thin;"
             >
               <button
