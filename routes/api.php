@@ -142,6 +142,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
 
     Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);
+    Route::get('/visits/timeline/status', [VisitsController::class, 'checkCalculationStatus']);
     Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay']);
     Route::get('visits/day-totals', [VisitsController::class, 'dayTotals']);
     Route::get('visits/month-totals', [VisitsController::class, 'monthTotals']);

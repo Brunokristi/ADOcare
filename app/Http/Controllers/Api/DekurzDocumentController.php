@@ -205,6 +205,7 @@ class DekurzDocumentController extends Controller
 
         $dates = PatientPoint::query()
             ->where('patient_id', (int) $data['patient_id'])
+            ->whereIn('procedure_code', ['3439', '3440'])
             ->whereBetween('date', [$from, $to])
             ->orderBy('date')
             ->distinct()

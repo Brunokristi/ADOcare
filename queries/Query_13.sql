@@ -1,1 +1,1 @@
-select * from documents
+SELECT * FROM visit_calculations ORDER BY created_at DESC LIMIT 5;

@@ -37,107 +37,184 @@ class CalculateVisitsTimeline implements ShouldQueue
         $procedureCodes = $data['procedure_codes'] ?? ['3439', '3440'];
         $filterPatientIds = array_values(array_filter(array_map('intval', $data['patients'] ?? [])));
 
-        $month = Carbon::parse($data['month'])->setTimezone($tz);
+        // Parse month the same way the controller does to ensure consistent format
+        $monthDate = Carbon::parse($data['month'])->toDateString(); // Normalize to YYYY-MM-DD
+        $month = Carbon::parse($monthDate)->setTimezone($tz);
         $from = $month->copy()->startOfMonth()->toDateString();
         $to   = $month->copy()->endOfMonth()->toDateString();
 
-        $branch = DB::table('branches')
-            ->where('id', $branchId)
-            ->select('id', 'latitude', 'longitude', 'per_location_time', 'terrain_start_time', 'administrative_start_time')
-            ->first();
-
-        if (!$branch) {
-            Log::error('CalculateVisitsTimeline: Branch not found', ['branch_id' => $branchId]);
-            return;
-        }
-
-        if ($branch->latitude === null || $branch->longitude === null) {
-            Log::error('CalculateVisitsTimeline: Branch has missing coordinates', ['branch_id' => $branchId]);
-            return;
-        }
-
-        $perLocationSeconds = ((int)($branch->per_location_time ?? 0)) * 60;
-        if ($perLocationSeconds <= 0) {
-            $perLocationSeconds = 10 * 60;
-        }
-
-        $startTimeHHmm = $branch->terrain_start_time
-            ? substr((string)$branch->terrain_start_time, 0, 5)
-            : '08:00';
-
-        $administrativeStartTimeHHmm = $branch->administrative_start_time
-            ? substr((string)$branch->administrative_start_time, 0, 5)
-            : null;
-
-        $rows = DB::table('patient_points as pp')
-            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
-            ->where('pp.user_id', $userId)
-            ->where('pp.branch_id', $branchId)
-            ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($procedureCodes), fn ($q) => $q->whereIn('pp.procedure_code', $procedureCodes))
-            ->when(!empty($filterPatientIds), fn ($q) => $q->whereIn('pp.patient_id', $filterPatientIds))
-            ->select([
-                'pp.id as patient_point_id',
-                'pp.date',
-                'pp.patient_id',
-                'p.first_name',
-                'p.last_name',
-                'p.city as patient_city',
-                'p.address as patient_address',
-                'p.latitude as patient_lat',
-                'p.longitude as patient_lng',
-            ])
-            ->orderBy('pp.date')
-            ->orderBy('pp.id')
-            ->get();
-
-        Log::info('CalculateVisitsTimeline: Starting calculation', [
+        Log::info('CalculateVisitsTimeline: Job started', [
             'user_id' => $userId,
             'branch_id' => $branchId,
-            'from' => $from,
-            'to' => $to,
-            'rows' => $rows->count(),
+            'month_date' => $monthDate,
+            'month_raw_input' => $data['month'],
         ]);
 
-        $visitsByDay = [];
-        foreach ($rows as $r) {
-            $day = Carbon::parse($r->date)->toDateString();
-            $visitsByDay[$day] ??= [];
-            $visitsByDay[$day][] = $r;
+        try {
+            $branch = DB::table('branches')
+                ->where('id', $branchId)
+                ->select('id', 'latitude', 'longitude', 'per_location_time', 'terrain_start_time', 'administrative_start_time')
+                ->first();
+
+            if (!$branch) {
+                throw new \Exception('Branch not found');
+            }
+
+            if ($branch->latitude === null || $branch->longitude === null) {
+                throw new \Exception('Branch has missing coordinates (latitude/longitude).');
+            }
+
+            $perLocationSeconds = ((int)($branch->per_location_time ?? 0)) * 60;
+            if ($perLocationSeconds <= 0) {
+                $perLocationSeconds = 10 * 60;
+            }
+
+            $startTimeHHmm = $branch->terrain_start_time
+                ? substr((string)$branch->terrain_start_time, 0, 5)
+                : '08:00';
+
+            $administrativeStartTimeHHmm = $branch->administrative_start_time
+                ? substr((string)$branch->administrative_start_time, 0, 5)
+                : null;
+
+            $rows = DB::table('patient_points as pp')
+                ->join('patients as p', 'p.id', '=', 'pp.patient_id')
+                ->where('pp.user_id', $userId)
+                ->where('pp.branch_id', $branchId)
+                ->whereBetween('pp.date', [$from, $to])
+                ->when(!empty($procedureCodes), fn ($q) => $q->whereIn('pp.procedure_code', $procedureCodes))
+                ->when(!empty($filterPatientIds), fn ($q) => $q->whereIn('pp.patient_id', $filterPatientIds))
+                ->select([
+                    'pp.id as patient_point_id',
+                    'pp.date',
+                    'pp.patient_id',
+                    'p.first_name',
+                    'p.last_name',
+                    'p.city as patient_city',
+                    'p.address as patient_address',
+                    'p.latitude as patient_lat',
+                    'p.longitude as patient_lng',
+                ])
+                ->orderBy('pp.date')
+                ->orderBy('pp.id')
+                ->get();
+
+            Log::info('CalculateVisitsTimeline: Data loaded', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'from' => $from,
+                'to' => $to,
+                'rows' => $rows->count(),
+            ]);
+
+            $visitsByDay = [];
+            foreach ($rows as $r) {
+                $day = Carbon::parse($r->date)->toDateString();
+                $visitsByDay[$day] ??= [];
+                $visitsByDay[$day][] = $r;
+            }
+
+            $days = [];
+            for ($d = 1; $d <= $month->daysInMonth; $d++) {
+                $date = Carbon::create($month->year, $month->month, $d, 0, 0, 0, $tz)->toDateString();
+                $startUnix = Carbon::parse($date . ' ' . $startTimeHHmm . ':00', $tz)->timestamp;
+
+                $dayVisits = $visitsByDay[$date] ?? [];
+                $timeline = $this->solveDayTimeline($date, $dayVisits, $branch, $startUnix, $perLocationSeconds);
+
+                $days[] = $timeline;
+            }
+
+            if ($persist) {
+                $this->persistMonthTimelinesIntoVisits(
+                    from: $from,
+                    to: $to,
+                    userId: $userId,
+                    branchId: $branchId,
+                    startTimeHHmm: $startTimeHHmm,
+                    administrativeStartTimeHHmm: $administrativeStartTimeHHmm,
+                    branch: $branch,
+                    days: $days,
+                    tz: $tz,
+                    perLocationSeconds: $perLocationSeconds
+                );
+            }
+
+            // Mark calculation as completed
+            Log::info('CalculateVisitsTimeline: About to update database', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'month_date' => $monthDate,
+            ]);
+
+            // Debug: Check what's in the database before update
+            $existingRecord = DB::table('visit_calculations')
+                ->where('user_id', $userId)
+                ->where('branch_id', $branchId)
+                ->where('month', $monthDate)
+                ->first();
+            
+            Log::info('CalculateVisitsTimeline: Before updateOrInsert', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'month_date' => $monthDate,
+                'month_date_type' => gettype($monthDate),
+                'existing_record_found' => $existingRecord ? true : false,
+                'existing_month' => $existingRecord?->month,
+                'existing_status' => $existingRecord?->status,
+            ]);
+
+            $updateResult = DB::table('visit_calculations')
+                ->updateOrInsert(
+                    [
+                        'user_id' => $userId,
+                        'branch_id' => $branchId,
+                        'month' => $monthDate,
+                    ],
+                    [
+                        'status' => 'completed',
+                        'completed_at' => now(),
+                        'error_message' => null,
+                    ]
+                );
+
+            Log::info('CalculateVisitsTimeline: Database updated successfully', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'month_date' => $monthDate,
+                'update_result' => $updateResult,
+            ]);
+
+            Log::info('CalculateVisitsTimeline: Calculation completed', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'from' => $from,
+                'to' => $to,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('CalculateVisitsTimeline: Calculation failed', [
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'month_date' => $monthDate,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Mark calculation as failed
+            DB::table('visit_calculations')
+                ->updateOrInsert(
+                    [
+                        'user_id' => $userId,
+                        'branch_id' => $branchId,
+                        'month' => $monthDate,
+                    ],
+                    [
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                    ]
+                );
+
+            throw $e;
         }
-
-        $days = [];
-        for ($d = 1; $d <= $month->daysInMonth; $d++) {
-            $date = Carbon::create($month->year, $month->month, $d, 0, 0, 0, $tz)->toDateString();
-            $startUnix = Carbon::parse($date . ' ' . $startTimeHHmm . ':00', $tz)->timestamp;
-
-            $dayVisits = $visitsByDay[$date] ?? [];
-            $timeline = $this->solveDayTimeline($date, $dayVisits, $branch, $startUnix, $perLocationSeconds);
-
-            $days[] = $timeline;
-        }
-
-        if ($persist) {
-            $this->persistMonthTimelinesIntoVisits(
-                from: $from,
-                to: $to,
-                userId: $userId,
-                branchId: $branchId,
-                startTimeHHmm: $startTimeHHmm,
-                administrativeStartTimeHHmm: $administrativeStartTimeHHmm,
-                branch: $branch,
-                days: $days,
-                tz: $tz,
-                perLocationSeconds: $perLocationSeconds
-            );
-        }
-
-        Log::info('CalculateVisitsTimeline: Calculation completed', [
-            'user_id' => $userId,
-            'branch_id' => $branchId,
-            'from' => $from,
-            'to' => $to,
-        ]);
     }
 
     private function persistMonthTimelinesIntoVisits(

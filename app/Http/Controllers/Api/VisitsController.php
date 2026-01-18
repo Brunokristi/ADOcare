@@ -30,6 +30,20 @@ class VisitsController extends \Illuminate\Routing\Controller
             $data['user_id'] = Auth::id();
         }
 
+        // Create initial record with pending status
+        $month = Carbon::parse($data['month'])->toDateString();
+        DB::table('visit_calculations')->updateOrInsert(
+            [
+                'user_id' => $data['user_id'],
+                'branch_id' => $data['branch_id'],
+                'month' => $month,
+            ],
+            [
+                'status' => 'pending',
+                'error_message' => null,
+            ]
+        );
+
         // Dispatch the job to the queue
         CalculateVisitsTimeline::dispatch($data);
 
@@ -38,6 +52,45 @@ class VisitsController extends \Illuminate\Routing\Controller
             'message' => 'Timeline calculation has been queued and will be processed in the background.',
             'data' => [
                 'queued' => true,
+            ],
+        ]);
+    }
+
+    public function checkCalculationStatus(Request $request)
+    {
+        $data = $request->validate([
+            'month' => 'required|date',
+            'branch_id' => 'required|integer|exists:branches,id',
+            'user_id' => 'nullable|integer',
+        ]);
+
+        if (!isset($data['user_id']) || !$data['user_id']) {
+            $data['user_id'] = Auth::id();
+        }
+
+        $month = Carbon::parse($data['month'])->toDateString();
+
+        $calculation = DB::table('visit_calculations')
+            ->where('user_id', $data['user_id'])
+            ->where('branch_id', $data['branch_id'])
+            ->where('month', $month)
+            ->first();
+
+        if (!$calculation) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'status' => 'not_found',
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'status' => $calculation->status,
+                'completed_at' => $calculation->completed_at,
+                'error_message' => $calculation->error_message,
             ],
         ]);
     }

@@ -43,6 +43,7 @@ const selectedPatients = ref<Patient[]>([]);
 const submitted = ref(false);
 const loading = ref(false);
 const patientsLoading = ref(false);
+let calculationToastId: string | undefined;
 
 
 const batchTypes = ref<BatchType[]>([
@@ -139,6 +140,90 @@ function removePatient(patient: Patient) {
   );
 }
 
+async function pollCalculationStatus(periodFrom: Date) {
+  const maxAttempts = 120; // 10 minutes with 5 second interval
+  let attempts = 0;
+  
+  const monthStr = toApiDate(periodFrom);
+  const branchId = authStore.currentBranch?.id;
+  const userId = authStore.user?.id;
+
+  console.log('Starting to poll calculation status for month:', monthStr, 'branch:', branchId, 'user:', userId);
+
+  // Give the toast time to mount on the new page
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  const interval = setInterval(async () => {
+    attempts++;
+    console.log(`Poll attempt ${attempts}/${maxAttempts}`);
+
+    try {
+      const res = await api.get('/v1/visits/timeline/status', {
+        params: {
+          month: monthStr,
+          branch_id: branchId,
+          user_id: userId,
+        },
+      });
+
+      console.log('API Response:', res.data);
+      const status = res.data?.data?.status;
+      console.log('Calculation status:', status);
+
+      if (status === 'completed') {
+        clearInterval(interval);
+        // Dismiss the info toast
+        if (calculationToastId) {
+          toast.remove(calculationToastId);
+        }
+        console.log('Calculation completed! Showing success toast.');
+        toast.add({
+          severity: 'success',
+          summary: 'Výpočet dokončený',
+          detail: 'Časová os návštev bola úspešne vypočítaná.',
+          life: 5000,
+        });
+      } else if (status === 'failed') {
+        clearInterval(interval);
+        // Dismiss the info toast
+        if (calculationToastId) {
+          toast.remove(calculationToastId);
+        }
+        const errorMsg = res.data?.data?.error_message || 'Neznáma chyba';
+        console.log('Calculation failed:', errorMsg);
+        toast.add({
+          severity: 'error',
+          summary: 'Chyba výpočtu',
+          detail: errorMsg,
+          life: 5000,
+        });
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        // Dismiss the info toast
+        if (calculationToastId) {
+          toast.remove(calculationToastId);
+        }
+        console.log('Polling timeout');
+        toast.add({
+          severity: 'warn',
+          summary: 'Časový limit',
+          detail: 'Výpočet trvá dlhšie ako obvykle. Pokračuje na pozadí.',
+          life: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to check calculation status:', error);
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        // Dismiss the info toast on error
+        if (calculationToastId) {
+          toast.remove(calculationToastId);
+        }
+      }
+    }
+  }, 5000); // Check every 5 seconds
+}
+
 async function onSubmit() {
   submitted.value = true;
 
@@ -197,12 +282,18 @@ async function onSubmit() {
       persist: true,
     })
       .then(() => {
+        // Show persistent info toast (no auto-dismiss)
+        calculationToastId = 'calculation-in-progress';
         toast.add({
+          id: calculationToastId,
           severity: 'info',
           summary: 'Výpočet v progrese',
           detail: 'Časová os návštev sa počíta na pozadí.',
-          life: 3000,
+          sticky: true,
         });
+
+        // Start polling for completion
+        pollCalculationStatus(periodFrom);
       })
       .catch(error => {
         console.error('Background calculation failed:', error);
