@@ -1,144 +1,142 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Jobs;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Jobs\CalculateVisitsTimeline;
 use Carbon\Carbon;
 
-class VisitsController extends \Illuminate\Routing\Controller
+class CalculateVisitsTimeline implements ShouldQueue
 {
-    public function monthTimeline(Request $request)
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public $timeout = 600; // 10 minutes timeout
+    public $tries = 3;
+
+    protected array $data;
+
+    public function __construct(array $data)
     {
-        $data = $request->validate([
-            'month' => 'required|date',
-            'branch_id' => 'required|integer|exists:branches,id',
-            'user_id' => 'nullable|integer',
-            'procedure_codes' => 'nullable|array',
-            'procedure_codes.*' => 'string',
-            'patients' => 'nullable|array',
-            'patients.*' => 'integer',
-            'persist' => 'nullable|boolean',
-        ]);
-
-        // Use authenticated user ID if not provided
-        if (!isset($data['user_id']) || !$data['user_id']) {
-            $data['user_id'] = Auth::id();
-        }
-
-        // Dispatch the job to the queue
-        CalculateVisitsTimeline::dispatch($data);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Timeline calculation has been queued and will be processed in the background.',
-            'data' => [
-                'queued' => true,
-            ],
-        ]);
+        $this->data = $data;
     }
 
-    public function dayTotals(Request $request)
+    public function handle(): void
     {
-        $data = $request->validate([
-            'date' => 'required|date_format:Y-m-d',
-            'user_id' => 'nullable|integer',
-            'branch_id' => 'required|integer|exists:branches,id',
-            'include_on_location' => 'nullable|boolean',
-        ]);
-
-        $userId = (int)($data['user_id'] ?? Auth::id());
-        $branchId = (int)$data['branch_id'];
-        $date = $data['date'];
-        $includeOnLocation = (bool)($data['include_on_location'] ?? true);
-
-        $agg = DB::table('visits')
-            ->where('user_id', $userId)
-            ->where('branch_id', $branchId)
-            ->where('date', $date)
-            ->selectRaw('
-                COUNT(*) as stops,
-                COALESCE(SUM(time_to_location), 0) as travel_seconds,
-                COALESCE(SUM(distance_to_location), 0) as distance_m,
-                COALESCE(SUM(time_on_location), 0) as on_location_seconds,
-                MIN(COALESCE(terrain_time, administrative_time)) as first_arrival,
-                MAX(COALESCE(terrain_time, administrative_time)) as last_arrival
-            ')
-            ->first();
-
-        $totalSeconds = (int)$agg->travel_seconds + ($includeOnLocation ? (int)$agg->on_location_seconds : 0);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'date' => $date,
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'stops' => (int)$agg->stops,
-                'travel_seconds' => (int)$agg->travel_seconds,
-                'on_location_seconds' => (int)$agg->on_location_seconds,
-                'total_seconds' => $totalSeconds,
-                'distance_m' => (int)$agg->distance_m,
-                'distance_km' => round(((int)$agg->distance_m) / 1000, 2),
-                'first_arrival' => $agg->first_arrival,
-                'last_arrival' => $agg->last_arrival,
-            ],
-        ]);
-    }
-
-    public function monthTotals(Request $request)
-    {
-        $data = $request->validate([
-            'month' => 'required|date', // any date within month
-            'user_id' => 'nullable|integer',
-            'branch_id' => 'required|integer|exists:branches,id',
-            'include_on_location' => 'nullable|boolean',
-        ]);
-
+        $data = $this->data;
+        $persist = (bool)($data['persist'] ?? true);
         $tz = 'Europe/Bratislava';
-        $userId = (int)($data['user_id'] ?? Auth::id());
-        $branchId = (int)$data['branch_id'];
-        $includeOnLocation = (bool)($data['include_on_location'] ?? true);
+
+        $userId = (int) ($data['user_id'] ?? null);
+        $branchId = (int) $data['branch_id'];
+        $procedureCodes = $data['procedure_codes'] ?? ['3439', '3440'];
+        $filterPatientIds = array_values(array_filter(array_map('intval', $data['patients'] ?? [])));
 
         $month = Carbon::parse($data['month'])->setTimezone($tz);
         $from = $month->copy()->startOfMonth()->toDateString();
         $to   = $month->copy()->endOfMonth()->toDateString();
 
-        $agg = DB::table('visits')
-            ->where('user_id', $userId)
-            ->where('branch_id', $branchId)
-            ->whereBetween('date', [$from, $to])
-            ->selectRaw('
-                COUNT(*) as stops,
-                COALESCE(SUM(time_to_location), 0) as travel_seconds,
-                COALESCE(SUM(distance_to_location), 0) as distance_m,
-                COALESCE(SUM(time_on_location), 0) as on_location_seconds,
-                MIN(date) as from_date,
-                MAX(date) as to_date
-            ')
+        $branch = DB::table('branches')
+            ->where('id', $branchId)
+            ->select('id', 'latitude', 'longitude', 'per_location_time', 'terrain_start_time', 'administrative_start_time')
             ->first();
 
-        $totalSeconds = (int)$agg->travel_seconds + ($includeOnLocation ? (int)$agg->on_location_seconds : 0);
+        if (!$branch) {
+            Log::error('CalculateVisitsTimeline: Branch not found', ['branch_id' => $branchId]);
+            return;
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'month' => $month->format('Y-m'),
-                'from' => $from,
-                'to' => $to,
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'stops' => (int)$agg->stops,
-                'travel_seconds' => (int)$agg->travel_seconds,
-                'on_location_seconds' => (int)$agg->on_location_seconds,
-                'total_seconds' => $totalSeconds,
-                'distance_m' => (int)$agg->distance_m,
-                'distance_km' => round(((int)$agg->distance_m) / 1000, 2),
-            ],
+        if ($branch->latitude === null || $branch->longitude === null) {
+            Log::error('CalculateVisitsTimeline: Branch has missing coordinates', ['branch_id' => $branchId]);
+            return;
+        }
+
+        $perLocationSeconds = ((int)($branch->per_location_time ?? 0)) * 60;
+        if ($perLocationSeconds <= 0) {
+            $perLocationSeconds = 10 * 60;
+        }
+
+        $startTimeHHmm = $branch->terrain_start_time
+            ? substr((string)$branch->terrain_start_time, 0, 5)
+            : '08:00';
+
+        $administrativeStartTimeHHmm = $branch->administrative_start_time
+            ? substr((string)$branch->administrative_start_time, 0, 5)
+            : null;
+
+        $rows = DB::table('patient_points as pp')
+            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
+            ->where('pp.user_id', $userId)
+            ->where('pp.branch_id', $branchId)
+            ->whereBetween('pp.date', [$from, $to])
+            ->when(!empty($procedureCodes), fn ($q) => $q->whereIn('pp.procedure_code', $procedureCodes))
+            ->when(!empty($filterPatientIds), fn ($q) => $q->whereIn('pp.patient_id', $filterPatientIds))
+            ->select([
+                'pp.id as patient_point_id',
+                'pp.date',
+                'pp.patient_id',
+                'p.first_name',
+                'p.last_name',
+                'p.city as patient_city',
+                'p.address as patient_address',
+                'p.latitude as patient_lat',
+                'p.longitude as patient_lng',
+            ])
+            ->orderBy('pp.date')
+            ->orderBy('pp.id')
+            ->get();
+
+        Log::info('CalculateVisitsTimeline: Starting calculation', [
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows->count(),
+        ]);
+
+        $visitsByDay = [];
+        foreach ($rows as $r) {
+            $day = Carbon::parse($r->date)->toDateString();
+            $visitsByDay[$day] ??= [];
+            $visitsByDay[$day][] = $r;
+        }
+
+        $days = [];
+        for ($d = 1; $d <= $month->daysInMonth; $d++) {
+            $date = Carbon::create($month->year, $month->month, $d, 0, 0, 0, $tz)->toDateString();
+            $startUnix = Carbon::parse($date . ' ' . $startTimeHHmm . ':00', $tz)->timestamp;
+
+            $dayVisits = $visitsByDay[$date] ?? [];
+            $timeline = $this->solveDayTimeline($date, $dayVisits, $branch, $startUnix, $perLocationSeconds);
+
+            $days[] = $timeline;
+        }
+
+        if ($persist) {
+            $this->persistMonthTimelinesIntoVisits(
+                from: $from,
+                to: $to,
+                userId: $userId,
+                branchId: $branchId,
+                startTimeHHmm: $startTimeHHmm,
+                administrativeStartTimeHHmm: $administrativeStartTimeHHmm,
+                branch: $branch,
+                days: $days,
+                tz: $tz,
+                perLocationSeconds: $perLocationSeconds
+            );
+        }
+
+        Log::info('CalculateVisitsTimeline: Calculation completed', [
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'from' => $from,
+            'to' => $to,
         ]);
     }
 
@@ -167,18 +165,15 @@ class VisitsController extends \Illuminate\Routing\Controller
             $perLocationSeconds,
             $administrativeStartTimeHHmm
         ) {
-            // 1) delete existing month rows
             $deleted = DB::table('visits')
                 ->where('user_id', $userId)
                 ->where('branch_id', $branchId)
                 ->whereBetween('date', [$from, $to])
                 ->delete();
 
-            Log::info('Visits persist: deleted old month rows', [
+            Log::info('CalculateVisitsTimeline persist: deleted old rows', [
                 'user_id' => $userId,
                 'branch_id' => $branchId,
-                'from' => $from,
-                'to' => $to,
                 'deleted' => $deleted,
             ]);
 
@@ -192,21 +187,12 @@ class VisitsController extends \Illuminate\Routing\Controller
                 $stops = $day['stops'] ?? [];
                 if (!is_array($stops) || !count($stops)) continue;
 
-                // Sort by actual visit order (terrain arrival)
                 usort($stops, fn ($a, $b) => ((int)($a['arrive_unix'] ?? 0)) <=> ((int)($b['arrive_unix'] ?? 0)));
 
-                // 2) build afternoon paperwork timeline cursor
                 $adminCursor = null;
                 if ($administrativeStartTimeHHmm) {
                     $adminCursor = Carbon::parse($date . ' ' . $administrativeStartTimeHHmm . ':00', $tz);
                 }
-
-                Log::info('Visits persist: day start', [
-                    'date' => $date,
-                    'stops' => count($stops),
-                    'admin_start' => $administrativeStartTimeHHmm,
-                    'admin_cursor' => $adminCursor?->format('Y-m-d H:i:s'),
-                ]);
 
                 foreach ($stops as $s) {
                     $patientId = (int)($s['patient_id'] ?? 0);
@@ -216,22 +202,12 @@ class VisitsController extends \Illuminate\Routing\Controller
                         continue;
                     }
 
-                    // Terrain arrival time (from solver)
                     $terrainTime = Carbon::createFromTimestamp($arriveUnix, $tz);
-
-                    // Administrative paperwork time in afternoon (sequential)
                     $administrativeTime = null;
 
                     if ($adminCursor) {
-                        // paperwork duration 3..6 min
                         $paperSeconds = $this->paperworkSecondsForPatient($date, $patientId, $userId, $branchId);
-
-                        // store the time when papers for that patient are done/recorded
-                        // If you want "start time", keep as-is.
-                        // If you want "finish time", store $adminCursor->copy()->addSeconds($paperSeconds) instead.
                         $administrativeTime = $adminCursor->copy();
-
-                        // advance cursor for next patient
                         $adminCursor->addSeconds($paperSeconds);
                     }
 
@@ -267,11 +243,9 @@ class VisitsController extends \Illuminate\Routing\Controller
                 $inserted += count($buffer);
             }
 
-            Log::info('Visits persist: inserted rows', [
+            Log::info('CalculateVisitsTimeline persist: inserted rows', [
                 'user_id' => $userId,
                 'branch_id' => $branchId,
-                'from' => $from,
-                'to' => $to,
                 'inserted' => $inserted,
             ]);
 
@@ -302,7 +276,7 @@ class VisitsController extends \Illuminate\Routing\Controller
         $timeSpending = [];
         $metaBySentKey = [];
 
-        $baseEps = 0.000001; // tiny jitter to keep stops unique even at same coords
+        $baseEps = 0.000001;
 
         foreach ($validVisits as $i => $v) {
             $epsLat = $baseEps * (($i % 7) + 1);
@@ -311,7 +285,7 @@ class VisitsController extends \Illuminate\Routing\Controller
             $latJ = (float)$v->patient_lat + $epsLat;
             $lngJ = (float)$v->patient_lng + $epsLng;
 
-            $points[] = [$lngJ, $latJ]; // [lng, lat]
+            $points[] = [$lngJ, $latJ];
             $timeSpending[] = $perLocationSeconds;
 
             $sentKey = sprintf('%.7f,%.7f', $lngJ, $latJ);
@@ -328,13 +302,6 @@ class VisitsController extends \Illuminate\Routing\Controller
             'start_time' => $startUnix,
             'timeSpending' => $timeSpending,
         ];
-
-        Log::info('TSP payload day', [
-            'date' => $dateYmd,
-            'points_count' => count($points),
-            'start_time_unix' => $startUnix,
-            'per_location_seconds' => $perLocationSeconds,
-        ]);
 
         $json = $this->callTspSolver($payload, $dateYmd);
         if ($json === null) {
@@ -357,7 +324,7 @@ class VisitsController extends \Illuminate\Routing\Controller
             $isLastLeg = ($i === count($legs) - 1);
             if ($isLastLeg) continue;
 
-            $end = $leg['end'] ?? null; // [lng, lat]
+            $end = $leg['end'] ?? null;
             $ts  = $leg['timestamps'] ?? [];
 
             $sentKey = (is_array($end) && count($end) === 2)
@@ -409,17 +376,16 @@ class VisitsController extends \Illuminate\Routing\Controller
                 ->send('GET', $url);
 
             if (!$resp->successful()) {
-                Log::warning('TSP HTTP failed', [
+                Log::warning('TSP HTTP failed in job', [
                     'date' => $dateYmd,
                     'status' => $resp->status(),
-                    'body' => $resp->body(),
                 ]);
                 return null;
             }
 
             return $resp->json();
         } catch (\Throwable $e) {
-            Log::error('TSP call exception', [
+            Log::error('TSP call exception in job', [
                 'date' => $dateYmd,
                 'error' => $e->getMessage(),
             ]);

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
+import { toApiDate } from '@/utils/dateUtils';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
+const toast = useToast();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
 
@@ -185,6 +188,31 @@ async function onSubmit() {
       console.error('Missing sheet in response:', res.data);
       return;
     }
+
+    // Start background calculation (fire and forget)
+    api.post('/v1/visits/timeline', {
+      month: toApiDate(periodFrom),
+      branch_id: authStore.currentBranch?.id,
+      user_id: authStore.user?.id,
+      persist: true,
+    })
+      .then(() => {
+        toast.add({
+          severity: 'info',
+          summary: 'Výpočet v progrese',
+          detail: 'Časová os návštev sa počíta na pozadí.',
+          life: 3000,
+        });
+      })
+      .catch(error => {
+        console.error('Background calculation failed:', error);
+        toast.add({
+          severity: 'warn',
+          summary: 'Upozornenie',
+          detail: 'Výpočet časovej osi návštev nebol spustený.',
+          life: 5000,
+        });
+      });
 
     await router.push({
       path: '/documents/points',
