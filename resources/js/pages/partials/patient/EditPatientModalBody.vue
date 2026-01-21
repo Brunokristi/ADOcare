@@ -35,8 +35,9 @@ const savePatient = async () => {
     // use api to save patient
     try {
         await patientStore.persistPatientData(patient.value)
+        const fresh = await patientStore.fetchPatient(patient.value.id)
+        patient.value = fresh;
         toast.add({ severity: 'success', summary: 'Pacient uložený', detail: `Pacient ${patient.value.first_name} bol úspešne uložený.` });
-        // If opened via provider, resolve via modalResolve, otherwise emit events
         if (props.modalResolve) {
             props.modalResolve(patient.value);
         }

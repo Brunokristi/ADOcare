@@ -39,7 +39,7 @@ class DekurzDocumentController extends Controller
             'type' => 'dekurz',
             'mime_type' => 'application/json',
             'name' => 'dekurz_' . now()->format('d.m.Y'),
-            'path' => 'dekurz/' . 'dekurz_' . now()->timestamp . '.json',
+            'path' => 'dekurz/' . now()->timestamp . '.json',
         ]);
 
         // normalize sections
@@ -119,7 +119,7 @@ class DekurzDocumentController extends Controller
         ];
 
         Storage::disk('local')->put(
-            $document->path,
+            'dekurz/' . now()->timestamp . '.json',
             json_encode($dekurzData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
         );
 

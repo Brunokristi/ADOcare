@@ -159,7 +159,7 @@ watch(
       <div class="flex justify-end gap-2">
         <Button
           label="Upraviť teraz"
-          @click="$router.replace({ query: { ...$route.query, editPatient: patientId } })"
+          @click="openEditPatient(incompletePatientId!)"
           class="bg-accent! border-0! text-white! hover:bg-darkgrey! px-4!"
         />
       </div>
