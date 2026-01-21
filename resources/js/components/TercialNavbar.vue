@@ -10,7 +10,6 @@ const attrs = useAttrs()
 
 const router = useRouter()
 const patientStore = usePatientStore()
-const patientId = computed(() => patientStore.current?.id ?? null)
 const patient = computed<Patient | null>(() => patientStore.current)
 
 const patientName = computed(() =>
@@ -122,14 +121,14 @@ watch(
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/agreement' }"
-                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
+                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
                     dohoda
                 </RouterLink>
 
-                <RouterLink :to="{ path: '/patient/record' }"
+                <!-- <RouterLink :to="{ path: '/patient/record' }"
                     class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
                     ošetrovateľský záznam
-                </RouterLink>
+                </RouterLink> -->
 
                 <button type="button" @click="openEditPatient(patient?.id)"
                     class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">

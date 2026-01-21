@@ -345,7 +345,7 @@ const routes = [
         meta: {
             title: 'Účtovníctvo',
             sectionRoot: 'accounting',
-            sidebar: true
+            sidebar: false
 
         },
         children: [
@@ -356,8 +356,8 @@ const routes = [
                 meta: {
                     title: 'Cestovné',
                     link: 'cestovné',
-                    sidebar: true,
-                    navbar: true,
+                    sidebar: false,
+                    navbar: false,
                 },
             },
         ]
