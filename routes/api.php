@@ -31,7 +31,7 @@ use App\Http\Controllers\Api\DekurzDocumentController;
 use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
 use App\Http\Controllers\Api\VisitsController;
-
+use App\Http\Controllers\Api\CityController;
 
 
 use Illuminate\Http\Request;
@@ -147,4 +147,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay']);
     Route::get('visits/day-totals', [VisitsController::class, 'dayTotals']);
     Route::get('visits/month-totals', [VisitsController::class, 'monthTotals']);
+
+    Route::get('/cities/suggest', [CityController::class, 'suggest']);
+    Route::get('/cities/by-zip', [CityController::class, 'byZip']);  
 });

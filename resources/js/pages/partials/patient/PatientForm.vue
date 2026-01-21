@@ -27,15 +27,22 @@ const localPatient = ref<Patient>({ ...(props.patient ?? ({} as Patient)) })
 // What the AutoComplete input displays (street + number only)
 const addressQuery = ref('')
 
-// Sync local patient + input when parent patient changes
+// What the AutoComplete input displays for city (city name only)
+const cityQuery = ref('')
+const citySuggestions = ref<any[]>([])
+
+// Sync local patient + inputs when parent patient changes
 watch(
   () => props.patient,
   (p) => {
     const next = { ...(p ?? ({} as Patient)) }
     localPatient.value = next
 
-    // ✅ show only stored address (street + number)
+    // show stored address (street + number)
     addressQuery.value = (next as any).address ?? ''
+
+    // show stored city
+    cityQuery.value = next.city ?? ''
   },
   { immediate: true, deep: true }
 )
@@ -56,7 +63,7 @@ watch(
   { deep: true }
 )
 
-// -------------------- Doctors / Insurance (unchanged) --------------------
+// -------------------- Doctors / Insurance --------------------
 const sexOptions = [
   { label: 'Muž', value: 'M' },
   { label: 'Žena', value: 'F' },
@@ -131,7 +138,6 @@ function initMap() {
   center.value = [lat, lng]
   zoom.value = 15
 
-  // Attach click listener to the Leaflet map after it's initialized
   setTimeout(() => {
     if (mapRef.value?.leafletObject) {
       mapRef.value.leafletObject.on('click', onMapClick)
@@ -139,13 +145,10 @@ function initMap() {
   }, 100)
 }
 
+// -------------------- Personal number --------------------
 function onPersonalNumberInput(e: Event) {
   const input = e.target as HTMLInputElement
-
-  // remove EVERYTHING except digits
   const digitsOnly = input.value.replace(/\D+/g, '')
-
-  // update model as STRING
   localPatient.value.personal_number = digitsOnly
 }
 
@@ -154,34 +157,30 @@ watch(
   (val) => {
     if (!val) return
     const clean = val.replace(/\D+/g, '')
-    if (val !== clean) {
-      localPatient.value.personal_number = clean
-    }
+    if (val !== clean) localPatient.value.personal_number = clean
   }
 )
 
-
-
-// -------------------- Address Autocomplete --------------------
+// -------------------- Address Autocomplete (geocode provider) --------------------
 const addressSuggestions = ref<any[]>([])
 
-// enforce "select or keep stored"
 function revertAddressToStored() {
   addressQuery.value = (localPatient.value as any).address ?? ''
 }
 
+function normalizeZip(zip: string) {
+  return (zip ?? '').replace(/\s+/g, '').trim()
+}
+
 async function searchAddress(e: AutoCompleteCompleteEvent) {
   try {
-    const q = e.query
+    const q = (e.query ?? '').trim()
     if (!q) {
       addressSuggestions.value = []
       return
     }
 
-    const res = await api.get('/v1/geocode/autocomplete', {
-      params: { text: q },
-    })
-
+    const res = await api.get('/v1/geocode/autocomplete', { params: { text: q } })
     const features = res.data?.features ?? []
 
     addressSuggestions.value = features.map((f: any) => {
@@ -190,16 +189,11 @@ async function searchAddress(e: AutoCompleteCompleteEvent) {
 
       const streetOnly = [p.street, p.housenumber].filter(Boolean).join(' ').trim() || p.name || ''
       const city = p.locality || p.county || p.region || ''
-      const zip = p.postalcode || ''
+      const zip = normalizeZip(p.postalcode || '')
 
       return {
-        // PrimeVue shows suggestions using optionLabel="label"
-        // ✅ show full label in dropdown if you want, but we will NOT put this into the input on select
         label: p.label || `${streetOnly}${city ? ', ' + city : ''}${zip ? ', ' + zip : ''}`,
-
-        // ✅ what we store + show in the input
         streetOnly,
-
         city,
         zip,
         lng: coords[0] ?? null,
@@ -213,95 +207,104 @@ async function searchAddress(e: AutoCompleteCompleteEvent) {
 }
 
 function onAddressSelect(event: AutoCompleteOptionSelectEvent) {
+  const sel: any = event?.value
+  if (!sel) return
+
+  // store only street + number
+  ;(localPatient.value as any).address = sel.streetOnly || ''
+
+  // temporarily set city/zip from geocode (may be imperfect)
+  localPatient.value.city = sel.city || ''
+  localPatient.value.zip = sel.zip || ''
+  cityQuery.value = localPatient.value.city || ''
+
+  localPatient.value.latitude = sel.lat ?? null
+  localPatient.value.longitude = sel.lng ?? null
+
+  center.value = [localPatient.value.latitude || 48.1486, localPatient.value.longitude || 17.1077]
+  zoom.value = 15
+
+  addressQuery.value = sel.streetOnly || ''
+
+  emit('clear-error', 'address')
+  emit('clear-error', 'city')
+  emit('clear-error', 'zip')
+  emit('clear-error', 'coordinates')
+}
+
+// -------------------- City + PSČ Autocomplete (your DB) --------------------
+async function searchCity(e: AutoCompleteCompleteEvent) {
   try {
-    const sel: any = event?.value
-    if (!sel) return
+    const q = (e.query ?? '').trim()
+    if (!q) {
+      citySuggestions.value = []
+      return
+    }
 
-    // ✅ store only address (street + number)
-    ;(localPatient.value as any).address = sel.streetOnly || ''
-
-    // keep these too
-    localPatient.value.city = sel.city || ''
-    localPatient.value.zip = sel.zip || ''
-    localPatient.value.latitude = sel.lat ?? null
-    localPatient.value.longitude = sel.lng ?? null
-
-    center.value = [localPatient.value.latitude || 48.1486, localPatient.value.longitude || 17.1077]
-    zoom.value = 15
-
-    addressQuery.value = sel.streetOnly || ''
-
-    emit('clear-error', 'address')
-    emit('clear-error', 'city')
-    emit('clear-error', 'zip')
-    emit('clear-error', 'coordinates')
+    const res = await api.get('/v1/cities/suggest', { params: { q, limit: 10 } })
+    citySuggestions.value = res.data?.data ?? []
   } catch (err) {
-    console.error('onAddressSelect error:', err)
+    console.error('searchCity error:', err)
+    citySuggestions.value = []
   }
 }
+
+function onCitySelect(event: AutoCompleteOptionSelectEvent) {
+  const sel: any = event?.value
+  if (!sel) return
+
+  localPatient.value.city = sel.name || ''
+  localPatient.value.zip = normalizeZip(sel.zip || '')
+  cityQuery.value = sel.name || ''
+
+  emit('clear-error', 'city')
+  emit('clear-error', 'zip')
+}
+
+// Keep query in sync if something else sets city directly
+watch(
+  () => localPatient.value.city,
+  (v) => {
+    const next = v ?? ''
+    if (cityQuery.value !== next) cityQuery.value = next
+  }
+)
 
 // -------------------- Reverse Geocoding (Map Click) --------------------
 async function onMapClick(e: any) {
   try {
-    console.log('Map click event received:', e)
-    
-    // Leaflet click event has latlng object
     const lat = e.latlng?.lat ?? e.latlng?._lat
     const lng = e.latlng?.lng ?? e.latlng?._lng
-    
-    console.log('Extracted coordinates - lat:', lat, 'lng:', lng)
-    
-    if (lat === undefined || lng === undefined || lat === null || lng === null) {
-      console.warn('Invalid coordinates from click event')
-      return
-    }
-    
-    console.log('Map clicked at:', lat, lng)
-    
-    // Update marker position
+    if (lat == null || lng == null) return
+
     localPatient.value.latitude = lat
     localPatient.value.longitude = lng
-    
-    console.log('Updated patient lat/lng:', localPatient.value.latitude, localPatient.value.longitude)
-    
-    // Reverse geocode to get address details
-    const res = await api.get('/v1/geocode/reverse', {
-      params: { lat, lon: lng },
-    })
-    
-    console.log('Reverse geocoding response:', res.data)
-    
+
+    const res = await api.get('/v1/geocode/reverse', { params: { lat, lon: lng } })
     const features = res.data?.features ?? []
-    if (features.length === 0) {
-      console.warn('No reverse geocoding results found')
-      return
-    }
-    
-    const feature = features[0]
-    const p = feature.properties ?? {}
-    
-    // Extract address components
+    if (!features.length) return
+
+    const p = features[0]?.properties ?? {}
+
     const streetOnly = [p.street, p.housenumber].filter(Boolean).join(' ').trim() || p.name || ''
-    const city = p.locality || p.county || p.region || ''
-    const zip = p.postalcode || ''
-    
-    console.log('Parsed address components:', { streetOnly, city, zip })
-    
-    // Update form fields
+    const city = (p.locality || p.county || p.region || '').trim()
+    const zip = normalizeZip(p.postalcode || '')
+
     ;(localPatient.value as any).address = streetOnly || ''
-    localPatient.value.city = city || ''
-    localPatient.value.zip = zip || ''
     addressQuery.value = streetOnly || ''
-    
+
+    // set from geocode, but user can correct via city autocomplete
+    localPatient.value.city = city || localPatient.value.city || ''
+    localPatient.value.zip = zip || localPatient.value.zip || ''
+    cityQuery.value = localPatient.value.city || ''
+
     center.value = [lat, lng]
     zoom.value = 15
-    
+
     emit('clear-error', 'address')
     emit('clear-error', 'city')
     emit('clear-error', 'zip')
     emit('clear-error', 'coordinates')
-    
-    console.log('Reverse geocoding result:', { streetOnly, city, zip, lat, lng })
   } catch (err) {
     console.error('Reverse geocoding error:', err)
   }
@@ -335,13 +338,13 @@ async function onMapClick(e: any) {
       <div class="col-span-4">
         <label class="block text-normal mb-1">Rodné číslo</label>
         <InputText
-        v-model="localPatient.personal_number"
-        maxlength="11"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        fluid
-        :invalid="submitted && !localPatient.personal_number"
-        @input="onPersonalNumberInput"
+          v-model="localPatient.personal_number"
+          maxlength="11"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          fluid
+          :invalid="submitted && !localPatient.personal_number"
+          @input="onPersonalNumberInput"
         />
         <small v-if="submitted && errors.personal_number" class="text-warning">{{ errors.personal_number }}</small>
       </div>
@@ -424,7 +427,15 @@ async function onMapClick(e: any) {
 
         <div>
           <label class="block text-normal mb-1">Mesto</label>
-          <InputText v-model.trim="localPatient.city" fluid :invalid="submitted && !!errors.city" />
+          <AutoComplete
+            v-model="cityQuery"
+            :suggestions="citySuggestions"
+            optionLabel="label"
+            @complete="searchCity"
+            @item-select="onCitySelect"
+            fluid
+            :invalid="submitted && !!errors.city"
+          />
           <small v-if="submitted && errors.city" class="text-warning">{{ errors.city }}</small>
         </div>
 
@@ -440,11 +451,11 @@ async function onMapClick(e: any) {
       </div>
 
       <div class="col-span-8">
-        <LMap 
+        <LMap
           ref="mapRef"
-          :center="center" 
-          :zoom="zoom" 
-          :useGlobalLeaflet="false" 
+          :center="center"
+          :zoom="zoom"
+          :useGlobalLeaflet="false"
           class="w-full h-full rounded-md overflow-hidden"
         >
           <l-tile-layer

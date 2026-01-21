@@ -1,1 +1,1 @@
-SELECT * FROM visit_calculations ORDER BY created_at DESC LIMIT 5;
+SELECT unaccent('Ábelová');
