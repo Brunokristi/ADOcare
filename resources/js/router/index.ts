@@ -76,8 +76,8 @@ const routes = [
                 name: 'pointsdata',
                 component: Points,
                 meta: {
-                    title: 'Body',
-                    link: 'body',
+                    title: 'Výkonová',
+                    link: 'výkonová',
                     sidebar: true,
                     navbar: true,
                 },
@@ -88,8 +88,8 @@ const routes = [
                 name: 'kilometersdata',
                 component: Kilometers,
                 meta: {
-                    title: 'Kilometre',
-                    link: 'kilometre',
+                    title: 'Dopravná',
+                    link: 'dopravná',
                     sidebar: true,
                     navbar: true,
                 },
