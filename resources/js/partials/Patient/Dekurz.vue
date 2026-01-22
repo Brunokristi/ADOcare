@@ -27,16 +27,21 @@ patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?? '')
+
 const dekurzMonth = ref<Date | null>(new Date())
 const dekurzNumber = ref<string>('')
+
 const allowedDaysInMonth = ref<number[]>([])
 const snippets = ref<DekurzSnippet[]>([])
 const macrosLoading = ref(false)
+
 const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
+
 const draftLoaded = ref(false)
 const submitted = ref(false)
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
+
 const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
 
 function setMacroScrollRef(sectionId: string) {
@@ -92,6 +97,30 @@ const disabledDates = computed(() => {
   return out
 })
 
+// --- Cross-calendar date logic ---
+function dateKey(d: Date) {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  return isoDate(x)
+}
+
+function selectedInOtherSections(sectionId: string) {
+  const keys = new Set<string>()
+  for (const s of sections.value) {
+    if (s.id === sectionId) continue
+    for (const d of s.dates || []) keys.add(dateKey(d))
+  }
+  return keys
+}
+
+function isCrossedOutDay(slotProps: any, sectionId: string) {
+  const other = selectedInOtherSections(sectionId)
+  const { year, month, day } = slotProps.date // month is 0-11
+  const k = isoDate(new Date(year, month, day))
+  return other.has(k)
+}
+
+// --- Section actions ---
 function addSection() {
   sections.value.push({ id: makeId(), text: '', dates: [] })
 }
@@ -122,6 +151,7 @@ function appendToSectionText(sectionId: string, text: string) {
   s.text = s.text?.trim() ? `${s.text}\n${add}` : add
 }
 
+// --- Validation ---
 function validateForm() {
   const e: Record<string, string> = {}
 
@@ -142,6 +172,7 @@ function validateForm() {
   return Object.keys(e).length === 0
 }
 
+// --- API ---
 async function fetchAllowedDays() {
   if (!patientId.value || !dekurzMonth.value) {
     allowedDaysInMonth.value = []
@@ -179,10 +210,7 @@ async function fetchAllowedDays() {
 async function fetchMacros() {
   macrosLoading.value = true
   try {
-    const params: Record<string, any> = {}
-    params.per_page = 100
-    params.sort = 'name'
-
+    const params: Record<string, any> = { per_page: 100, sort: 'name' }
     const res = await api.get('/v1/macros', { params })
     const items = res.data?.data?.items ?? []
 
@@ -220,7 +248,8 @@ async function generateDekurz() {
         text: s.text,
         dates: (s.dates || []).map(isoDate).sort(),
       })),
-      branch_id: auth.currentBranch?.id ?? null,}
+      branch_id: auth.currentBranch?.id ?? null,
+    }
 
     const res = await api.post('/v1/dekurz', payload)
 
@@ -273,7 +302,7 @@ async function loadLastDekurzDraft() {
   }
 }
 
-
+// --- Watches ---
 watch(
   patientDekurzNumber,
   val => {
@@ -302,15 +331,13 @@ watch(
 
 watch(
   () => patientId.value,
-  async (val) => {
+  async val => {
     if (!val) return
     await fetchMacros()
     await loadLastDekurzDraft()
   },
   { immediate: true },
 )
-
-
 </script>
 
 <template>
@@ -347,113 +374,123 @@ watch(
 
       <div v-if="submitted && errors.sections" class="text-warning -mt-2">{{ errors.sections }}</div>
 
-      <section v-for="(section) in sections" :key="section.id" class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
-          <template #start>
-            <div class="font-medium text-lg">Text dekurzu</div>
-          </template>
+      <!-- IMPORTANT: v-for on template fixes TS slot scope pobem -->
+      <template v-for="section in sections" :key="section.id">
+        <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+          <Toolbar class="bg-transparent! border-0! p-0! shadow-none! flex items-center justify-between no-print">
+            <template #start>
+              <div class="font-medium text-lg">Text dekurzu</div>
+            </template>
 
-          <template #end>
-            <Button
-              icon="bi bi-eraser"
-              class="bg-warning! border-warning! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-              @click.prevent="removeSection(section.id)"
+            <template #end>
+              <Button
+                icon="bi bi-eraser"
+                class="bg-warning! border-warning! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                @click.prevent="removeSection(section.id)"
+              />
+            </template>
+          </Toolbar>
+
+          <div>
+            <Textarea
+              v-model="section.text"
+              rows="8"
+              class="w-full border-none!"
+              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+              :invalid="submitted && !!errors[`sectionText-${section.id}`]"
             />
-          </template>
-        </Toolbar>
-
-        <div>
-          <Textarea
-            v-model="section.text"
-            rows="8"
-            class="w-full border-none!"
-            inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            :invalid="submitted && !!errors[`sectionText-${section.id}`]"
-          />
-          <small v-if="submitted && errors[`sectionText-${section.id}`]" class="text-warning">
-            {{ errors[`sectionText-${section.id}`] }}
-          </small>
-        </div>
-
-        <!-- MACROS as chips scroller -->
-        <div class="w-full">
-          <label class="block text-normal mb-2">Makrá</label>
-
-          <div v-if="!macrosLoading && !snippets.length" class="opacity-70">
-            Nemáte žiadne makrá. Vytvorte ich v Nastaveniach.
+            <small v-if="submitted && errors[`sectionText-${section.id}`]" class="text-warning">
+              {{ errors[`sectionText-${section.id}`] }}
+            </small>
           </div>
 
-          <div v-else class="relative">
-            <button
-              type="button"
-              class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
-                     flex items-center justify-center cursor-pointer"
-              @click.prevent="scrollMacros(section.id, -1)"
-              title="Doľava"
-            >
-              <i class="bi bi-chevron-left text-darkgrey" />
-            </button>
+          <!-- MACROS as chips scroller -->
+          <div class="w-full">
+            <label class="block text-normal mb-2">Makrá</label>
 
-            <button
-              type="button"
-              class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
-                     flex items-center justify-center cursor-pointer"
-              @click.prevent="scrollMacros(section.id, 1)"
-              title="Doprava"
-            >
-              <i class="bi bi-chevron-right text-darkgrey" />
-            </button>
+            <div v-if="!macrosLoading && !snippets.length" class="opacity-70">
+              Nemáte žiadne makrá. Vytvorte ich v Nastaveniach.
+            </div>
 
-            <!-- chips row -->
-            <div
-              :ref="setMacroScrollRef(section.id)"
-              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-3 px-10 mb-2"
-              style="scrollbar-width: thin;"
-            >
+            <div v-else class="relative">
               <button
-                v-for="snip in snippets"
-                :key="snip.key"
                 type="button"
-                class="shrink-0 px-3 py-1 rounded-md bg-accent
-                       text-white text-normal border border-transparent
-                       hover:cursor-pointer
-                       "
-                @pointerdown.stop
-                @mousedown.stop
-                @touchstart.stop
-                @click.prevent.stop="appendToSectionText(section.id, snip.body)"
-                :title="snip.body"
+                class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                       flex items-center justify-center cursor-pointer"
+                @click.prevent="scrollMacros(section.id, -1)"
+                title="Doľava"
               >
-                {{ snip.title }}
+                <i class="bi bi-chevron-left text-darkgrey" />
               </button>
+
+              <button
+                type="button"
+                class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                       flex items-center justify-center cursor-pointer"
+                @click.prevent="scrollMacros(section.id, 1)"
+                title="Doprava"
+              >
+                <i class="bi bi-chevron-right text-darkgrey" />
+              </button>
+
+              <!-- chips row -->
+              <div
+                :ref="setMacroScrollRef(section.id)"
+                class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-3 px-10 mb-2"
+                style="scrollbar-width: thin;"
+              >
+                <button
+                  v-for="snip in snippets"
+                  :key="snip.key"
+                  type="button"
+                  class="shrink-0 px-3 py-1 rounded-md bg-accent
+                         text-white text-normal border border-transparent
+                         hover:cursor-pointer"
+                  @pointerdown.stop
+                  @mousedown.stop
+                  @touchstart.stop
+                  @click.prevent.stop="appendToSectionText(section.id, snip.body)"
+                  :title="snip.body"
+                >
+                  {{ snip.title }}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="w-full">
-          <label class="block text-normal mb-2">Dátumy</label>
+          <div class="w-full">
+            <label class="block text-normal mb-2">Dátumy</label>
 
-          <DatePicker
-            v-model="section.dates"
-            selectionMode="multiple"
-            :minDate="monthStart"
-            :maxDate="monthEnd"
-            :disabledDates="disabledDates"
-            :showOtherMonths="false"
-            :showButtonBar="false"
-            :showIcon="false"
-            :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
-            dateFormat="dd.mm.yy"
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
-            :invalid="submitted && !!errors[`sectionDates-${section.id}`]"
-          />
+              <DatePicker
+                v-model="section.dates"
+                selectionMode="multiple"
+                :minDate="monthStart"
+                :maxDate="monthEnd"
+                :disabledDates="disabledDates"
+                :showOtherMonths="false"
+                :showButtonBar="false"
+                :showIcon="false"
+                :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
+                dateFormat="dd.mm.yy"
+                class="w-full"
+                inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+                :invalid="submitted && !!errors[`sectionDates-${section.id}`]"
+              >
+                <template #date="slotProps">
+                  <span
+                    :style="isCrossedOutDay(slotProps, section.id) ? 'color: var(--c-warning);' : ''"
+                  >
+                    {{ slotProps.date.day }}
+                  </span>
+                </template>
+              </DatePicker>
 
-          <small v-if="submitted && errors[`sectionDates-${section.id}`]" class="text-warning">
-            {{ errors[`sectionDates-${section.id}`] }}
-          </small>
-        </div>
-      </section>
+            <small v-if="submitted && errors[`sectionDates-${section.id}`]" class="text-warning">
+              {{ errors[`sectionDates-${section.id}`] }}
+            </small>
+          </div>
+        </section>
+      </template>
 
       <div class="bg-tag3 rounded-md h-12 flex items-center justify-center">
         <Button type="button" text class="text-accent! border-0!" @click="addSection">
@@ -465,6 +502,7 @@ watch(
         <Button
           type="submit"
           class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
+          :disabled="loading"
         >
           Generovať dokument
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
