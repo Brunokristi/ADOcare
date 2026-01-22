@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Responses\ApiResponseClass;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,5 +34,30 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return $request->expectsJson();
         });
+
+
+        $exceptions->render(function (Throwable $e) {
+            if (request()->is('api/*')) {
+                $response = new ApiResponseClass();
+
+                $status = 500;
+                if (method_exists($e, 'getStatusCode')) {
+                    $status = $e->getStatusCode();
+                }
+
+                $message = $e->getMessage() ?: 'Server Error';
+
+                $errors = [];
+
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    $status = 422;
+                    $errors = $e->errors();
+                }
+
+                return $response->error($message, $status, $errors);
+            }
+        });
+
+
 
     })->create();
