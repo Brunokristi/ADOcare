@@ -18,9 +18,9 @@ class ApiQuery
      * Apply query parameters to a Builder.
      *
      * Recognized params:
-     * - filter[field]=value  (exact match, can be array values)
-     * - q=search-term        (search across searchable columns)
-     * - sort=field,-other    (comma-separated, prefix - for DESC)
+     * - filter[field]=value or filter[field][op]=value    (simple filters with optional operators) (operators: gt, gte, lt, lte, ne, neq, like, in)
+     * - q=search-term          (search across searchable columns)
+     * - sort=field,-other      (comma-separated, prefix - for DESC)
      * - per_page=N, page=N
      * - paginate=0|1 (default 1)
      * - limit=N (when paginate=0)
@@ -95,11 +95,56 @@ class ApiQuery
                 continue;
             }
 
+            // If value is an array, decide if it's an indexed array (IN) or
+            // an associative array of operators (e.g. ['gt' => 5, 'lte' => 10]).
             if (is_array($value)) {
-                $query->whereIn($key, $value);
-            } else {
-                $query->where($key, $value);
+                foreach ($value as $op => $operand) {
+                    $op = strtolower(trim((string) $op));
+                    switch ($op) {
+                        case 'gt':
+                            $query->where($key, '>', $operand);
+                            break;
+                        case 'gte':
+                            $query->where($key, '>=', $operand);
+                            break;
+                        case 'lt':
+                            $query->where($key, '<', $operand);
+                            break;
+                        case 'lte':
+                            $query->where($key, '<=', $operand);
+                            break;
+                        case 'ne':
+                        case 'neq':
+                            $query->where($key, '!=', $operand);
+                            break;
+                        case 'like':
+                            $query->where($key, 'LIKE', $operand);
+                            break;
+                        case 'in':
+                            if (is_array($operand)) {
+                                $query->whereIn($key, $operand);
+                            }
+                            break;
+                        default:
+                            // unknown operator — fallback to equality
+                            $query->where($key, $operand);
+                    }
+                }
+                continue;
             }
+
+            // Scalar values: allow operator prefix like ">=10" or "< 5"
+            if (is_string($value)) {
+                if (preg_match('/^(>=|<=|!=|<>|>|<)\s*(.+)$/', $value, $m)) {
+                    $op = $m[1];
+                    $val = $m[2];
+                    $query->where($key, $op, $val);
+                    continue;
+                }
+            }
+
+            // Fallback: exact match
+            $query->where($key, $value);
         }
     }
 
