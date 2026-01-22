@@ -31,7 +31,7 @@ use App\Http\Controllers\Api\DekurzDocumentController;
 use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
 use App\Http\Controllers\Api\VisitsController;
-
+use App\Http\Controllers\Api\CityController;
 
 
 use Illuminate\Http\Request;
@@ -84,16 +84,14 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
 
-    // Newly added resources
     Route::apiResourceComplete('branches', BranchController::class);
-    // (branch patients now handled by BranchPatientController)
     Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors']);
     Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
-
+    
     Route::apiResourceComplete('doctors', DoctorController::class);
-
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
+    Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class);
     Route::apiResourceComplete('macros', MacroController::class);
     Route::apiResourceComplete('procedures', ProcedureController::class);
     Route::apiResourceComplete('patient-points', PatientPointController::class);
@@ -114,10 +112,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf']);
 
     Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
-
+    Route::get('/geocode/reverse', [\App\Http\Controllers\Api\GeocodeController::class, 'reverse']);
 
     Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
-
 
     Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
@@ -146,7 +143,11 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
 
     Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);
+    Route::get('/visits/timeline/status', [VisitsController::class, 'checkCalculationStatus']);
     Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay']);
     Route::get('visits/day-totals', [VisitsController::class, 'dayTotals']);
     Route::get('visits/month-totals', [VisitsController::class, 'monthTotals']);
+
+    Route::get('/cities/suggest', [CityController::class, 'suggest']);
+    Route::get('/cities/by-zip', [CityController::class, 'byZip']);  
 });

@@ -1,21 +1,15 @@
-<!-- src/components/PatientNavbar.vue -->
 <script setup lang="ts">
 import { computed, ref, watch, useAttrs } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import Menubar from 'primevue/menubar'
-import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
-
+import { openPatientDocumentsModal, openPatientEditModal} from '@/helpers/modalHelpers'
 import { usePatientStore } from '@/stores/patientStore'
 import type { Patient } from '@/types/models'
-import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
 
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 
 const router = useRouter()
 const patientStore = usePatientStore()
-const patientId = computed(() => patientStore.current?.id ?? null)
 const patient = computed<Patient | null>(() => patientStore.current)
 
 const patientName = computed(() =>
@@ -39,6 +33,13 @@ const closePatient = () => {
 const showIncompleteModal = ref(false)
 const incompletePatientId = ref<number | null>(null)
 
+function openPatientDocuments(patientId: number) {
+    void openPatientDocumentsModal(patientId)
+}
+
+function openEditPatient(patientId: number) {
+    void openPatientEditModal(patientId)
+}
 
 function patientIsComplete(p: Patient | null) {
     if (!p) return true
@@ -105,44 +106,44 @@ watch(
         <template #end>
             <div class="flex items-center gap-2">
                 <RouterLink :to="{ path: '/patient/points' }"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!">
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
                     bodovanie
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/dekurz' }"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!">
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
                     dekurz
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/proposal' }"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!">
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
                     návrh
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/agreement' }"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!">
+                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
                     dohoda
                 </RouterLink>
 
-                <RouterLink :to="{ path: '/patient/record' }"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent!">
+                <!-- <RouterLink :to="{ path: '/patient/record' }"
+                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
                     ošetrovateľský záznam
-                </RouterLink>
+                </RouterLink> -->
 
-                <button type="button" @click="openPatientEditModal(patient?.id)"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">
+                <button type="button" @click="openEditPatient(patient?.id)"
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">
                     upraviť
                 </button>
 
-                <button type="button" @click="openPatientDocuments"
-                    class="text-mini! underline px-sm! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">
+                <button type="button" @click="openPatientDocuments(patient?.id)"
+                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! cursor-pointer border-r border-almostwhite!">
                     dokumenty
                 </button>
 
 
-                <button @click="closePatient" class="text-almostwhite cursor-pointer flex items-center ml-4">
+                <button @click="closePatient" class="text-almostwhite cursor-pointer flex items-center ml-2!">
                     <i :class="isHovered ? 'bi bi-pin-angle' : 'bi bi-pin-fill'" @mouseenter="isHovered = true"
-                        @mouseleave="isHovered = false" class="text-lg leading-none"></i>
+                        @mouseleave="isHovered = false" class="text-md leading-none"></i>
                 </button>
             </div>
         </template>
@@ -157,7 +158,7 @@ watch(
       <div class="flex justify-end gap-2">
         <Button
           label="Upraviť teraz"
-          @click="$router.replace({ query: { ...$route.query, editPatient: patientId } })"
+          @click="openEditPatient(incompletePatientId!)"
           class="bg-accent! border-0! text-white! hover:bg-darkgrey! px-4!"
         />
       </div>

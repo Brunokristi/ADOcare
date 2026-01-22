@@ -265,7 +265,7 @@ async function loadLastDekurzDraft() {
     toast.add({
       severity: 'info',
       summary: 'Načítané',
-      detail: 'Načítal som posledné uložené texty.',
+      detail: 'Texty načítané z histórie.',
       life: 2500,
     })
   } catch (err) {
@@ -387,27 +387,27 @@ watch(
             <button
               type="button"
               class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
-                     lex items-center justify-center"
+                     flex items-center justify-center cursor-pointer"
               @click.prevent="scrollMacros(section.id, -1)"
               title="Doľava"
             >
-              <i class="bi bi-chevron-left text-accent" />
+              <i class="bi bi-chevron-left text-darkgrey" />
             </button>
 
             <button
               type="button"
               class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
-                     flex items-center justify-center"
+                     flex items-center justify-center cursor-pointer"
               @click.prevent="scrollMacros(section.id, 1)"
               title="Doprava"
             >
-              <i class="bi bi-chevron-right text-accent" />
+              <i class="bi bi-chevron-right text-darkgrey" />
             </button>
 
             <!-- chips row -->
             <div
               :ref="setMacroScrollRef(section.id)"
-              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-1 px-10"
+              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-3 px-10 mb-2"
               style="scrollbar-width: thin;"
             >
               <button
@@ -464,11 +464,9 @@ watch(
       <div class="flex justify-end">
         <Button
           type="submit"
-          :loading="loading"
-          
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-6 py-2 rounded-md text-white min-w-[260px]"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
         >
-          Vygenerovať dekurz
+          Generovať dokument
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>
       </div>

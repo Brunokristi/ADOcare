@@ -27,4 +27,25 @@ class GeocodeController extends Controller
         return response($response->body(), $response->status())
             ->header('Content-Type', 'application/json');
     }
+
+    public function reverse(Request $request)
+    {
+        $lat = $request->query('lat');
+        $lon = $request->query('lon');
+
+        if (!$lat || !$lon) {
+            return response()->json(['error' => 'Missing lat or lon parameter'], 400);
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => config('services.ors.key'),
+            'Accept' => 'application/json',
+        ])->get('https://api.openrouteservice.org/geocode/reverse', [
+                    'point.lat' => $lat,
+                    'point.lon' => $lon,
+                ]);
+
+        return response($response->body(), $response->status())
+            ->header('Content-Type', 'application/json');
+    }
 }

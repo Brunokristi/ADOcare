@@ -74,7 +74,6 @@ export const usePatientStore = defineStore('patient', {
                     dekurz_number: patient.dekurz_number || 1
                 });
                 const created = response.data.data as Patient;
-                // this.setPatient(created);
                 return created;
             } catch (error) {
                 throw new Error('Failed to create patient: ' + error);

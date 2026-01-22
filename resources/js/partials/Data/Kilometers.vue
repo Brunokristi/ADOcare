@@ -28,7 +28,7 @@ type Patient = {
 
 const router = useRouter();
 
-const batchNumber = ref<number | null>(null);
+const batchNumber = ref<string | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
 const dates = ref<Date | null>(null);
@@ -143,7 +143,7 @@ async function onSubmit() {
   const needsPatients = isCorrectionBatch.value;
 
   if (
-    batchNumber.value === null ||
+    !batchNumber.value ||
     !batchType.value ||
     !insurance.value ||
     !hasPeriod ||
@@ -234,16 +234,14 @@ onMounted(() => {
           <!-- Číslo dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Číslo dávky</label>
-            <InputNumber
+            <InputText
               v-model="batchNumber"
-              :useGrouping="false"
-              :minFractionDigits="0"
-              :maxFractionDigits="0"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+              class="border-none!"
               fluid
             />
             <small
-              v-if="submitted && batchNumber === null"
+              v-if="submitted && !batchNumber"
               class="text-warning"
             >
               Číslo dávky je povinné.

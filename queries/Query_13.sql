@@ -1,1 +1,1 @@
-select * from documents
+SELECT unaccent('Ábelová');

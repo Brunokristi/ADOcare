@@ -49,6 +49,15 @@ export interface Diagnosis {
   updated_at: string | null
 }
 
+export interface City {
+  // columns
+  id: number
+  name: string
+  zip: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 export interface InsuranceCompany {
   // columns
   id: number

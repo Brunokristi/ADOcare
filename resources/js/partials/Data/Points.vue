@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
+import { toApiDate } from '@/utils/dateUtils';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
+const toast = useToast();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
 
@@ -28,7 +31,7 @@ type Patient = {
 
 const router = useRouter();
 
-const batchNumber = ref<number | null>(null);
+const batchNumber = ref<string | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
 const dates = ref<Date | null>(null);
@@ -40,6 +43,7 @@ const selectedPatients = ref<Patient[]>([]);
 const submitted = ref(false);
 const loading = ref(false);
 const patientsLoading = ref(false);
+let calculationToastId: string | undefined;
 
 
 const batchTypes = ref<BatchType[]>([
@@ -136,6 +140,89 @@ function removePatient(patient: Patient) {
   );
 }
 
+async function pollCalculationStatus(periodFrom: Date) {
+  const maxAttempts = 120; // 10 minutes with 5 second interval
+  let attempts = 0;
+  
+  const monthStr = toApiDate(periodFrom);
+  const branchId = authStore.currentBranch?.id;
+  const userId = authStore.user?.id;
+
+  console.log('Starting to poll calculation status for month:', monthStr, 'branch:', branchId, 'user:', userId);
+
+  // Give the toast time to mount on the new page
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  const interval = setInterval(async () => {
+    attempts++;
+    console.log(`Poll attempt ${attempts}/${maxAttempts}`);
+
+    try {
+      const res = await api.get('/v1/visits/timeline/status', {
+        params: {
+          month: monthStr,
+          branch_id: branchId,
+          user_id: userId,
+        },
+      });
+
+      console.log('API Response:', res.data);
+      const status = res.data?.data?.status;
+      console.log('Calculation status:', status);
+
+      if (status === 'completed') {
+        clearInterval(interval);
+        // Dismiss the info toast
+        if (calculationToastId) {
+          toast.removeGroup(calculationToastId);
+        }
+        console.log('Calculation completed! Showing success toast.');
+        toast.add({
+          severity: 'success',
+          summary: 'Výpočet dokončený',
+          detail: 'Časová os návštev bola úspešne vypočítaná.',
+          life: 5000,
+        });
+      } else if (status === 'failed') {
+        clearInterval(interval);
+        if (calculationToastId) {
+          toast.removeGroup(calculationToastId);
+        }
+        const errorMsg = res.data?.data?.error_message || 'Neznáma chyba';
+        console.log('Calculation failed:', errorMsg);
+        toast.add({
+          severity: 'error',
+          summary: 'Chyba výpočtu',
+          detail: errorMsg,
+          life: 5000,
+        });
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        // Dismiss the info toast
+        if (calculationToastId) {
+          toast.removeGroup(calculationToastId);
+        }
+        console.log('Polling timeout');
+        toast.add({
+          severity: 'warn',
+          summary: 'Časový limit',
+          detail: 'Výpočet trvá dlhšie ako obvykle. Pokračuje na pozadí.',
+          life: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to check calculation status:', error);
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        // Dismiss the info toast on error
+        if (calculationToastId) {
+          toast.removeGroup(calculationToastId);
+        }
+      }
+    }
+  }, 5000); // Check every 5 seconds
+}
+
 async function onSubmit() {
   submitted.value = true;
 
@@ -143,7 +230,7 @@ async function onSubmit() {
   const needsPatients = isCorrectionBatch.value;
 
   if (
-    batchNumber.value === null ||
+    !batchNumber.value ||
     !batchType.value ||
     !insurance.value ||
     !hasPeriod ||
@@ -185,6 +272,37 @@ async function onSubmit() {
       console.error('Missing sheet in response:', res.data);
       return;
     }
+
+    // Start background calculation (fire and forget)
+    api.post('/v1/visits/timeline', {
+      month: toApiDate(periodFrom),
+      branch_id: authStore.currentBranch?.id,
+      user_id: authStore.user?.id,
+      persist: true,
+    })
+      .then(() => {
+        // Show persistent info toast (no auto-dismiss)
+        calculationToastId = 'calculation-in-progress';
+        toast.add({
+          group: calculationToastId,
+          severity: 'info',
+          summary: 'Výpočet v progrese',
+          detail: 'Časová os návštev sa počíta na pozadí.',
+          life: 0,
+        });
+
+        // Start polling for completion
+        pollCalculationStatus(periodFrom);
+      })
+      .catch(error => {
+        console.error('Background calculation failed:', error);
+        toast.add({
+          severity: 'warn',
+          summary: 'Upozornenie',
+          detail: 'Výpočet časovej osi návštev nebol spustený.',
+          life: 5000,
+        });
+      });
 
     await router.push({
       path: '/documents/points',
@@ -233,16 +351,14 @@ onMounted(() => {
           <!-- Číslo dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Číslo dávky</label>
-            <InputNumber
+            <InputText
               v-model="batchNumber"
-              :useGrouping="false"
-              :minFractionDigits="0"
-              :maxFractionDigits="0"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+              class="border-none!"
               fluid
             />
             <small
-              v-if="submitted && batchNumber === null"
+              v-if="submitted && !batchNumber"
               class="text-warning"
             >
               Číslo dávky je povinné.
