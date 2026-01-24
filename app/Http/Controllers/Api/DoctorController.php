@@ -13,6 +13,13 @@ use Illuminate\Http\Response;
 
 class DoctorController extends Controller
 {
+    /**
+     * List doctors
+     *
+     * @group Doctors
+     * @queryParam q string Search query. Example: "Smith"
+     * @response 200 {"data":[{"id":1,"first_name":"John","last_name":"Smith"}],"meta":{"total":1}}
+     */
     public function index()
     {
 
@@ -23,9 +30,9 @@ class DoctorController extends Controller
             // Add is_favourite attribute via LEFT JOIN for better performance
             $subquery->leftJoin('branch_favourite_doctors as bfd', function ($join) use ($branchId) {
                 $join->on('bfd.doctor_id', '=', 'doctors.id')
-                     ->where('bfd.branch_id', '=', $branchId);
+                    ->where('bfd.branch_id', '=', $branchId);
             })
-            ->selectRaw('doctors.*, (bfd.doctor_id IS NOT NULL) AS is_favourite');
+                ->selectRaw('doctors.*, (bfd.doctor_id IS NOT NULL) AS is_favourite');
         }
 
         $query = DB::table(DB::raw("({$subquery->toSql()}) as doctors"))
@@ -36,29 +43,60 @@ class DoctorController extends Controller
             request(),
             $query,
             searchable: ['first_name', 'last_name', 'zpr', 'pzs'],
-            allowedFilters: ['first_name', 'last_name', 'title', 'zpr', 'pzs',  'is_favourite'],
+            allowedFilters: ['first_name', 'last_name', 'title', 'zpr', 'pzs', 'is_favourite'],
         );
 
         return $this->success(new BaseCollection($results), 'Doctors retrieved');
     }
 
+    /**
+     * Create a doctor
+     *
+     * @group Doctors
+     * @bodyParam first_name string required Example: "John"
+     * @bodyParam last_name string required Example: "Smith"
+     * @response 201 {"id":1,"first_name":"John","last_name":"Smith"}
+     */
     public function store(\App\Http\Requests\StoreDoctorRequest $request)
     {
         $item = Doctor::create($request->all());
         return $this->success($item, 'Created', Response::HTTP_CREATED);
     }
 
+    /**
+     * Get a doctor
+     *
+     * @group Doctors
+     * @urlParam doctor int required Doctor ID. Example: 1
+     * @response 200 {"id":1,"first_name":"John","last_name":"Smith"}
+     */
     public function show(Doctor $doctor)
     {
         return $this->success($doctor, 'Doctor retrieved');
     }
 
+    /**
+     * Update a doctor
+     *
+     * @group Doctors
+     * @urlParam doctor int required Doctor ID. Example: 1
+     * @bodyParam first_name string Example: "John"
+     * @bodyParam last_name string Example: "Smith"
+     * @response 200 {"id":1,"first_name":"John","last_name":"Smith"}
+     */
     public function update(\App\Http\Requests\UpdateDoctorRequest $request, Doctor $doctor)
     {
         $doctor->update($request->all());
         return $this->success($doctor, 'Updated');
     }
 
+    /**
+     * Delete a doctor
+     *
+     * @group Doctors
+     * @urlParam doctor int required Doctor ID. Example: 1
+     * @response 204 {}
+     */
     public function destroy(Doctor $doctor)
     {
         $doctor->delete();
