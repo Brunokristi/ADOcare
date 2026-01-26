@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', {
     }),
     getters: {
         isAuthenticated: (state) => !!state.user,
+        isManager: (state) => state.currentRole === 'manager',
     },
     actions: {
         async waitUntilInitialized() {

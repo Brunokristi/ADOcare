@@ -10,6 +10,8 @@
 // Reporty
 
 import Error from "@/pages/Error.vue";
+import Patient from "@/pages/Patient.vue";
+import Patients from "@/pages/Patients.vue";
 import type { RouteRecordRaw } from "vue-router";
 
 
@@ -27,7 +29,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager/overview',
         name: 'manager-overview',
-        component: Error,
+        // component: Error,
         meta: {
             title: 'Prehľady',
             managerSidebar: true,
@@ -36,7 +38,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'patients',
                 name: 'manager-overview-patients',
-                component: Error,
+                component: Patients,
                 meta: { title: 'Pacienti', managerSidebar: true },
             },
             {
