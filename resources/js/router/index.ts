@@ -9,7 +9,6 @@ import Diagnoses from '@/partials/Settings/Diagnoses/Diagnoses.vue'
 import Doctors from '@/partials/Settings/Doctors/Doctors.vue'
 import DoctorsOld from '@/partials/Settings/Doctors/DoctorsOld.vue'
 import Macros from '@/partials/Settings/Macros/Macros.vue'
-import MacrosOld from '@/partials/Settings/Macros/MacrosOld.vue'
 import Data from '@/pages/Data.vue'
 import Points from '@/partials/Data/Points.vue'
 import Kilometers from '@/partials/Data/Kilometers.vue'
@@ -24,7 +23,6 @@ import DocumentAgreement from '@/partials/Documents/Agreement.vue'
 import DocumentCP from '@/partials/Documents/CP.vue'
 import DocumentDZC from '@/partials/Documents/DZC.vue'
 import DocumentDekurz from '@/partials/Documents/Dekurz.vue'
-import PatientsOld from '@/pages/PatientsOld.vue'
 import PatientProposal from '@/partials/Patient/Proposal.vue'
 import PatientAgreement from '@/partials/Patient/Agreement.vue'
 import PatientRecord from '@/partials/Patient/Record.vue'
@@ -49,15 +47,6 @@ const routes = [
         meta: {
             title: 'Pacienti',
             sidebar: true,
-        },
-    },
-    {
-        path: '/patients-old',
-        name: 'patients-old',
-        component: PatientsOld,
-        meta: {
-            title: 'Pacienti (old)',
-            sidebar: false,
         },
     },
 
@@ -322,17 +311,6 @@ const routes = [
                     link: 'makrá',
                     sidebar: true,
                     navbar: true,
-                },
-            },
-            {
-                path: 'macros-old',
-                name: 'macros-old',
-                component: MacrosOld,
-                meta: {
-                    title: 'Makrá (old)',
-                    link: 'makrá-old',
-                    sidebar: false,
-                    navbar: false,
                 },
             },
         ],
