@@ -3,6 +3,9 @@ import { ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import appRouter from '@/router';
 import { capitalize } from '@/utils/formatUtils';
+import useAuthStore from '@/stores/auth';
+
+const auth = useAuthStore();
 
 interface RawRoute {
     path: string;
@@ -25,15 +28,27 @@ interface SidebarItem {
 }
 
 function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
+    console.log('routes', routes);
+
     const items: SidebarItem[] = [];
+
+    const isManager = auth.currentRole === 'manager';
 
     for (const r of routes) {
         const meta = r.meta ?? {};
 
-        if (!meta.sidebar) continue;
+
+        if (isManager ? !meta?.managerSidebar : !meta.sidebar) continue;
+
+
 
         const children: SidebarChild[] = (r.children ?? [])
-            .filter((c) => c.meta?.sidebar)
+            .filter((c) => {
+                if (isManager) {
+                    return c.meta?.managerSidebar === true;
+                }
+                return c.meta?.sidebar
+            })
             .map((c) => {
                 const childMeta = c.meta ?? {};
 
