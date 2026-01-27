@@ -80,11 +80,7 @@ async function loadFavouriteDoctors() {
         return
     }
 
-    const doctors = await api.fetchEntities<Doctor>('v1/doctors', {
-        branch_id: branchId,
-        mark_favourites_for_branch_id: branchId,
-        filter: { is_favourite: 1 },
-    })
+    const doctors = await api.fetchEntities<Doctor>(`v1/branches/${branchId}/favourite-doctors`)
 
     doctorOptions.value = doctors.map((doc) => ({
         id: doc.id,

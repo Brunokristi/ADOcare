@@ -6,7 +6,7 @@ import type { useRemoteTable } from "@/composables/useRemoteTable";
 type VueComponent = Component | (() => Promise<Component>);
 type ValueFormatter<T = any> = (value: any, row: T) => string | number | null;
 
-type RemoteTableReturn = ReturnType<typeof useRemoteTable>;
+export type RemoteTableReturn = ReturnType<typeof useRemoteTable>;
 
 interface ColumnDef<T = any> {
     // key on the row object; optional if using custom slot/component
@@ -48,7 +48,7 @@ interface ActionDef<T = any> {
 interface DataTableOptions<T = any> {
     endpointUrl: string;
     columns: ColumnDef<T>[];
-    afterInit?: ({ remote: RemoteTableReturn }) => void;
+    afterInit?: function({ remote: RemoteTableReturn }): void;
     rowKey?: string;
     selectable?: boolean;
     actions?: ActionDef<T>[];

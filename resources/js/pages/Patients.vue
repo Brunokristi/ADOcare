@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, markRaw } from 'vue'
+import { computed, markRaw, ref } from 'vue'
 
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Doctor, Patient } from '@/types/models'
@@ -10,9 +10,10 @@ import router from '@/router'
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
 import api from '@/services/api'
 import CreatePatientModalBody from './partials/patient/CreatePatientModalBody.vue'
-import type { DataTableOptions } from '@/types/datatable'
+import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
+import { formatBranchFullName, formatUserFullName } from '@/utils/formatUtils'
 
 const patientStore = usePatientStore()
 
@@ -23,13 +24,15 @@ const authStore = useAuthStore()
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
 const companyId = computed(() => authStore.user?.company?.id ?? null)
 const tableKey = computed(() => `patients-${branchId.value ?? 'none'}`)
+const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
 function openPatientDocuments(patientId: number) {
     void openPatientDocumentsModal(patientId)
 }
 
-function openEditPatient(patientId: number) {
-    void openPatientEditModal(patientId)
+async function openEditPatient(patientId: number) {
+    const patient = await openPatientEditModal(patientId)
+    actionRemote.value?.reload()
 }
 
 const endpointUrl = computed(() => {
@@ -50,8 +53,11 @@ const options = computed<DataTableOptions<Patient>>(() => {
         defaultPageSize: 25,
         pageSizeOptions: [10, 25, 50],
         selectable: true,
+        afterInit: ({ remote }) => {
+            actionRemote.value = remote;
+        },
         extraParams: authStore.isManager
-            ? { with: 'assignedUsers,branches,doctor' }
+            ? { with: 'nurse,branch,doctor' }
             : {},
 
         columns: [
@@ -171,8 +177,8 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 field: 'nurse',
                 header: 'Sestra',
                 render: (v: any, row: Patient) => {
-                    if (row.assigned_users) {
-                        return `${row.assigned_users[0]?.first_name} ${row.assigned_users[0]?.last_name}`;
+                    if (row.nurse) {
+                        return formatUserFullName(row.nurse)
                     }
                     return '';
                 },
@@ -182,11 +188,8 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 field: 'branch',
                 header: 'Prevádzka',
                 render: (v: any, row: Patient) => {
-                    const branch = row.branches[0];
-                    if (branch) {
-                        return branch.address + ", " + branch.city || branch.identificator || branch.city || ''
-                    }
-                    return '-';
+                    const branch = row.branch;
+                    return formatBranchFullName(branch)
                 },
                 sortable: false,
             },

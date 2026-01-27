@@ -33,7 +33,7 @@ export async function openPatientDocumentsModal(patientId?: number) {
     if (!patientId) return
 
     // open via modal provider
-    await openModal(markRaw(PatientDocumentsModalBody), { patientId }, { header: 'Dokumenty pacienta', class: 'w-7xl max-w-[90vw]' })
+    return await openModal(markRaw(PatientDocumentsModalBody), { patientId }, { header: 'Dokumenty pacienta', class: 'w-7xl max-w-[90vw]' })
 }
 
 export async function openPatientEditModal(patientId?: number) {
@@ -41,5 +41,5 @@ export async function openPatientEditModal(patientId?: number) {
 
     const isManagerView = useAuthStore().isManager;
     // open via modal provider
-    await openModal(markRaw(EditPatientModalBody), { patientId, isManagerView }, { header: 'Upraviť pacienta', style: { width: '90%' } });
+    return await openModal(markRaw(EditPatientModalBody), { patientId, isManagerView }, { header: 'Upraviť pacienta', style: { width: '90%' } });
 }

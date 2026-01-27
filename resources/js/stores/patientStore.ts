@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import type { Doctor, InsuranceCompany, Patient } from '@/types/models';
 import api from '@/services/api';
+import useAuthStore from './auth';
 
 const STORAGE_KEY = 'selected-patient';
 
@@ -11,6 +12,7 @@ export const usePatientStore = defineStore('patient', {
 
     actions: {
         setPatient(patient: Patient) {
+            if (useAuthStore().isManager) return;
             this.current = patient;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(patient));
         },
@@ -40,7 +42,7 @@ export const usePatientStore = defineStore('patient', {
                 });
         },
 
-        async persistPatientData(patient: Patient, branchId?: number) {
+        async persistPatientData(patient: Patient) {
             try {
                 const isNew = !patient.id
 
@@ -48,7 +50,6 @@ export const usePatientStore = defineStore('patient', {
                     // create
                     const response = await api.post('/v1/patients', {
                         ...patient,
-                        ...(branchId ? { branch_id: branchId } : {}),
                     })
 
                     const created = response.data.data as Patient
@@ -56,7 +57,13 @@ export const usePatientStore = defineStore('patient', {
                 }
 
                 // update
-                await api.put(`/v1/patients/${patient.id}`, patient)
+                let payload: Partial<Patient> = { ...patient }
+                if (useAuthStore().isManager) {
+                    payload = { branch_id: patient.branch_id, nurse_id: patient.nurse_id }
+                }
+                console.log('Payload', payload);
+
+                await api.put(`/v1/patients/${patient.id}`, payload)
 
                 // optional: reload fresh from backend
                 const fresh = await this.fetchPatient(patient.id)
