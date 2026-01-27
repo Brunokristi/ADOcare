@@ -14,7 +14,6 @@ class PatientUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'branch_id' => 'sometimes|integer|exists:branches,id',
 
             'first_name' => 'sometimes|required|string|max:255',
             'last_name' => 'sometimes|required|string|max:255',
@@ -23,6 +22,8 @@ class PatientUpdateRequest extends FormRequest
             'sex' => 'nullable|in:M,F',
             'contact' => 'nullable|string|max:255',
 
+            'branch_id' => 'sometimes|integer|exists:branches,id',
+            'nurse_id' => 'nullable|integer|exists:users,id',
             'doctor_id' => 'nullable|integer|exists:doctors,id',
             'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
 

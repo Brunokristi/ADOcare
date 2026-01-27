@@ -14,12 +14,12 @@ class BranchDoctorController extends Controller
     public function doctors(Branch $branch)
     {
         $query = Doctor::query()
-        ->whereHas('branches', function ($q) use ($branch) {
-            $q->where('branches.id', $branch->id);
-        });
+            ->whereHas('favourite_in_branches', function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            });
         $results = ApiQuery::apply(request(), $query);
         return $this->success(new DoctorCollection($results), 'Branch doctors retrieved');
-        }
+    }
 
     public function attach(Branch $branch, Doctor $doctor)
     {

@@ -7,7 +7,7 @@ use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Doctor;
-use DB;
+use App\Services\DoctorService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -23,21 +23,8 @@ class DoctorController extends Controller
     public function index()
     {
 
-        $subquery = Doctor::query();
-
         $branchId = request()->input('mark_favourites_for_branch_id');
-        if ($branchId) {
-            // Add is_favourite attribute via LEFT JOIN for better performance
-            $subquery->leftJoin('branch_favourite_doctors as bfd', function ($join) use ($branchId) {
-                $join->on('bfd.doctor_id', '=', 'doctors.id')
-                    ->where('bfd.branch_id', '=', $branchId);
-            })
-                ->selectRaw('doctors.*, (bfd.doctor_id IS NOT NULL) AS is_favourite');
-        }
-
-        $query = DB::table(DB::raw("({$subquery->toSql()}) as doctors"))
-            ->mergeBindings($subquery->getQuery()) // Merge bindings from subquery
-            ->select('doctors.*');
+        $query = app(DoctorService::class)->indexQuery($branchId);
 
         $results = ApiQuery::apply(
             request(),

@@ -25,6 +25,16 @@ class BranchController extends Controller
         return $this->success(new BaseCollection($results), 'Branches retrieved');
     }
 
+    public function myCompanyBranches(Request $request)
+    {
+        $user = $request->user();
+        $companyId = $user->company->id;
+
+        $query = Branch::query()->where('company_id', $companyId);
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new BaseCollection($results), 'Company branches retrieved');
+    }
+
     public function patients(Branch $branch)
     {
         $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
@@ -43,6 +53,21 @@ class BranchController extends Controller
         $results = ApiQuery::apply(request(), $usersQuery);
 
         return $this->success(new BaseCollection($results), 'Branch users retrieved');
+    }
+
+    public function nurses(Branch $branch)
+    {
+        $nursesQuery = User::query()
+            ->whereHas('branches', function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            })
+            ->whereHas('roles', function ($q) {
+                $q->where('position', 'nurse');
+            });
+
+        $results = ApiQuery::apply(request(), $nursesQuery);
+
+        return $this->success(new BaseCollection($results), 'Branch nurses retrieved');
     }
 
 

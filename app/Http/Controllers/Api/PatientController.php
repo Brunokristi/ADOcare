@@ -78,7 +78,7 @@ class PatientController extends Controller
     {
         $data = $request->validated();
 
-        $patient = $this->service->create($data, $request->user(), (int) $data['branch_id']);
+        $patient = $this->service->create($data);
 
         return $this->success(new PatientResource($patient), 'Created', 201);
     }
@@ -111,18 +111,11 @@ class PatientController extends Controller
      * @bodyParam last_name string Example: "Doe"
      * @response 200 {"data": {"id":1, "first_name":"Jane", "last_name":"Doe"}}
      */
-    public function update(PatientUpdateRequest $request, $id)
+    public function update(PatientUpdateRequest $request, Patient $patient)
     {
         $data = $request->validated();
 
-        $patient = Patient::find($id);
-        if (!$patient) {
-            return $this->error('Not found', 404);
-        }
-
-        $branchId = array_key_exists('branch_id', $data) ? (int) $data['branch_id'] : null;
-
-        $patient = $this->service->update($patient, $data, $request->user(), $branchId);
+        $patient = $this->service->update($patient, $data);
 
         return $this->success(new PatientResource($patient), 'Updated');
     }

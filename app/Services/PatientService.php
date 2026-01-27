@@ -32,11 +32,11 @@ class PatientService
     {
         $this->checkManagerProtectedFields($data);
 
+        $user = auth()->user();
+        $data['nurse_id'] = $user->id;
+
         return DB::transaction(function () use ($data) {
-            $patient = Patient::create(collect($data)->except('branch_id')->toArray());
-
-            $patient->save();
-
+            $patient = Patient::create($data);
             $patient->load(['doctor', 'visits', 'insuranceCompany']);
 
             return $patient;
@@ -47,7 +47,6 @@ class PatientService
     {
 
         $this->checkManagerProtectedFields($data);
-
 
         return DB::transaction(function () use ($patient, $data) {
 
@@ -60,11 +59,7 @@ class PatientService
                 }
             }
 
-
-            $patient->fill(collect($data)->toArray());
-
-            $patient->save();
-
+            $patient->update($data);
             $patient->load(['doctor', 'visits', 'insuranceCompany']);
 
             return $patient;

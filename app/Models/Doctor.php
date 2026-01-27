@@ -18,5 +18,9 @@ class Doctor extends Model
         return $this->hasMany(Patient::class);
     }
 
+    public function favourite_in_branches()
+    {
+        return $this->belongsToMany(Branch::class, 'branch_favourite_doctors', 'doctor_id', 'branch_id');
+    }
 
 }
