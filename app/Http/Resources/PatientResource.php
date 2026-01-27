@@ -37,17 +37,15 @@ class PatientResource extends JsonResource
 
             // relations
 
-            'assignedUsers' => $this->whenLoaded('assignedUsers', function () {
-                return $this->assignedUsers->map(function ($user) {
-                    return [
-                        'id' => $user->id,
-                        'first_name' => $user->first_name,
-                        'last_name' => $user->last_name,
-                        'email' => $user->email,
-                        'created_at' => $user->created_at,
-                        'updated_at' => $user->updated_at,
-                    ];
-                });
+            'nurse' => $this->whenLoaded('nurse', function () {
+                return $this->nurse ? [
+                    'id' => $this->nurse->id,
+                    'first_name' => $this->nurse->first_name,
+                    'last_name' => $this->nurse->last_name,
+                    'email' => $this->nurse->email,
+                    'created_at' => $this->nurse->created_at,
+                    'updated_at' => $this->nurse->updated_at,
+                ] : null;
             }),
 
             'doctor' => $this->whenLoaded('doctor', function () {
@@ -94,6 +92,17 @@ class PatientResource extends JsonResource
                         'updated_at' => $visit->updated_at,
                     ];
                 });
+            }),
+
+            'branch' => $this->whenLoaded('branch', function () {
+                return $this->branch ? [
+                    'id' => $this->branch->id,
+                    'name' => $this->branch->name ?? null,
+                    'address' => $this->branch->address ?? null,
+                    'city' => $this->branch->city ?? null,
+                    'created_at' => $this->branch->created_at ?? null,
+                    'updated_at' => $this->branch->updated_at ?? null,
+                ] : null;
             }),
 
             // counts + exists flags

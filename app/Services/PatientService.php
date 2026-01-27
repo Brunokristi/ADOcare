@@ -4,29 +4,38 @@ namespace App\Services;
 
 use App\Models\Branch;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PatientService
 {
-    public function queryForUserBranch($user, Branch $branch): Builder
+    public function queryForUserBranch(User $nurse, Branch $branch): Builder
     {
         return Patient::with(['doctor', 'visits', 'insuranceCompany'])
-            ->whereHas('assignedUsers', function ($q) use ($user, $branch) {
-                $q->where('users.id', $user->id)
-                    ->where('patient_branch_users.branch_id', $branch->id);
-            });
+            ->where('nurse_id', $nurse->id)
+            ->where('branch_id', $branch->id);
     }
 
-    public function create(array $data, $user, int $branchId): Patient
+    // FUnction to check if branch_id or nurse_id are being set by non-manager user
+    public function checkManagerProtectedFields(array $data): void
     {
-        return DB::transaction(function () use ($data, $user, $branchId) {
+        // branch_id and nurse_id are manager protected. If user is not manager, throw error
+        $user = auth()->user();
+        if (($data['branch_id'] || $data['nurse_id']) && !$user->hasRole('manager')) {
+            throw new \Exception("Unauthorized to set branch_id or nurse_id");
+        }
+    }
+
+    public function create(array $data): Patient
+    {
+        $this->checkManagerProtectedFields($data);
+
+        return DB::transaction(function () use ($data) {
             $patient = Patient::create(collect($data)->except('branch_id')->toArray());
 
-            $patient->assignedUsers()->syncWithoutDetaching([
-                $user->id => ['branch_id' => $branchId],
-            ]);
+            $patient->save();
 
             $patient->load(['doctor', 'visits', 'insuranceCompany']);
 
@@ -34,27 +43,27 @@ class PatientService
         });
     }
 
-    public function update(Patient $patient, array $data, $user, ?int $branchId = null): Patient
+    public function update(Patient $patient, array $data): Patient
     {
-        return DB::transaction(function () use ($patient, $data, $user, $branchId) {
+
+        $this->checkManagerProtectedFields($data);
+
+
+        return DB::transaction(function () use ($patient, $data) {
 
             if (array_key_exists('dekurz_number', $data)) {
                 $incoming = (int) $data['dekurz_number'];
-                $current  = (int) ($patient->dekurz_number ?? 0);
+                $current = (int) ($patient->dekurz_number ?? 0);
 
                 if ($incoming <= $current) {
                     unset($data['dekurz_number']);
                 }
             }
 
-            $patient->fill(collect($data)->except('branch_id')->toArray());
-            $patient->save();
 
-            if (!is_null($branchId)) {
-                $patient->assignedUsers()->syncWithoutDetaching([
-                    $user->id => ['branch_id' => $branchId],
-                ]);
-            }
+            $patient->fill(collect($data)->toArray());
+
+            $patient->save();
 
             $patient->load(['doctor', 'visits', 'insuranceCompany']);
 
@@ -75,14 +84,12 @@ class PatientService
 
     public function deleteManyInBranch(array $ids, Branch $branch): void
     {
-        Patient::whereHas('assignedUsers', function ($q) use ($branch) {
-            $q->where('patient_branch_users.branch_id', $branch->id);
-        })->whereIn('id', $ids)->delete();
+        Patient::where('branch_id', $branch->id)->whereIn('id', $ids)->delete();
     }
 
     public function ensureAssignedToBranch(Patient $patient, Branch $branch): bool
     {
-        return $patient->assignedUsers()->where('patient_branch_users.branch_id', $branch->id)->exists();
+        return $patient->branch_id === $branch->id;
     }
 
     public function findWithRelations(int $id): ?Patient

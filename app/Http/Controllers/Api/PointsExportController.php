@@ -179,11 +179,9 @@ class PointsExportController extends Controller
         $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('doctors as d', 'd.id', '=', 'p.doctor_id')
-            ->join('patient_branch_users as pbu', function ($join) {
-                $join->on('pbu.patient_id', '=', 'p.id')
-                    ->on('pbu.user_id', '=', 'pp.user_id')
-                    ->on('pbu.branch_id', '=', 'pp.branch_id');
-            })
+            // replaced pivot join with direct patient fields (nurse_id, branch_id)
+            ->whereColumn('p.nurse_id', 'pp.user_id')
+            ->whereColumn('p.branch_id', 'pp.branch_id')
             ->join('procedure_company_prices as pcp', function ($join) {
                 $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');

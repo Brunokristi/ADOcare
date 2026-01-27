@@ -80,7 +80,7 @@ class CompanyController extends Controller
      */
     public function patients(Request $request, Company $company)
     {
-        $query = Patient::query()->whereHas('branches', function ($q) use ($company) {
+        $query = Patient::query()->whereHas('branch', function ($q) use ($company) {
             $q->where('company_id', $company->id);
         });
         $results = ApiQuery::apply(
