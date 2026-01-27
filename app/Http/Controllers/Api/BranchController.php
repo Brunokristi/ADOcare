@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Branch;
 use App\Models\Patient;
 use App\Models\Doctor;
+use App\Models\User;
 use Illuminate\Http\Request;
 use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -33,6 +34,17 @@ class BranchController extends Controller
 
         $results = ApiQuery::apply(request(), $query);
         return $this->success(new PatientCollection($results), 'Branch patients retrieved');
+    }
+
+    public function users(Branch $branch)
+    {
+        $usersQuery = User::query()->whereHas('branches', function ($q) use ($branch) {
+            $q->where('branch_id', $branch->id);
+        });
+
+        $results = ApiQuery::apply(request(), $usersQuery);
+
+        return $this->success(new BaseCollection($results), 'Branch users retrieved');
     }
 
 
