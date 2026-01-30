@@ -6,6 +6,7 @@ import api from '@/services/api'
 import useAuthStore from '@/stores/auth'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
+import { formatBranchFullName } from '@/utils/formatUtils'
 
 let showFavouritesOnly = ref(false);
 
@@ -108,11 +109,37 @@ const options = ref<DataTableOptions<Doctor>>({
         },
     ],
 })
+
+// remove zpr, pzs, is_favourite and all actions if user is manager
+if (useAuthStore().isManager) {
+    options.value.columns = options.value.columns?.filter(c => !['zpr', 'pzs', 'is_favourite'].includes(c.field ?? ''));
+    options.value.actions = options.value.actions?.filter(a => a.key !== 'show_favourites_only');
+    options.value.extraParams = { count: 'assigned_patients', with: 'assigned_branches' };
+
+    // Add Pocet pacientov and pobocky columns
+    options.value.columns?.push(
+        { field: 'assigned_patients_count', header: 'Počet pacientov', sortable: true },
+        { field: 'assigned_branches', header: 'Pobočky', sortable: false, width: '35%' },
+    );
+}
+
+
+
 </script>
 
 <template>
     <div class="h-full flex flex-col overflow-hidden min-h-0">
-        <UniversalDataTable :options="options" />
+        <UniversalDataTable :options="options">
+            <template #col-assigned_branches="{ row }">
+                <div class="flex flex-wrap max-h-24 overflow-y-auto">
+                    <tag v-if="row.assigned_branches && row.assigned_branches.length"
+                        v-for="branch in row.assigned_branches" :key="branch.id" class="mr-1 mb-1"
+                        :value="formatBranchFullName(branch)"></tag>
+                    <span v-else>-</span>
+                </div>
+            </template>
+        </UniversalDataTable>
+
 
         <!-- Modal opened via provider; no inline form component here -->
     </div>

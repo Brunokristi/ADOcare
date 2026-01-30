@@ -10,8 +10,8 @@
 // Reporty
 
 import Error from "@/pages/Error.vue";
-import Patient from "@/pages/Patient.vue";
 import Patients from "@/pages/Patients.vue";
+import Doctors from "@/partials/Settings/Doctors/Doctors.vue";
 import type { RouteRecordRaw } from "vue-router";
 
 
@@ -44,7 +44,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'doctors',
                 name: 'manager-overview-doctors',
-                component: Error,
+                component: Doctors,
                 meta: { title: 'Spolupracujúci lekári', managerSidebar: true },
             },
         ],
