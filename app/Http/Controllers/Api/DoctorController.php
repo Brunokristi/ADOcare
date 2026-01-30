@@ -24,7 +24,7 @@ class DoctorController extends Controller
     {
 
         $branchId = request()->input('mark_favourites_for_branch_id');
-        $query = app(DoctorService::class)->indexQuery($branchId);
+        $query = DoctorService::indexQuery($branchId);
 
         $results = ApiQuery::apply(
             request(),
