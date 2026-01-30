@@ -27,6 +27,7 @@ trait ApiResponse
         return response()->json([
             'message' => $message,
             'errors' => $errors,
+            'trace' => config('app.debug') ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) : null,
             'request' => request()->all(),
         ], $status);
     }

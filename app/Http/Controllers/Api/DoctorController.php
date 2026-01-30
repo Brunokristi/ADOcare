@@ -24,12 +24,13 @@ class DoctorController extends Controller
     {
 
         $branchId = request()->input('mark_favourites_for_branch_id');
-        $query = DoctorService::indexQuery($branchId);
+        $query = app(DoctorService::class)->indexQuery($branchId);
 
         $results = ApiQuery::apply(
             request(),
             $query,
-            searchable: ['first_name', 'last_name', 'zpr', 'pzs'],
+            // allow searching related branch columns (city, address, identificator)
+            searchable: ['first_name', 'last_name', 'zpr', 'pzs', 'assigned_branches' => ['city', 'address', 'identificator']],
             allowedFilters: ['first_name', 'last_name', 'title', 'zpr', 'pzs', 'is_favourite'],
         );
 

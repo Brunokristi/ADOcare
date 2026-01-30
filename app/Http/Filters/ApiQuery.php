@@ -45,6 +45,7 @@ class ApiQuery
             'filter' => 'sometimes|array',
             'q' => 'sometimes|string|max:255',
             'sort' => 'sometimes|string|max:255',
+            'count' => 'sometimes|string|max:255',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'limit' => 'sometimes|integer|min:1|max:1000',
             'all' => 'sometimes|boolean',
@@ -55,6 +56,7 @@ class ApiQuery
 
         // Apply modular parts
         static::applyWith($request, $query, $defaults);
+        static::applyCount($request, $query, $defaults);
         static::applyFilters($request, $query, $allowedFilters, $defaults);
         static::applySearch($request, $query, $searchable, $defaults);
         static::applySort($request, $query, $defaults);
@@ -77,6 +79,26 @@ class ApiQuery
         if ($with) {
             $relations = array_map('trim', explode(',', $with));
             $query->with($relations);
+        }
+    }
+
+    /**
+     * Apply relation counts (withCount)
+     * Accepts a comma-separated list of relations in the `count` query param.
+     * This is a no-op if the provided builder does not support `withCount`.
+     */
+    protected static function applyCount(Request $request, Builder $query, array $defaults = []): void
+    {
+        $count = $request->input('count', $defaults['count'] ?? null);
+        if (!$count) {
+            return;
+        }
+
+        $relations = array_map('trim', explode(',', $count));
+
+        // Only apply when the builder supports withCount (Eloquent builder)
+        if (method_exists($query, 'withCount')) {
+            $query->withCount($relations);
         }
     }
 
@@ -164,19 +186,77 @@ class ApiQuery
             $tokens = [$q];
         }
 
-        $query->where(function (Builder $outer) use ($searchable, $tokens) {
+        // Parse searchable into root columns and relation => columns map.
+        $rootColumns = [];
+        $relationColumns = [];
+
+        foreach ((array) $searchable as $k => $v) {
+            if (is_int($k)) {
+                $rootColumns[] = $v;
+                continue;
+            }
+
+            // associative entry: key is relation name, value is array|string
+            if (is_array($v)) {
+                $relationColumns[$k] = array_merge($relationColumns[$k] ?? [], $v);
+            } elseif (is_string($v)) {
+                $relationColumns[$k][] = $v;
+            }
+        }
+
+        // Build search: tokens are ANDed; within a token, columns/relations are ORed
+        $query->where(function (Builder $outer) use ($rootColumns, $relationColumns, $tokens, $query) {
             foreach ($tokens as $token) {
                 $like = "%{$token}%";
 
-                $outer->where(function (Builder $inner) use ($searchable, $like) {
-                    foreach ((array) $searchable as $i => $col) {
-                        $expr = "public.immutable_unaccent(lower(cast({$col} as text))) LIKE public.immutable_unaccent(lower(?))";
+                $outer->where(function (Builder $inner) use ($rootColumns, $relationColumns, $like, $query) {
+                    $first = true;
+                    $table = $query->getModel()->getTable();
 
-                        if ($i === 0) {
+                    // root columns on the main model
+                    foreach ($rootColumns as $col) {
+                        $expr = "public.immutable_unaccent(lower(cast({$table}.{$col} as text))) LIKE public.immutable_unaccent(lower(?))";
+                        if ($first) {
                             $inner->whereRaw($expr, [$like]);
+                            $first = false;
                         } else {
                             $inner->orWhereRaw($expr, [$like]);
                         }
+                    }
+
+                    // relations
+                    foreach ($relationColumns as $relation => $cols) {
+                        $inner->orWhereHas($relation, function (Builder $q) use ($cols, $like, $query, $relation) {
+                            $resolved = $resolved = $cols;
+
+                            // if '*' is present, resolve related model fillable columns
+                            if (in_array('*', $cols, true)) {
+                                $model = $query->getModel();
+                                if (!method_exists($model, $relation)) {
+                                    throw new \Exception("Cannot resolve relation '{$relation}' for searching on model " . get_class($model));
+                                }
+                                /** @var \Illuminate\Database\Eloquent\Relations\Relation $modelRelation */
+                                $modelRelation = $model->$relation();
+                                $related = $modelRelation->getRelated();
+                                dd($related, $related->getFillable());
+                                // $resolved = $related->
+                            }
+
+                            // if we couldn't resolve any columns, do nothing
+                            if (empty($resolved)) {
+                                return;
+                            }
+
+                            $table = $q->getModel()->getTable();
+                            foreach ($resolved as $i => $col) {
+                                $expr = "public.immutable_unaccent(lower(cast({$table}.{$col} as text))) LIKE public.immutable_unaccent(lower(?))";
+                                if ($i === 0) {
+                                    $q->whereRaw($expr, [$like]);
+                                } else {
+                                    $q->orWhereRaw($expr, [$like]);
+                                }
+                            }
+                        });
                     }
                 });
             }
