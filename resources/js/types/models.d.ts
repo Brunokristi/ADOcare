@@ -194,10 +194,19 @@ export interface Doctor {
   updated_at: string | null
   // relations
   patients: Patient[]
+  favourite_in_branches: Branch[]
+  assigned_patients: Patient[]
+  assigned_branches: Branch[]
   // counts
   patients_count: number
+  favourite_in_branches_count: number
+  assigned_patients_count: number
+  assigned_branches_count: number
   // exists
   patients_exists: boolean
+  favourite_in_branches_exists: boolean
+  assigned_patients_exists: boolean
+  assigned_branches_exists: boolean
 }
 
 export interface Patient {
