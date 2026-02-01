@@ -73,6 +73,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     // Route::delete('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'destroyMany']);
     Route::apiResourceComplete('branches/{branch}/patients', BranchPatientController::class);
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
+    Route::delete('patients', [PatientController::class, 'destroyMany']);
+
     Route::group(['prefix' => 'patients/{patient}'], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
         Route::get('doctor', [PatientController::class, 'doctor']);

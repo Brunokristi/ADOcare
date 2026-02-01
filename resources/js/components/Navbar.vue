@@ -91,14 +91,17 @@ const patientOptions = ref<PatientOption[]>([])
 const selectedPatient = ref<PatientOption | null>(null)
 const patientsLoading = ref(false)
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
-const companyId = computed(() => authStore.user?.company.id ?? null)
+const companyId = computed(() => authStore.user?.company?.id ?? null)
 const currentRole = computed(() => authStore.currentRole ?? null)
 const fetchPatientsURL = computed(() => {
-    console.log('Computed fetchPatientsURL for branchId', branchId.value, companyId.value)
+  console.log('Computed fetchPatientsURL for branchId', branchId.value, companyId.value)
 
-    if (currentRole.value == 'manager') return `/v1/companies/${companyId.value}/patients`
-    return branchId.value ? `/v1/branches/${branchId.value}/patients` : ''
-});
+  if (currentRole.value === 'manager') {
+    return companyId.value ? `/v1/companies/${companyId.value}/patients` : ''
+  }
+
+  return branchId.value ? `/v1/branches/${branchId.value}/patients` : ''
+})
 async function fetchPatients(page: number) {
     try {
         console.log(isAuthenticated.value, fetchPatientsURL.value)
