@@ -8,12 +8,12 @@ import api from '@/services/api'
 import type { Patient, User } from '@/types/models'
 import { useToast } from 'primevue/usetoast'
 import type { VirtualScrollerLazyEvent } from 'primevue/virtualscroller'
+import { formatBranchFullName } from '@/utils/formatUtils'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const patientStore = usePatientStore()
 const toast = useToast();
-
 
 const emit = defineEmits<{
     (e: 'toggle-sidebar'): void
@@ -44,7 +44,7 @@ const branchOptions = computed<BranchOption[]>(() => {
 
     const options: BranchOption[] = (userInfo.branches ?? []).map((branch: any) => ({
         id: branch.id,
-        label: branch.address + ", " + branch.city || branch.identificator || branch.city || '',
+        label: formatBranchFullName(branch),
         isManager: false,
     }))
 
@@ -193,9 +193,18 @@ function toggleSidebar() {
 
 /* ------------ LIFECYCLE ------------ */
 
-onMounted(() => {
+onMounted(async () => {
     patientStore.loadFromStorage()
     loadPatients()
+    await authStore.waitUntilInitialized()
+    if (authStore.isManager)
+        selectedBranchId.value = -1
+    else
+        selectedBranchId.value = authStore.currentBranch?.id ?? null;
+
+    console.log('Navbar mounted, selectedBranchId:', selectedBranchId.value);
+
+
 })
 
 /* reload patients when branch changes */
@@ -203,7 +212,7 @@ watch(
     () => authStore.currentBranch?.id,
     () => {
         loadPatients();
-        selectedBranchId.value = authStore.currentBranch?.id ?? (authStore.currentRole === 'manager' ? -1 : null)
+        selectedBranchId.value = authStore.currentBranch?.id ?? (authStore.isManager ? -1 : null)
     }
 )
 

@@ -12,18 +12,16 @@ class Patient extends Model
 
     protected $table = 'patients';
 
-    protected $fillable = ['first_name', 'last_name', 'title', 'personal_number', 'sex', 'contact', 'doctor_id', 'insurance_company_id', 'address', 'city', 'zip', 'latitude', 'longitude', 'reference_date', 'dekurz_number'];
+    protected $fillable = ['first_name', 'last_name', 'title', 'personal_number', 'sex', 'contact', 'doctor_id', 'insurance_company_id', 'address', 'city', 'zip', 'latitude', 'longitude', 'reference_date', 'dekurz_number', 'branch_id', 'nurse_id'];
 
-    public function assignedUsers()
+    public function nurse()
     {
-        return $this->belongsToMany(User::class, 'patient_branch_users')
-            ->withPivot('branch_id');
+        return $this->belongsTo(User::class, 'nurse_id');
     }
 
-    public function branches()
+    public function branch()
     {
-        return $this->belongsToMany(Branch::class, 'patient_branch_users')
-            ->withPivot('user_id');
+        return $this->belongsTo(Branch::class);
     }
 
     public function doctor()

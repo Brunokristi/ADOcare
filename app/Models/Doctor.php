@@ -18,5 +18,19 @@ class Doctor extends Model
         return $this->hasMany(Patient::class);
     }
 
+    public function favourite_in_branches()
+    {
+        return $this->belongsToMany(Branch::class, 'branch_favourite_doctors', 'doctor_id', 'branch_id');
+    }
+
+    public function assigned_patients()
+    {
+        return $this->hasManyThrough(Patient::class, Branch::class, 'id', 'branch_id', 'id', 'company_id');
+    }
+
+    public function assigned_branches()
+    {
+        return $this->hasManyThrough(Branch::class, Patient::class, 'doctor_id', 'id', 'id', 'branch_id');
+    }
 
 }

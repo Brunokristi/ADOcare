@@ -1,3 +1,5 @@
+import type { Branch, User } from "@/types/models";
+
 export function formatBirthNumber(value?: string) {
     const digits = (value || '').replace(/\D/g, '');
     const first = digits.slice(0, 6);
@@ -8,4 +10,17 @@ export function formatBirthNumber(value?: string) {
 export function capitalize(text: string): string {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function formatUserFullName(user: User): string {
+    if (!user) return '-';
+    const first = user.first_name ? user.first_name.trim() : '';
+    const last = user.last_name ? user.last_name.trim() : '';
+    const title = user.title ? user.title.trim() : '';
+    return `${title} ${first} ${last}`.trim();
+}
+
+export function formatBranchFullName(branch: Branch): string {
+    if (!branch) return '-';
+    return branch.address + ", " + branch.city || branch.identificator || branch.code || ''
 }

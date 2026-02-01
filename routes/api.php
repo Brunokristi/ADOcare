@@ -67,11 +67,6 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('cars', CarController::class);
 
-    // Branch-scoped patient collection routes (explicit)
-    // Route::get('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'index']);
-    // Route::post('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'store']);
-    // Route::delete('/branches/{branch}/patients', [\App\Http\Controllers\Api\BranchPatientController::class, 'destroyMany']);
-    Route::apiResourceComplete('branches/{branch}/patients', BranchPatientController::class);
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::delete('patients', [PatientController::class, 'destroyMany']);
 
@@ -87,10 +82,14 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
 
     Route::apiResourceComplete('branches', BranchController::class);
+    Route::get('branches/{branch}/patients', [BranchPatientController::class, 'index']);
+    Route::get('branches/{branch}/nurses', [BranchController::class, 'nurses']);
     Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors']);
     Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
-    
+
+    Route::get('/my-company/branches', [BranchController::class, 'myCompanyBranches']);
+
     Route::apiResourceComplete('doctors', DoctorController::class);
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
     Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class);
@@ -151,5 +150,5 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('visits/month-totals', [VisitsController::class, 'monthTotals']);
 
     Route::get('/cities/suggest', [CityController::class, 'suggest']);
-    Route::get('/cities/by-zip', [CityController::class, 'byZip']);  
+    Route::get('/cities/by-zip', [CityController::class, 'byZip']);
 });

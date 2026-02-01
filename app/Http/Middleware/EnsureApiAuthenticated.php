@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class EnsureApiAuthenticated
 {
+    use ApiResponse;
 
     /**
      * Handle an incoming request.

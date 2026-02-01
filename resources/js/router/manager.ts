@@ -1,0 +1,116 @@
+// Manger routes:
+// Prehlady
+//  \---- Pacienty
+//  \---- Spolupracujuci lekari
+// Nastavenia
+// \---- Spolocnost
+// \---- Pobocky
+// \---- Pouzivatelia
+// \---- Auta
+// Reporty
+
+import Error from "@/pages/Error.vue";
+import Patients from "@/pages/Patients.vue";
+import Doctors from "@/partials/Settings/Doctors/Doctors.vue";
+import type { RouteRecordRaw } from "vue-router";
+
+
+const managerRoutes: Readonly<RouteRecordRaw[]> = [
+
+    {
+        path: '/manager',
+        name: 'manager-dashboard',
+        component: Error,
+        meta: {
+            title: 'Manažérsky dashboard',
+            managerSidebar: true,
+        },
+    },
+    {
+        path: '/manager/overview',
+        name: 'manager-overview',
+        // component: Error,
+        meta: {
+            title: 'Prehľady',
+            managerSidebar: true,
+        },
+        children: [
+            {
+                path: 'patients',
+                name: 'manager-overview-patients',
+                component: Patients,
+                meta: { title: 'Pacienti', managerSidebar: true },
+            },
+            {
+                path: 'doctors',
+                name: 'manager-overview-doctors',
+                component: Doctors,
+                meta: { title: 'Spolupracujúci lekári', managerSidebar: true },
+            },
+        ],
+    },
+    {
+        path: '/manager/settings',
+        name: 'manager-settings',
+        component: Error,
+        redirect: { name: 'manager-settings-company' },
+        meta: {
+            title: 'Nastavenia (Manažér)',
+            sectionRoot: 'manager-settings',
+            managerSidebar: true,
+        },
+        children: [
+            {
+                path: 'company',
+                name: 'manager-settings-company',
+                component: Error,
+                meta: { title: 'Spoločnosť', managerSidebar: true },
+            },
+            {
+                path: 'branches',
+                name: 'manager-settings-branches',
+                component: Error,
+                meta: { title: 'Pobočky', managerSidebar: true },
+            },
+            {
+                path: 'users',
+                name: 'manager-settings-users',
+                component: Error,
+                meta: { title: 'Používatelia', managerSidebar: true },
+            },
+            {
+                path: 'cars',
+                name: 'manager-settings-cars',
+                component: Error,
+                meta: { title: 'Autá', managerSidebar: true },
+            },
+        ],
+    },
+    {
+        path: '/manager/reports',
+        name: 'manager-reports',
+        component: Error,
+        meta: {
+            title: 'Reporty',
+            managerSidebar: true,
+        },
+    },
+];
+
+managerRoutes.forEach(route => {
+    route.meta = route.meta || {};
+    route.meta.roles = route.meta.roles || [];
+    (route.meta.roles as string[]).push('manager');
+
+    if (route.children) {
+        route.children.forEach(child => {
+            child.meta = child.meta || {};
+            child.meta.roles = child.meta.roles || [];
+            (child.meta.roles as string[]).push('manager');
+        });
+    }
+
+});
+
+
+export default managerRoutes;

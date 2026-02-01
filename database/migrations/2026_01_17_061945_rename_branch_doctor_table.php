@@ -3,11 +3,12 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
-        Schema::rename('branch_doctor', 'branch_favourite_doctors');
+        if (Schema::hasTable('branch_doctor'))
+            Schema::rename('branch_doctor', 'branch_favourite_doctors');
+
     }
 
     public function down(): void

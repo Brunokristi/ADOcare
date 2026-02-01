@@ -9,7 +9,7 @@ trait ApiResponse
      *
      * @param  mixed  $data
      */
-    protected function success($data = null, string $message = 'OK', int $status = 200)
+    public function success($data = null, string $message = 'OK', int $status = 200)
     {
         return response()->json([
             'message' => $message,
@@ -22,21 +22,23 @@ trait ApiResponse
      *
      * @param  mixed  $data
      */
-    protected function error(string $message = 'Error', int $status = 400, $errors = null)
+    public function error(string $message = 'Error', int $status = 400, $errors = null)
     {
         return response()->json([
             'message' => $message,
             'errors' => $errors,
+            'trace' => config('app.debug') ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) : null,
+            'request' => request()->all(),
         ], $status);
     }
 
 
 
-    protected function notFound(string $message = 'Not Found', $errors = null)
+    public function notFound(string $message = 'Not Found', $errors = null)
     {
         return $this->error($message, 404, $errors);
     }
-    protected function forbidden(string $message = 'Forbidden', $errors = null)
+    public function forbidden(string $message = 'Forbidden', $errors = null)
     {
         return $this->error($message, 403, $errors);
     }

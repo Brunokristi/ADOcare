@@ -56,7 +56,7 @@ class Branch extends Model
 
     public function patients()
     {
-        return $this->belongsToMany(Patient::class, 'patient_branch_users', 'branch_id', 'patient_id');
+        return $this->hasMany(Patient::class, 'branch_id');
     }
 
     public function favourite_doctors()

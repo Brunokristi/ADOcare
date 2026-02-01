@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', {
     }),
     getters: {
         isAuthenticated: (state) => !!state.user,
+        isManager: (state) => state.currentRole === 'manager',
     },
     actions: {
         async waitUntilInitialized() {
@@ -45,6 +46,8 @@ export const useAuthStore = defineStore('auth', {
                 const savedRole = localStorage.getItem('current_role');
                 if (savedRole && this.user?.role_names.includes(savedRole)) {
                     this.currentRole = savedRole;
+                    console.log(`Restored saved role: ${savedRole}`);
+
                 } else if (this.user?.role_names.length) {
                     this.currentRole = this.user.role_names[0] ?? null;
                 }

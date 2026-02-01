@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Branch;
 use App\Models\Patient;
 use App\Models\Doctor;
+use App\Models\User;
 use Illuminate\Http\Request;
 use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -24,15 +25,49 @@ class BranchController extends Controller
         return $this->success(new BaseCollection($results), 'Branches retrieved');
     }
 
+    public function myCompanyBranches(Request $request)
+    {
+        $user = $request->user();
+        $companyId = $user->company->id;
+
+        $query = Branch::query()->where('company_id', $companyId);
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new BaseCollection($results), 'Company branches retrieved');
+    }
+
     public function patients(Branch $branch)
     {
         $query = Patient::with(['doctor', 'visits', 'insuranceCompany'])
-            ->whereHas('assignedUsers', function ($q) use ($branch) {
-                $q->where('branch_id', $branch->id);
-            });
+            ->where('branch_id', $branch->id);
 
         $results = ApiQuery::apply(request(), $query);
         return $this->success(new PatientCollection($results), 'Branch patients retrieved');
+    }
+
+    public function users(Branch $branch)
+    {
+        $usersQuery = User::query()->whereHas('branches', function ($q) use ($branch) {
+            $q->where('branch_id', $branch->id);
+        });
+
+        $results = ApiQuery::apply(request(), $usersQuery);
+
+        return $this->success(new BaseCollection($results), 'Branch users retrieved');
+    }
+
+    public function nurses(Branch $branch)
+    {
+        $nursesQuery = User::query()
+            ->whereHas('branches', function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            })
+            ->whereHas('roles', function ($q) {
+                $q->where('position', 'nurse');
+            });
+
+        $results = ApiQuery::apply(request(), $nursesQuery);
+
+        return $this->success(new BaseCollection($results), 'Branch nurses retrieved');
     }
 
 

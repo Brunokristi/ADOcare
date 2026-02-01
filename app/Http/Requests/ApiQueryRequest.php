@@ -21,6 +21,7 @@ class ApiQueryRequest extends FormRequest
             'limit' => 'nullable|integer|min:1',
             'all' => 'nullable|boolean',
             'with' => 'nullable|string',
+            'count' => 'nullable|string',
             // generic filter param can be an array or string depending on client
             'filter' => 'nullable',
         ];

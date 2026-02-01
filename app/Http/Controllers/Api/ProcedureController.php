@@ -28,6 +28,14 @@ class ProcedureController extends Controller
         $this->service = $service;
     }
 
+
+    /**
+     * List procedures
+     *
+     * @group Procedures
+     * @queryParam per_page int The number of items per page. Example: 15
+     * @response 200 {"data":[{"id":1,"code":"X123","description":"Test"}],"meta":{"total":1}}
+     */
     public function index(Request $request)
     {
         $query = Procedure::query();
@@ -47,10 +55,14 @@ class ProcedureController extends Controller
     }
 
 
+
     /**
-     * POST /v1/procedures
+     * Create a procedure
      *
-     * Creates procedure + writes prices for insurers 25/24/27 into procedure_company
+     * @group Procedures
+     * @bodyParam code string required Procedure code. Example: "X123"
+     * @bodyParam description string Procedure description. Example: "Example"
+     * @response 201 {"id":1,"code":"X123","description":"Example"}
      */
     public function store(ProcedureStoreRequest $request)
     {
@@ -61,8 +73,14 @@ class ProcedureController extends Controller
         return $this->success($procedure, 'Created', Response::HTTP_CREATED);
     }
 
+
+
     /**
-     * GET /v1/procedures/{procedure}
+     * Get a procedure
+     *
+     * @group Procedures
+     * @urlParam procedure int required Procedure ID. Example: 1
+     * @response 200 {"id":1,"code":"X123","description":"Example"}
      */
     public function show(Procedure $procedure)
     {
@@ -71,9 +89,13 @@ class ProcedureController extends Controller
     }
 
     /**
-     * PUT/PATCH /v1/procedures/{procedure}
+     * Update a procedure
      *
-     * Updates prices (and optionally code/description if you ever allow it)
+     * @group Procedures
+     * @urlParam procedure int required Procedure ID. Example: 1
+     * @bodyParam code string Procedure code. Example: "X123"
+     * @bodyParam description string Procedure description. Example: "Updated"
+     * @response 200 {"id":1,"code":"X123","description":"Updated"}
      */
     public function update(ProcedureUpdateRequest $request, Procedure $procedure)
     {
@@ -85,7 +107,11 @@ class ProcedureController extends Controller
     }
 
     /**
-     * DELETE /v1/procedures/{procedure}
+     * Delete a procedure
+     *
+     * @group Procedures
+     * @urlParam procedure int required Procedure ID. Example: 1
+     * @response 204 {}
      */
     public function destroy(Procedure $procedure)
     {
@@ -95,8 +121,11 @@ class ProcedureController extends Controller
     }
 
     /**
-     * POST /v1/procedures/bulk-delete
-     * body: { ids: number[] }
+     * Bulk delete procedures
+     *
+     * @group Procedures
+     * @bodyParam ids array required Array of procedure IDs to delete. Example: [1,2,3]
+     * @response 200 {"success":true}
      */
     public function destroyMany(DestroyManyRequest $request)
     {
