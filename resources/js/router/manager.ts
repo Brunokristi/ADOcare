@@ -9,8 +9,11 @@
 // \---- Auta
 // Reporty
 
+import Cars from "@/pages/Cars.vue";
 import Error from "@/pages/Error.vue";
 import Patients from "@/pages/Patients.vue";
+import Settings from "@/pages/Settings.vue";
+import Users from "@/pages/Users.vue";
 import Doctors from "@/partials/Settings/Doctors/Doctors.vue";
 import type { RouteRecordRaw } from "vue-router";
 
@@ -52,7 +55,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager/settings',
         name: 'manager-settings',
-        component: Error,
+        component: Settings,
         redirect: { name: 'manager-settings-company' },
         meta: {
             title: 'Nastavenia (Manažér)',
@@ -75,7 +78,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'users',
                 name: 'manager-settings-users',
-                component: Error,
+                component: () => Users,
                 meta: { title: 'Používatelia', managerSidebar: true },
             },
             {

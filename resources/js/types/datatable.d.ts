@@ -10,7 +10,7 @@ export type RemoteTableReturn = ReturnType<typeof useRemoteTable>;
 
 interface ColumnDef<T = any> {
     // key on the row object; optional if using custom slot/component
-    field?: string;
+    field?: keyof T | string;
     // header label
     header?: string;
     // sortable and filterable flags
