@@ -74,7 +74,8 @@ class User extends Authenticatable
 
     public function branches()
     {
-        return $this->belongsToMany(Branch::class, 'user_branches', 'user_id', 'branch_id');
+        return $this->belongsToMany(Branch::class, 'user_branches', 'user_id', 'branch_id')
+            ->withPivot(['working_time']);
     }
 
     public function company()
