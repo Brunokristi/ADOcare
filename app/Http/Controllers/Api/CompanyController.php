@@ -119,4 +119,20 @@ class CompanyController extends Controller
         Company::whereIn('id', $ids)->delete();
         return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
+
+    /**
+     * Get current user's company
+     *
+     * @group Companies
+     * @response 200 {"id":1, "name":"Acme"}
+     */
+    public function myCompany(Request $request)
+    {
+        $user = $request->user();
+        $company = $user->company;
+        if (!$company)
+            return $this->success(null, 'No company associated with current user');
+
+        return $this->success($company->load(['representative']), 'My company retrieved');
+    }
 }

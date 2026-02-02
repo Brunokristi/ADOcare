@@ -29,6 +29,11 @@ function handleToggleSidebar() {
     isSidebarOpen.value = !isSidebarOpen.value
 }
 
+const allowOverflow = computed(() => {
+    const last = route.matched[route.matched.length - 1]
+    return !!last?.meta?.overflow
+})
+
 </script>
 
 <template>
@@ -38,7 +43,7 @@ function handleToggleSidebar() {
         <TercialNavbar v-if="isLoggedIn" class="flex-none" />
 
         <div class="flex flex-1 overflow-hidden">
-            <div class="flex-1 overflow-auto bg-white p-8">
+            <div class="flex-1 bg-white p-8" :class="allowOverflow ? 'overflow-auto' : 'overflow-hidden'">
                 <router-view />
             </div>
 
