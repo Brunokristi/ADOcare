@@ -17,8 +17,10 @@ class CarResource extends JsonResource
         return [
             'id' => $this->id,
             'evc' => $this->evc,
+            'model' => $this->model,
             'company_id' => $this->company_id,
             'user_id' => $this->user_id,
+            'user' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

@@ -81,7 +81,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'cars',
                 name: 'manager-settings-cars',
-                component: Error,
+                component: Cars,
                 meta: { title: 'Autá', managerSidebar: true },
             },
         ],

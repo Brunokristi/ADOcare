@@ -11,7 +11,7 @@ class Car extends Model
 
     protected $table = 'cars';
 
-    protected $fillable = ['evc', 'company_id', 'user_id'];
+    protected $fillable = ['evc', 'model', 'company_id', 'user_id'];
 
     public function company()
     {
