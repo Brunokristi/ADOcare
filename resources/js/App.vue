@@ -43,7 +43,7 @@ const allowOverflow = computed(() => {
         <TercialNavbar v-if="isLoggedIn" class="flex-none" />
 
         <div class="flex flex-1 overflow-hidden">
-            <div class="flex-1 bg-white p-8" :class="allowOverflow ? 'overflow-auto' : 'overflow-hidden'">
+            <div class="flex-1 overflow-auto bg-white p-8">               
                 <router-view />
             </div>
 
