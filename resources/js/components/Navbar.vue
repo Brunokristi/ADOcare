@@ -91,16 +91,8 @@ const patientOptions = ref<PatientOption[]>([])
 const selectedPatient = ref<PatientOption | null>(null)
 const patientsLoading = ref(false)
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
-const companyId = computed(() => authStore.user?.company?.id ?? null)
-const currentRole = computed(() => authStore.currentRole ?? null)
 const fetchPatientsURL = computed(() => {
-  console.log('Computed fetchPatientsURL for branchId', branchId.value, companyId.value)
-
-  if (currentRole.value === 'manager') {
-    return companyId.value ? `/v1/companies/${companyId.value}/patients` : ''
-  }
-
-  return branchId.value ? `/v1/branches/${branchId.value}/patients` : ''
+  return `/v1/branches/${branchId.value}/patients`;
 })
 async function fetchPatients(page: number) {
     try {
@@ -132,6 +124,7 @@ function transformPatientsToPatientOptions(items: Patient[]): PatientOption[] {
 
 async function loadPatients() {
     patientOptions.value = []
+    if(authStore.isManager) return;
     if (!isAuthenticated.value) return
     patientsLoading.value = true
     const items = await fetchPatients(1)
@@ -144,6 +137,7 @@ const patientFilterString = ref('');
 
 async function onLazyLoadPatients(event: VirtualScrollerLazyEvent) {
 
+    if(authStore.isManager) return;
     const page = Math.floor(event.last / 20 + 1)
     console.log('Lazy load patients', event, page)
     if (page <= lastLoadedPage) {
@@ -240,7 +234,7 @@ watch(
                 @click="goHome" />
 
             <!-- PATIENT SELECT -->
-            <Select v-model="selectedPatient" :options="patientOptions" optionLabel="name"
+            <Select v-if="!authStore.isManager" v-model="selectedPatient" :options="patientOptions" optionLabel="name"
                 :virtualScrollerOptions="{ lazy: true, onLazyLoad: onLazyLoadPatients, appendOnly: true, itemSize: 38, showLoader: false, loading: patientsLoading, delay: 10 }"
                 :placeholder="patientsLoading ? 'Načítavam pacientov...' : 'Vyberte pacienta'"
                 dropdownIcon="bi bi-chevron-down !text-white" class="w-60 h-7! flex items-center border-none! bg-tag2!">

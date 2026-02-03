@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'title',
         'phone_number',
+        'company_id',
         'initials',
         'login',
         'code',
@@ -80,7 +81,7 @@ class User extends Authenticatable
 
     public function company()
     {
-        return $this->hasOneThrough(Company::class, Branch::class, 'id', 'id', 'id', 'company_id');
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function roles()

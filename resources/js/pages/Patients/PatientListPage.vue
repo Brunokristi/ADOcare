@@ -38,10 +38,8 @@ async function openEditPatient(patientId: number) {
 const endpointUrl = computed(() => {
     if (authStore.isManager) {
         return `v1/companies/${companyId.value}/patients`
-    } else if (companyId.value) {
-        return `v1/branches/${branchId.value}/patients`
     } else {
-        return null
+        return `v1/branches/${branchId.value}/patients`
     }
 })
 
