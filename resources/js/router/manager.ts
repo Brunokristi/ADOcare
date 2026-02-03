@@ -9,13 +9,13 @@
 // \---- Auta
 // Reporty
 
-import Cars from "@/pages/Cars.vue";
-import Error from "@/pages/Error.vue";
-import CompanySettings from "@/pages/partials/Settings/Company/CompanySettings.vue";
-import Patients from "@/pages/Patients.vue";
+import Cars from "@/pages/Settings/Cars/Cars.vue";
+import Error from "@/pages/ErrorPage.vue";
+import CompanySettings from "@/pages/Settings/Company/CompanySettingsPage.vue";
+import Patients from "@/pages/Patients/PatientListPage.vue";
 import Settings from "@/pages/Settings.vue";
-import Users from "@/pages/Users.vue";
-import Doctors from "@/partials/Settings/Doctors/Doctors.vue";
+import Users from "@/pages/Settings/Users/UsersPage.vue";
+import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 
 

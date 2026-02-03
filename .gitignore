@@ -9,6 +9,7 @@
 vendor
 node_modules
 /data-db
+/data
 /data-ors
 .DS_Store
 .env
@@ -16,6 +17,7 @@ node_modules
 .env.production
 .phpactor.json
 .phpunit.result.cache
+adocare-flask
 Homestead.json
 Homestead.yaml
 npm-debug.log
