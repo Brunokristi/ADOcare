@@ -112,8 +112,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/batches/kilometers/download', [KilometersExportController::class, 'download']);
     Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf']);
 
-    Route::get('/geocode/autocomplete', [\App\Http\Controllers\Api\GeocodeController::class, 'autocomplete']);
-    Route::get('/geocode/reverse', [\App\Http\Controllers\Api\GeocodeController::class, 'reverse']);
+    Route::get('/geocode/autocomplete', [GeocodeController::class, 'autocomplete']);
+    Route::get('/geocode/details', [GeocodeController::class, 'details']);
 
     Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
 
