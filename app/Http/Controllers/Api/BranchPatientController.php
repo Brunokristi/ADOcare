@@ -42,4 +42,14 @@ class BranchPatientController extends Controller
 
         return $this->success(new PatientCollection($results), 'Patients retrieved');
     }
+
+    public function store(BranchPatientStoreRequest $request, Branch $branch)
+    {
+        $data = $request->validated();
+        $data['branch_id'] = $branch->id;
+
+        $patient = $this->service->create($data);
+
+        return $this->success(new PatientResource($patient), 'Patient created', 201);
+    }
 }

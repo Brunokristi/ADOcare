@@ -83,6 +83,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('branches', BranchController::class);
     Route::get('branches/{branch}/patients', [BranchPatientController::class, 'index']);
+    Route::post('branches/{branch}/patients', [BranchPatientController::class, 'store']);
     Route::get('branches/{branch}/nurses', [BranchController::class, 'nurses']);
     Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors']);
     Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);

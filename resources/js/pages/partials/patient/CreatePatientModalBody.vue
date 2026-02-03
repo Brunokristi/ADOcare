@@ -40,6 +40,7 @@ const createPatient = async () => {
       severity: 'success',
       summary: 'Pacient vytvorený',
       detail: `Pacient ${created.first_name} bol úspešne vytvorený.`,
+      life: 5000,
     })
 
     // ✅ resolve with created patient (NOT the old patient.value before POST)
