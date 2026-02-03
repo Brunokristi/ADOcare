@@ -10,12 +10,13 @@ import { formatBranchFullName } from '@/utils/formatUtils'
 
 let showFavouritesOnly = ref(false);
 
+const branchId = useAuthStore().currentBranch?.id
+
 const options = ref<DataTableOptions<Doctor>>({
     rowKey: 'id',
     endpointUrl: `v1/doctors`,
     extraParams: {
-        // Pass branch ID to mark favourites
-        mark_favourites_for_branch_id: useAuthStore().currentBranch?.id ?? null,
+    ...(branchId ? { mark_favourites_for_branch_id: branchId } : {}),
     },
     defaultPageSize: 50,
     pageSizeOptions: [25, 50, 100],
@@ -102,7 +103,7 @@ const options = ref<DataTableOptions<Doctor>>({
             tooltip: 'Zobraziť len obľúbených',
             handler: async ({ remote }) => {
                 showFavouritesOnly.value = !showFavouritesOnly.value;
-                remote.setExtraParam('filter', showFavouritesOnly.value ? { is_favourite: true } : {});
+                remote.setExtraParam('filter[is_favourite]', showFavouritesOnly.value ? 1 : undefined)
                 console.log('Toggling favourites only:', showFavouritesOnly.value, remote.params.value);
                 await remote.loadPage(1);
             }

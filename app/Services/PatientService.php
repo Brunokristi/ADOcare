@@ -19,18 +19,18 @@ class PatientService
     }
 
     // FUnction to check if branch_id or nurse_id are being set by non-manager user
-    public function checkManagerProtectedFields(array $data): void
-    {
-        // branch_id and nurse_id are manager protected. If user is not manager, throw error
-        $user = auth()->user();
-        if (($data['branch_id'] || $data['nurse_id']) && !$user->hasRole('manager')) {
-            throw new \Exception("Unauthorized to set branch_id or nurse_id");
-        }
-    }
+    // public function checkManagerProtectedFields(array $data): void
+    // {
+    //     // branch_id and nurse_id are manager protected. If user is not manager, throw error
+    //     $user = auth()->user();
+    //     if (($data['branch_id'] || $data['nurse_id']) && !$user->hasRole('manager')) {
+    //         throw new \Exception("Unauthorized to set branch_id or nurse_id");
+    //     }
+    // }
 
     public function create(array $data): Patient
     {
-        $this->checkManagerProtectedFields($data);
+        // $this->checkManagerProtectedFields($data);
 
         $user = auth()->user();
         $data['nurse_id'] = $user->id;

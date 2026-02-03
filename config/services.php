@@ -38,6 +38,10 @@ return [
     'ors' => [
         'key' => env('ORS_API_KEY'),
     ],
+    
+    'google' => [
+        'maps_key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
 
     'route_service' => [
         'base_url' => env('ROUTE_SERVICE_BASE_URL', 'http://127.0.0.1:1515'),

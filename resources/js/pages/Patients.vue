@@ -31,7 +31,7 @@ function openPatientDocuments(patientId: number) {
 }
 
 async function openEditPatient(patientId: number) {
-    const patient = await openPatientEditModal(patientId)
+    await openPatientEditModal(patientId)
     actionRemote.value?.reload()
 }
 
@@ -142,9 +142,9 @@ const options = computed<DataTableOptions<Patient>>(() => {
             {
                 key: 'delete',
                 disabled: ({ selectedRows }) => selectedRows.length === 0,
+                confirm: 'Naozaj vymazať vybraných pacientov?',
                 icon: 'bi bi-eraser',
                 class: 'bg-warning!',
-                confirm: 'Delete selected?',
                 handler: async ({ selectedRows, remote }) => {
                     await api.delete('v1/patients', {
                         data: { ids: selectedRows.map((r) => r.id) },
@@ -176,7 +176,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
             {
                 field: 'nurse',
                 header: 'Sestra',
-                render: (v: any, row: Patient) => {
+                render: (_v: any, row: Patient) => {
                     if (row.nurse) {
                         return formatUserFullName(row.nurse)
                     }
@@ -187,7 +187,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
             {
                 field: 'branch',
                 header: 'Prevádzka',
-                render: (v: any, row: Patient) => {
+                render: (_: any, row: Patient) => {
                     const branch = row.branch;
                     return formatBranchFullName(branch)
                 },
