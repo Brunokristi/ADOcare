@@ -23,7 +23,7 @@ const model = ref({
 onMounted(async () => {
     try {
         insuranceCompanies.value = await api.fetchEntities('v1/insurance-companies')
-    } catch (e) {
+    } catch {
         insuranceCompanies.value = []
     }
 
