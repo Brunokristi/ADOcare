@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
 import { computed } from 'vue';
-import type { User } from '@/types/models';
+import type {User} from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
@@ -16,7 +16,7 @@ const fullName = computed(() =>
 </script>
 
 <template>
-    <div class="space-y-10 p-4">
+    <div class="space-y-10">
 
         <!-- Greeting -->
         <div class="text-heading-accent">

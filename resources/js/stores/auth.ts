@@ -1,4 +1,3 @@
-import { openModal } from '@/composables/useModal';
 import { openPriceAlertModal } from '@/helpers/modalHelpers';
 import router from '@/router';
 import api from '@/services/api';

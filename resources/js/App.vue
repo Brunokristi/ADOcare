@@ -1,6 +1,6 @@
 <!-- src/App.vue -->
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import Navbar from '@/components/Navbar.vue'

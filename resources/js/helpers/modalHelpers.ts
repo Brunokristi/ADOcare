@@ -2,8 +2,8 @@ import { openModal } from "@/composables/useModal"
 import PriceAlertModalBody from "@/pages/partials/PriceAlertModalBody.vue"
 import useAuthStore from "@/stores/auth"
 import { markRaw } from "vue"
-import PatientDocumentsModalBody from "@/pages/partials/patient/PatientDocumentsModalBody.vue"
-import EditPatientModalBody from "@/pages/partials/patient/EditPatientModalBody.vue"
+import PatientDocumentsModalBody from "@/pages/Patients/partials/form/PatientDocumentsModalBody.vue"
+import EditPatientModalBody from "@/pages/Patients/partials/form/EditPatientModalBody.vue"
 
 export async function openPriceAlertModal() {
 

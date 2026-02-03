@@ -1,30 +1,29 @@
 import Dashboard from '@/pages/Dashboard.vue'
-import Login from '@/pages/Login.vue'
-import Patients from '@/pages/Patients.vue'
+import Login from '@/pages/LoginPage.vue'
+import Patients from '@/pages/Patients/PatientListPage.vue'
 import Settings from '@/pages/Settings.vue'
-import Procedures from '@/partials/Settings/Procedures/Procedures.vue'
-import Diagnoses from '@/partials/Settings/Diagnoses/Diagnoses.vue'
-import Doctors from '@/partials/Settings/Doctors/Doctors.vue'
-import DoctorsOld from '@/partials/Settings/Doctors/DoctorsOld.vue'
-import Macros from '@/partials/Settings/Macros/Macros.vue'
-import Data from '@/pages/Data.vue'
-import Points from '@/partials/Data/Points.vue'
-import Kilometers from '@/partials/Data/Kilometers.vue'
-import Routes from '@/partials/Data/Routes.vue'
-import Patient from '@/pages/Patient.vue'
-import PatientPoints from '@/partials/Patient/Points.vue'
-import Document from '@/pages/Documents.vue'
-import DocumentPoints from '@/partials/Documents/Points.vue'
-import DocumentKilometers from '@/partials/Documents/Kilometers.vue'
-import DocumentProposal from '@/partials/Documents/Proposal.vue'
-import DocumentAgreement from '@/partials/Documents/Agreement.vue'
-import DocumentCP from '@/partials/Documents/CP.vue'
-import DocumentDZC from '@/partials/Documents/DZC.vue'
-import DocumentDekurz from '@/partials/Documents/Dekurz.vue'
-import PatientProposal from '@/partials/Patient/Proposal.vue'
-import PatientAgreement from '@/partials/Patient/Agreement.vue'
-import PatientRecord from '@/partials/Patient/Record.vue'
-import PatientDekurz from '@/partials/Patient/Dekurz.vue'
+import Procedures from '@/pages/Settings/Procedures/ProceduresPage.vue'
+import Diagnoses from '@/pages/Settings/Diagnoses/DiagnosesPage.vue'
+import Doctors from '@/pages/Settings/Doctors/DoctorsPage.vue'
+import Macros from '@/pages/Settings/Macros/MacrosPage.vue'
+import Data from '@/pages/Data/DataPage.vue'
+import Points from '@/pages/Data/Points.vue'
+import Kilometers from '@/pages/Data/Kilometers.vue'
+import Routes from '@/pages/Data/Routes.vue'
+import Patient from '@/pages/Patients/PatientDetailPage.vue'
+import PatientPoints from '@/pages/Patients/Points/PatientPointsPage.vue'
+import Document from '@/pages/Documents/DocumentsPage.vue'
+import DocumentPoints from '@/pages/Documents/Points.vue'
+import DocumentKilometers from '@/pages/Documents/Kilometers.vue'
+import DocumentProposal from '@/pages/Documents/Proposal.vue'
+import DocumentAgreement from '@/pages/Documents/Agreement.vue'
+import DocumentCP from '@/pages/Documents/CP.vue'
+import DocumentDZC from '@/pages/Documents/DZC.vue'
+import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
+import PatientProposal from '@/pages/Patients/Proposal/PatientProposalPage.vue'
+import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
+import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
+import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
 import type { RouteRecordRaw } from 'vue-router'
 
 
@@ -265,17 +264,6 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     link: 'lekári',
                     sidebar: true,
                     navbar: true,
-                },
-            },
-            {
-                path: 'doctors-old',
-                name: 'doctors-old',
-                component: DoctorsOld,
-                meta: {
-                    title: 'Lekári (old)',
-                    link: 'lekári-old',
-                    sidebar: false,
-                    navbar: false,
                 },
             },
             {

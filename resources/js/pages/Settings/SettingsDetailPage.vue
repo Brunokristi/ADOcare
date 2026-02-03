@@ -10,4 +10,3 @@ import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
         </div>
     </div>
 </template>
-
