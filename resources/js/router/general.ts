@@ -192,6 +192,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     link: 'bodovanie',
                     sidebar: false,
                     navbar: false,
+                    overflow: true,
                 },
             },
             {

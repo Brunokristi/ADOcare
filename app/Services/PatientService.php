@@ -46,7 +46,7 @@ class PatientService
     public function update(Patient $patient, array $data): Patient
     {
 
-        $this->checkManagerProtectedFields($data);
+        // $this->checkManagerProtectedFields($data);
 
         return DB::transaction(function () use ($patient, $data) {
 

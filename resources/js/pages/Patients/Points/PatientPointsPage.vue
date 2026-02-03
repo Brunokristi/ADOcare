@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, markRaw } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
-import { FilterMatchMode } from '@primevue/core/api'
 
 import api from '@/services/api'
 import { toApiDate } from '@/utils/dateUtils'
 import { usePatientStore } from '@/stores/patientStore'
 import { useAuthStore } from '@/stores/auth'
 import type { Diagnosis, Procedure, Patient } from '@/types/models'
+
+import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -78,31 +81,21 @@ const filteredProcedures = ref<Option[]>([])
 const quantity = ref<number | null>(1)
 const submitted = ref(false)
 
+// local cache for duplicate detection + quick local updates (still useful)
 const records = ref<RecordEntry[]>([])
-const selectedRecords = ref<RecordEntry[]>([])
-const deleteRecordsDialog = ref(false)
 
+/* Edit dialog */
 const pointDialog = ref(false)
 const editSubmitted = ref(false)
 const editPoint = ref<RecordEntry | null>(null)
 
+/* UniversalDataTable remote handle */
+const pointRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
+const tableKey = computed(() => `patient-points-${currentPatient.value?.id ?? 'none'}`)
+
 /* -------------------------------------------------------------------------- */
-/*  Table helpers                                                             */
+/*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
-
-const filters = ref({
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-})
-
-const recordsInfo = computed(() => {
-  const total = records.value.length
-  return total ? `Počet záznamov: ${total}` : 'Žiadne záznamy'
-})
-
-function formatDate(d: Date | null) {
-  if (!d) return ''
-  return d.toLocaleDateString('sk-SK')
-}
 
 function truncate(text: string, max = 60) {
   if (!text) return ''
@@ -143,39 +136,33 @@ function todayOnly() {
 }
 
 function safePatientReferralDate(): Date {
-  const raw = currentPatient.value?.reference_date
+  const raw = (currentPatient.value as any)?.reference_date
   if (!raw) return todayOnly()
 
   const d = new Date(raw)
   if (isNaN(d.getTime())) return todayOnly()
 
-  // normalize to date-only (optional but consistent)
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
 function resetFormForNewPatient() {
   const t = todayOnly()
 
-  // fresh inputs
   dates.value = [t]
-  referralDate.value = safePatientReferralDate() // <-- FROM DB (patient.reference_date)
+  referralDate.value = safePatientReferralDate()
 
   diagnosis.value = null
   procedure.value = null
   quantity.value = 1
   submitted.value = false
 
-  // reset selection/dialogs
-  selectedRecords.value = []
-  deleteRecordsDialog.value = false
   pointDialog.value = false
   editSubmitted.value = false
   editPoint.value = null
 }
 
-
 /* -------------------------------------------------------------------------- */
-/*  API: Load existing patient points                                         */
+/*  API: Load existing patient points (local cache)                           */
 /* -------------------------------------------------------------------------- */
 
 async function loadRecordsForPatient() {
@@ -187,7 +174,7 @@ async function loadRecordsForPatient() {
   isLoading.value = true
 
   try {
-    const { data } = await api.get('/v1/patient-points', {
+    const { data } = await api.get('v1/patient-points', {
       params: { patient_id: currentPatient.value.id, paginate: false },
     })
     const arr = extractArray(data)
@@ -219,14 +206,14 @@ async function loadRecordsForPatient() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Lookup: Diagnoses & Procedures (works for focus + typing)                 */
+/*  Lookup: Diagnoses & Procedures                                            */
 /* -------------------------------------------------------------------------- */
 
 async function searchDiagnoses(event: { query: string }) {
   try {
     const q = (event.query ?? '').trim()
 
-    const res = await api.get('/v1/diagnoses', {
+    const res = await api.get('v1/diagnoses', {
       params: {
         q,
         per_page: 25,
@@ -239,8 +226,8 @@ async function searchDiagnoses(event: { query: string }) {
 
     filteredDiagnoses.value = (arr as Diagnosis[]).map((d) => ({
       id: d.id,
-      code: d.code ?? '',
-      description: d.description ?? '',
+      code: (d as any).code ?? '',
+      description: (d as any).description ?? '',
     }))
   } catch (e) {
     console.error('Failed to load diagnoses', e)
@@ -252,7 +239,7 @@ async function searchProcedures(event: { query: string }) {
   try {
     const q = (event.query ?? '').trim()
 
-    const res = await api.get('/v1/procedures', {
+    const res = await api.get('v1/procedures', {
       params: {
         q,
         per_page: 25,
@@ -265,8 +252,8 @@ async function searchProcedures(event: { query: string }) {
 
     filteredProcedures.value = (arr as Procedure[]).map((p) => ({
       id: p.id,
-      code: p.code ?? '',
-      description: p.description ?? '',
+      code: (p as any).code ?? '',
+      description: (p as any).description ?? '',
     }))
   } catch (e) {
     console.error('Failed to load procedures', e)
@@ -298,7 +285,11 @@ function parseDateInput(raw: unknown): Date | null {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null
 
   const result = new Date(year, month - 1, day)
-  if (result.getFullYear() !== year || result.getMonth() !== month - 1 || result.getDate() !== day) {
+  if (
+    result.getFullYear() !== year ||
+    result.getMonth() !== month - 1 ||
+    result.getDate() !== day
+  ) {
     return null
   }
 
@@ -326,7 +317,6 @@ function normalizeSelectedDates(input: unknown): Date[] {
 
 async function ensureDiagnosisSelected(): Promise<boolean> {
   const value = diagnosis.value as unknown
-
   if (value && typeof value === 'object' && 'id' in (value as any)) return true
 
   const raw = (value as string | undefined) ?? ''
@@ -338,12 +328,12 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
   }
 
   try {
-    const res = await api.get('/v1/diagnoses', {
+    const res = await api.get('v1/diagnoses', {
       params: { q: code, per_page: 50, page: 1, sort: 'code' },
     })
 
-    const arr = extractArray(res.data) as Diagnosis[]
-    const match = arr.find((d) => (d.code ?? '').toLowerCase() === code.toLowerCase())
+    const arr = extractArray(res.data) as any[]
+    const match = arr.find((d) => String(d.code ?? '').toLowerCase() === code.toLowerCase())
 
     if (!match) {
       diagnosis.value = null
@@ -366,7 +356,6 @@ async function ensureDiagnosisSelected(): Promise<boolean> {
 
 async function ensureProcedureSelected(): Promise<boolean> {
   const value = procedure.value as unknown
-
   if (value && typeof value === 'object' && 'id' in (value as any)) return true
 
   const raw = (value as string | undefined) ?? ''
@@ -378,12 +367,12 @@ async function ensureProcedureSelected(): Promise<boolean> {
   }
 
   try {
-    const res = await api.get('/v1/procedures', {
+    const res = await api.get('v1/procedures', {
       params: { q: code, per_page: 50, page: 1, sort: 'code' },
     })
 
-    const arr = extractArray(res.data) as Procedure[]
-    const match = arr.find((p) => (p.code ?? '').toLowerCase() === code.toLowerCase())
+    const arr = extractArray(res.data) as any[]
+    const match = arr.find((p) => String(p.code ?? '').toLowerCase() === code.toLowerCase())
 
     if (!match) {
       procedure.value = null
@@ -411,7 +400,7 @@ async function ensureProcedureSelected(): Promise<boolean> {
 function buildPatientPointPayloadForDate(dateOverride: Date) {
   if (!currentPatient.value) throw new Error('No patient selected')
 
-  const patient = currentPatient.value
+  const patient = currentPatient.value as any
   const doctor = patient.doctor
   const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim()
 
@@ -439,14 +428,14 @@ function buildPatientPointPayloadForDate(dateOverride: Date) {
   }
 }
 
-function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
+function buildPayloadFromApiRow(row: PatientPointApi, dateOverride: Date) {
   if (!currentPatient.value) throw new Error('No patient selected')
 
-  const patient = currentPatient.value
+  const patient = currentPatient.value as any
   const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim()
 
-  const doctorRel = (patient as any).doctor ?? null
-  const doctorId = doctorRel?.id ?? (patient as any).doctor_id ?? null
+  const doctorRel = patient.doctor ?? null
+  const doctorId = doctorRel?.id ?? patient.doctor_id ?? null
 
   return {
     date: toApiDate(dateOverride),
@@ -455,17 +444,17 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
     patient_name: fullName,
     patient_id: patient.id,
 
-    diagnosis_code: row.diagnosis?.code ?? '',
-    diagnosis_id: row.diagnosis?.id ?? null,
+    diagnosis_code: row.diagnosis_code ?? '',
+    diagnosis_id: row.diagnosis_id ?? null,
 
-    procedure_code: row.procedure?.code ?? '',
-    procedure_id: row.procedure?.id ?? null,
+    procedure_code: row.procedure_code ?? '',
+    procedure_id: row.procedure_id ?? null,
 
     doctor_pzs: doctorRel?.pzs ?? null,
     doctor_zpr: doctorRel?.zpr ?? null,
     doctor_id: doctorId,
 
-    reference_date: toApiDate(row.referralDate),
+    reference_date: row.reference_date ?? toApiDate(referralDate.value),
     user_id: user.value?.id ?? null,
     branch_id: currentBranch.value!.id,
     quantity: row.quantity ?? quantity.value,
@@ -473,7 +462,7 @@ function buildPayloadFromRow(row: RecordEntry, dateOverride: Date) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Date picker button helpers                                                */
+/*  Date picker helpers                                                       */
 /* -------------------------------------------------------------------------- */
 
 function selectWorkingDays() {
@@ -526,14 +515,30 @@ function selectAllDays() {
   dates.value = selectedDates
 }
 
+function selectWeekends() {
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
+  const selectedDates: Date[] = []
+
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
+
+  for (let day = 1; day <= lastDay; day++) {
+    const date = new Date(currentYear, currentMonth, day)
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek === 0 || dayOfWeek === 6) selectedDates.push(date)
+  }
+
+  dates.value = selectedDates
+}
+
 /* -------------------------------------------------------------------------- */
-/*  Form submit (create) - MULTI CREATE                                       */
+/*  Submit (create)                                                           */
 /* -------------------------------------------------------------------------- */
 
 async function onSubmit() {
   submitted.value = true
 
-  // normalize inputs
   dates.value = normalizeSelectedDates(dates.value as any)
   referralDate.value = parseDateInput(referralDate.value as any)
 
@@ -551,7 +556,7 @@ async function onSubmit() {
     return
   }
 
-  // Check if referral date is older than submission dates
+  // referral date must be older than all selected dates
   if (referralDate.value) {
     const referralDateOnly = new Date(
       referralDate.value.getFullYear(),
@@ -584,20 +589,19 @@ async function onSubmit() {
   }
 
   try {
-    // 1) update patient's reference date once
+    // 1) update patient reference_date once
     const refDate = toApiDate(referralDate.value)
 
-    await api.put(`/v1/patients/${currentPatient.value.id}`, {
+    await api.put(`v1/patients/${currentPatient.value.id}`, {
       reference_date: refDate,
     })
 
-    // IMPORTANT: this should NOT reset anything now because we watch only currentPatient.id
     patientStore.setPatient({
       ...(currentPatient.value as Patient),
       reference_date: refDate,
     })
 
-    // 2) build a set of existing keys so we skip duplicates in UI + backend calls
+    // 2) duplicate detection based on full cache (paginate:false)
     const existingKeys = new Set(
       records.value.map((r) => {
         const d = r.date ? toApiDate(r.date) : ''
@@ -605,34 +609,35 @@ async function onSubmit() {
       }),
     )
 
-    // 3) create records (no per-date reload)
+    // 3) create records
     let createdCount = 0
-
     for (const d of dates.value) {
       const payload = buildPatientPointPayloadForDate(d)
-
       const key = `${payload.date}|${payload.diagnosis_id}|${payload.procedure_id}|${payload.quantity ?? ''}`
       if (existingKeys.has(key)) continue
 
-      await api.post('/v1/patient-points', payload)
+      await api.post('v1/patient-points', payload)
       existingKeys.add(key)
       createdCount++
     }
 
-    // 4) reload ONCE so table always has correct ids + order
+    // 4) refresh cache + remote table
     if (createdCount > 0) {
       await loadRecordsForPatient()
+      pointRemote.value?.reload?.()
       emit('submit', records.value[0] ?? ({} as any))
     }
 
     toast.add({
       severity: createdCount > 0 ? 'success' : 'info',
       summary: createdCount > 0 ? 'Uložené' : 'Nič nové',
-      detail: createdCount > 0 ? `Uložené záznamy: ${createdCount}` : 'Vybrané dátumy už existujú v tabuľke.',
+      detail:
+        createdCount > 0
+          ? `Uložené záznamy: ${createdCount}`
+          : 'Vybrané dátumy už existujú v tabuľke.',
       life: 3000,
     })
 
-    // keep dates + diagnosis as-is if you want; currently: only clear procedure/quantity like you had
     procedure.value = null
     quantity.value = 1
     submitted.value = false
@@ -653,21 +658,27 @@ async function onSubmit() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Edit dialog                                                               */
+/*  Edit dialog helpers                                                       */
 /* -------------------------------------------------------------------------- */
 
-function editRecord(row: RecordEntry) {
-  editSubmitted.value = false
-
-  editPoint.value = {
-    ...row,
+function apiRowToRecordEntry(row: PatientPointApi): RecordEntry {
+  return {
+    id: row.id,
     date: row.date ? new Date(row.date) : null,
-    referralDate: row.referralDate ? new Date(row.referralDate) : null,
-    diagnosis: row.diagnosis ? { ...row.diagnosis } : null,
-    procedure: row.procedure ? { ...row.procedure } : null,
+    diagnosis: row.diagnosis_id
+      ? { id: row.diagnosis_id, code: row.diagnosis_code ?? '', description: '' }
+      : null,
+    procedure: row.procedure_id
+      ? { id: row.procedure_id, code: row.procedure_code ?? '', description: '' }
+      : null,
+    referralDate: row.reference_date ? new Date(row.reference_date) : null,
     quantity: row.quantity ?? null,
   }
+}
 
+function editRecordFromApiRow(row: PatientPointApi) {
+  editSubmitted.value = false
+  editPoint.value = apiRowToRecordEntry(row)
   pointDialog.value = true
 }
 
@@ -675,7 +686,6 @@ async function savePoint() {
   if (!editPoint.value) return
 
   editSubmitted.value = true
-
   const p = editPoint.value
 
   const normalizedDate = parseDateInput(p.date as any)
@@ -689,7 +699,7 @@ async function savePoint() {
   }
 
   try {
-    await api.put(`/v1/patient-points/${p.id}`, {
+    await api.put(`v1/patient-points/${p.id}`, {
       date: toApiDate(p.date),
       diagnosis_code: p.diagnosis.code,
       diagnosis_id: p.diagnosis.id,
@@ -699,9 +709,6 @@ async function savePoint() {
       quantity: p.quantity,
     })
 
-    const idx = records.value.findIndex((r) => r.id === p.id)
-    if (idx !== -1) records.value[idx] = { ...p }
-
     toast.add({
       severity: 'success',
       summary: 'Uložené',
@@ -710,6 +717,8 @@ async function savePoint() {
     })
 
     pointDialog.value = false
+    await loadRecordsForPatient()
+    pointRemote.value?.reload?.()
   } catch (error: any) {
     console.error('Failed to update point', error)
 
@@ -727,103 +736,176 @@ async function savePoint() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Delete selected                                                           */
+/*  UniversalDataTable options                                                */
 /* -------------------------------------------------------------------------- */
 
-function confirmDeleteSelected() {
-  if (!selectedRecords.value || !selectedRecords.value.length) return
-  deleteRecordsDialog.value = true
-}
+const pointsEndpointUrl = computed(() => (currentPatient.value?.id ? 'v1/patient-points' : ''))
 
-async function deleteSelected() {
-  if (!selectedRecords.value || !selectedRecords.value.length) return
+const pointTableOptions = computed<DataTableOptions<PatientPointApi>>(() => {
+  const patientId = currentPatient.value?.id
 
-  const idsToDelete = selectedRecords.value.map((r) => r.id)
+  return {
+    rowKey: 'id',
+    endpointUrl: pointsEndpointUrl.value,
+    defaultPageSize: 25,
+    pageSizeOptions: [10, 25, 50],
+    selectable: true,
 
-  try {
-    await Promise.all(idsToDelete.map((id) => api.delete(`/v1/patient-points/${id}`)))
+    // filter by patient
+    extraParams: patientId ? { patient_id: patientId } : {},
 
-    const deleteSet = new Set(idsToDelete)
-    records.value = records.value.filter((r) => !deleteSet.has(r.id))
-    selectedRecords.value = []
-    deleteRecordsDialog.value = false
+    afterInit: ({ remote }) => {
+      pointRemote.value = remote
+      // If your backend supports sort=-date
+      remote.setSort?.('-date')
+      remote.loadPage?.(1)
+    },
 
-    toast.add({
-      severity: 'success',
-      summary: 'Vymazané',
-      detail: 'Vybrané záznamy boli vymazané.',
-      life: 3000,
-    })
-  } catch (error: any) {
-    console.error('Failed to delete patient points', error)
+    columns: [
+      {
+        field: 'date',
+        header: 'Dátum',
+        sortable: true,
+        render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : ''),
+      },
+      {
+        field: 'diagnosis_code',
+        header: 'Diagnóza',
+        sortable: true,
+        render: (v: string | null) => v ?? '',
+      },
+      {
+        field: 'procedure_code',
+        header: 'Výkon',
+        sortable: true,
+        render: (v: string | null) => v ?? '',
+      },
+      {
+        field: 'quantity',
+        header: 'Počet',
+        sortable: true,
+        render: (v: number | null) => (v ?? ''),
+      },
+      {
+        field: 'reference_date',
+        header: 'Dátum odporučenia',
+        sortable: true,
+        render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : ''),
+      },
+      {
+        field: 'edit',
+        header: '',
+        width: '3rem',
+        component: markRaw(ActionButtons),
+        componentOptions: [
+          {
+            icon: 'bi bi-pencil',
+            color: 'info',
+            tooltip: 'Upraviť záznam',
+            action: (row: PatientPointApi) => editRecordFromApiRow(row),
+          },
+        ],
+      },
+    ],
 
-    const msg = error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo vymazať.'
+    actions: [
+      {
+        key: 'duplicate',
+        icon: 'bi bi-copy',
+        class:
+          '!h-7 !bg-accent !border-accent !text-white hover:!bg-darkgrey hover:!border-darkgrey',
+        disabled: ({ selectedRows }) => selectedRows.length === 0,
+        handler: async ({ selectedRows, remote }) => {
+          if (!currentPatient.value) {
+            toast.add({
+              severity: 'warn',
+              summary: 'Chýbajúci pacient',
+              detail: 'Najprv vyberte pacienta.',
+              life: 4000,
+            })
+            return
+          }
 
-    toast.add({
-      severity: 'error',
-      summary: 'Chyba pri mazaní',
-      detail: msg,
-      life: 5000,
-    })
+          const today = new Date()
+
+          try {
+            for (const original of selectedRows as PatientPointApi[]) {
+              const payload = buildPayloadFromApiRow(original, today)
+              await api.post('v1/patient-points', payload)
+            }
+
+            await loadRecordsForPatient()
+            await remote.loadPage(remote.page.value)
+
+            toast.add({
+              severity: 'success',
+              summary: 'Duplikované',
+              detail: 'Vybrané záznamy boli duplikované.',
+              life: 3000,
+            })
+          } catch (error: any) {
+            console.error('Failed to duplicate patient points', error)
+
+            const msg = error?.response?.data?.errors
+              ? (Object.values(error.response.data.errors).flat() as string[])[0]
+              : error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo duplikovať.'
+
+            toast.add({
+              severity: 'error',
+              summary: 'Chyba pri duplikovaní',
+              detail: msg,
+              life: 6000,
+            })
+          }
+        },
+      },
+      {
+        key: 'delete',
+        icon: 'bi bi-eraser',
+        class: '!h-7 !bg-warning !border-warning !text-white',
+        disabled: ({ selectedRows }) => selectedRows.length === 0,
+
+        // Confirmation handled by UniversalDataTable
+        confirm: 'Naozaj si prajete vymazať vybrané záznamy?',
+
+        handler: async ({ selectedRows, remote }) => {
+          const idsToDelete = (selectedRows as PatientPointApi[]).map((r) => r.id)
+
+          try {
+            await Promise.all(idsToDelete.map((id) => api.delete(`v1/patient-points/${id}`)))
+
+            await loadRecordsForPatient()
+            await remote.loadPage(remote.page.value)
+
+            toast.add({
+              severity: 'success',
+              summary: 'Vymazané',
+              detail: 'Vybrané záznamy boli vymazané.',
+              life: 3000,
+            })
+          } catch (error: any) {
+            console.error('Failed to delete patient points', error)
+
+            const msg = error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo vymazať.'
+
+            toast.add({
+              severity: 'error',
+              summary: 'Chyba pri mazaní',
+              detail: msg,
+              life: 5000,
+            })
+          }
+        },
+      },
+    ],
   }
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Duplicate selected                                                        */
-/* -------------------------------------------------------------------------- */
-
-async function duplicateSelected() {
-  if (!selectedRecords.value || !selectedRecords.value.length) return
-
-  if (!currentPatient.value) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Chýbajúci pacient',
-      detail: 'Najprv vyberte pacienta.',
-      life: 4000,
-    })
-    return
-  }
-
-  const today = new Date()
-
-  try {
-    for (const original of selectedRecords.value) {
-      const payload = buildPayloadFromRow(original, today)
-      await api.post('/v1/patient-points', payload)
-    }
-
-    // reload once
-    await loadRecordsForPatient()
-
-    toast.add({
-      severity: 'success',
-      summary: 'Duplikované',
-      detail: 'Vybrané záznamy boli duplikované.',
-      life: 3000,
-    })
-  } catch (error: any) {
-    console.error('Failed to duplicate patient points', error)
-
-    const msg = error?.response?.data?.errors
-      ? (Object.values(error.response.data.errors).flat() as string[])[0]
-      : error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo duplikovať.'
-
-    toast.add({
-      severity: 'error',
-      summary: 'Chyba pri duplikovaní',
-      detail: msg,
-      life: 6000,
-    })
-  }
-}
+})
 
 /* -------------------------------------------------------------------------- */
 /*  Lifecycle                                                                 */
 /* -------------------------------------------------------------------------- */
 
-// IMPORTANT: watch only patient id so updating the same patient object (reference_date)
-// does NOT reset your form.
+// IMPORTANT: watch only patient id so updating the same patient object does not reset form
 watch(
   () => currentPatient.value?.id,
   async (newId) => {
@@ -835,24 +917,23 @@ watch(
       procedure.value = null
       quantity.value = 1
       submitted.value = false
-      selectedRecords.value = []
       return
     }
 
     resetFormForNewPatient()
     await loadRecordsForPatient()
+    pointRemote.value?.reload?.()
   },
   { immediate: true },
 )
 
-
 onMounted(() => {
-  // the watcher above handles initial load too; keeping onMounted empty is fine
+  // watcher handles initial load
 })
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6 overflow-y-auto">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <div class="grid grid-cols-15 gap-4">
@@ -890,6 +971,12 @@ onMounted(() => {
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
                       @click="selectMondayWednesdayFriday"
                     />
+                    <Button
+                      size="small"
+                      label="Sobota-Nedeľa"
+                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
+                      @click="selectWeekends"
+                    />
                   </div>
                   <div class="flex gap-2">
                     <Button
@@ -902,7 +989,9 @@ onMounted(() => {
                 </div>
               </template>
             </DatePicker>
-            <small v-if="submitted && (!dates || !dates.length)" class="text-warning"> Dátum je povinný. </small>
+            <small v-if="submitted && (!dates || !dates.length)" class="text-warning">
+              Dátum je povinný.
+            </small>
           </div>
 
           <!-- Diagnóza -->
@@ -967,7 +1056,9 @@ onMounted(() => {
               :max="100"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-warning"> Počet je povinný. </small>
+            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-warning">
+              Počet je povinný.
+            </small>
           </div>
 
           <!-- Dátum odporučenia -->
@@ -981,7 +1072,9 @@ onMounted(() => {
               :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small v-if="submitted && !referralDate" class="text-warning"> Dátum je povinný. </small>
+            <small v-if="submitted && !referralDate" class="text-warning">
+              Dátum je povinný.
+            </small>
           </div>
         </div>
       </section>
@@ -997,222 +1090,110 @@ onMounted(() => {
       </div>
     </form>
 
-    <div>
-      <Toolbar class="!bg-transparent !border-0 !shadow-none flex items-center justify-between py-3 !px-0">
-        <template #end>
-          <div class="flex items-center gap-2">
-            <IconField>
-              <InputText v-model="filters['global'].value" />
-              <InputIcon>
-                <i class="bi bi-search text-darkgrey" />
-              </InputIcon>
-            </IconField>
+    <!-- Table (UniversalDataTable) -->
+    <div class="overflow-x-auto">
+      <UniversalDataTable
+        v-if="currentPatient?.id"
+        :key="tableKey"
+        :options="pointTableOptions"
+      />
+      <div v-else class="text-mini text-accent py-2">Najprv vyberte pacienta.</div>
+    </div>
 
-            <Button
-              icon="bi bi-copy"
-              @click="duplicateSelected"
-              :disabled="!selectedRecords || !selectedRecords.length"
-              class="!h-7 !bg-accent !border-accent !text-white hover:!bg-darkgrey hover:!border-darkgrey"
-            />
+    <!-- Edit dialog (unchanged UI; works with pencil action) -->
+    <Dialog v-model:visible="pointDialog" :style="{ width: '600px' }" header="Upraviť záznam" :modal="true">
+      <div class="flex flex-col gap-6" v-if="editPoint">
+        <div class="col-span-12">
+          <label class="block text-normal mb-1">Dátum</label>
+          <DatePicker
+            v-model="editPoint.date"
+            dateFormat="dd.mm.yy"
+            :showIcon="false"
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+          />
+          <small v-if="editSubmitted && !editPoint.date" class="text-warning"> Dátum je povinný. </small>
+        </div>
 
-            <Button
-              icon="bi bi-eraser"
-              @click="confirmDeleteSelected"
-              :disabled="!selectedRecords || !selectedRecords.length"
-              class="!h-7 !bg-warning !border-warning !text-white"
-            />
-          </div>
-        </template>
-      </Toolbar>
+        <div class="col-span-12">
+          <label class="block text-normal mb-1">Diagnóza</label>
+          <AutoComplete
+            v-model="editPoint.diagnosis"
+            :suggestions="filteredDiagnoses"
+            @complete="searchDiagnoses"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            optionLabel="code"
+            dropdown
+            dropdownMode="blank"
+            :minLength="0"
+            completeOnFocus
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+          >
+            <template #option="slotProps">
+              <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
+            </template>
+          </AutoComplete>
+          <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning"> Diagnóza je povinná. </small>
+        </div>
 
-      <DataTable
-        v-model:selection="selectedRecords"
-        :value="records"
-        dataKey="id"
-        :filters="filters"
-        stripedRows
-        removableSort
-        scrollable
-        scrollHeight="400px"
-        class="text-sm"
-        sortMode="single"
-        :sortField="'date'"
-        :sortOrder="-1"
-      >
-        <Column selectionMode="multiple" headerStyle="width: 3rem" :exportable="false" />
+        <div class="col-span-12">
+          <label class="block text-normal mb-1">Výkon</label>
+          <AutoComplete
+            v-model="editPoint.procedure"
+            :suggestions="filteredProcedures"
+            @complete="searchProcedures"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            optionLabel="code"
+            dropdown
+            dropdownMode="blank"
+            :minLength="0"
+            completeOnFocus
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+          >
+            <template #option="slotProps">
+              <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
+            </template>
+          </AutoComplete>
+          <small v-if="editSubmitted && !editPoint.procedure" class="text-warning"> Výkon je povinný. </small>
+        </div>
 
-        <Column field="date" header="Dátum" sortable>
-          <template #body="slotProps">
-            {{ formatDate(slotProps.data.date) }}
-          </template>
-        </Column>
+        <div class="col-span-12">
+          <label class="block text-normal mb-1">Počet</label>
+          <InputNumber
+            :modelValue="editPoint.quantity"
+            @update:modelValue="editPoint.quantity = $event ? Number($event) : null"
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+          />
+          <small v-if="editSubmitted && (!editPoint.quantity || editPoint.quantity <= 0)" class="text-warning">
+            Počet je povinný.
+          </small>
+        </div>
 
-        <Column field="diagnosis" header="Diagnóza" sortable>
-          <template #body="slotProps">
-            <span v-if="slotProps.data.diagnosis">
-              {{ slotProps.data.diagnosis.code }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="procedure" header="Výkon" sortable>
-          <template #body="slotProps">
-            <span v-if="slotProps.data.procedure">
-              {{ slotProps.data.procedure.code }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="quantity" header="Počet" sortable>
-          <template #body="slotProps">
-            {{ slotProps.data.quantity }}
-          </template>
-        </Column>
-
-        <Column field="referralDate" header="Dátum odporučenia" sortable>
-          <template #body="slotProps">
-            {{ formatDate(slotProps.data.referralDate) }}
-          </template>
-        </Column>
-
-        <Column headerStyle="width: 3rem" :exportable="false">
-          <template #body="slotProps">
-            <Button
-              icon="bi bi-pencil"
-              text
-              rounded
-              @click="editRecord(slotProps.data)"
-              class="text-darkgrey! hover:bg-transparent! p-0! !h-min"
-            />
-          </template>
-        </Column>
-      </DataTable>
-
-      <div class="text-mini text-accent flex justify-end w-full py-2">
-        {{ recordsInfo }}
+        <div class="col-span-12">
+          <label class="block text-normal mb-1">Dátum odporučenia</label>
+          <DatePicker
+            v-model="editPoint.referralDate"
+            dateFormat="dd.mm.yy"
+            :showIcon="false"
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
+          />
+          <small v-if="editSubmitted && !editPoint.referralDate" class="text-warning">
+            Dátum odporučenia je povinný.
+          </small>
+        </div>
       </div>
 
-      <!-- Delete dialog -->
-      <Dialog
-        v-model:visible="deleteRecordsDialog"
-        :style="{ width: '600px' }"
-        :modal="true"
-        :closable="false"
-        header="Upozornenie"
-      >
-        <div class="flex items-center justify-between w-full">
-          <span class="text-heading">Naozaj si prajete vymazať vybrané záznamy?</span>
-
-          <div class="flex items-center gap-2">
-            <Button
-              label="Nie"
-              text
-              @click="deleteRecordsDialog = false"
-              class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0"
-            />
-            <Button
-              label="Áno"
-              text
-              @click="deleteSelected"
-              class="!bg-warning !px-4 !text-white"
-            />
-          </div>
-        </div>
-      </Dialog>
-
-      <!-- Edit dialog -->
-      <Dialog v-model:visible="pointDialog" :style="{ width: '600px' }" header="Upraviť záznam" :modal="true">
-        <div class="flex flex-col gap-6" v-if="editPoint">
-          <div class="col-span-12">
-            <label class="block text-normal mb-1">Dátum</label>
-            <DatePicker
-              v-model="editPoint.date"
-              dateFormat="dd.mm.yy"
-              :showIcon="false"
-              class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            />
-            <small v-if="editSubmitted && !editPoint.date" class="text-warning"> Dátum je povinný. </small>
-          </div>
-
-          <div class="col-span-12">
-            <label class="block text-normal mb-1">Diagnóza</label>
-            <AutoComplete
-              v-model="editPoint.diagnosis"
-              :suggestions="filteredDiagnoses"
-              @complete="searchDiagnoses"
-              :virtualScrollerOptions="{ itemSize: 38 }"
-              optionLabel="code"
-              dropdown
-              dropdownMode="blank"
-              :minLength="0"
-              completeOnFocus
-              class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            >
-              <template #option="slotProps">
-                <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
-              </template>
-            </AutoComplete>
-            <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning"> Diagnóza je povinná. </small>
-          </div>
-
-          <div class="col-span-12">
-            <label class="block text-normal mb-1">Výkon</label>
-            <AutoComplete
-              v-model="editPoint.procedure"
-              :suggestions="filteredProcedures"
-              @complete="searchProcedures"
-              :virtualScrollerOptions="{ itemSize: 38 }"
-              optionLabel="code"
-              dropdown
-              dropdownMode="blank"
-              :minLength="0"
-              completeOnFocus
-              class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            >
-              <template #option="slotProps">
-                <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
-              </template>
-            </AutoComplete>
-            <small v-if="editSubmitted && !editPoint.procedure" class="text-warning"> Výkon je povinný. </small>
-          </div>
-
-          <div class="col-span-12">
-            <label class="block text-normal mb-1">Počet</label>
-            <InputNumber
-              :modelValue="editPoint.quantity"
-              @update:modelValue="editPoint.quantity = $event ? Number($event) : null"
-              class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            />
-            <small v-if="editSubmitted && (!editPoint.quantity || editPoint.quantity <= 0)" class="text-warning">
-              Počet je povinný.
-            </small>
-          </div>
-
-          <div class="col-span-12">
-            <label class="block text-normal mb-1">Dátum odporučenia</label>
-            <DatePicker
-              v-model="editPoint.referralDate"
-              dateFormat="dd.mm.yy"
-              :showIcon="false"
-              class="w-full"
-              inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            />
-            <small v-if="editSubmitted && !editPoint.referralDate" class="text-warning"> Dátum odporučenia je povinný. </small>
-          </div>
-        </div>
-
-        <template #footer>
-          <Button
-            label="Uložiť"
-            class="!bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey"
-            @click="savePoint"
-          />
-        </template>
-      </Dialog>
-    </div>
+      <template #footer>
+        <Button
+          label="Uložiť"
+          class="!bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey"
+          @click="savePoint"
+        />
+      </template>
+    </Dialog>
   </div>
 </template>

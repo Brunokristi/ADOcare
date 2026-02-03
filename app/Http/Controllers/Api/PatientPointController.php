@@ -4,12 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
+use App\Http\Resources\BaseCollection;
 use App\Models\PatientPoint;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PatientPointController extends Controller
 {
+    public function __construct()
+    {
+        // Same as MacroController
+        $this->middleware('api.auth')->only(['index']);
+    }
+
     public function index(Request $request)
     {
         $query = PatientPoint::query();
@@ -26,7 +33,8 @@ class PatientPointController extends Controller
             defaults: ['sort' => '-date,id']
         );
 
-        return $this->success($results, 'Patient points retrieved');
+        // ✅ same shape as macros
+        return $this->success(new BaseCollection($results), 'Patient points retrieved');
     }
 
     /**
@@ -38,27 +46,28 @@ class PatientPointController extends Controller
             'date'                      => ['required', 'date'],
             'patient_personal_number'   => ['required', 'string', 'max:255'],
             'patient_name'              => ['required', 'string', 'max:255'],
-            'patient_id'                => ['required', 'integer'], // add "exists:patients,id" if FK is set
+            'patient_id'                => ['required', 'integer'],
 
             'diagnosis_code'            => ['required', 'string', 'max:255'],
-            'diagnosis_id'              => ['required', 'integer'], // "exists:diagnoses,id"
+            'diagnosis_id'              => ['required', 'integer'],
 
             'procedure_code'            => ['required', 'string', 'max:255'],
-            'procedure_id'              => ['required', 'integer'], // "exists:procedures,id"
+            'procedure_id'              => ['required', 'integer'],
 
             'doctor_pzs'                => ['nullable', 'string', 'max:255'],
             'doctor_zpr'                => ['nullable', 'string', 'max:255'],
-            'doctor_id'                 => ['nullable', 'integer'], // or required + exists
+            'doctor_id'                 => ['nullable', 'integer'],
 
             'reference_date'            => ['required', 'date'],
-            'user_id'                   => ['required', 'integer'], // "exists:users,id"
-            'branch_id'                 => ['required', 'integer'], // "exists:branches,id"
+            'user_id'                   => ['required', 'integer'],
+            'branch_id'                 => ['required', 'integer'],
             'quantity'                  => ['required', 'integer', 'min:1'],
         ]);
 
         $point = PatientPoint::create($validated);
 
-        return response()->json($point, Response::HTTP_CREATED);
+        // (Optional) make consistent with macros:
+        return $this->success($point, 'Created', Response::HTTP_CREATED);
     }
 
     /**
@@ -66,7 +75,7 @@ class PatientPointController extends Controller
      */
     public function show(PatientPoint $patientPoint)
     {
-        return $patientPoint;
+        return $this->success($patientPoint, 'Patient point retrieved');
     }
 
     /**
@@ -98,7 +107,8 @@ class PatientPointController extends Controller
 
         $patientPoint->update($validated);
 
-        return response()->json($patientPoint);
+        // (Optional) make consistent with macros:
+        return $this->success($patientPoint, 'Updated');
     }
 
     /**
@@ -108,6 +118,7 @@ class PatientPointController extends Controller
     {
         $patientPoint->delete();
 
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        // (Optional) make consistent with macros:
+        return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
 }
