@@ -49,14 +49,19 @@ class UserSeeder extends Seeder
                 DB::table('user_branches')->insert([
                     'user_id' => $user->id,
                     'branch_id' => $branchId,
-                    'working_time' => 8.0,
+                    'working_time' => 1.0,
                 ]);
 
                 // If this is an early user (id < 10), ensure they are assigned to at least two branches
                 if ($user->id < 10) {
-                    // find a different branch to attach
+                    // find a different branch to attach within the same company as the original branch
+                    $companyId = DB::table('branches')->where('id', $branchId)->value('company_id');
+
                     $otherBranchId = DB::table('branches')
                         ->where('id', '!=', $branchId)
+                        ->when($companyId, function ($q) use ($companyId) {
+                            return $q->where('company_id', $companyId);
+                        })
                         ->inRandomOrder()
                         ->value('id');
 
@@ -70,7 +75,7 @@ class UserSeeder extends Seeder
                             DB::table('user_branches')->insert([
                                 'user_id' => $user->id,
                                 'branch_id' => $otherBranchId,
-                                'working_time' => 8.0,
+                                'working_time' => 1.0,
                             ]);
                         }
                     }

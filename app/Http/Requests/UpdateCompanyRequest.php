@@ -13,6 +13,22 @@ class UpdateCompanyRequest extends FormRequest
 
     public function rules(): array
     {
-        return [];
+        return [
+            'name' => 'sometimes|required|string',
+            'ico' => 'nullable|string',
+            'dic' => 'nullable|string',
+            'ic_dph' => 'nullable|string',
+            'iban' => 'nullable|string',
+            'bic' => 'nullable|string',
+            'register' => 'nullable|string',
+            'address' => 'nullable|string',
+            'city' => 'nullable|string',
+            'psc' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'representative_id' => 'nullable|integer|exists:users,id',
+        ];
     }
 }

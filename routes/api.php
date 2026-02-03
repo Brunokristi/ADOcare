@@ -89,6 +89,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
 
     Route::get('/my-company/branches', [BranchController::class, 'myCompanyBranches']);
+    Route::get('/my-company', [CompanyController::class, 'myCompany']);
+    Route::get('/my-company/cars', [CarController::class, 'myCompanyCars']);
+    Route::get('/my-company/users', [UserController::class, 'myCompanyUsers']);
 
     Route::apiResourceComplete('doctors', DoctorController::class);
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);

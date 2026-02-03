@@ -15,6 +15,7 @@ class UpdateCarRequest extends FormRequest
     {
         return [
             'evc' => 'sometimes|required|string|max:255',
+            'model' => 'nullable|string|max:255',
             'company_id' => 'nullable|integer',
             'user_id' => 'nullable|integer',
         ];

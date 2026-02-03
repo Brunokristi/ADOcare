@@ -9,8 +9,12 @@
 // \---- Auta
 // Reporty
 
+import Cars from "@/pages/Cars.vue";
 import Error from "@/pages/Error.vue";
+import CompanySettings from "@/pages/partials/Settings/Company/CompanySettings.vue";
 import Patients from "@/pages/Patients.vue";
+import Settings from "@/pages/Settings.vue";
+import Users from "@/pages/Users.vue";
 import Doctors from "@/partials/Settings/Doctors/Doctors.vue";
 import type { RouteRecordRaw } from "vue-router";
 
@@ -52,7 +56,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager/settings',
         name: 'manager-settings',
-        component: Error,
+        component: Settings,
         redirect: { name: 'manager-settings-company' },
         meta: {
             title: 'Nastavenia (Manažér)',
@@ -63,26 +67,26 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'company',
                 name: 'manager-settings-company',
-                component: Error,
-                meta: { title: 'Spoločnosť', managerSidebar: true },
+                component: () => CompanySettings,
+                meta: { title: 'Spoločnosť', managerSidebar: true, navbar: true, overflow: true },
             },
             {
                 path: 'branches',
                 name: 'manager-settings-branches',
                 component: Error,
-                meta: { title: 'Pobočky', managerSidebar: true },
+                meta: { title: 'Pobočky', managerSidebar: true, navbar: true, },
             },
             {
                 path: 'users',
                 name: 'manager-settings-users',
-                component: Error,
-                meta: { title: 'Používatelia', managerSidebar: true },
+                component: () => Users,
+                meta: { title: 'Používatelia', managerSidebar: true, navbar: true, },
             },
             {
                 path: 'cars',
                 name: 'manager-settings-cars',
-                component: Error,
-                meta: { title: 'Autá', managerSidebar: true },
+                component: Cars,
+                meta: { title: 'Autá', managerSidebar: true, navbar: true, },
             },
         ],
     },
