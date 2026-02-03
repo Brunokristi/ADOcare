@@ -41,7 +41,6 @@ const submitted = ref(false);
 const loading = ref(false);
 const patientsLoading = ref(false);
 
-
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
   { code: 'O', name: 'Opravná dávka' },
@@ -378,10 +377,10 @@ onMounted(() => {
     </form>
 
     <!-- Loader Overlay -->
-    <div v-if="loading" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-      <div class="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
-        <i class="bi bi-infinity animate-spin text-2xl text-accent"></i>
-        <p class="text-gray-700 font-medium">Generujem</p>
+    <div v-if="loading" class="fixed inset-0 flex items-center justify-center bg-tag2/50 z-50">
+      <div class="p-8 flex flex-col items-center gap-4 w-90">
+        <i class="bi bi-flower2 animate-spin text-2xl text-white"></i>
+        <p class="text-white text-normal">Dáta sa generujú, počkajte prosím.</p>
       </div>
     </div>
   </div>
