@@ -13,6 +13,7 @@ import Cars from "@/pages/Settings/Cars/Cars.vue";
 import Error from "@/pages/ErrorPage.vue";
 import CompanySettings from "@/pages/Settings/Company/CompanySettingsPage.vue";
 import Patients from "@/pages/Patients/PatientListPage.vue";
+import Branches from "@/pages/Settings/Branches/BranchesPage.vue";
 import Settings from "@/pages/Settings.vue";
 import Users from "@/pages/Settings/Users/UsersPage.vue";
 import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
@@ -73,7 +74,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'branches',
                 name: 'manager-settings-branches',
-                component: Error,
+                component: Branches,
                 meta: { title: 'Pobočky', managerSidebar: true, navbar: true, },
             },
             {
