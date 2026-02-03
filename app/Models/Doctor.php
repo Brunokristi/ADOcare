@@ -30,7 +30,7 @@ class Doctor extends Model
 
     public function assigned_branches()
     {
-        return $this->hasManyThrough(Branch::class, Patient::class, 'doctor_id', 'id', 'id', 'branch_id');
+        return $this->belongsToMany(Branch::class, 'patients', 'doctor_id', 'branch_id')->distinct();
     }
 
 }
