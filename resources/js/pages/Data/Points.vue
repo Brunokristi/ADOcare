@@ -273,7 +273,6 @@ async function onSubmit() {
       return;
     }
 
-    // Start background calculation (fire and forget)
     api.post('/v1/visits/timeline', {
       month: toApiDate(periodFrom),
       branch_id: authStore.currentBranch?.id,

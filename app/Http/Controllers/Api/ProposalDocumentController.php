@@ -41,7 +41,7 @@ class ProposalDocumentController extends Controller
 
         $patient = Patient::findOrFail($validated['patient_id']);
         $user = Auth::user();
-        $company = $user->company;
+        $company = $user->companies()->first();
         $doctor = $patient->doctor;
 
         $companyName = $company ? $company->name : '';

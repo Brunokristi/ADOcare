@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\Patient;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -86,8 +87,8 @@ class DekurzDocumentController extends Controller
         );
 
         $user = Auth::user();
-        $company = $user->company;
-        $branch = $company->branches()->findOrFail($validated['branch_id']);
+        $branch = Branch::findOrFail((int)$validated['branch_id']);
+        $company = $branch->company;
         $insurance = $patient->insuranceCompany;
 
         $userName = trim(($user->title ?? '') . ' ' . ($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));

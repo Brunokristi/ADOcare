@@ -138,6 +138,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/dzcs', [DZCDocumentController::class, 'store']);
     Route::get('/dzcs/{documentId}', [DZCDocumentController::class, 'show']);
+    Route::get('/dzcs/{documentId}/csv', [DZCDocumentController::class, 'exportCsv']);
 
     Route::post('/dekurz', [DekurzDocumentController::class, 'store']);
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates']);

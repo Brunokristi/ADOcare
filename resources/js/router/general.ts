@@ -310,8 +310,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Účtovníctvo',
             sectionRoot: 'accounting',
-            sidebar: false
-
+            sidebar: true,
         },
         children: [
             {
@@ -321,7 +320,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Cestovné',
                     link: 'cestovné',
-                    sidebar: false,
+                    sidebar: true,
                     navbar: false,
                 },
             },
