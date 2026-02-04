@@ -12,6 +12,32 @@ use Illuminate\Support\Facades\Storage;
 
 class DZCDocumentController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = Document::where('type', 'dzc')
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc');
+
+        if ($request->has('branch_id')) {
+            // For DZC documents, we can filter by the branch_id from request
+            // Since DZC documents don't have a branch_id column, we'll just return all for the user
+            // But we can add filtering if needed
+        }
+
+        $documents = $query->get()->map(function ($doc) {
+            return [
+                'id' => $doc->id,
+                'name' => $doc->name,
+                'type' => $doc->type,
+                'mime_type' => $doc->mime_type,
+                'created_at' => $doc->created_at,
+                'path' => $doc->path,
+            ];
+        });
+
+        return response()->json(['data' => $documents]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

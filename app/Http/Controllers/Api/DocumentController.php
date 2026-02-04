@@ -13,6 +13,19 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class DocumentController extends Controller
 {
     /**
+     * Display a listing of travel documents (CP and DZC) for current user.
+     */
+    public function indexTravelDocuments(Request $request)
+    {
+        $documents = Document::whereIn('type', ['cp', 'dzc'])
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate($request->input('per_page', 25));
+
+        return response()->json($documents);
+    }
+
+    /**
      * Display a listing of documents for a patient.
      */
     public function index($patientId)

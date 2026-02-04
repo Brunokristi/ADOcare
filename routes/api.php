@@ -133,9 +133,11 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/agreements/{documentId}', [AgreementDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/agreements', [AgreementDocumentController::class, 'getByPatient']);
 
+    Route::get('/cps', [CPDocumentController::class, 'index']);
     Route::post('/cps', [CPDocumentController::class, 'store']);
     Route::get('/cps/{documentId}', [CPDocumentController::class, 'show']);
 
+    Route::get('/dzcs', [DZCDocumentController::class, 'index']);
     Route::post('/dzcs', [DZCDocumentController::class, 'store']);
     Route::get('/dzcs/{documentId}', [DZCDocumentController::class, 'show']);
     Route::get('/dzcs/{documentId}/csv', [DZCDocumentController::class, 'exportCsv']);
@@ -147,6 +149,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
+    Route::get('/documents/travel', [DocumentController::class, 'indexTravelDocuments']);
 
     Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);
     Route::get('/visits/timeline/status', [VisitsController::class, 'checkCalculationStatus']);
