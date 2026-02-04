@@ -24,6 +24,7 @@ import PatientProposal from '@/pages/Patients/Proposal/PatientProposalPage.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
+import PatientLeave from '@/pages/Patients/Leave/PatientLeavePage.vue'
 import type { RouteRecordRaw } from 'vue-router'
 
 
@@ -235,6 +236,18 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Ošetrovateľský záznam',
                     link: 'ošetrovateľský záznam',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+
+            {
+                path: 'leave',
+                name: 'leave',
+                component: PatientLeave,
+                meta: {
+                    title: 'Prepúšťacia správa',
+                    link: 'prepúšťacia správa',
                     sidebar: false,
                     navbar: false,
                 },
