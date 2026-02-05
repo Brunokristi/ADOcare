@@ -39,6 +39,7 @@ const options = computed<DataTableOptions<User>>(() => ({
     endpointUrl: 'v1/my-company/users',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
+    extraParams: { with: 'roles' },
     selectable: true,
     afterInit: ({ remote }) => {
         actionRemote.value = remote
@@ -48,6 +49,7 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
+        { field: 'role_names', header: 'Roly', sortable: true, render: (v) => v.join(', ') },
         { field: 'phone', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {
