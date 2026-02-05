@@ -41,7 +41,7 @@ class ProposalDocumentController extends Controller
 
         $patient = Patient::findOrFail($validated['patient_id']);
         $user = Auth::user();
-        $company = $user->companies()->first();
+        $company = $user->company()->first();
         $doctor = $patient->doctor;
 
         $companyName = $company ? $company->name : '';
@@ -83,7 +83,7 @@ class ProposalDocumentController extends Controller
                 }
             }
         }
-        
+
         $proposalData = [
             'company_address' => $companyAddress,
             'company_name' => $companyName,
@@ -110,7 +110,7 @@ class ProposalDocumentController extends Controller
             'proposals/' . now()->timestamp . '.json',
             json_encode($proposalData, JSON_PRETTY_PRINT)
         );
-        
+
         return response()->json([
             'success' => true,
             'document_id' => $document->id,
