@@ -44,14 +44,7 @@ class PatientController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $branchId = (int) $request->input('branch_id');
-        $branch = Branch::find($branchId);
-        if (!$branch) {
-            return $this->success(new PatientCollection(collect([])), 'Patients retrieved');
-        }
-
-        $query = $this->service->queryForUserBranch($user, $branch);
+        $query = Patient::query();
 
         $results = ApiQuery::apply(
             $request,

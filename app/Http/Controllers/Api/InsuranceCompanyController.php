@@ -15,8 +15,6 @@ class InsuranceCompanyController extends Controller
 {
     public function index(Request $request)
     {
-        $q = $request->query('q', '');
-
         $query = InsuranceCompany::query();
 
         $result = ApiQuery::apply(

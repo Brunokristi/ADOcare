@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
+use App\Http\Requests\NurseDiagnosisRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\DiagnosisResource;
 use App\Http\Requests\DiagnosisRequest;
+use App\Http\Resources\NurseDiagnosisResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\NurseDiagnosis;
 use Illuminate\Http\Request;
@@ -21,7 +23,7 @@ class NurseDiagnosisController extends Controller
         $results = ApiQuery::apply(
             $request,
             $query,
-             ['code', 'description'],
+            ['code', 'description'],
             [],
             ['sort' => 'code']
 
