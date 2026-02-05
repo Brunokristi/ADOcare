@@ -4,7 +4,7 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
-import { searchAutocomplete, fetchPlaceDetails, parseComponents } from '@/composables/useAddressAutocomplete'
+import { searchAutocomplete, fetchPlaceDetails, parseComponents, extractAddressFromPlace } from '@/composables/useAddressAutocomplete'
 import type { Company, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 
@@ -143,15 +143,14 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
                             <AddressAutocomplete v-model="addressQuery" @selected="(s) => {
-
-                                company.address = s.streetOnly ? `${s.streetOnly}` : (s.streetOnly || company.address)
-                                company.city = s.city || company.city
-                                company.psc = s.zip || company.psc
-                                if (s.latitude && s.longitude) {
-                                    company.latitude = s.latitude
-                                    company.longitude = s.longitude
+                                const {city, street, zip, latitude, longitude,} = extractAddressFromPlace(s);
+                                company = { ...company,
+                                    city: city || company.city,
+                                    address: street || company.address,
+                                    psc: zip || company.psc,
+                                    latitude: latitude || company.latitude,
+                                    longitude: longitude || company.longitude,
                                 }
-
                             }" />
                         </div>
                     </div>

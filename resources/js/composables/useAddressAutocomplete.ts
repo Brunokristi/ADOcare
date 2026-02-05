@@ -38,3 +38,13 @@ export function parseComponents(components: any[]): ParsedAddress {
   const streetOnly = [route, streetNumber].filter(Boolean).join(' ').trim()
   return { streetOnly, city, zip }
 }
+
+export function extractAddressFromPlace(place: any) {
+  if (!place || !place.address_components) return { address: '', city: '', zip: '', latitude: null, longitude: null }
+  const { streetOnly, city, zip } = parseComponents(place.address_components)
+  const address = [streetOnly, city, zip].filter(Boolean).join(', ').trim()
+  const street = place.streetOnly || '';
+  const latitude = place.geometry?.location?.lat ?? null
+  const longitude = place.geometry?.location?.lng ?? null
+  return { address, street, city, zip, latitude, longitude }
+}
