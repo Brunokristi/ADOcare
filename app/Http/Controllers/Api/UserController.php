@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
+use App\Http\Resources\UserCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Services\UserService;
@@ -25,7 +26,7 @@ class UserController extends Controller
     {
         $query = User::query();
         $results = ApiQuery::apply(request(), $query);
-        return $this->success(new BaseCollection($results), 'Users retrieved');
+        return $this->success(new UserCollection($results), 'Users retrieved');
     }
 
     public function myCompanyUsers(Request $request)
@@ -34,14 +35,14 @@ class UserController extends Controller
         $company = $user->company;
 
         if (!$company) {
-            return $this->success(new BaseCollection(collect([])), 'Users retrieved');
+            return $this->success(new UserCollection(collect([])), 'Users retrieved');
         }
 
         $query = User::query()->whereHas('company', function ($q) use ($company) {
             $q->where('company.id', $company->id);
         });
         $results = ApiQuery::apply(request(), $query);
-        return $this->success(new BaseCollection($results), 'Users retrieved');
+        return $this->success(new UserCollection($results), 'Users retrieved');
     }
 
     public function store(\App\Http\Requests\StoreUserRequest $request)
