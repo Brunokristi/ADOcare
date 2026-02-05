@@ -41,7 +41,24 @@ This guide is meant for both humans and automated agents that modify the codebas
 
 - Database access
 	- Prefer using Eloquent models and query builder for data access and relationships. Avoid raw SQL queries or `DB::statement` unless there is a demonstrated, unavoidable need (e.g., specific performance optimizations or vendor-specific SQL features).
-	- If you must use raw SQL, document the reason in the PR and in a code comment, use parameter binding to avoid SQL injection, and add tests that cover the behavior.
+	- If you must use raw SQL, document the reason in the PR and or in a code comment, use parameter binding to avoid SQL injection.
+
+- Console logs & debugging
+	- Remove `console.log` and other temporary debug prints from committed code. Use structured logging on the backend and proper debug tools locally.
+
+- Static analysis & typing
+	- Enable/encourage TypeScript strict mode and add ESLint rules to discourage `any` (e.g., `@typescript-eslint/no-explicit-any`).
+	- Consider adding PHP static analysis (PHPStan or Psalm) to the CI pipeline to catch type and return-type issues early.
+
+- Large data processing
+	- When processing large datasets, prefer `cursor()` or `chunk()` to avoid loading entire tables into memory. Use transactions when mutating multiple related rows.
+
+- Validation
+	- Prefer FormRequest classes for complex request validation and authorization instead of inline `$request->validate()`.
+
+- Documentation & API docs
+	- When adding or changing API endpoints, update Scribe/OpenAPI docs and include examples in the PR.
+
 
 ---
 
