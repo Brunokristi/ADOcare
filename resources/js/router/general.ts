@@ -21,6 +21,7 @@ import DocumentCP from '@/pages/Documents/CP.vue'
 import DocumentDZC from '@/pages/Documents/DZC.vue'
 import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
 import DocumentLeave from '@/pages/Documents/Leave.vue'
+import DocumentRecord from '@/pages/Documents/Record.vue'
 import PatientProposal from '@/pages/Patients/Proposal/PatientProposalPage.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
@@ -179,6 +180,17 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Ošetrovateľská prepúšťacia správa',
                     link: 'prepúšťacia správa',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'record/:documentId',
+                name: 'documents-record',
+                component: DocumentRecord,
+                meta: {
+                    title: 'Vstupný záznam sesterského posúdenia',
+                    link: 'sesterské posúdenie',
                     sidebar: false,
                     navbar: false,
                 },

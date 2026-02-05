@@ -29,8 +29,8 @@ class AgreementDocumentController extends Controller
             'user_id' => Auth::id(),
             'type' => 'agreement',
             'mime_type' => 'application/json',
-            'name' => 'agreement_' . now()->format('d.m.Y'),
-            'path' => 'agreements/' . 'agreement_' . now()->timestamp . '.json',
+            'name' => 'dohoda_' . now()->format('d.m.Y'),
+            'path' => 'agreements/' . '' . now()->timestamp . '.json',
         ]);
 
         $patient = Patient::findOrFail($validated['patient_id']);

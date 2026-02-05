@@ -351,10 +351,6 @@ async function generateDocument() {
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
-        <div class="flex items-center justify-between">
-          <div class="text-sm opacity-80" v-if="loadingPrefill">Načítavam posledný návrh…</div>
-        </div>
-
         <div class="grid grid-cols-3 gap-4">
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
