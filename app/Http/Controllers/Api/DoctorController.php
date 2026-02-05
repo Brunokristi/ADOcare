@@ -13,6 +13,16 @@ use Illuminate\Http\Response;
 
 class DoctorController extends Controller
 {
+
+
+    // constror
+    private DoctorService $service;
+    public function __construct(DoctorService $service)
+    {
+        $this->service = $service;
+    }
+
+
     /**
      * List doctors
      *
@@ -23,10 +33,9 @@ class DoctorController extends Controller
     public function index()
     {
         $branchId = request()->input('mark_favourites_for_branch_id');
-
         $branchId = is_numeric($branchId) ? (int) $branchId : null;
 
-        $query = app(DoctorService::class)->indexQuery($branchId);
+        $query = $this->service->indexQuery($branchId);
 
         $results = ApiQuery::apply(
             request(),
