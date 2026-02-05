@@ -79,9 +79,9 @@ class User extends Authenticatable
             ->withPivot(['working_time']);
     }
 
-    public function company()
+    public function companies()
     {
-        return $this->belongsTo(Company::class, 'company_id');
+        return $this->hasManyThrough(Company::class, Branch::class, 'id', 'id', 'id', 'company_id');
     }
 
     public function roles()

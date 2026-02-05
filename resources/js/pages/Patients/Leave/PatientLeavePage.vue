@@ -1,0 +1,209 @@
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/api'
+import { useToast } from 'primevue/usetoast'
+import { usePatientStore } from '@/stores/patientStore'
+
+const router = useRouter()
+const toast = useToast()
+const patientStore = usePatientStore()
+
+patientStore.loadFromStorage?.()
+
+const patientId = computed(() => patientStore.current?.id ?? 0)
+
+const errors = ref<Record<string, string>>({})
+const submitted = ref(false)
+
+const date = ref<Date>(new Date())
+const selectedProblems = ref<string[]>([])
+const other_findings = ref('')
+const results = ref(`${formatDateForText(new Date())} ukončená ošetrovateľská starostlivosť`)
+const education = ref('')
+const received = ref('')
+
+const problemOptions = [
+  { label: 'výživy', value: 'nutrition' },
+  { label: 'mobility', value: 'mobility' },
+  { label: 'vylučovania/vyprázdňovania', value: 'elimination' },
+  { label: 'aplikáacie s. c. inj.', value: 'injections' },
+  { label: 'hygieny', value: 'hygiene' },
+  { label: 'starosti o ranu.', value: 'wound_care' },
+  { label: 'iné zistenia', value: 'other_findings' }
+]
+
+function toIsoDateTime(d: Date) {
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`
+}
+
+function formatDateForText(d: Date) {
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  return `${dd}.${mm}.${yyyy}`
+}
+
+watch(
+  () => date.value,
+  (newDate) => {
+    if (newDate && !Number.isNaN(newDate.getTime())) {
+      const formattedDate = formatDateForText(newDate)
+      results.value = `${formattedDate} ukončená ošetrovateľská starostlivosť`
+    }
+  }
+)
+
+function validateForm() {
+  const e: Record<string, string> = {}
+
+  if (!patientId.value) e.patient = 'Pacient nie je vybratý.'
+  if (!date.value || Number.isNaN(date.value.getTime())) e.date = 'Dátum je povinný.'
+
+  if (selectedProblems.value.includes('other_findings') && !other_findings.value.trim()) {
+    e.other_findings = 'Vyplňte "iné zistenia".'
+  }
+
+  errors.value = e
+  return Object.keys(e).length === 0
+}
+
+async function generateDocument() {
+  submitted.value = true
+
+  if (!validateForm()) {
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba validácie',
+      detail: 'Vyplňte všetky povinné polia.',
+      life: 3000
+    })
+    return
+  }
+
+  try {
+    const payload = {
+      patient_id: patientId.value,
+      date: toIsoDateTime(date.value),
+      problems: selectedProblems.value,
+      other_findings: other_findings.value,
+      results: results.value,
+      education: education.value,
+      received: received.value
+    }
+
+    const res = await api.post('/v1/leave-documents', payload)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Úspešne',
+      detail: 'Dokument bol vytvorený',
+      life: 3000
+    })
+
+    // If API returns a document id, navigate
+    const documentId = res.data?.document_id ?? res.data?.id ?? null
+    if (documentId) {
+      router.push({ name: 'documents-leave', params: { documentId } })
+    }
+  } catch (err: any) {
+    console.error('Failed to generate document:', err)
+    const message = err?.response?.data?.message || err?.message || 'Chyba pri vytváraní dokumentu'
+    toast.add({ severity: 'error', summary: 'Chyba', detail: message, life: 3000 })
+  }
+}
+</script>
+
+<template>
+  <div class="flex flex-col gap-6">
+    <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
+      <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
+        <div>
+          <label class="block text-normal mb-2">Dátum</label>
+          <DatePicker
+            v-model="date"
+            dateFormat="dd.mm.yy"
+            timeFormat="HH:mm"
+            :showTime="true"
+            :showIcon="false"
+            class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+            :invalid="submitted && !!errors.date"
+          />
+          <small v-if="submitted && errors.date" class="text-warning">{{ errors.date }}</small>
+        </div>
+
+        <div>
+          <label class="block text-normal mb-2">Prervávanie problémov pri prepustení v oblasti sebaopatery</label>
+          <div class="flex flex-col gap-2">
+            <div v-for="(option, idx) in problemOptions" :key="option.value" class="flex items-center gap-2">
+              <Checkbox v-model="selectedProblems" :inputId="`opt-${idx}`" :value="option.value" />
+              <label :for="`opt-${idx}`" class="text-normal cursor-pointer">{{ option.label }}</label>
+            </div>
+          </div>
+          <small v-if="submitted && errors.patientProblem" class="text-warning">{{ errors.patientProblem }}</small>
+        </div>
+
+        <div v-if="selectedProblems.includes('other_findings')">
+          <label class="block text-normal mb-2">Iné zistenia</label>
+          <Textarea
+            v-model="other_findings"
+            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
+            rows="3"
+            :invalid="submitted && !!errors.other_findings"
+          />
+          <small v-if="submitted && errors.other_findings" class="text-warning">{{ errors.other_findings }}</small>
+        </div>
+
+        <div>
+          <label class="block text-normal mb-2">Vyhodnotenie výsledkov ošetrovateľskej starostlivosti</label>
+          <Textarea
+            v-model="results"
+            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
+            rows="3"
+            :invalid="submitted && !!errors.results"
+          />
+          <small v-if="submitted && errors.results" class="text-warning">{{ errors.results }}</small>
+        </div>
+
+        <div>
+          <label class="block text-normal mb-2">Realizovaná edukácia o</label>
+          <Textarea
+            v-model="education"
+            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
+            rows="2"
+            :invalid="submitted && !!errors.education"
+          />
+          <small v-if="submitted && errors.education" class="text-warning">{{ errors.education }}</small>
+        </div>
+
+        <div>
+          <label class="block text-normal mb-2">Pacient pri ukončení hospitalizácie prevzal</label>
+          <Textarea
+            v-model="received"
+            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
+            rows="2"
+            :invalid="submitted && !!errors.received"
+          />
+          <small v-if="submitted && errors.received" class="text-warning">{{ errors.received }}</small>
+        </div>
+      </section>
+
+      <div class="flex justify-end">
+        <Button
+          type="submit"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
+        >
+          Generovať dokument
+          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
+        </Button>
+      </div>
+    </form>
+  </div>
+</template>

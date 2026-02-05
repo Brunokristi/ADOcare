@@ -4,6 +4,11 @@ import api from '@/services/api'
 type RemoteLoadResultLocal<T = any> = { items: T[]; total: number }
 
 function extractRemote<T = any>(res: any): { items: T[]; total: number } {
+    // Check if res IS the Laravel paginator response (has data array and total number)
+    if (Array.isArray(res?.data) && typeof res?.total === 'number') {
+        return { items: res.data as T[], total: res.total }
+    }
+
     // Your API wrapper seems to be: { message, data: ... }
     const wrapped = res?.data ?? res
 
@@ -16,9 +21,8 @@ function extractRemote<T = any>(res: any): { items: T[]; total: number } {
         return { items: baseItems as T[], total: baseTotal }
     }
 
-    // 2) Laravel paginator style:
+    // 2) Laravel paginator style (wrapped in another object):
     // { data: { data: [...], total: number, ... } }
-    // (this is exactly what your patient-points index returns)
     const paginator = wrapped
     const pagedItems = paginator?.data
     const pagedTotal = paginator?.total
@@ -101,11 +105,8 @@ export function useRemoteTable<T = any>(
             const res = (await api.get(endpointUrl, { params: params.value })).data
             console.log('[useRemoteTable] loadPage response', res)
 
-            // IMPORTANT: your real payload is inside res.data
-            // so parse res.data first, but keep compatibility
-            const payload = res?.data ?? res
-
-            const parsed = extractRemote<T>(payload)
+            // res is the full Laravel paginator response with data, total, current_page, etc
+            const parsed = extractRemote<T>(res)
 
             items.value = parsed.items
             total.value = parsed.total

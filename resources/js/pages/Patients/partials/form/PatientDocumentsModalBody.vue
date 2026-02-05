@@ -47,6 +47,8 @@ const openDocument = (doc: PatientDocument) => {
         window.open(`/documents/agreement/${doc.id}`, '_blank');
     } else if (doc.type === 'dekurz') {
         window.open(`/documents/dekurz/${doc.id}`, '_blank');
+    } else if (doc.type === 'leave') {
+        window.open(`/documents/leave/${doc.id}`, '_blank');
     } else {
         const target = doc.url || doc.path;
         if (target) window.open(target, '_blank');
@@ -58,6 +60,7 @@ const formatDocumentType = (type?: string) => {
         'proposal': 'Návrh',
         'agreement': 'Dohoda',
         'dekurz': 'Dekurz',
+        'leave': 'Prepúšťacia správa',
         'other': 'Iné'
     };
     return typeMap[type || ''] || type || '';

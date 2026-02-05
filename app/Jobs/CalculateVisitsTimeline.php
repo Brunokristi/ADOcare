@@ -16,7 +16,7 @@ class CalculateVisitsTimeline implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 600; // 10 minutes timeout
+    public $timeout = 600;
     public $tries = 3;
 
     protected array $data;
@@ -37,18 +37,10 @@ class CalculateVisitsTimeline implements ShouldQueue
         $procedureCodes = $data['procedure_codes'] ?? ['3439', '3440'];
         $filterPatientIds = array_values(array_filter(array_map('intval', $data['patients'] ?? [])));
 
-        // Parse month the same way the controller does to ensure consistent format
-        $monthDate = Carbon::parse($data['month'])->toDateString(); // Normalize to YYYY-MM-DD
+        $monthDate = Carbon::parse($data['month'])->toDateString();
         $month = Carbon::parse($monthDate)->setTimezone($tz);
         $from = $month->copy()->startOfMonth()->toDateString();
         $to   = $month->copy()->endOfMonth()->toDateString();
-
-        Log::info('CalculateVisitsTimeline: Job started', [
-            'user_id' => $userId,
-            'branch_id' => $branchId,
-            'month_date' => $monthDate,
-            'month_raw_input' => $data['month'],
-        ]);
 
         try {
             $branch = DB::table('branches')
@@ -99,14 +91,6 @@ class CalculateVisitsTimeline implements ShouldQueue
                 ->orderBy('pp.id')
                 ->get();
 
-            Log::info('CalculateVisitsTimeline: Data loaded', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'from' => $from,
-                'to' => $to,
-                'rows' => $rows->count(),
-            ]);
-
             $visitsByDay = [];
             foreach ($rows as $r) {
                 $day = Carbon::parse($r->date)->toDateString();
@@ -140,30 +124,12 @@ class CalculateVisitsTimeline implements ShouldQueue
                 );
             }
 
-            // Mark calculation as completed
-            Log::info('CalculateVisitsTimeline: About to update database', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'month_date' => $monthDate,
-            ]);
-
-            // Debug: Check what's in the database before update
             $existingRecord = DB::table('visit_calculations')
                 ->where('user_id', $userId)
                 ->where('branch_id', $branchId)
                 ->where('month', $monthDate)
                 ->first();
             
-            Log::info('CalculateVisitsTimeline: Before updateOrInsert', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'month_date' => $monthDate,
-                'month_date_type' => gettype($monthDate),
-                'existing_record_found' => $existingRecord ? true : false,
-                'existing_month' => $existingRecord?->month,
-                'existing_status' => $existingRecord?->status,
-            ]);
-
             $updateResult = DB::table('visit_calculations')
                 ->updateOrInsert(
                     [
@@ -178,19 +144,6 @@ class CalculateVisitsTimeline implements ShouldQueue
                     ]
                 );
 
-            Log::info('CalculateVisitsTimeline: Database updated successfully', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'month_date' => $monthDate,
-                'update_result' => $updateResult,
-            ]);
-
-            Log::info('CalculateVisitsTimeline: Calculation completed', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'from' => $from,
-                'to' => $to,
-            ]);
         } catch (\Exception $e) {
             Log::error('CalculateVisitsTimeline: Calculation failed', [
                 'user_id' => $userId,
@@ -199,7 +152,6 @@ class CalculateVisitsTimeline implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
-            // Mark calculation as failed
             DB::table('visit_calculations')
                 ->updateOrInsert(
                     [
@@ -239,7 +191,6 @@ class CalculateVisitsTimeline implements ShouldQueue
             $days,
             $tz,
             $now,
-            $perLocationSeconds,
             $administrativeStartTimeHHmm
         ) {
             $deleted = DB::table('visits')
@@ -248,12 +199,6 @@ class CalculateVisitsTimeline implements ShouldQueue
                 ->whereBetween('date', [$from, $to])
                 ->delete();
 
-            Log::info('CalculateVisitsTimeline persist: deleted old rows', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'deleted' => $deleted,
-            ]);
-
             $buffer = [];
             $inserted = 0;
 
@@ -261,28 +206,28 @@ class CalculateVisitsTimeline implements ShouldQueue
                 $date = $day['date'] ?? null;
                 if (!$date) continue;
 
-                $stops = $day['stops'] ?? [];
-                if (!is_array($stops) || !count($stops)) continue;
-
-                usort($stops, fn ($a, $b) => ((int)($a['arrive_unix'] ?? 0)) <=> ((int)($b['arrive_unix'] ?? 0)));
-
+                $locations = $day['locations'] ?? [];
+                
                 $adminCursor = null;
                 if ($administrativeStartTimeHHmm) {
                     $adminCursor = Carbon::parse($date . ' ' . $administrativeStartTimeHHmm . ':00', $tz);
+                    // Add random variation: -5 to +5 minutes
+                    $minuteVariation = rand(-5, 5);
+                    $adminCursor->addMinutes($minuteVariation);
                 }
 
-                foreach ($stops as $s) {
-                    $patientId = (int)($s['patient_id'] ?? 0);
-                    $arriveUnix = (int)($s['arrive_unix'] ?? 0);
+                foreach ($locations as $location) {
+                    $arriveUnix = (int)($location['arrive_unix'] ?? 0);
 
-                    if ($patientId <= 0 || $arriveUnix <= 0) {
+                    if ($arriveUnix <= 0) {
                         continue;
                     }
 
                     $terrainTime = Carbon::createFromTimestamp($arriveUnix, $tz);
+                    $patientId = (int)($location['patient_id'] ?? 0) ?: null;
                     $administrativeTime = null;
 
-                    if ($adminCursor) {
+                    if ($patientId && $adminCursor) {
                         $paperSeconds = $this->paperworkSecondsForPatient($date, $patientId, $userId, $branchId);
                         $administrativeTime = $adminCursor->copy();
                         $adminCursor->addSeconds($paperSeconds);
@@ -293,14 +238,11 @@ class CalculateVisitsTimeline implements ShouldQueue
                         'patient_id' => $patientId,
                         'user_id' => $userId,
                         'branch_id' => $branchId,
-
                         'terrain_time' => $terrainTime->format('Y-m-d H:i:s'),
                         'administrative_time' => $administrativeTime?->format('Y-m-d H:i:s'),
-
-                        'time_on_location' => (int)($s['spent_seconds'] ?? $perLocationSeconds),
-                        'distance_to_location' => (int)round((float)($s['travel_distance_m'] ?? 0)),
-                        'time_to_location' => (int)round((float)($s['travel_seconds'] ?? 0)),
-
+                        'time_on_location' => 0,
+                        'distance_to_location' => (int)round((float)($location['distance_km'] ?? 0) * 1000),
+                        'time_to_location' => 0,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -319,12 +261,6 @@ class CalculateVisitsTimeline implements ShouldQueue
                 DB::table('visits')->insert($buffer);
                 $inserted += count($buffer);
             }
-
-            Log::info('CalculateVisitsTimeline persist: inserted rows', [
-                'user_id' => $userId,
-                'branch_id' => $branchId,
-                'inserted' => $inserted,
-            ]);
 
             return $inserted;
         });
@@ -390,50 +326,28 @@ class CalculateVisitsTimeline implements ShouldQueue
             return ['date' => $dateYmd, 'error' => 'TSP solver returned empty response', 'stops' => []];
         }
 
-        $stops = [];
-        $totalTravel = 0.0;
-        $totalDistance = 0.0;
+        $locations = [];
 
-        foreach ($legs as $i => $leg) {
-            $totalTravel += (float)($leg['duration'] ?? 0);
-            $totalDistance += (float)($leg['length'] ?? 0);
-
-            $isLastLeg = ($i === count($legs) - 1);
-            if ($isLastLeg) continue;
-
+        foreach ($legs as $leg) {
             $end = $leg['end'] ?? null;
             $ts  = $leg['timestamps'] ?? [];
 
-            $sentKey = (is_array($end) && count($end) === 2)
-                ? sprintf('%.7f,%.7f', (float)$end[0], (float)$end[1])
-                : null;
+            if (!is_array($end) || count($end) !== 2) {
+                continue;
+            }
 
-            $meta = $sentKey ? ($metaBySentKey[$sentKey] ?? null) : null;
-
-            $stops[] = [
-                'patient_id' => $meta['patient_id'] ?? null,
+            $locations[] = [
+                'lat' => (float)$end[1],
+                'lng' => (float)$end[0],
                 'arrive_unix' => (int) data_get($ts, 'arrive_end_point', 0),
-                'leave_unix' => (int) data_get($ts, 'leave_end_point', 0),
-                'leave_previous_unix' => (int) data_get($ts, 'leave_start_point', 0),
-
-                'travel_seconds' => (float)($leg['duration'] ?? 0),
-                'travel_distance_m' => (float)($leg['length'] ?? 0),
-                'spent_seconds' => $perLocationSeconds,
+                'distance_km' => round((float)($leg['length'] ?? 0) / 1000, 2),
+                'patient_id' => $metaBySentKey[sprintf('%.7f,%.7f', (float)$end[0], (float)$end[1])]['patient_id'] ?? null,
             ];
         }
 
-        $startAt = (int) data_get($legs, '0.timestamps.leave_start_point', $startUnix);
-        $endAt   = (int) data_get($legs, (string)(count($legs)-1).'.timestamps.leave_end_point', $startAt);
-
         return [
             'date' => $dateYmd,
-            'stops' => $stops,
-            'summary' => [
-                'start_unix' => $startAt,
-                'end_unix' => $endAt,
-                'total_travel_seconds' => round($totalTravel, 2),
-                'total_distance_m' => round($totalDistance, 2),
-            ],
+            'locations' => $locations,
         ];
     }
 

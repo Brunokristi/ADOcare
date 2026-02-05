@@ -20,10 +20,12 @@ import DocumentAgreement from '@/pages/Documents/Agreement.vue'
 import DocumentCP from '@/pages/Documents/CP.vue'
 import DocumentDZC from '@/pages/Documents/DZC.vue'
 import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
+import DocumentLeave from '@/pages/Documents/Leave.vue'
 import PatientProposal from '@/pages/Patients/Proposal/PatientProposalPage.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
+import PatientLeave from '@/pages/Patients/Leave/PatientLeavePage.vue'
 import type { RouteRecordRaw } from 'vue-router'
 
 
@@ -170,6 +172,17 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     navbar: false,
                 },
             },
+            {
+                path: 'leave/:documentId',
+                name: 'documents-leave',
+                component: DocumentLeave,
+                meta: {
+                    title: 'Ošetrovateľská prepúšťacia správa',
+                    link: 'prepúšťacia správa',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
         ]
     },
 
@@ -235,6 +248,18 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Ošetrovateľský záznam',
                     link: 'ošetrovateľský záznam',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+
+            {
+                path: 'leave',
+                name: 'leave',
+                component: PatientLeave,
+                meta: {
+                    title: 'Ošetrovateľská prepúšťacia správa',
+                    link: 'prepúšťacia správa',
                     sidebar: false,
                     navbar: false,
                 },
@@ -310,8 +335,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Účtovníctvo',
             sectionRoot: 'accounting',
-            sidebar: false
-
+            sidebar: true,
         },
         children: [
             {
@@ -321,7 +345,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Cestovné',
                     link: 'cestovné',
-                    sidebar: false,
+                    sidebar: true,
                     navbar: false,
                 },
             },

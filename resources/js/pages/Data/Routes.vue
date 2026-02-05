@@ -1,29 +1,137 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
+import UniversalDataTable from '@/components/UniversalDataTable.vue';
+import ActionButtons from '@/components/table-columns/ActionButtons.vue';
+import type { DataTableOptions } from '@/types/datatable'
 
 interface BatchType {
   code: string;
   name: string;
 }
 
+type Document = {
+    id: number;
+    name: string;
+    type?: string;
+    mime_type?: string;
+    path?: string;
+    created_at?: string;
+};
+
 const authStore = useAuthStore();
-const router = useRouter();
 const toast = useToast();
 
 const batchType = ref<BatchType | null>(null);
 const dates = ref<Date | null>(null);
 const submitted = ref(false);
 const loading = ref(false);
+const tableRef = ref<any>(null);
 
 
 const batchTypes = ref<BatchType[]>([
   { code: 'CP', name: 'Cestovný príkaz' },
   { code: 'DZC', name: 'Denný záznam ciest' },
 ]);
+
+const openDocument = (doc: Document) => {
+    if (!doc.id) {
+        console.error('Document ID is missing');
+        return;
+    }
+
+    if (doc.type === 'cp') {
+        window.open(`/documents/cp/${doc.id}`, '_blank');
+    } else if (doc.type === 'dzc') {
+        window.open(`/documents/dzc/${doc.id}`, '_blank');
+    } else {
+        console.warn('Unknown document type:', doc.type);
+    }
+};
+
+const formatDocumentType = (type?: string) => {
+    const typeMap: Record<string, string> = {
+        'cp': 'Cestovný príkaz',
+        'dzc': 'Denný záznam ciest',
+    };
+    return typeMap[type || ''] || type || '';
+};
+
+const formatDateWithTime = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const datePart = date.toLocaleDateString('sk-SK');
+    const timePart = date.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return `${datePart} ${timePart}`;
+};
+
+const options = computed<DataTableOptions<Document>>(() => ({
+    rowKey: 'id',
+    endpointUrl: 'v1/documents/travel',
+    defaultPageSize: 25,
+    pageSizeOptions: [10, 25, 50],
+    selectable: true,
+
+    columns: [
+        {
+            field: 'name',
+            header: 'Názov',
+            sortable: true
+        },
+        {
+            field: 'type',
+            header: 'Typ',
+            sortable: true,
+            render: (v: string | undefined) => formatDocumentType(v)
+        },
+        {
+            field: 'created_at',
+            header: 'Dátum a čas vytvorenia',
+            sortable: true,
+            render: (v: string | undefined) => formatDateWithTime(v)
+        },
+        {
+            field: 'preview',
+            header: '',
+            width: '3rem',
+            component: ActionButtons,
+            componentOptions: [
+                {
+                    icon: 'bi bi-eye',
+                    color: 'info',
+                    tooltip: 'Zobraziť dokument',
+                    action: (row: Document) => {
+                        openDocument(row);
+                    },
+                },
+            ],
+        },
+    ],
+
+    actions: [
+        {
+            key: 'delete',
+            disabled: ({ selectedRows }: { selectedRows: Document[] }) => selectedRows.length === 0,
+            icon: 'bi bi-eraser',
+            class: 'bg-warning!',
+            confirm: 'Naozaj chcete zmazať vybrané dokumenty?',
+            handler: async ({ selectedRows, remote }: { selectedRows: Document[]; remote: any }) => {
+                try {
+                    await api.delete('v1/documents', {
+                        data: {
+                            ids: selectedRows.map((r) => r.id),
+                        },
+                    });
+                    await remote.loadPage(remote.page);
+                } catch (err) {
+                    console.error('Error deleting documents:', err);
+                }
+            },
+        },
+    ],
+}));
 
 async function onSubmit() {
     submitted.value = true;
@@ -73,9 +181,15 @@ async function onSubmit() {
             life: 3000,
             });
 
-            await router.push({
-            path: `/documents/cp/${documentId}`,
-            });
+            // Reload table to show new document
+            if (tableRef.value?.remote?.loadPage) {
+                await tableRef.value.remote.loadPage(1);
+            }
+
+            // Optionally open in new tab after a short delay
+            setTimeout(() => {
+                window.open(`/documents/cp/${documentId}`, '_blank');
+            }, 500);
         } catch (error) {
             toast.add({
             severity: 'error',
@@ -106,9 +220,15 @@ async function onSubmit() {
             life: 3000,
             });
 
-            await router.push({
-            path: `/documents/dzc/${documentId}`,
-            });
+            // Reload table to show new document
+            if (tableRef.value?.remote?.loadPage) {
+                await tableRef.value.remote.loadPage(1);
+            }
+
+            // Optionally open in new tab after a short delay
+            setTimeout(() => {
+                window.open(`/documents/dzc/${documentId}`, '_blank');
+            }, 500);
         } catch (error) {
             toast.add({
             severity: 'error',
@@ -180,5 +300,19 @@ async function onSubmit() {
         </Button>
       </div>
     </form>
+
+    <section>
+      <UniversalDataTable ref="tableRef" :options="options">
+        <template #actions="{ row }">
+          <button
+            @click.stop="openDocument(row)"
+            class="btn btn-sm btn-link p-0"
+            title="Otvoriť dokument"
+          >
+            <i class="bi bi-eye"></i>
+          </button>
+        </template>
+      </UniversalDataTable>
+    </section>
   </div>
 </template>

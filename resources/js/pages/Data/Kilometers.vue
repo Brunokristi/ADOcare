@@ -135,6 +135,11 @@ function removePatient(patient: Patient) {
   );
 }
 
+function onBatchNumberInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+  batchNumber.value = input.value.replace(/[^0-9]/g, '');
+}
+
 async function onSubmit() {
   submitted.value = true;
 
@@ -235,6 +240,7 @@ onMounted(() => {
             <label class="block text-normal mb-1">Číslo dávky</label>
             <InputText
               v-model="batchNumber"
+              @input="onBatchNumberInput"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
               class="border-none!"
               fluid

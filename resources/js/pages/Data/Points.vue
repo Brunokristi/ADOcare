@@ -140,6 +140,11 @@ function removePatient(patient: Patient) {
   );
 }
 
+function onBatchNumberInput(event: Event) {
+  const input = event.target as HTMLInputElement;
+  batchNumber.value = input.value.replace(/[^0-9]/g, '');
+}
+
 async function pollCalculationStatus(periodFrom: Date) {
   const maxAttempts = 120; // 10 minutes with 5 second interval
   let attempts = 0;
@@ -273,7 +278,6 @@ async function onSubmit() {
       return;
     }
 
-    // Start background calculation (fire and forget)
     api.post('/v1/visits/timeline', {
       month: toApiDate(periodFrom),
       branch_id: authStore.currentBranch?.id,
@@ -353,6 +357,7 @@ onMounted(() => {
             <label class="block text-normal mb-1">Číslo dávky</label>
             <InputText
               v-model="batchNumber"
+              @input="onBatchNumberInput"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
               class="border-none!"
               fluid

@@ -7,10 +7,12 @@ use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
 use App\Models\Document;
 use App\Models\Patient;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+
 
 class AgreementDocumentController extends Controller
 {
@@ -33,8 +35,8 @@ class AgreementDocumentController extends Controller
 
         $patient = Patient::findOrFail($validated['patient_id']);
         $user = Auth::user();
-        $company = $user->company;
-        $branch = $company->branches()->findOrFail($validated['branch_id']);
+        $branch = Branch::findOrFail((int)$validated['branch_id']);
+        $company = $branch->company;
         $user = $branch->representative;
 
         $companyName = $company ? $company->name : '';

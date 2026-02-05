@@ -52,7 +52,7 @@ class AuthController extends Controller
         }
 
         // Load relationships needed by frontend
-        $user->load(['branches', 'company', 'roles']);
+        $user->load(['branches', 'companies', 'roles']);
 
         $token = $this->createToken($user);
 
@@ -70,7 +70,7 @@ class AuthController extends Controller
 
         $user = User::query()
             ->where('id', $userId)
-            ->with(['branches', 'company', 'roles'])
+            ->with(['branches', 'companies', 'roles'])
             ->first();
 
         return $this->success(new UserResource($user), 'Profile retrieved');

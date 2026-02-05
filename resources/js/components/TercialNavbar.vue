@@ -121,14 +121,19 @@ watch(
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/agreement' }"
-                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
                     dohoda
                 </RouterLink>
 
-                <!-- <RouterLink :to="{ path: '/patient/record' }"
-                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
+                <RouterLink :to="{ path: '/patient/record' }"
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
                     ošetrovateľský záznam
-                </RouterLink> -->
+                </RouterLink>
+
+                <RouterLink :to="{ path: '/patient/leave' }"
+                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
+                    prepúšťacia správa
+                </RouterLink>
 
                 <button type="button" @click="openEditPatient(patient?.id)"
                     class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">

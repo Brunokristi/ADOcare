@@ -3,8 +3,50 @@ import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 
-type PatientAddress = { address: string; latitude: number; longitude: number }
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
+
+type PatientAddress = {
+  type?: 'branch_start' | 'patient' | 'branch_end'
+  patient_id?: number | null
+
+  address: string
+  latitude: number
+  longitude: number
+
+  arrival_time?: string | null
+  departure_time?: string | null
+
+  // leg metrics (previous -> this stop)
+  kilometers?: number | null
+  distance_to_location_m?: number | null
+  time_to_location_seconds?: number | null
+
+  time_on_location_seconds?: number | null
+}
+
 type PatientAddressesByDate = Record<string, PatientAddress[]>
+
+type DayTotal = {
+  date: string
+  stops: number
+  travel_seconds: number
+  distance_m: number
+  distance_km: number
+  total_time?: string
+  first_arrival?: string | null
+  last_arrival?: string | null
+}
+
+type MonthTotals = {
+  from: string
+  to: string
+  stops: number
+  travel_seconds: number
+  distance_m: number
+  distance_km: number
+}
 
 interface CPData {
   user_id: number
@@ -17,9 +59,17 @@ interface CPData {
   car_license_plate: string
   branch_address: string
   patient_addresses: PatientAddressesByDate
+
+  // NEW: persisted totals
+  day_totals?: Record<string, DayTotal>
+  month_totals?: MonthTotals | null
 }
 
 type DailyRecord = { date: string; addresses: PatientAddress[] }
+
+/* -------------------------------------------------------------------------- */
+/*  State                                                                     */
+/* -------------------------------------------------------------------------- */
 
 const route = useRoute()
 const loading = ref(false)
@@ -36,7 +86,13 @@ const cpData = ref<CPData>({
   car_license_plate: '',
   branch_address: '',
   patient_addresses: {},
+  day_totals: {},
+  month_totals: null,
 })
+
+/* -------------------------------------------------------------------------- */
+/*  Load                                                                       */
+/* -------------------------------------------------------------------------- */
 
 onMounted(async () => {
   await loadCP(String(route.params.documentId))
@@ -59,6 +115,8 @@ async function loadCP(documentId: string) {
       car_license_plate: cp.car_license_plate ?? '',
       branch_address: cp.branch_address ?? '',
       patient_addresses: cp.patient_addresses ?? {},
+      day_totals: cp.day_totals ?? {},
+      month_totals: cp.month_totals ?? null,
     }
   } catch (error) {
     console.error('Failed to load DZC:', error)
@@ -67,11 +125,38 @@ async function loadCP(documentId: string) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Formatting                                                                 */
+/* -------------------------------------------------------------------------- */
+
 function formatDate(v?: string) {
   if (!v) return ''
   return new Date(v).toLocaleDateString('sk-SK')
 }
 
+function formatTime(v?: string | null) {
+  if (!v) return '-'
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatSecondsToHm(seconds?: number | null) {
+  if (seconds === null || seconds === undefined) return '-'
+  const s = Math.max(0, Math.floor(seconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function sumLegKm(addresses: PatientAddress[]) {
+  const km = addresses.reduce((sum, a) => sum + (a.kilometers ?? 0), 0)
+  return Math.round(km * 100) / 100
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Derived records                                                            */
+/* -------------------------------------------------------------------------- */
 
 const dailyRecords = computed<DailyRecord[]>(() => {
   const dates = Object.keys(cpData.value.patient_addresses || {}).sort()
@@ -80,6 +165,16 @@ const dailyRecords = computed<DailyRecord[]>(() => {
     addresses: cpData.value.patient_addresses[date] || [],
   }))
 })
+
+const monthTotalKm = computed(() => {
+  const persisted = cpData.value.month_totals?.distance_km
+  if (typeof persisted === 'number') return persisted
+  return dailyRecords.value.reduce((sum, r) => sum + sumLegKm(r.addresses), 0)
+})
+
+/* -------------------------------------------------------------------------- */
+/*  Pagination (print pages)                                                   */
+/* -------------------------------------------------------------------------- */
 
 const pagedRecords = ref<DailyRecord[][]>([])
 
@@ -156,6 +251,10 @@ watch(
   { deep: true, immediate: true }
 )
 
+/* -------------------------------------------------------------------------- */
+/*  Printing                                                                   */
+/* -------------------------------------------------------------------------- */
+
 async function printPage() {
   isPrinting.value = true
   await nextTick()
@@ -168,12 +267,51 @@ function handleAfterPrint() {
   isPrinting.value = false
 }
 
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function downloadCSV() {
+  try {
+    const documentId = String(route.params.documentId)
+    const res = await api.get(`/v1/dzcs/${documentId}/csv`, {
+      responseType: 'blob',
+      headers: { Accept: 'text/csv' },
+    })
+
+    const filename = `dzc_${cpData.value.month}_${cpData.value.year}.csv`
+    const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' })
+    triggerDownload(blob, filename)
+  } catch (error) {
+    console.error('Failed to download CSV:', error)
+  }
+}
+
 onMounted(() => window.addEventListener('afterprint', handleAfterPrint))
 onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint))
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4 cover-sheet-page">
+      <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
+
+      <div class="flex items-center gap-2">
+        <i class="bi bi-file-earmark" />
+        {{ `dzc_${cpData.month}_${cpData.year}.csv` }}
+      </div>
+
+      <Button
+        icon="bi bi-download"
+        class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+        @click="downloadCSV"
+      />
+    </div>
+
     <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
       <template #start>
         <span class="text-heading-accent">Denný záznam ciest</span>
@@ -214,7 +352,7 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
                 <tr>
                   <td class="border border-black p-2 w-1/2">
                     Celkový počet km:<br />
-                    <strong>xx</strong>
+                    <strong>{{ monthTotalKm ?? '-' }}</strong>
                   </td>
                   <td class="border border-black p-2 w-1/2">
                     Dopravný prostriedok:<br />
@@ -240,18 +378,44 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
                   </td>
                   <td class="border border-black p-2 text-left w-1/4">
                     <strong>Počet km</strong><br />
+                    {{
+                      cpData.day_totals?.[record.date]?.distance_km ??
+                      sumLegKm(record.addresses)
+                    }}
                   </td>
                   <td class="border border-black p-2 text-left w-1/4">
-                    <strong>Odchod / Príchod</strong><br />
+                    <strong>Trvanie</strong><br />
+                      {{ cpData.day_totals?.[record.date]?.total_time ?? '-' }}
                   </td>
                 </tr>
 
                 <tr>
                   <td class="border border-black p-2 text-left w-full" colspan="4">
-                    <strong>Trasa</strong><br />
-                    <div v-for="(addr, idx) in record.addresses" :key="idx" class="mb-1">
-                      {{ addr.address }}
-                    </div>
+                    <table class="w-full text-xs mt-2">
+                      <tbody>
+                        <tr class="border-b border-gray-300">
+                          <td class="p-1 w-40 text-left"><strong>Poradové číslo</strong></td>
+                          <td class="p-1 flex-1"><strong>Adresa</strong></td>
+                          <td class="p-1 w-20 text-center"><strong>Príchod</strong></td>
+                          <td class="p-1 w-16 text-right"><strong>KM</strong></td>
+                        </tr>
+
+                        <tr v-for="(addr, idx) in record.addresses" :key="idx" class="border-b border-gray-300">
+                          <td class="p-1 w-40 text-left">
+                            <strong>{{ idx + 1 }}.</strong>
+                          </td>
+
+                          <td class="p-1 flex-1">
+                            <span v-if="addr.type === 'branch_start'"> </span>
+                            <span v-else-if="addr.type === 'branch_end'"> </span>
+                            {{ addr.address }}
+                          </td>
+
+                          <td class="p-1 w-20 text-center">{{ formatTime(addr.arrival_time ?? null) }}</td>
+                          <td class="p-1 w-16 text-right">{{ addr.kilometers ?? '-' }} km</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </td>
                 </tr>
               </thead>
@@ -282,7 +446,7 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
                   <tr>
                     <td class="border border-black p-2 w-1/2">
                       Celkový počet km:<br />
-                      <strong>xx</strong>
+                      <strong>{{ monthTotalKm ?? '-' }}</strong>
                     </td>
                     <td class="border border-black p-2 w-1/2">
                       Dopravný prostriedok:<br />
@@ -308,24 +472,54 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
                       </td>
                       <td class="border border-black p-2 text-left w-1/4">
                         <strong>Počet km</strong><br />
+                        {{
+                          cpData.day_totals?.[record.date]?.distance_km ??
+                          sumLegKm(record.addresses)
+                        }}
                       </td>
                       <td class="border border-black p-2 text-left w-1/4">
-                        <strong>Odchod / Príchod</strong><br />
+                        <strong>Trvanie</strong><br />
+                        <span>
+                          
+                        </span>
                       </td>
                     </tr>
 
                     <tr>
                       <td class="border border-black p-2 text-left w-full" colspan="4">
                         <strong>Trasa</strong><br />
-                        <div v-for="(addr, idx) in record.addresses" :key="idx" class="mb-1">
-                          {{ addr.address }}
-                        </div>
+
+                        <table class="w-full text-xs mt-2">
+                          <tbody>
+                            <tr class="border-b border-gray-300">
+                              <td class="p-1 w-20 text-left"><strong>Poradové číslo</strong></td>
+                              <td class="p-1 flex-1"><strong>Adresa</strong></td>
+                              <td class="p-1 w-20 text-center"><strong>Príchod</strong></td>
+                              <td class="p-1 w-16 text-right"><strong>KM</strong></td>
+                            </tr>
+
+                            <tr v-for="(addr, idx) in record.addresses" :key="idx" class="border-b border-gray-300">
+                              <td class="p-1 w-20 text-left"><strong>{{ idx + 1 }}.</strong></td>
+                              <td class="p-1 flex-1">
+                                <span v-if="addr.type === 'branch_start'"><strong>Štart:</strong> </span>
+                                <span v-else-if="addr.type === 'branch_end'"><strong>Konец:</strong> </span>
+                                {{ addr.address }}
+                              </td>
+                              <td class="p-1 w-20 text-center">{{ formatTime(addr.arrival_time ?? null) }}</td>
+                              <td class="p-1 w-20 text-center">{{ formatTime(addr.departure_time ?? null) }}</td>
+                              <td class="p-1 w-16 text-center">{{ formatSecondsToHm(addr.time_to_location_seconds ?? null) }}</td>
+                              <td class="p-1 w-16 text-right">{{ addr.kilometers ?? '-' }} km</td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                   </thead>
                 </table>
               </div>
             </div>
+
+            <div ref="measureFooterRef"></div>
           </div>
         </div>
       </div>
