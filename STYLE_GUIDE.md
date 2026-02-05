@@ -39,6 +39,10 @@ This guide is meant for both humans and automated agents that modify the codebas
 - When to break the rules
 	- If a change will violate a guideline, ask for confirmation and record the reason in the PR. State which guideline is being broken and why, and propose mitigations.
 
+- Database access
+	- Prefer using Eloquent models and query builder for data access and relationships. Avoid raw SQL queries or `DB::statement` unless there is a demonstrated, unavoidable need (e.g., specific performance optimizations or vendor-specific SQL features).
+	- If you must use raw SQL, document the reason in the PR and in a code comment, use parameter binding to avoid SQL injection, and add tests that cover the behavior.
+
 ---
 
 ## Stylistic Guidelines (Formatting & Conventions)
