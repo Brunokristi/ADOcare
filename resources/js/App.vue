@@ -1,7 +1,7 @@
 <!-- src/App.vue -->
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
@@ -12,7 +12,6 @@ import { useAuthStore } from '@/stores/auth'
 import ModalProvider from './components/ModalProvider.vue'
 
 const router = useRouter()
-const route = useRoute()
 const auth = useAuthStore()
 
 
@@ -29,10 +28,6 @@ function handleToggleSidebar() {
     isSidebarOpen.value = !isSidebarOpen.value
 }
 
-const allowOverflow = computed(() => {
-    const last = route.matched[route.matched.length - 1]
-    return !!last?.meta?.overflow
-})
 
 </script>
 
@@ -43,7 +38,7 @@ const allowOverflow = computed(() => {
         <TercialNavbar v-if="isLoggedIn" class="flex-none" />
 
         <div class="flex flex-1 overflow-hidden">
-            <div class="flex-1 overflow-auto bg-white p-8">               
+            <div class="flex-1 overflow-auto bg-white p-8">
                 <router-view />
             </div>
 
