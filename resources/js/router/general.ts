@@ -20,6 +20,7 @@ import DocumentAgreement from '@/pages/Documents/Agreement.vue'
 import DocumentCP from '@/pages/Documents/CP.vue'
 import DocumentDZC from '@/pages/Documents/DZC.vue'
 import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
+import DocumentLeave from '@/pages/Documents/Leave.vue'
 import PatientProposal from '@/pages/Patients/Proposal/PatientProposalPage.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
@@ -171,6 +172,17 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     navbar: false,
                 },
             },
+            {
+                path: 'leave/:documentId',
+                name: 'documents-leave',
+                component: DocumentLeave,
+                meta: {
+                    title: 'Ošetrovateľská prepúšťacia správa',
+                    link: 'prepúšťacia správa',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
         ]
     },
 
@@ -246,7 +258,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'leave',
                 component: PatientLeave,
                 meta: {
-                    title: 'Prepúšťacia správa',
+                    title: 'Ošetrovateľská prepúšťacia správa',
                     link: 'prepúšťacia správa',
                     sidebar: false,
                     navbar: false,

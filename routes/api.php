@@ -28,10 +28,12 @@ use App\Http\Controllers\Api\AgreementDocumentController;
 use App\Http\Controllers\Api\CPDocumentController;
 use App\Http\Controllers\Api\DZCDocumentController;
 use App\Http\Controllers\Api\DekurzDocumentController;
+use App\Http\Controllers\Api\LeaveDocumentController;
 use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
 use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
+
 
 
 use Illuminate\Http\Request;
@@ -146,6 +148,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates']);
     Route::get('/dekurz/last', [DekurzDocumentController::class, 'last']);
     Route::get('/dekurz/{documentId}', [DekurzDocumentController::class, 'show']);
+
+    Route::post('/leave-documents', [LeaveDocumentController::class, 'store']);
+    Route::get('/leave-documents/{documentId}', [LeaveDocumentController::class, 'show']);
+    Route::get('/patients/{patientId}/leave/latest', [LeaveDocumentController::class, 'latestByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
