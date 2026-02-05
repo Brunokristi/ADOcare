@@ -86,4 +86,38 @@ class GeocodeController extends Controller
 
         return response()->json($r->json(), $r->status());
     }
+
+    public function reverse(Request $request)
+    {
+        $lat = trim((string) $request->query('lat'));
+        $lon = trim((string) $request->query('lon'));
+        if ($lat === '' || $lon === '') {
+            return response()->json(['error' => 'Missing lat or lon'], 400);
+        }
+
+        $r = Http::timeout(10)->get('https://maps.googleapis.com/maps/api/geocode/json', [
+            'latlng' => $lat . ',' . $lon,
+            'key' => config('services.google.maps_key'),
+            'language' => 'sk',
+            'result_type' => 'street_address|premise|route',
+        ]);
+
+        $json = $r->json();
+        $results = $json['results'] ?? [];
+        if (empty($results)) {
+            return response()->json(['address' => '', 'city' => '', 'postcode' => '']);
+        }
+
+        $first = $results[0];
+        $components = $first['address_components'] ?? [];
+        $parsed = $this->parseAddressComponents($components);
+        $formatted = trim((string) ($first['formatted_address'] ?? ''));
+
+        return response()->json([
+            'address' => $formatted ?: $parsed['streetOnly'],
+            'city' => $parsed['city'],
+            'postcode' => $parsed['zip'],
+            'components' => $parsed,
+        ], $r->status());
+    }
 }

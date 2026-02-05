@@ -120,6 +120,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/geocode/autocomplete', [GeocodeController::class, 'autocomplete']);
     Route::get('/geocode/details', [GeocodeController::class, 'details']);
+    Route::get('/geocode/reverse', [GeocodeController::class, 'reverse']);
 
     Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
 
