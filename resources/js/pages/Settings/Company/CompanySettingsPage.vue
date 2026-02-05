@@ -2,17 +2,18 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
-import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
+import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
+import MapSelector from '@/components/Address/MapSelector.vue'
+import { searchAutocomplete, fetchPlaceDetails, parseComponents } from '@/composables/useAddressAutocomplete'
 import type { Company, User } from '@/types/models'
-import type { PointExpression } from 'leaflet'
+import { mergeAddressParts } from '@/utils/formatUtils'
 
 const toast = useToast()
-const company = ref<Partial<Company & { representative?: User }>>({} as any)
+const company = ref<Company & { representative?: User }>({} as any)
 const loading = ref(false)
-const mapRef = ref<any>(null)
-const center = ref<PointExpression>([48.1486, 17.1077])
 const zoom = ref(13)
 const representativeOptions = ref<User[]>([])
+const addressQuery = ref<string | null>('');
 
 onMounted(async () => {
     loading.value = true
@@ -20,9 +21,7 @@ onMounted(async () => {
         const data = await api.fetchEntity<Company>('v1/my-company')
         if (data) {
             company.value = data
-            if (company.value.latitude && company.value.longitude) {
-                center.value = [company.value.latitude, company.value.longitude]
-            }
+            addressQuery.value = mergeAddressParts(company.value.address, company.value.city, company.value.psc) || company.value.address
         }
         // fetch company users for representative selection
         try {
@@ -40,6 +39,28 @@ onMounted(async () => {
 
 async function save() {
     if (!company.value.id) return
+    // Best-effort: if address provided but city/psc/coords missing, try to resolve via autocomplete
+    try {
+        const needResolve = !!company.value.address && (!company.value.city || !company.value.psc || !company.value.latitude || !company.value.longitude)
+        if (needResolve) {
+            const preds = await searchAutocomplete(company.value.address as string)
+            if (preds && preds.length > 0) {
+                const first = preds[0]
+                const details = await fetchPlaceDetails(first.place_id)
+                if (details) {
+                    const parsed = parseComponents(details.address_components || [])
+                    company.value.address = first.label || company.value.address
+                    company.value.city = parsed.city || company.value.city
+                    company.value.psc = parsed.zip || company.value.psc
+                    company.value.latitude = details.geometry?.location?.lat ?? company.value.latitude
+                    company.value.longitude = details.geometry?.location?.lng ?? company.value.longitude
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Address resolution before save failed', err)
+        // continue to attempt save with whatever data we have
+    }
     try {
         const payload = { ...company.value }
         await api.patch(`v1/companies/${company.value.id}`, payload)
@@ -50,31 +71,35 @@ async function save() {
     }
 }
 
-async function onMapClick(e: any) {
+// Only perform reverse geocoding when the user clicks on the map.
+// const addressResolveToken = ref(0)
+async function onMapClick(payload: { lat: number | null; lon: number | null }) {
     try {
-        const lat = e.latlng.lat
-        const lon = e.latlng.lng
+        const lat = payload.lat
+        const lon = payload.lon
         company.value.latitude = lat
         company.value.longitude = lon
-        center.value = [lat, lon]
-        // reverse geocode to fill address
+        if (lat && lon) { zoom.value = 15 }
+
+        if (!lat || !lon) return
         const res = await api.get('/v1/geocode/reverse', { params: { lat, lon } })
         if (res && res.data) {
             const place = res.data
-            company.value.address = place.address || company.value.address
-            company.value.city = place.city || company.value.city
-            company.value.psc = place.postcode || company.value.psc
+            if (place.address) company.value.address = place.address
+            if (place.city) company.value.city = place.city
+            if (place.postcode) company.value.psc = place.postcode
+            addressQuery.value = mergeAddressParts(company.value.address, company.value.city, company.value.psc) || company.value.address
+            // trigger autocomplete to resolve canonical place and emit selected
         }
     } catch (err) {
         console.error('Reverse geocode failed', err)
     }
 }
+
 </script>
 
 <template>
     <div class="p-4">
-        <h2 class="text-xl mb-4">Nastavenia spoločnosti</h2>
-
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
                 <div class="card mb-4">
@@ -83,6 +108,10 @@ async function onMapClick(e: any) {
                         <div>
                             <label class="block text-sm mb-1">Názov</label>
                             <InputText v-model="company.name" class="w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">Zapísaná v registri</label>
+                            <InputText v-model="company.register" class="w-full" />
                         </div>
                         <div>
                             <label class="block text-sm mb-1">IČO</label>
@@ -96,35 +125,46 @@ async function onMapClick(e: any) {
                             <label class="block text-sm mb-1">IČ DPH</label>
                             <InputText v-model="company.ic_dph" class="w-full" />
                         </div>
+                                                <div>
+                            <label class="block text-sm mb-1">IBAN</label>
+                            <InputText v-model="company.iban" class="w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">BIČ</label>
+                            <InputText v-model="company.bic" class="w-full" />
+                        </div>
+
                     </div>
                 </div>
 
                 <div class="card mb-4">
                     <h3 class="text-lg mb-2">Adresa</h3>
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm mb-1">Ulica + číslo</label>
-                            <InputText v-model="company.address" class="w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm mb-1">Mesto</label>
-                            <InputText v-model="company.city" class="w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm mb-1">PSČ</label>
-                            <InputText v-model="company.psc" class="w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-sm mb-1">Zadajte pozíciu kliknutím na mapu</label>
+                        <div class="col-span-2">
+                            <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
+                            <AddressAutocomplete v-model="addressQuery" @selected="(s) => {
+
+                                company.address = s.streetOnly ? `${s.streetOnly}` : (s.streetOnly || company.address)
+                                company.city = s.city || company.city
+                                company.psc = s.zip || company.psc
+                                if (s.latitude && s.longitude) {
+                                    company.latitude = s.latitude
+                                    company.longitude = s.longitude
+                                }
+
+                            }" />
                         </div>
                     </div>
-                    <div class="mt-3 h-64 rounded-md overflow-hidden">
-                        <LMap ref="mapRef" :center="center" :zoom="zoom" :useGlobalLeaflet="false" style="height:100%"
-                            @click="onMapClick">
-                            <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <LMarker v-if="company.latitude && company.longitude"
-                                :lat-lng="[company.latitude, company.longitude]" />
-                        </LMap>
+
+                    <div>
+                        <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
+                    </div>
+                    <div class="mt-3">
+                        <MapSelector :latitude="company.latitude" :longitude="company.longitude" @update="({lat,lon})=>{
+                            company.latitude = lat
+                            company.longitude = lon
+                            onMapClick({ lat, lon })
+                        }" />
                     </div>
                 </div>
 
@@ -161,14 +201,8 @@ async function onMapClick(e: any) {
                     <Button label="Uložiť" class="bg-accent!" @click="save" />
                 </div>
             </div>
-
-            <div>
-                <div class="card">
-                    <h3 class="text-lg mb-2">Rýchle informácie</h3>
-                    <p v-if="company && company.name">{{ company.name }}</p>
-                </div>
-            </div>
         </div>
 
     </div>
 </template>
+

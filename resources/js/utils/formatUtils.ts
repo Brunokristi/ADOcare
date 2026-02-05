@@ -24,3 +24,19 @@ export function formatBranchFullName(branch: Branch): string {
     if (!branch) return '-';
     return branch.address + ", " + branch.city || branch.identificator || branch.code || ''
 }
+
+export function mergeAddressParts(street?: string | null, city?: string | null, psc?: string | null) {
+    const s = (street ?? '').trim()
+    const c = (city ?? '').trim()
+    const z = (psc ?? '').trim()
+    if (!s && !c && !z) return ''
+    // avoid duplicating city if already present in street
+    let addr = s
+    if (c && !addr.toLowerCase().includes(c.toLowerCase())) {
+        addr = `${addr}${addr ? ', ' : ''}${c}`.trim()
+    }
+    if (z && !addr.includes(z)) {
+        addr = `${addr}${addr ? ' ' : ''}${z}`.trim()
+    }
+    return addr
+}
