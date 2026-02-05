@@ -2,20 +2,21 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
-import { LMap, LMarker, LTileLayer } from '@vue-leaflet/vue-leaflet'
 import type { IModalContentProps } from '@/types/ui'
 import type { Branch, User } from '@/types/models'
-import type { PointExpression } from 'leaflet'
+import { mergeAddressParts } from '@/utils/formatUtils'
+import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
+import { extractAddressFromPlace } from '@/composables/useAddressAutocomplete'
+import MapSelector from '@/components/Address/MapSelector.vue'
 
 const props = defineProps<IModalContentProps & { branchId?: number }>()
 const toast = useToast()
 
 const branch = ref<Partial<Branch>>({} as any)
 const loading = ref(false)
-const mapRef = ref<any>(null)
-const center = ref<PointExpression>([48.1486, 17.1077])
 const zoom = ref(13)
 const representativeOptions = ref<User[]>([])
+const addressQuery = ref('')
 
 onMounted(async () => {
     loading.value = true
@@ -27,11 +28,8 @@ onMounted(async () => {
 
     if (props.branchId) {
         try {
-            const data = await api.fetchEntity<Branch>(`v1/branches/${props.branchId}`)
-            branch.value = data
-            if (branch.value.latitude && branch.value.longitude) {
-                center.value = [branch.value.latitude, branch.value.longitude]
-            }
+            branch.value = await api.fetchEntity<Branch>(`v1/branches/${props.branchId}`)
+            addressQuery.value = mergeAddressParts(branch.value.address, branch.value.city, branch.value.psc) || branch.value.address || ''
         } catch (e) {
             console.error('Failed to load branch', e)
             toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať pobočku' })
@@ -57,25 +55,24 @@ async function save() {
     }
 }
 
-async function onMapClick(e: any) {
-    try {
-        const lat = e.latlng.lat
-        const lon = e.latlng.lng
-        branch.value.latitude = lat
-        branch.value.longitude = lon
-        center.value = [lat, lon]
-        // reverse geocode to fill address
-        const res = await api.get('/v1/geocode/reverse', { params: { lat, lon } })
-        if (res && res.data) {
-            const place = res.data
-            branch.value.address = place.address || branch.value.address
-            branch.value.city = place.city || branch.value.city
-            branch.value.psc = place.postcode || branch.value.psc
-        }
-    } catch (err) {
-        console.error('Reverse geocode failed', err)
-    }
-}
+// async function onMapClick(e: any) {
+//     try {
+//         const lat = e.latlng.lat
+//         const lon = e.latlng.lng
+//         branch.value.latitude = lat
+//         branch.value.longitude = lon
+//         // reverse geocode to fill address
+//         const res = await api.get('/v1/geocode/reverse', { params: { lat, lon } })
+//         if (res && res.data) {
+//             const place = res.data
+//             branch.value.address = place.address || branch.value.address
+//             branch.value.city = place.city || branch.value.city
+//             branch.value.psc = place.postcode || branch.value.psc
+//         }
+//     } catch (err) {
+//         console.error('Reverse geocode failed', err)
+//     }
+// }
 </script>
 
 <template>
@@ -94,12 +91,14 @@ async function onMapClick(e: any) {
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm mb-1">Obozorný zástupca</label>
-                        <Select v-model="branch.representative_id" :options="representativeOptions" optionLabel="first_name" optionValue="id" class="w-full">
+                        <Select v-model="branch.representative_id" :options="representativeOptions"
+                            optionLabel="first_name" optionValue="id" class="w-full">
                             <template #option="{ option }">
                                 <span>{{ option.first_name }} {{ option.last_name }}</span>
                             </template>
                             <template #value="{ value }">
-                                <span v-if="value">{{ representativeOptions.find(u => u.id === value)?.first_name }} {{ representativeOptions.find(u => u.id === value)?.last_name }}</span>
+                                <span v-if="value">{{representativeOptions.find(u => u.id === value)?.first_name}} {{
+                                    representativeOptions.find(u => u.id === value)?.last_name}}</span>
                             </template>
                         </Select>
                     </div>
@@ -108,28 +107,29 @@ async function onMapClick(e: any) {
 
             <div class="col-span-12">
                 <h3 class="text-lg mb-2">Adresa</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm mb-1">Ulica + číslo</label>
-                        <InputText v-model="branch.address" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="block text-sm mb-1">Mesto</label>
-                        <InputText v-model="branch.city" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="block text-sm mb-1">PSČ</label>
-                        <InputText v-model="branch.psc" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="block text-sm mb-1">Kliknite na mapu pre polohu</label>
-                    </div>
+                <div>
+                    <label class="block text-sm mb-1">Adresa</label>
+                    <AddressAutocomplete v-model="addressQuery" @select="(place) => {
+                        const { city, street, zip, latitude, longitude, } = extractAddressFromPlace(place);
+                        branch = {
+                            ...branch,
+                            city: city || branch.city,
+                            address: street || branch.address,
+                            psc: zip || branch.psc,
+                            latitude: latitude || branch.latitude,
+                            longitude: longitude || branch.longitude,
+                        }
+                    }" />
                 </div>
-                <div class="mt-3 h-64 rounded-md overflow-hidden">
-                    <LMap ref="mapRef" :center="center" :zoom="zoom" :useGlobalLeaflet="false" style="height:100%" @click="onMapClick">
-                        <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                        <LMarker v-if="branch.latitude && branch.longitude" :lat-lng="[branch.latitude, branch.longitude]" />
-                    </LMap>
+                <div>
+                    <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
+                </div>
+                <div class="mt-3">
+                    <MapSelector :latitude="branch.latitude" :longitude="branch.longitude" @update="({ lat, lon }) => {
+                        branch.latitude = lat
+                        branch.longitude = lon
+                        // onMapClick({ lat, lon })
+                    }" />
                 </div>
             </div>
 
@@ -156,7 +156,8 @@ async function onMapClick(e: any) {
                     </div>
                     <div>
                         <label class="block text-sm mb-1">Začiatok administratívny</label>
-                        <input type="time" v-model="branch.administrative_start_time" class="w-full border p-2 rounded" />
+                        <input type="time" v-model="branch.administrative_start_time"
+                            class="w-full border p-2 rounded" />
                     </div>
                     <div>
                         <label class="block text-sm mb-1">Čas na pacienta (min)</label>
