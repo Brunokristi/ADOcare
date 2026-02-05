@@ -73,10 +73,10 @@ This guide is meant for both humans and automated agents that modify the codebas
 	- Use structured logging for unexpected errors and avoid leaving `console.log` / debug prints in committed code.
 
 - Reusability & organization
-	- Favor small, well-documented functions over large ones. Extract common logic into services or helpers and add tests.
+	- Favor small, well-documented functions over large ones. Extract common logic into services or helpers s.
 
-- Tests
-	- Add unit tests for service logic and integration tests for API behavior when adding or changing business logic.
+<!-- - Tests (Avoid for now)
+	- Add unit tests for service logic and integration tests for API behavior when adding or changing business logic. -->
 
 ---
 
@@ -84,28 +84,3 @@ This guide is meant for both humans and automated agents that modify the codebas
 
 - Good: `UserController::index()` calls `UserService::listForCompany($companyId, $filters)` and returns `$this->success(new UserCollection($results))`.
 - Bad: `UserController::index()` builds complex joins and returns raw arrays.
-
----
-
-## PR checklist (suggested; please enable as a template)
-
-- Add/update unit/integration tests for new business logic
-- Add PHPDoc for new public methods/classes
-- Return Resource/Collection classes for endpoints
-- Ensure controllers delegate logic to services
-- Run linters, type checks and tests locally
-
-- Avoid using `any` in TypeScript; prefer explicit types and DTOs
-- Ensure services are instantiated via constructor injection in controllers (no static services)
-- Replace magic numbers with named constants and prefer descriptive variable names
-
----
-
-## When an agent or developer is unsure
-
-- Ask the repository owner or create a short PR describing suggested changes and how they affect the guidelines.
-- If the change must break the guidelines (e.g., performance emergency), explicitly document the exception and ensure a follow-up to restore compliance.
-
----
-
-If you'd like, I can add a PR template and a minimal GitHub Action that verifies some of these rules automatically (e.g., PHPDoc presence, resource usage, basic linting). Let me know if you want that added.
