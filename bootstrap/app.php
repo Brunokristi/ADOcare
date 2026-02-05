@@ -1,6 +1,8 @@
 <?php
 
+use App\Console\Commands\SoftDeleteInactivePatients;
 use App\Http\Responses\ApiResponseClass;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api([
             App\Http\Middleware\ForceJsonResponse::class,
         ]);
+    })->withSchedule(function (Schedule $schedule): void {
+        $schedule->command(SoftDeleteInactivePatients::class)->monthlyOn(1, '2:00');
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
