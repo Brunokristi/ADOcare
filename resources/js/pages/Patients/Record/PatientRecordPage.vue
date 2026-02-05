@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { reactive, computed, watchEffect } from 'vue'
+import { reactive, computed, watchEffect, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/api'
+import { useToast } from 'primevue/usetoast'
+import { usePatientStore } from '@/stores/patientStore'
 
 type Option = { label: string; value: string }
 
@@ -25,7 +29,27 @@ type CheckboxGroupField = FieldBase & {
   options: Option[]
 }
 
-type Field = TextField | RadioField | CheckboxGroupField
+type AutoCompleteField = FieldBase & {
+  type: 'autocomplete'
+}
+
+type NursingDiagnosesField = FieldBase & {
+  type: 'nursing-diagnoses-autocomplete'
+}
+
+interface DiagnosisOption {
+  id: number
+  code: string
+  description: string
+}
+
+interface NurseDiagnosis {
+  id: number
+  code: string
+  description: string
+}
+
+type Field = TextField | RadioField | CheckboxGroupField | AutoCompleteField | NursingDiagnosesField
 
 type Section = {
   id: string
@@ -41,14 +65,15 @@ type FormSpec = {
 
 const defaultSpec: FormSpec = {
   id: 'admission',
-  title: 'Admission Form',
+  title: '',
   sections: [
     {
       id: 'basic',
-      title: 'Basic',
+      title: 'Základné údaje',
       fields: [
-        { id: 'recommendedPharmacy', label: 'Recommended pharmacy', type: 'text', placeholder: '...' },
-        { id: 'admissionDate', label: 'Admission date', type: 'date' },
+        { id: 'recommendedPharmacy', label: 'Odporučená farmakoterapia', type: 'textarea' },
+        { id: 'admissionDate', label: 'Dátum prijatia do starostlivosti', type: 'date' },
+        { id: 'diagnosis', label: 'Diagnóza', type: 'autocomplete' },
       ],
     },
     {
@@ -180,7 +205,7 @@ const defaultSpec: FormSpec = {
       id: 'healthPerception',
       title: 'Vnímanie zdravia',
       fields: [
-        { id: 'healthPerception.description', label: 'Subjektívny popis pobemov pacienta', type: 'textarea' },
+        { id: 'healthPerception.description', label: 'Subjektívny popis problémov pacienta', type: 'textarea' },
       ],
     },
     {
@@ -253,7 +278,7 @@ const defaultSpec: FormSpec = {
         { id: 'pulse', label: 'P (/min)', type: 'text' },
         {
           id: 'circulation.problemExists',
-          label: 'Pobem',
+          label: 'problém',
           type: 'radio',
           options: [
             { label: 'áno', value: 'yes' },
@@ -288,7 +313,7 @@ const defaultSpec: FormSpec = {
         { id: 'respiratoryRate', label: 'D (/min)', type: 'text' },
         {
           id: 'breathing.problemExists',
-          label: 'Pobem',
+          label: 'problém',
           type: 'radio',
           options: [
             { label: 'áno', value: 'yes' },
@@ -297,7 +322,7 @@ const defaultSpec: FormSpec = {
         },
         {
           id: 'irregularities',
-          label: 'Nepravidelnosti',
+          label: 'Problémy s dýchaním',
           type: 'checkbox-group',
           options: [
             { label: 'nepravidelné', value: 'irregular' },
@@ -371,7 +396,7 @@ const defaultSpec: FormSpec = {
 
         {
           id: 'nutrition.problemExists',
-          label: 'Pobem',
+          label: 'problém',
           type: 'radio',
           options: [
             { label: 'áno', value: 'yes' },
@@ -422,17 +447,9 @@ const defaultSpec: FormSpec = {
           options: [
             { label: 'sám', value: 'alone' },
             { label: 's pomocou', value: 'withHelp' },
+            { label: 'nazog. sonda', value: 'tube' },
           ],
         },
-
-        // Tubes / access + introduced dates (unique ids)
-        {
-          id: 'nutrition.nasogastricTube',
-          label: 'Nazog. sonda',
-          type: 'checkbox-group',
-          options: [{ label: 'áno', value: 'yes' }],
-        },
-        { id: 'nutrition.nasogastricTubeDateIntroduced', label: 'dátum zavedenia', type: 'date' },
 
         {
           id: 'nutrition.gastrostomy',
@@ -498,7 +515,7 @@ const defaultSpec: FormSpec = {
       fields: [
         {
           id: 'defecation.problemExists',
-          label: 'Defekácia – pobem',
+          label: 'Defekácia – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -574,17 +591,12 @@ const defaultSpec: FormSpec = {
 
         {
           id: 'urination.diuresis',
-          label: 'Diuréza / 24 hod.',
-          type: 'text',
-        },
-        {
-          id: 'urination.diuresisUnit',
-          label: 'ml',
+          label: 'Diuréza  (ml/24 hod.)',
           type: 'text',
         },
         {
           id: 'urination.problemExists',
-          label: 'Močenie – pobem',
+          label: 'Močenie – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -668,7 +680,7 @@ const defaultSpec: FormSpec = {
       fields: [
         {
           id: 'sleep.problemExists',
-          label: 'Spánok – pobem',
+          label: 'Spánok – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -724,7 +736,7 @@ const defaultSpec: FormSpec = {
       fields: [
         {
           id: 'movement.problemExists',
-          label: 'Pohybový systém – pobem',
+          label: 'Pohybový systém – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -759,7 +771,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'skin.problemExists',
-          label: 'Koža – pobem',
+          label: 'Koža – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -850,7 +862,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'edema.problemExists',
-          label: 'Edémy – pobem',
+          label: 'Edémy – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -882,7 +894,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'mucosa.problemExists',
-          label: 'Sliznice – pobem',
+          label: 'Sliznice – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1062,7 +1074,7 @@ const defaultSpec: FormSpec = {
       fields: [
         {
           id: 'pain.problemExists',
-          label: 'Bolesť – pobem',
+          label: 'Bolesť – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1110,7 +1122,7 @@ const defaultSpec: FormSpec = {
         },
         {
           id: 'communication.problemExists',
-          label: 'Komunikácia – pobem',
+          label: 'Komunikácia – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1142,7 +1154,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'learning.problemExists',
-          label: 'Učenie / zmyslové vnímanie – pobem',
+          label: 'Učenie / zmyslové vnímanie – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1248,7 +1260,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'psychological.problemExists',
-          label: 'Psychické potreby – pobem',
+          label: 'Psychické potreby – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1296,7 +1308,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'social.problemExists',
-          label: 'Sociálne potreby – pobem',
+          label: 'Sociálne potreby – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1318,7 +1330,7 @@ const defaultSpec: FormSpec = {
         // =====================
         {
           id: 'spiritual.problemExists',
-          label: 'Duchovné potreby – pobem',
+          label: 'Duchovné potreby – problém',
           type: 'radio',
           options: [
             { label: 'nie', value: 'no' },
@@ -1451,22 +1463,17 @@ const defaultSpec: FormSpec = {
     },
     {
       id: 'nursingDiagnoses',
-      title: 'Stanovenie sesterských diagnóz pri prijme',
+      title: 'Stanovenie sesterských diagnóz pri príjme',
       fields: [
         {
           id: 'nursingDiagnoses.list',
-          label: 'Sesterské diagnózy pri prijme',
-          type: 'textarea',
+          label: 'Sesterské diagnózy pri príjme',
+          type: 'nursing-diagnoses-autocomplete',
         },
         {
           id: 'nursingDiagnoses.dateTime',
-          label: 'Dátum a čas',
-          type: 'text',
-        },
-        {
-          id: 'nursingDiagnoses.nurseSignature',
-          label: 'Čitateľný podpis sestry/pôrodnej asistentky',
-          type: 'text',
+          label: 'Dátum',
+          type: 'date',
         },
       ],
     }
@@ -1555,8 +1562,6 @@ const answers = reactive<Record<string, any>>({
   'nutrition.appetite': null,
   'nutrition.intake': null,
 
-  'nutrition.nasogastricTube': [],
-  'nutrition.nasogastricTubeDateIntroduced': '',
 
   'nutrition.gastrostomy': [],
   'nutrition.gastrostomyDateIntroduced': '',
@@ -1589,7 +1594,6 @@ const answers = reactive<Record<string, any>>({
 
   // elimination – urination
   'urination.diuresis': '',
-  'urination.diuresisUnit': '',
   'urination.problemExists': null,
   'urination.symptoms': [],
   'urination.catheter': [],
@@ -1716,11 +1720,156 @@ const answers = reactive<Record<string, any>>({
   'instruction.date': '',
 
   // nursing diagnoses
-  'nursingDiagnoses.list': '',
+  'nursingDiagnoses.list': [] as NurseDiagnosis[],
   'nursingDiagnoses.dateTime': '',
-  'nursingDiagnoses.nurseSignature': '',
+
+  diagnosis: null as DiagnosisOption | null,
 
 })
+
+const filteredDiagnoses = ref<DiagnosisOption[]>([])
+const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
+
+const router = useRouter()
+const toast = useToast()
+const patientStore = usePatientStore()
+
+patientStore.loadFromStorage?.()
+
+const patientId = computed(() => patientStore.current?.id ?? 0)
+
+function extractArray(raw: any): any[] {
+  if (Array.isArray(raw)) return raw
+
+  const candidates = [
+    raw?.data,
+    raw?.data?.items,
+    raw?.data?.data,
+    raw?.data?.data?.items,
+    raw?.data?.data?.data,
+    raw?.items,
+    raw?.items?.data
+  ]
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c
+  }
+  return []
+}
+
+async function searchDiagnoses(event: { query: string }) {
+  try {
+    const q = (event.query ?? '').trim()
+
+    const res = await api.get('/v1/diagnoses', {
+      params: { q, per_page: 25, page: 1, sort: 'code' }
+    })
+
+    const arr = extractArray(res.data) as DiagnosisOption[]
+    filteredDiagnoses.value = arr.map((d: any) => ({
+      id: d.id,
+      code: d.code ?? '',
+      description: d.description ?? ''
+    }))
+  } catch (e) {
+    console.error('Failed to load diagnoses', e)
+    filteredDiagnoses.value = []
+  }
+}
+
+async function searchNurseDiagnoses(event: { query: string }) {
+  try {
+    const q = (event.query ?? '').trim()
+
+    const res = await api.get('/v1/nurse-diagnoses', {
+      params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 }
+    })
+
+    const arr = extractArray(res.data) as NurseDiagnosis[]
+    filteredNurseDiagnoses.value = arr.map((d: any) => ({
+      id: d.id,
+      code: d.code ?? '',
+      description: d.description ?? ''
+    }))
+  } catch (e) {
+    console.error('Failed to load nurse diagnoses', e)
+    filteredNurseDiagnoses.value = []
+  }
+}
+
+async function preloadFromLatestRecord() {
+  if (!patientId.value) return
+
+  try {
+    const res = await api.get(`/v1/patients/${patientId.value}/records/latest`)
+    const recordData = res.data?.record_data?.form_data
+
+    if (!recordData) return
+
+    // Populate all answers from the saved record data
+    Object.keys(recordData).forEach((key) => {
+      if (key in answers) {
+        answers[key] = recordData[key]
+      }
+    })
+
+    // Special handling for diagnosis (single object with code/description)
+    if (recordData.diagnosis && typeof recordData.diagnosis === 'object' && recordData.diagnosis.id) {
+      answers.diagnosis = {
+        id: recordData.diagnosis.id,
+        code: recordData.diagnosis.code ?? '',
+        description: recordData.diagnosis.description ?? ''
+      }
+    }
+
+    // Special handling for nursing diagnoses (array of objects)
+    if (recordData['nursingDiagnoses.list'] && Array.isArray(recordData['nursingDiagnoses.list'])) {
+      answers['nursingDiagnoses.list'] = recordData['nursingDiagnoses.list'].map((nd: any) => ({
+        id: nd.id,
+        code: nd.code ?? '',
+        description: nd.description ?? ''
+      }))
+    }
+  } catch (e: any) {
+    if (e?.response?.status !== 404) {
+      console.error('Prefill failed:', e)
+    }
+    // 404 is expected for new records, so we don't show an error
+  }
+}
+
+watchEffect(() => {
+  if (patientId.value) {
+    preloadFromLatestRecord()
+  }
+})
+
+async function saveRecord() {
+  try {
+    const payload = {
+      patient_id: patientId.value,
+      record_data: answers,
+    }
+
+    const res = await api.post('/v1/records', payload)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Úspešne',
+      detail: 'Záznam prijatia bol vytvorený',
+      life: 3000
+    })
+
+    const documentId = res.data?.document_id ?? null
+    if (documentId) {
+      router.push({ name: 'documents-record', params: { documentId } })
+    }
+  } catch (err: any) {
+    console.error('Failed to save record:', err)
+    const message = err?.response?.data?.message || err?.message || 'Chyba pri vytváraní záznamu'
+    toast.add({ severity: 'error', summary: 'Chyba', detail: message, life: 3000 })
+  }
+}
 
 function answersGetValue(id: string) {
   return answers[id]
@@ -1738,8 +1887,6 @@ function toggleInArray(id: string, value: string, checked: boolean) {
   answers[id] = arr
 }
 
-const answersOutputJson = computed(() => JSON.stringify(answers, null, 2))
-
 const props = defineProps<{
   spec: any
   getValue: (id: string) => any
@@ -1750,9 +1897,19 @@ const props = defineProps<{
 }>()
 
 // public helpers used in template: prefer props when passed, otherwise use internal answers
-const getValue = (id: string) => (props.getValue ? props.getValue(id) : answersGetValue(id))
-const setValue = (id: string, v: any) => (props.setValue ? props.setValue(id, v) : answersSetValue(id, v))
-const outputJson = computed(() => props.outputJson ?? answersOutputJson.value)
+const getValue = (id: string) => {
+  if (id === 'diagnosis') {
+    return answers.diagnosis
+  }
+  return props.getValue ? props.getValue(id) : answersGetValue(id)
+}
+const setValue = (id: string, v: any) => {
+  if (id === 'diagnosis') {
+    answers.diagnosis = v
+    return
+  }
+  return props.setValue ? props.setValue(id, v) : answersSetValue(id, v)
+}
 const displaySpec = computed(() => props.spec ?? defaultSpec)
 
 /**
@@ -1811,7 +1968,7 @@ watchEffect(() => {
       :key="section.id"
       class="bg-tag3 p-6 rounded-md flex flex-col gap-6"
     >
-      <h3 class="text-lg font-semibold">{{ section.title }}</h3>
+      <h3 class="text-accent text-normal">{{ section.title }}</h3>
 
       <div v-for="field in section.fields" :key="field.id" class="flex flex-col gap-2">
         <!-- Hide label row if empty -->
@@ -1823,7 +1980,7 @@ watchEffect(() => {
         <!-- text -->
         <input
           v-if="field.type === 'text'"
-          class="w-full rounded-md bg-white px-3 py-2 border-0 shadow-none outline-none focus:ring-0 focus:shadow-none"
+          class="w-full rounded-md bg-white px-3 py-2 border-0 shadow-none outline-none focus:ring-0 focus:shadow-none text-normal"
           :placeholder="field.placeholder"
           :value="getValue(field.id) ?? ''"
           @input="setValue(field.id, ($event.target as HTMLInputElement).value)"
@@ -1832,7 +1989,7 @@ watchEffect(() => {
         <!-- textarea -->
         <textarea
           v-else-if="field.type === 'textarea'"
-          class="w-full rounded-md bg-white px-3 py-2 border-0 shadow-none outline-none focus:ring-0 focus:shadow-none"
+          class="w-full rounded-md bg-white px-3 py-2 border-0 shadow-none outline-none focus:ring-0 focus:shadow-none text-normal"
           rows="4"
           :placeholder="field.placeholder"
           :value="getValue(field.id) ?? ''"
@@ -1840,13 +1997,87 @@ watchEffect(() => {
         />
 
         <!-- date -->
-        <input
+        <DatePicker
           v-else-if="field.type === 'date'"
-          type="date"
-          class="w-full rounded-md bg-white px-3 py-2 border-0 shadow-none outline-none focus:ring-0 focus:shadow-none"
-          :value="getValue(field.id) ?? ''"
-          @input="setValue(field.id, ($event.target as HTMLInputElement).value)"
+          v-model="dateProxy[field.id]"
+          dateFormat="dd.mm.yy"
+          :showIcon="false"
+          class="w-full"
+          inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0 text-normal"
         />
+
+        <!-- autocomplete -->
+        <AutoComplete
+          v-else-if="field.type === 'autocomplete'"
+          v-model="answers.diagnosis"
+          :suggestions="filteredDiagnoses"
+          @complete="searchDiagnoses"
+          :virtualScrollerOptions="{ itemSize: 38 }"
+          optionLabel="code"
+          dropdown
+          dropdownMode="blank"
+          :minLength="0"
+          completeOnFocus
+          class="w-full"
+          inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0! text-normal"
+        >
+          <template #option="slotProps">
+            <div class="flex flex-col">
+              <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
+              <span>{{ slotProps.option.description }}</span>
+            </div>
+          </template>
+        </AutoComplete>
+
+        <!-- nursing-diagnoses-autocomplete -->
+        <div v-else-if="field.type === 'nursing-diagnoses-autocomplete'" class="flex flex-col gap-3">
+          <AutoComplete
+            :suggestions="filteredNurseDiagnoses"
+            @complete="searchNurseDiagnoses"
+            :virtualScrollerOptions="{ itemSize: 38 }"
+            optionLabel="code"
+            dropdown
+            dropdownMode="blank"
+            :minLength="0"
+            completeOnFocus
+            class="w-full"
+            inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0! text-normal"
+            @item-select="(e: any) => {
+              const selected = getValue(field.id) ?? []
+              if (!selected.find((d: any) => d.id === e.value.id)) {
+                answers[field.id] = [...selected, e.value]
+              }
+            }"
+          >
+            <template #option="slotProps">
+              <div class="flex flex-col">
+                <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
+                <span>{{ slotProps.option.description }}</span>
+              </div>
+            </template>
+          </AutoComplete>
+
+          <!-- Display selected nursing diagnoses -->
+          <div v-if="(getValue(field.id) ?? []).length > 0" class="flex flex-col gap-2">
+            <div
+              v-for="(nd, idx) in getValue(field.id)"
+              :key="nd.id"
+              class="flex items-center justify-between bg-darkgrey p-3 rounded-md"
+            >
+              <div class="flex flex-col">
+                <span class="font-medium text-normal text-white">{{ nd.code }}</span>
+                <span class="text-sm text-white">{{ nd.description }}</span>
+              </div>
+              <button
+                type="button"
+                @click="answers[field.id] = getValue(field.id).filter((_: any, i: number) => i !== idx)"
+                class="text-warning"
+              >
+                <i class="bi bi-x-lg" />
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- radio -->
         <div v-else-if="field.type === 'radio'" class="flex flex-col gap-2">
@@ -1882,9 +2113,15 @@ watchEffect(() => {
       </div>
     </section>
 
-    <div class="bg-tag3 p-6 rounded-md">
-      <div class="font-medium mb-2">Current answers</div>
-      <pre class="text-xs overflow-auto bg-white rounded-md p-4">{{ outputJson }}</pre>
+    <div class="flex justify-end">
+      <Button
+        @click="saveRecord"
+        class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
+      >
+        Generovať dokument
+        <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
+      </Button>
     </div>
+
   </div>
 </template>

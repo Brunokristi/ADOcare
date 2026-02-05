@@ -75,7 +75,7 @@ class DZCDocumentController extends Controller
             'type' => 'dzc',
             'mime_type' => 'application/json',
             'name' => 'dzc_' . now()->format('d.m.Y'),
-            'path' => 'dzcs/' . 'dzc_' . now()->timestamp . '.json',
+            'path' => 'dzcs/' . '' . now()->timestamp . '.json',
         ]);
 
         $visitRows = DB::table('visits')
@@ -288,7 +288,7 @@ class DZCDocumentController extends Controller
         // Generate CSV
         $csv = $this->generateDZCCsv($dzcFile);
 
-        $filename = 'dzc_' . $dzcFile['month'] . '_' . $dzcFile['year'] . '.csv';
+        $filename = 'dzc' . $dzcFile['month'] . '_' . $dzcFile['year'] . '.csv';
 
         return response($csv)
             ->header('Content-Type', 'text/csv')
