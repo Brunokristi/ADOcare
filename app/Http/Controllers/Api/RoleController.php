@@ -13,11 +13,32 @@ use Illuminate\Http\Response;
 class RoleController extends Controller
 {
 
-    public function index(Request $request)
+    public function index()
     {
         $query = Role::query();
         $results = ApiQuery::apply(request(), $query);
         return $this->success(new BaseCollection($results), 'Roles retrieved');
+    }
+
+    public function branchRoles()
+    {
+        $query = Role::query()->where('scope', 'branch');
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new BaseCollection($results), 'Branch roles retrieved');
+    }
+
+    public function companyRoles()
+    {
+        $query = Role::query()->where('scope', 'company');
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new BaseCollection($results), 'Company roles retrieved');
+    }
+
+    public function globalRoles()
+    {
+        $query = Role::query()->where('scope', 'global');
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new BaseCollection($results), 'Global roles retrieved');
     }
 
     public function store(\App\Http\Requests\StoreRoleRequest $request)

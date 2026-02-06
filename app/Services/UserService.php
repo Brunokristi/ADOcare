@@ -32,6 +32,7 @@ class UserService
                 $sync[(int) $b['branch_id']] = [
                     // use existing pivot column 'working_time' if provided
                     'working_time' => $b['working_time'] ?? null,
+                    'role_id' => $b['role_id'] ?? null,
                 ];
             }
             if (!empty($sync))
@@ -66,6 +67,7 @@ class UserService
                     continue;
                 $sync[(int) $b['branch_id']] = [
                     'working_time' => $b['working_time'] ?? null,
+                    'role_id' => $b['role_id'] ?? null,
                 ];
             }
             $user->branches()->sync($sync);

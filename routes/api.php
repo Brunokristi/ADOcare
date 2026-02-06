@@ -28,7 +28,9 @@ use App\Http\Controllers\Api\AgreementDocumentController;
 use App\Http\Controllers\Api\CPDocumentController;
 use App\Http\Controllers\Api\DZCDocumentController;
 use App\Http\Controllers\Api\DekurzDocumentController;
-use App\Http\Controllers\Api\LeaveDocumentController;use App\Http\Controllers\Api\RecordDocumentController;use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
+use App\Http\Controllers\Api\LeaveDocumentController;
+use App\Http\Controllers\Api\RecordDocumentController;
+use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
 use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
@@ -102,7 +104,13 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('procedures', ProcedureController::class);
     Route::apiResourceComplete('patient-points', PatientPointController::class);
     Route::apiResourceComplete('report-months', ReportMonthController::class);
+    Route::group(['prefix' => 'roles'], function () {
+        Route::get('/branch', [RoleController::class, 'branchRoles']);
+        Route::get('/company', [RoleController::class, 'companyRoles']);
+        Route::get('/all', [RoleController::class, 'globalRoles']);
+    });
     Route::apiResourceComplete('roles', RoleController::class);
+
     Route::apiResourceComplete('text-blocks', TextBlockController::class);
     Route::apiResourceComplete('users', UserController::class);
     Route::apiResourceComplete('companies', CompanyController::class);
