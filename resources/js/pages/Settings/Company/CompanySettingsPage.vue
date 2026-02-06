@@ -4,13 +4,15 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import { searchAutocomplete, fetchPlaceDetails, parseComponents, extractAddressFromPlace } from '@/composables/useAddressAutocomplete'
 import type { Company, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 
 const toast = useToast()
 const company = ref<Company & { representative?: User }>({} as any)
-const loading = ref(false)
+const loading = ref(true)
+const saving = ref(false)
 const zoom = ref(13)
 const representativeOptions = ref<User[]>([])
 const addressQuery = ref<string | null>('');
@@ -39,6 +41,7 @@ onMounted(async () => {
 
 async function save() {
     if (!company.value.id) return
+    saving.value = true
     // Best-effort: if address provided but city/psc/coords missing, try to resolve via autocomplete
     try {
         const needResolve = !!company.value.address && (!company.value.city || !company.value.psc || !company.value.latitude || !company.value.longitude)
@@ -68,6 +71,9 @@ async function save() {
     } catch (e) {
         console.error('Failed to save company', e)
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť spoločnosť' })
+    }
+    finally {
+        saving.value = false
     }
 }
 
@@ -100,6 +106,7 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
 
 <template>
     <div class="p-4">
+        <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
                 <div class="card mb-4">
@@ -125,7 +132,7 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                             <label class="block text-sm mb-1">IČ DPH</label>
                             <InputText v-model="company.ic_dph" class="w-full" />
                         </div>
-                                                <div>
+                        <div>
                             <label class="block text-sm mb-1">IBAN</label>
                             <InputText v-model="company.iban" class="w-full" />
                         </div>
@@ -143,8 +150,9 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
                             <AddressAutocomplete v-model="addressQuery" @selected="(s) => {
-                                const {city, street, zip, latitude, longitude,} = extractAddressFromPlace(s);
-                                company = { ...company,
+                                const { city, street, zip, latitude, longitude, } = extractAddressFromPlace(s);
+                                company = {
+                                    ...company,
                                     city: city || company.city,
                                     address: street || company.address,
                                     psc: zip || company.psc,
@@ -159,7 +167,7 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                         <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
                     </div>
                     <div class="mt-3">
-                        <MapSelector :latitude="company.latitude" :longitude="company.longitude" @update="({lat,lon})=>{
+                        <MapSelector :latitude="company.latitude" :longitude="company.longitude" @update="({ lat, lon }) => {
                             company.latitude = lat
                             company.longitude = lon
                             onMapClick({ lat, lon })
@@ -197,11 +205,10 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                 </div>
 
                 <div class="flex justify-end">
-                    <Button label="Uložiť" class="bg-accent!" @click="save" />
+                    <Button label="Uložiť" class="bg-accent!" @click="save" :disabled="saving || loading" />
                 </div>
             </div>
         </div>
 
     </div>
 </template>
-
