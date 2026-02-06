@@ -58,7 +58,8 @@ class GeocodeController extends Controller
     public function autocomplete(Request $request)
     {
         $text = trim((string) $request->query('text'));
-        if ($text === '') return response()->json(['predictions' => []]);
+        if ($text === '')
+            return response()->json(['predictions' => []]);
 
         $r = Http::timeout(10)->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
             'input' => $text,
@@ -97,7 +98,7 @@ class GeocodeController extends Controller
 
         $r = Http::timeout(10)->get('https://maps.googleapis.com/maps/api/geocode/json', [
             'latlng' => $lat . ',' . $lon,
-            'key' => config('services.google.maps_key'),
+            'key' => config('services.google.geocoding_key'),
             'language' => 'sk',
             'result_type' => 'street_address|premise|route',
         ]);

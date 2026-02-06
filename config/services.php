@@ -38,9 +38,10 @@ return [
     'ors' => [
         'key' => env('ORS_API_KEY'),
     ],
-    
+
     'google' => [
         'maps_key' => env('GOOGLE_MAPS_API_KEY'),
+        'geocoding_key' => env('GOOGLE_MAPS_GEOCODING_API_KEY'),
     ],
 
     'route_service' => [
