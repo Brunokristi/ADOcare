@@ -15,11 +15,13 @@ export interface User {
   updated_at: string | null
   api_token?: string | null
   company_id: number | null
+  role_id: number | null
   // overrides
   role_names: string[]
   // relations
   cars: Car[]
   branches: Branch[]
+  role: Role
   company: Company
   roles: Role[]
   report_months: ReportMonth[]
@@ -39,6 +41,7 @@ export interface User {
   // exists
   cars_exists: boolean
   branches_exists: boolean
+  role_exists: boolean
   company_exists: boolean
   roles_exists: boolean
   report_months_exists: boolean
@@ -317,6 +320,7 @@ export interface Role {
   position: string | null
   created_at: string | null
   updated_at: string | null
+  scope: RoleScope
   // relations
   users: User[]
   // counts
@@ -436,3 +440,11 @@ export interface Diagnosis {
   created_at: string | null
   updated_at: string | null
 }
+
+const RoleScope = {
+  BRANCH: 'branch',
+  COMPANY: 'company',
+  GLOBAL: 'global',
+} as const;
+
+export type RoleScope = typeof RoleScope[keyof typeof RoleScope]

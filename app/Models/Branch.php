@@ -42,7 +42,7 @@ class Branch extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'user_branches', 'branch_id', 'user_id')
-            ->withPivot(['working_time']);
+            ->withPivot(['working_time', 'role_id']);
     }
 
     public function reportMonths()

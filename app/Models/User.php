@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\DB;
+use App\Models\Branch;
 
 class User extends Authenticatable
 {
@@ -30,6 +32,7 @@ class User extends Authenticatable
         'login',
         'code',
         'pin',
+        'role_id',
     ];
 
     /**
@@ -76,7 +79,12 @@ class User extends Authenticatable
     public function branches()
     {
         return $this->belongsToMany(Branch::class, 'user_branches', 'user_id', 'branch_id')
-            ->withPivot(['working_time']);
+            ->withPivot(['working_time', 'role_id']);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function company()
@@ -128,6 +136,13 @@ class User extends Authenticatable
             $roleId = (int) $role;
         }
         $this->roles()->syncWithoutDetaching([$roleId]);
+    }
+
+    public function roleInBranch(Branch|int $branch)
+    {
+        $branchId = $branch instanceof Branch ? $branch->id : (int) $branch;
+        $row = DB::table('user_branches')->where('user_id', $this->id)->where('branch_id', $branchId)->first();
+        return $row?->role_id ?? null;
     }
 
     public function patients()

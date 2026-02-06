@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\RoleScope;
+use Illuminate\Validation\Rule;
 
 class UpdateRoleRequest extends FormRequest
 {
@@ -13,6 +15,9 @@ class UpdateRoleRequest extends FormRequest
 
     public function rules(): array
     {
-        return [];
+        return [
+            'position' => ['sometimes', 'string'],
+            'scope' => ['sometimes', Rule::in(RoleScope::values())],
+        ];
     }
 }

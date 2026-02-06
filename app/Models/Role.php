@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\RoleScope;
+
 
 class Role extends Model
 {
@@ -11,7 +13,11 @@ class Role extends Model
 
     protected $table = 'roles';
 
-    protected $fillable = ['position'];
+    protected $fillable = ['position', 'scope'];
+
+    protected $casts = [
+        'scope' => RoleScope::class,
+    ];
 
     public function users()
     {
@@ -21,5 +27,20 @@ class Role extends Model
     public function assignUser(User $user)
     {
         $this->users()->syncWithoutDetaching([$user->id]);
+    }
+
+    public function isBranch(): bool
+    {
+        return $this->scope === RoleScope::BRANCH;
+    }
+
+    public function isCompany(): bool
+    {
+        return $this->scope === RoleScope::COMPANY;
+    }
+
+    public function isGlobal(): bool
+    {
+        return $this->scope === RoleScope::GLOBAL;
     }
 }
