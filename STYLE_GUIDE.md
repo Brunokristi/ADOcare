@@ -96,8 +96,6 @@ This guide is meant for both humans and automated agents that modify the codebas
 - Reusability & organization
 	- Favor small, well-documented functions over large ones. Extract common logic into services or helpers s.
 
-<!-- - Tests (Avoid for now)
-	- Add unit tests for service logic and integration tests for API behavior when adding or changing business logic. -->
 
 ---
 
