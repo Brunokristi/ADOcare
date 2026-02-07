@@ -1489,6 +1489,7 @@ const defaultSpec: FormSpec = {
  */
 const answers = reactive<Record<string, any>>({
   // basic
+  diagnosis: null as DiagnosisOption | null,
   recommendedPharmacy: '',
   admissionDate: '',
 
@@ -1722,9 +1723,6 @@ const answers = reactive<Record<string, any>>({
   // nursing diagnoses
   'nursingDiagnoses.list': [] as NurseDiagnosis[],
   'nursingDiagnoses.dateTime': '',
-
-  diagnosis: null as DiagnosisOption | null,
-
 })
 
 const filteredDiagnoses = ref<DiagnosisOption[]>([])

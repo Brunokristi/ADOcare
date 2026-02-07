@@ -29,7 +29,7 @@ class RecordDocumentController extends Controller
 
         $patient = Patient::findOrFail($validated['patient_id']);
         $user = Auth::user();
-        $company = $user->companies()->first();
+        $company = $user->company;
         $doctor = $patient->doctor;
 
         $companyName = $company ? $company->name : '';
