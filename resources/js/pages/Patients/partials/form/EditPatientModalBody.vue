@@ -39,7 +39,7 @@ const savePatient = async () => {
     try {
         const fresh = await patientStore.persistPatientData(patient.value)
         patient.value = fresh;
-        toast.add({ severity: 'success', summary: 'Pacient uložený', detail: `Pacient ${patient.value.first_name} bol úspešne uložený.` });
+        toast.add({ severity: 'success', summary: 'Pacient uložený', detail: `Pacient ${patient.value.first_name} bol úspešne uložený.`, life: 3000 });
         if (props.modalResolve) {
             props.modalResolve(patient.value);
         }

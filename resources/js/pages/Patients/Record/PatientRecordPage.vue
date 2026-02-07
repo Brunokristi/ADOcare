@@ -1804,19 +1804,24 @@ async function preloadFromLatestRecord() {
 
     if (!recordData) return
 
-    // Populate all answers from the saved record data
+    // Populate all answers from the saved record data (skip diagnosis and nursing diagnoses - they need special handling)
     Object.keys(recordData).forEach((key) => {
-      if (key in answers) {
+      if (key in answers && key !== 'diagnosis' && key !== 'nursingDiagnoses.list') {
         answers[key] = recordData[key]
       }
     })
 
     // Special handling for diagnosis (single object with code/description)
-    if (recordData.diagnosis && typeof recordData.diagnosis === 'object' && recordData.diagnosis.id) {
-      answers.diagnosis = {
-        id: recordData.diagnosis.id,
-        code: recordData.diagnosis.code ?? '',
-        description: recordData.diagnosis.description ?? ''
+    if (recordData.diagnosis) {
+      if (typeof recordData.diagnosis === 'object' && recordData.diagnosis.id) {
+        answers.diagnosis = {
+          id: recordData.diagnosis.id,
+          code: recordData.diagnosis.code ?? '',
+          description: recordData.diagnosis.description ?? ''
+        }
+      } else if (typeof recordData.diagnosis === 'string') {
+        // If it's a string, try to parse it or keep it as is
+        answers.diagnosis = recordData.diagnosis
       }
     }
 
@@ -1935,20 +1940,19 @@ const toIso = (d: any) => {
   return `${y}-${m}-${day}`
 }
 
-// lazy bind each date field on access
 const bindDateField = (fieldId: string) => {
   if (fieldId in dateProxy) return
+
   Object.defineProperty(dateProxy, fieldId, {
-    get: () => toDate(props.getValue(fieldId)),
-    set: (val: any) => props.setValue(fieldId, toIso(val)),
+    get: () => toDate(getValue(fieldId)),
+    set: (val: any) => setValue(fieldId, toIso(val)),
     enumerable: true,
     configurable: true,
   })
 }
 
-// pre-bind all date fields (safe) — re-run when spec changes
 watchEffect(() => {
-  for (const s of props.spec?.sections ?? []) {
+  for (const s of displaySpec.value.sections ?? []) {
     for (const f of s.fields ?? []) {
       if (f.type === 'date') bindDateField(f.id)
     }

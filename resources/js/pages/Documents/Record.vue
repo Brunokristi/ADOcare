@@ -73,7 +73,7 @@ const formSpec: { sections: Section[] } = {
     {
       id: 'healthPerception',
       title: 'Vnímanie zdravia',
-      fields: [{ id: 'healthPerception.description', label: 'Subjektívny popis pobemov pacienta' }],
+      fields: [{ id: 'healthPerception.description', label: 'Subjektívny popis problémov pacienta' }],
     },
     {
       id: 'nursingAssessment',
@@ -106,7 +106,7 @@ const formSpec: { sections: Section[] } = {
         { id: 'bloodPressure', label: 'TK (mmHg)' },
         { id: 'temperature', label: 'TT (°C)' },
         { id: 'pulse', label: 'P (/min)' },
-        { id: 'circulation.problemExists', label: 'Cirkulácia – pobem' },
+        { id: 'circulation.problemExists', label: 'Cirkulácia – problém' },
         { id: 'hypotensionHypertension', label: 'Hypotenzita/Hypertenzita' },
         { id: 'irregularPulse', label: 'Nepravidelný pulz' },
         { id: 'circulation.otherNotes', label: 'Iné zistenia' },
@@ -117,7 +117,7 @@ const formSpec: { sections: Section[] } = {
       title: 'Dýchanie',
       fields: [
         { id: 'respiratoryRate', label: 'D (/min)' },
-        { id: 'breathing.problemExists', label: 'Dýchanie – pobem' },
+        { id: 'breathing.problemExists', label: 'Dýchanie – problém' },
         { id: 'irregularities', label: 'Nepravidelnosti' },
         { id: 'breathing.otherNotes', label: 'Iné zistenia' },
         { id: 'suctioning', label: 'Odsávanie' },
@@ -133,7 +133,7 @@ const formSpec: { sections: Section[] } = {
         { id: 'nutrition.diet', label: 'Diéta č.' },
         { id: 'nutrition.weightTrend', label: 'Trend hmotnosti' },
         { id: 'nutrition.weightKg', label: 'Hmotnosť (kg)' },
-        { id: 'nutrition.problemExists', label: 'Výživa – pobem' },
+        { id: 'nutrition.problemExists', label: 'Výživa – problém' },
         { id: 'nutrition.symptoms', label: 'Symptómy' },
         { id: 'nutrition.feedingType', label: 'Typ kŕmenia' },
         { id: 'nutrition.preparations', label: 'Prípravky' },
@@ -157,7 +157,7 @@ const formSpec: { sections: Section[] } = {
       id: 'elimination',
       title: 'Vylučovanie',
       fields: [
-        { id: 'defecation.problemExists', label: 'Defekácia – pobem' },
+        { id: 'defecation.problemExists', label: 'Defekácia – problém' },
         { id: 'defecation.symptoms', label: 'Symptómy defekácie' },
         { id: 'defecation.stomaCare', label: 'Starostlivosť o stómiu' },
         { id: 'defecation.stomaCareDate', label: 'Dátum zavedenia stómie' },
@@ -167,7 +167,7 @@ const formSpec: { sections: Section[] } = {
         { id: 'defecation.regulationMethods', label: 'Spôsoby regulácie' },
         { id: 'defecation.regulationOtherNotes', label: 'Iné zistenia regulácie' },
         { id: 'urination.diuresis', label: 'Diuréza (ml/24 hod.)' },
-        { id: 'urination.problemExists', label: 'Močenie – pobem' },
+        { id: 'urination.problemExists', label: 'Močenie – problém' },
         { id: 'urination.symptoms', label: 'Symptómy močenia' },
         { id: 'urination.catheter', label: 'Permanentný katéter' },
         { id: 'urination.catheterDate', label: 'Dátum zavedenia katétra' },
@@ -184,7 +184,7 @@ const formSpec: { sections: Section[] } = {
       id: 'sleep',
       title: 'Spánok',
       fields: [
-        { id: 'sleep.problemExists', label: 'Spánok – pobem' },
+        { id: 'sleep.problemExists', label: 'Spánok – problém' },
         { id: 'sleep.findings', label: 'Zistenia' },
         { id: 'sleep.otherNotes', label: 'Iné zistenia' },
       ],
@@ -202,7 +202,7 @@ const formSpec: { sections: Section[] } = {
       id: 'movement',
       title: 'Pohybový systém',
       fields: [
-        { id: 'movement.problemExists', label: 'Pohybový systém – pobem' },
+        { id: 'movement.problemExists', label: 'Pohybový systém – problém' },
         { id: 'movement.findings', label: 'Zistenia' },
         { id: 'movement.otherNotes', label: 'Iné zistenia' },
       ],
@@ -211,7 +211,7 @@ const formSpec: { sections: Section[] } = {
       id: 'skin',
       title: 'Koža / Edémy / Sliznice / Hygiena',
       fields: [
-        { id: 'skin.problemExists', label: 'Koža – pobem' },
+        { id: 'skin.problemExists', label: 'Koža – problém' },
         { id: 'skin.temperature', label: 'Teplota kože' },
         { id: 'skin.moisture', label: 'Vlhkosť kože' },
         { id: 'skin.color', label: 'Farba' },
@@ -221,10 +221,10 @@ const formSpec: { sections: Section[] } = {
         { id: 'skin.defectLocation', label: 'Lokalizácia defektu' },
         { id: 'skin.defectSizeCm', label: 'Veľkosť defektu (cm)' },
         { id: 'skin.patientDayAfterSurgery', label: 'Deň po operácii' },
-        { id: 'edema.problemExists', label: 'Edémy – pobem' },
+        { id: 'edema.problemExists', label: 'Edémy – problém' },
         { id: 'edema.type', label: 'Typ edému' },
         { id: 'edema.measures', label: 'Opatrenia' },
-        { id: 'mucosa.problemExists', label: 'Sliznice – pobem' },
+        { id: 'mucosa.problemExists', label: 'Sliznice – problém' },
         { id: 'mucosa.findings', label: 'Zistenia na sliznici' },
         { id: 'hygiene.statusOnAdmission', label: 'Hygienický stav pri prijatí' },
         { id: 'hygiene.selfCare', label: 'Hygienu vykonáva' },
@@ -258,7 +258,7 @@ const formSpec: { sections: Section[] } = {
       id: 'pain',
       title: 'Bolesť',
       fields: [
-        { id: 'pain.problemExists', label: 'Bolesť – pobem' },
+        { id: 'pain.problemExists', label: 'Bolesť – problém' },
         { id: 'pain.type', label: 'Typ bolesti' },
         { id: 'pain.location', label: 'Lokalizácia' },
         { id: 'pain.character', label: 'Charakter' },
@@ -270,8 +270,8 @@ const formSpec: { sections: Section[] } = {
       title: 'Komunikácia',
       fields: [
         { id: 'communication.type', label: 'Spôsob komunikácie' },
-        { id: 'communication.problemExists', label: 'Komunikácia – pobem' },
-        { id: 'communication.issues', label: 'Pobemy v komunikácii' },
+        { id: 'communication.problemExists', label: 'Komunikácia – problém' },
+        { id: 'communication.issues', label: 'problémy v komunikácii' },
         { id: 'communication.otherNotes', label: 'Iné zistenia' },
       ],
     },
@@ -279,7 +279,7 @@ const formSpec: { sections: Section[] } = {
       id: 'learning',
       title: 'Učenie, zmyslové vnímanie',
       fields: [
-        { id: 'learning.problemExists', label: 'Pobem s učením/zmyslami' },
+        { id: 'learning.problemExists', label: 'problém s učením/zmyslami' },
         { id: 'learning.sensoryChanges', label: 'Zmeny v zmysloch' },
         { id: 'learning.sensoryChangesExist', label: 'Zmeny prítomné' },
         { id: 'learning.sensoryChangesDetails', label: 'Detaily zmien' },
@@ -293,12 +293,12 @@ const formSpec: { sections: Section[] } = {
       id: 'psychosocial',
       title: 'Psychické, sociálne a duchovné potreby',
       fields: [
-        { id: 'psychological.problemExists', label: 'Psychické potreby – pobem' },
+        { id: 'psychological.problemExists', label: 'Psychické potreby – problém' },
         { id: 'psychological.mood', label: 'Nálada' },
         { id: 'psychological.feelings', label: 'Pocity' },
-        { id: 'social.problemExists', label: 'Sociálne potreby – pobem' },
+        { id: 'social.problemExists', label: 'Sociálne potreby – problém' },
         { id: 'social.supportDependency', label: 'Sociálna pomoc' },
-        { id: 'spiritual.problemExists', label: 'Duchovné potreby – pobem' },
+        { id: 'spiritual.problemExists', label: 'Duchovné potreby – problém' },
         { id: 'psychosocial.otherNotes', label: 'Iné zistenia' },
       ],
     },
@@ -415,13 +415,17 @@ function formatValue(value: any, fieldId?: string): string {
     return JSON.stringify(value)
   }
 
-  if (fieldId) return getValueLabel(fieldId, String(value ?? ''))
-  return translateValue(String(value ?? ''))
-}
+  const strValue = String(value ?? '')
+  
+  // Format dates to Slovak format (DD.MM.YYYY)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(strValue)) {
+    const [year, month, day] = strValue.split('-')
+    return `${day}.${month}.${year}`
+  }
 
-/* -------------------------------------------------------------------------- */
-/*  Pagination (measurer-driven, like DZC)                                     */
-/* -------------------------------------------------------------------------- */
+  if (fieldId) return getValueLabel(fieldId, strValue)
+  return translateValue(strValue)
+}
 
 function outerHeightWithMargins(el: HTMLElement) {
   const style = window.getComputedStyle(el)
@@ -683,28 +687,8 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                   </table>
                 </section>
 
-                <!-- Footer only on last page -->
                 <div v-if="pageIndex === pages.length - 1" class="footer">
-                  <table class="w-full border-collapse text-sm">
-                    <tbody>
-                      <tr>
-                        <td class="border border-black p-2 w-1/2">
-                          Ošetrujúci lekár:<br />
-                          <strong>{{ documentData.doctorName }}</strong>
-                        </td>
-                        <td class="border border-black p-2 w-1/2">
-                          Sestra/Zdravotný pracovník:<br />
-                          <strong>{{ documentData.userName }}</strong>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-
                   <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
-                    <div class="text-center">
-                      <div class="border-t-1 border-black mb-2"></div>
-                      podpis lekára a pečiatka
-                    </div>
                     <div class="text-center">
                       <div class="border-t-1 border-black mb-2"></div>
                       podpis sestry/zdravotného pracovníka a pečiatka
@@ -713,12 +697,10 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                 </div>
               </div>
             </div>
-            <!-- /page-inner -->
           </div>
         </div>
       </div>
 
-      <!-- HIDDEN MEASURER (like DZC) -->
       <div id="measure-root" aria-hidden="true">
         <div class="page ruler-page measure-page">
           <div ref="measurePageInnerRef" class="page-inner">
