@@ -23,7 +23,7 @@ class RecordDocumentController extends Controller
             'user_id' => Auth::id(),
             'type' => 'record',
             'mime_type' => 'application/json',
-            'name' => 'zaznam_prijatia_' . now()->format('d.m.Y'),
+            'name' => 'zaznam' . now()->format('d.m.Y'),
             'path' => 'records/' . 'record_' . now()->timestamp . '.json',
         ]);
 
@@ -94,7 +94,7 @@ class RecordDocumentController extends Controller
         return response()->json([
             'success' => true,
             'document_id' => $document->id,
-            'message' => 'Záznam prijatia bol úspešne vytvorený',
+            'message' => 'Ošetrovateľský záznam bol úspešne vytvorený',
         ], 201);
     }
 

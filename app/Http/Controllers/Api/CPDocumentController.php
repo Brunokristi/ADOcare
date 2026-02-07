@@ -62,7 +62,7 @@ class CPDocumentController extends Controller
         $branch = Branch::findOrFail($validated['branch_id']);
         $company = $branch->company;
         $car = $user->cars()->first();
-        $representative = $branch->representative;
+        $representative = $company->representative;
 
 
         $companyName = $company ? $company->name : '';

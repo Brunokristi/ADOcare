@@ -199,6 +199,13 @@ async function preloadFromLatestProposal() {
       }
       procedures.value = mapped.length ? mapped : [{ procedure: null, frequency: '' }]
     }
+
+    toast.add({
+      severity: 'info',
+      summary: 'Načítané',
+      detail: 'Texty načítané z histórie.',
+      life: 2500,
+    })
   } catch (e: any) {
     if (e?.response?.status !== 404) console.error('Prefill failed:', e)
   } finally {

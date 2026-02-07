@@ -1833,6 +1833,13 @@ async function preloadFromLatestRecord() {
         description: nd.description ?? ''
       }))
     }
+
+    toast.add({
+      severity: 'info',
+      summary: 'Načítané',
+      detail: 'Texty načítané z histórie.',
+      life: 2500,
+    })
   } catch (e: any) {
     if (e?.response?.status !== 404) {
       console.error('Prefill failed:', e)
@@ -1859,7 +1866,7 @@ async function saveRecord() {
     toast.add({
       severity: 'success',
       summary: 'Úspešne',
-      detail: 'Záznam prijatia bol vytvorený',
+      detail: 'Ošetrovateľský záznam bol vytvorený',
       life: 3000
     })
 
