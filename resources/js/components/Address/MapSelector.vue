@@ -13,17 +13,12 @@ const emit = defineEmits<{
 
 const center = computed<PointExpression>(() => {
     if (props.latitude && props.longitude) {
-
-        console.log('centering map to', props.latitude, props.longitude);
         return [props.latitude, props.longitude]
     }
-    console.log('centering map to Bratislava as default');
     return [48.1486, 17.1077]
 })
 
 watch(() => [props.latitude, props.longitude], ([lat, lon]) => {
-    console.log('props changed, new center:', lat, lon);
-
     if (lat && lon) {
         zoom.value = 15
     }

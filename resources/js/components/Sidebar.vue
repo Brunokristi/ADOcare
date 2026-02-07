@@ -28,8 +28,6 @@ interface SidebarItem {
 }
 
 function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
-    console.log('routes', routes);
-
     const items: SidebarItem[] = [];
 
     const isManager = auth.currentRole === 'manager';

@@ -27,7 +27,6 @@ api.interceptors.request.use((config) => {
             }
             if (config.params.q !== undefined) {
                 config.params.q = String(config.params.q).trim();
-                console.log(`Trimmed q param: '${config.params.q}'`);
 
                 if (config.params.q === '') {
                     delete config.params.q;

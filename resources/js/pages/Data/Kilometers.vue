@@ -181,8 +181,6 @@ async function onSubmit() {
       patients: selectedPatients.value.map(p => ({ id: p.id })),
     });
 
-    console.log('preview response', res.data);
-
     const sheet = res.data?.data?.sheet;
 
     if (!sheet) {

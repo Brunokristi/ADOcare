@@ -153,14 +153,10 @@ async function pollCalculationStatus(periodFrom: Date) {
   const branchId = authStore.currentBranch?.id;
   const userId = authStore.user?.id;
 
-  console.log('Starting to poll calculation status for month:', monthStr, 'branch:', branchId, 'user:', userId);
-
-  // Give the toast time to mount on the new page
   await new Promise(resolve => setTimeout(resolve, 500));
 
   const interval = setInterval(async () => {
     attempts++;
-    console.log(`Poll attempt ${attempts}/${maxAttempts}`);
 
     try {
       const res = await api.get('/v1/visits/timeline/status', {
@@ -171,17 +167,13 @@ async function pollCalculationStatus(periodFrom: Date) {
         },
       });
 
-      console.log('API Response:', res.data);
       const status = res.data?.data?.status;
-      console.log('Calculation status:', status);
 
       if (status === 'completed') {
         clearInterval(interval);
-        // Dismiss the info toast
         if (calculationToastId) {
           toast.removeGroup(calculationToastId);
         }
-        console.log('Calculation completed! Showing success toast.');
         toast.add({
           severity: 'success',
           summary: 'Výpočet dokončený',
@@ -194,7 +186,6 @@ async function pollCalculationStatus(periodFrom: Date) {
           toast.removeGroup(calculationToastId);
         }
         const errorMsg = res.data?.data?.error_message || 'Neznáma chyba';
-        console.log('Calculation failed:', errorMsg);
         toast.add({
           severity: 'error',
           summary: 'Chyba výpočtu',
@@ -207,7 +198,6 @@ async function pollCalculationStatus(periodFrom: Date) {
         if (calculationToastId) {
           toast.removeGroup(calculationToastId);
         }
-        console.log('Polling timeout');
         toast.add({
           severity: 'warn',
           summary: 'Časový limit',
@@ -268,8 +258,6 @@ async function onSubmit() {
       company: { id: authStore.currentBranch?.company_id},
       patients: selectedPatients.value.map(p => ({ id: p.id })),
     });
-
-    console.log('preview response', res.data);
 
     const sheet = res.data?.data?.sheet;
 

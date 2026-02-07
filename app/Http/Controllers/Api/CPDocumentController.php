@@ -100,8 +100,6 @@ class CPDocumentController extends Controller
             'created_at' => now(),
         ];
 
-        Log::info('Creating CP Document', $cpData);
-
         Storage::disk('local')->put(
             'cps/' . now()->timestamp . '.json',
             json_encode($cpData, JSON_PRETTY_PRINT)

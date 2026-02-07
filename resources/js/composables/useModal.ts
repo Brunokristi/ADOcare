@@ -56,7 +56,6 @@ export function close(id: number, result?: any) {
 }
 
 export function closeModal(id: number, result?: any) {
-    console.log('closing', id, result);
 
     const idx = state.modals.findIndex((m) => m.id === id);
     if (idx === -1) return;

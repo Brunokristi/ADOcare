@@ -104,7 +104,6 @@ const options = ref<DataTableOptions<Doctor>>({
             handler: async ({ remote }) => {
                 showFavouritesOnly.value = !showFavouritesOnly.value;
                 remote.setExtraParam('filter[is_favourite]', showFavouritesOnly.value ? 1 : undefined)
-                console.log('Toggling favourites only:', showFavouritesOnly.value, remote.params.value);
                 await remote.loadPage(1);
             }
         },

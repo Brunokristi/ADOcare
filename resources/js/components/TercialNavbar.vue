@@ -106,13 +106,13 @@ watch(
         <template #end>
             <div class="flex items-center gap-2">
                 <RouterLink :to="{ path: '/patient/points' }"
-                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
+                    class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
                     bodovanie
                 </RouterLink>
 
-                <RouterLink :to="{ path: '/patient/dekurz' }"
+                <RouterLink :to="{ path: '/patient/agreement' }"
                     class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
-                    dekurz
+                    dohoda
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/proposal' }"
@@ -120,9 +120,9 @@ watch(
                     návrh
                 </RouterLink>
 
-                <RouterLink :to="{ path: '/patient/agreement' }"
+                <RouterLink :to="{ path: '/patient/dekurz' }"
                     class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
-                    dohoda
+                    dekurz
                 </RouterLink>
 
                 <RouterLink :to="{ path: '/patient/record' }"

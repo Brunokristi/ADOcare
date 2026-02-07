@@ -20,7 +20,6 @@ onMounted(async () => {
     try {
         const fetched = await api.fetchEntity<Patient>(`v1/patients/${props.patientId}`, { with: ['nurse', 'doctor', 'insuranceCompany'] });
         patient.value = fetched;
-        console.log('Fetched patient:', fetched);
 
     } catch (e) {
         console.error('Failed to fetch patient', e);
@@ -30,12 +29,10 @@ onMounted(async () => {
 const toast = useToast();
 
 const savePatient = async () => {
-    // basic validation
     if (!patient.value.first_name || !patient.value.last_name) {
         return;
     }
 
-    // use api to save patient
     try {
         const fresh = await patientStore.persistPatientData(patient.value)
         patient.value = fresh;
@@ -63,16 +60,11 @@ async function updateNurseOptions() {
     nurseOptions.value = nurses;
 }
 
-
-console.log();
-
 if (props.isManagerView) {
-    console.log('Manager view enabled');
     onMounted(async () => {
         try {
             const branches = await api.fetchEntities<Branch>('v1/my-company/branches');
             branchOptions.value = branches;
-            console.log('Fetched branch options:', branches);
 
             await updateNurseOptions();
         } catch (e) {
