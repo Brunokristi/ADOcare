@@ -110,7 +110,6 @@ const options = ref<DataTableOptions<any>>({
 <template>
     <div class="h-full flex flex-col overflow-hidden min-h-0">
         <UniversalDataTable :options="options" />
-
     </div>
 </template>
 
