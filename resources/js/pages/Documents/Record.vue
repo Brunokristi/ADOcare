@@ -3,6 +3,7 @@ import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getValueLabel } from '@/utils/valueTranslations'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -558,6 +559,8 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 </script>
 
 <template>
+  <LoadingOverlay :show="loading" text="" />
+
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
@@ -574,11 +577,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
       </template>
     </Toolbar>
 
-    <div v-if="loading" class="flex justify-center items-center py-20">
-      <ProgressSpinner />
-    </div>
-
-    <div v-else class="record-sheet-wrapper">
+    <div v-if="!loading" class="record-sheet-wrapper">
       <!-- PRINTED CONTENT (only this will be visible in print) -->
       <div id="print-root">
         <div class="pages">

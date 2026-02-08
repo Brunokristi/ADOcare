@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
+import LoadingOverlay from '@/components/LoadingOverlay.vue';
 
 const authStore = useAuthStore();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
@@ -212,7 +213,7 @@ async function onSubmit() {
   } catch (error) {
     console.error('Preview or navigation failed', error);
   } finally {
-    loading.value = false;
+      loading.value = false;
   }
 }
 
@@ -229,7 +230,8 @@ onMounted(() => {
 
 
 <template>
-  <div class="flex flex-col gap-6">
+  <LoadingOverlay :show="loading" text="" />
+  <div class="flex flex-col gap-6 relative">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <div class="grid grid-cols-12 gap-4">
@@ -379,13 +381,5 @@ onMounted(() => {
         </Button>
       </div>
     </form>
-
-    <!-- Loader Overlay -->
-    <div v-if="loading" class="fixed inset-0 flex items-center justify-center bg-tag2/50 z-50">
-      <div class="p-8 flex flex-col items-center gap-4 w-90">
-        <i class="bi bi-flower2 animate-spin text-2xl text-white"></i>
-        <p class="text-white text-normal">Dáta sa generujú, počkajte prosím.</p>
-      </div>
-    </div>
   </div>
 </template>

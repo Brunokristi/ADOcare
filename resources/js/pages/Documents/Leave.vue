@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
+import LoadingOverlay from '@/components/LoadingOverlay.vue';
 
 interface DocumentData {
   patientName: string;
@@ -83,6 +84,8 @@ function printPage() {
 </script>
 
 <template>
+  <LoadingOverlay :show="loading" text="" />
+
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar
@@ -103,7 +106,8 @@ function printPage() {
       </template>
     </Toolbar>
 
-    <div class="nursing-sheet-wrapper">
+
+    <div v-if="!loading" class="nursing-sheet-wrapper">
       <div id="nursing-sheet">
         <div class="text-center font-bold text-lg mb-3">
           OŠETROVATEĽSKÁ PREPÚŠŤACIA SPRÁVA

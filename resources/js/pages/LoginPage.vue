@@ -10,8 +10,6 @@ const router = useRouter();
 const route = useRoute();
 const toast = useToast();
 
-// Before loading the login page, check if user is logged in
-
 onBeforeMount(async () => {
 
     if (await auth.isAuthenticated()) {

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
+import LoadingOverlay from '@/components/LoadingOverlay.vue';
 
 type PatientCategory = 'H' | 'I' | 'F';
 type ExpectedDuration = 'do1mesiac' | 'do3mesiacov' | 'do6mesiacov' | 'nad6mesiacov';
@@ -126,6 +127,8 @@ function printPage() {
 </script>
 
 <template>
+  <LoadingOverlay :show="loading" text="" />
+
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar
@@ -146,7 +149,8 @@ function printPage() {
       </template>
     </Toolbar>
 
-    <div class="proposal-sheet-wrapper">
+
+    <div v-if="!loading" class="proposal-sheet-wrapper">
       <div id="proposal-sheet">
         <div class="text-center font-bold text-lg mb-3">
           NÁVRH NA POSKYTOVANIE OŠETROVATEĽSKEJ STAROSTLIVOSTI

@@ -6,6 +6,7 @@ import api from '@/services/api';
 import { toApiDate } from '@/utils/dateUtils';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
+import LoadingOverlay from '@/components/LoadingOverlay.vue';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -336,7 +337,8 @@ onMounted(() => {
 
 
 <template>
-  <div class="flex flex-col gap-6">
+  <LoadingOverlay :show="loading" text="Vygeneravám..." />
+  <div class="flex flex-col gap-6 relative">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <div class="grid grid-cols-12 gap-4">
