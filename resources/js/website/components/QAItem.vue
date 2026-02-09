@@ -7,10 +7,12 @@ interface Props {
     text?: string
     color?: 'primary' | 'secondary' | 'warning' | 'success' | 'dark' | 'light'
     brandColors?: BrandColors
+    open?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
     color: 'primary',
+    open: false,
     brandColors: () => ({
         primary: '#5C9EAD',
         light: '#DEECEF',
@@ -21,7 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
     }),
 })
 
-const isOpen = ref(false)
+const isOpen = ref(props.open)
 
 const getColorValue = (colorKey: string): string => {
     const colorMap: Record<string, string> = {
@@ -43,9 +45,10 @@ const buttonColor = getColorValue(props.color)
         <button
             @click="isOpen = !isOpen"
             :class="[
-                'w-full px-2 py-2 rounded-lg transition-all duration-200',
+                'w-full px-2 py-2 rounded-lg transition-all duration-100',
                 'flex items-center justify-between',
                 'hover:opacity-80',
+                'cursor-pointer',
                 'text-normal, text-white',
             ]"
             :style="{
@@ -55,19 +58,18 @@ const buttonColor = getColorValue(props.color)
             <span class="text-normal">{{ label }}</span>
             <i
                 :class="[
-                    'bi',
+                    'bi text-normal',
                     isOpen ? 'bi-arrow-up' : 'bi-arrow-down'
                 ]"
-                style="stroke-width: 2px;"
             ></i>
         </button>
 
         <Transition
-            enter-active-class="transition-all duration-300"
+            enter-active-class="transition-all duration-200 ease-out"
             enter-from-class="opacity-0 max-h-0"
-            enter-to-class="opacity-100 max-h-96"
-            leave-active-class="transition-all duration-300"
-            leave-from-class="opacity-100 max-h-96"
+            enter-to-class="opacity-100 max-h-screen"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 max-h-screen"
             leave-to-class="opacity-0 max-h-0"
         >
             <div

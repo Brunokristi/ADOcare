@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Logo from './Logo.vue'
 import type { BrandColors } from '@/website/config/themes'
+
 
 interface Props {
     brandColors?: BrandColors
@@ -18,16 +20,23 @@ withDefaults(defineProps<Props>(), {
     }),
 })
 
+const router = useRouter()
+
 const isMenuOpen = ref(false)
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
+    if (isMenuOpen.value) {
+        router.push({ name: 'website-nav' })
+    } else {
+        router.back()
+    }
 }
 </script>
 
 <template>
     <nav class="fixed top-0 left-0 right-0 w-full z-50">
-        <div class="px-4 sm:px-6 lg:px-8">
+        <div class="px-8">
             <div class="flex justify-between items-center h-16">
                 <Logo
                     :light="brandColors.light"
@@ -46,7 +55,7 @@ const toggleMenu = () => {
                         height: '30px'
                     }"
                 >
-                    <i class="bi bi-arrows-angle-expand text-xs"></i>
+                    <i :class="['bi', 'text-xs', isMenuOpen ? 'bi-arrows-angle-contract' : 'bi-arrows-angle-expand']"></i>
                 </button>
             </div>
         </div>

@@ -5,6 +5,7 @@ interface Props {
     label?: string
     secondLabel?: string
     color?: 'primary' | 'secondary' | 'warning' | 'success' | 'dark' | 'light'
+    textColor?: 'primary' | 'secondary' | 'warning' | 'success' | 'dark' | 'light'
     align?: 'left' | 'center' | 'right'
     variant?: 'light' | 'solid'
     brandColors?: {
@@ -56,15 +57,17 @@ const alignClasses = {
 }
 
 const buttonColor = getColorValue(props.color)
+const buttonTextColor = props.textColor ? getColorValue(props.textColor) : buttonColor
 
 const getButtonStyles = () => {
     if (props.variant === 'solid') {
         return {
             backgroundColor: buttonColor,
-            color: ['light'].includes(props.color) ? props.brandColors.dark : '#ffffff',
+            color: buttonTextColor,
         }
     }
     return {
+        color: buttonTextColor,
         backgroundColor: 'transparent',
     }
 }
@@ -72,12 +75,12 @@ const getButtonStyles = () => {
 const getContentStyles = () => {
     if (props.variant === 'solid') {
         return {
-            color: ['light'].includes(props.color) ? props.brandColors.dark : '#ffffff',
+            color: buttonTextColor,
         }
     }
     return {
-        color: buttonColor,
-        borderBottomColor: buttonColor,
+        color: buttonTextColor,
+        borderBottomColor: buttonTextColor,
     }
 }
 
@@ -89,6 +92,7 @@ const getContentStyles = () => {
             'w-full py-1 transition-all duration-200 flex',
             alignClasses[align],
             'hover:opacity-80',
+            'cursor-pointer',
             { 'px-2 py-2 rounded-lg': variant === 'solid' }
         ]"
         :style="getButtonStyles()"
@@ -100,7 +104,7 @@ const getContentStyles = () => {
                 'border-b-1',
                 'text-normal'
             ]"
-            :style="{color: buttonColor, borderBottomColor: buttonColor}"
+            :style="getContentStyles()"
         >
             <i v-if="icon" :class="`bi ${icon}`"></i>
             <span v-if="label">{{ label }}</span>
@@ -116,7 +120,7 @@ const getContentStyles = () => {
             :style="getContentStyles()"
         >
             <span class="flex items-center gap-2">
-                <span v-if="label" class="text-white">{{ label }} </span>
+                <span v-if="label">{{ label }} </span>
                 <span v-if="secondLabel" class="text-lightgrey">{{ secondLabel }} </span>
             </span>
             <i v-if="icon" :class="`bi ${icon}`" style="stroke-width: 2px;"></i>

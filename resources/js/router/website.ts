@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import WebsiteMain from '@/website/pages/main.vue'
 import ContactPage from '@/website/pages/contact.vue'
+import WebsiteNav from '@/website/components/WebsiteNavigation.vue'
 import { getThemeColors, type ThemeName, type BrandColors } from '@/website/config/themes'
 
 declare module 'vue-router' {
@@ -33,6 +34,17 @@ const websiteRoutes: Readonly<RouteRecordRaw[]> = [
             theme: 'dark',
         },
     },
+    {
+        path: '/nav',
+        name: 'website-nav',
+        component: WebsiteNav,
+        meta: {
+            requiresAuth: false,
+            theme: 'light',
+        },
+    },
+
+
     // {
     //     path: '/services',
     //     name: 'website-services',
