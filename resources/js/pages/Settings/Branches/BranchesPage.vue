@@ -36,19 +36,21 @@ const options = computed<DataTableOptions<Branch>>(() => ({
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,
-    extraParams: { with: 'representative', count:'users' },
+    extraParams: { with: 'representative', count: 'users' },
     afterInit: ({ remote }) => {
         actionRemote.value = remote
     },
     columns: [
         { field: 'address', header: 'Adresa', sortable: false, render: (_v, row: Branch) => `${row.address || ''} ${row.city ? ', ' + row.city : ''}` },
-        {field: 'city', header: 'Mesto', sortable: true },
+        { field: 'city', header: 'Mesto', sortable: true },
         { field: 'code', header: 'Kód', sortable: true },
         { field: 'representative', header: 'Obozorný zástupca', sortable: false, render: (v: User) => v ? `${v.first_name} ${v.last_name}` : '' },
         { field: 'users_count', header: 'Počet zamestnancov', sortable: true },
-        { field: 'edit', header: '', width: '3rem', component: ActionButtons, componentOptions: [
-            { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť', action: (row: Branch) => openEditBranch(row.id) }
-        ] }
+        {
+            field: 'edit', header: '', width: '3rem', component: ActionButtons, componentOptions: [
+                { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť', action: (row: Branch) => openEditBranch(row.id) }
+            ]
+        }
     ],
     actions: [
         {
@@ -81,5 +83,7 @@ const options = computed<DataTableOptions<Branch>>(() => ({
 </template>
 
 <style scoped>
-.text-muted { color: #6b7280; }
+.text-muted {
+    color: #6b7280;
+}
 </style>

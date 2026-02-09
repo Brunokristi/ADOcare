@@ -96,6 +96,8 @@ This guide is meant for both humans and automated agents that modify the codebas
 - Reusability & organization
 	- Favor small, well-documented functions over large ones. Extract common logic into services or helpers s.
 
+- Language & internationalization
+    - Be consistent with language in code and messages. The primary languasge is Slovak for anything that the user sees (UI, API messages) and English for code, variable names, and technical comments. Avoid mixing languages in the same context (e.g., don't use Slovak variable names or English messages).
 
 ---
 
