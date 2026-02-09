@@ -6,6 +6,8 @@ import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import useAddressForm from '@/composables/useAddressForm'
+import useFormValidator, { required, email } from '@/composables/useFormValidator'
+import AlertBar from '@/components/AlertBar.vue'
 import type { Company, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 
@@ -15,6 +17,19 @@ const loading = ref(true)
 const saving = ref(false)
 const representativeOptions = ref<User[]>([])
 const { addressQuery, init, onAutocompleteSelected, onMapClick: onMapClickAddress, resolveBeforeSave } = useAddressForm(company)
+
+const alert = ref<{ severity: 'error' | 'success', message: string } | null>(null)
+
+const validator = useFormValidator(
+    {
+        name: [required('Názov je povinný')],
+        email: [email('Neplatný email')],
+    },
+    () => ({
+        name: company.value.name,
+        email: company.value.email,
+    })
+)
 
 init()
 
@@ -45,6 +60,12 @@ async function save() {
     saving.value = true
     // Best-effort: if address provided but city/psc/coords missing, try to resolve via autocomplete
     try {
+        const ok = validator.validateAll()
+        if (!ok) {
+            alert.value = { severity: 'error', message: 'Opravte chyby vo formulári a skúste to znova' }
+            saving.value = false
+            return
+        }
         await resolveBeforeSave()
     } catch (err) {
         console.error('Address resolution before save failed', err)
@@ -67,6 +88,10 @@ async function save() {
 <template>
     <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
     <div class="p-4">
+        <div v-if="alert?.message" class="mb-4">
+            <AlertBar :message="alert.message" :severity="alert.severity" :closable="true" />
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
                 <div class="card mb-4">
@@ -74,7 +99,10 @@ async function save() {
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm mb-1">Názov</label>
-                            <InputText v-model="company.name" class="w-full" />
+                            <InputText v-model="company.name" class="w-full"
+                                @blur="() => { validator.setTouched('name'); validator.validateField('name') }" />
+                            <div v-if="validator.getError('name')" class="text-red-600 text-sm mt-1">{{
+                                validator.getError('name') }}</div>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">Zapísaná v registri</label>
@@ -131,7 +159,10 @@ async function save() {
                         </div>
                         <div>
                             <label class="block text-sm mb-1">Email</label>
-                            <InputText v-model="company.email" class="w-full" />
+                            <InputText v-model="company.email" class="w-full"
+                                @blur="() => { validator.setTouched('email'); validator.validateField('email') }" />
+                            <div v-if="validator.getError('email')" class="text-red-600 text-sm mt-1">{{
+                                validator.getError('email') }}</div>
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Zodpovedná osoba</label>
