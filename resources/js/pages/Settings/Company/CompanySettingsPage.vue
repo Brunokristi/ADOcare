@@ -5,7 +5,7 @@ import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
-import { searchAutocomplete, fetchPlaceDetails, parseComponents, extractAddressFromPlace } from '@/composables/useAddressAutocomplete'
+import useAddressForm from '@/composables/useAddressForm'
 import type { Company, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 
@@ -13,9 +13,10 @@ const toast = useToast()
 const company = ref<Company & { representative?: User }>({} as any)
 const loading = ref(true)
 const saving = ref(false)
-const zoom = ref(13)
 const representativeOptions = ref<User[]>([])
-const addressQuery = ref<string | null>('');
+const { addressQuery, init, onAutocompleteSelected, onMapClick: onMapClickAddress, resolveBeforeSave } = useAddressForm(company)
+
+init()
 
 onMounted(async () => {
     loading.value = true
@@ -44,22 +45,7 @@ async function save() {
     saving.value = true
     // Best-effort: if address provided but city/psc/coords missing, try to resolve via autocomplete
     try {
-        const needResolve = !!company.value.address && (!company.value.city || !company.value.psc || !company.value.latitude || !company.value.longitude)
-        if (needResolve) {
-            const preds = await searchAutocomplete(company.value.address as string)
-            if (preds && preds.length > 0) {
-                const first = preds[0]
-                const details = await fetchPlaceDetails(first.place_id)
-                if (details) {
-                    const parsed = parseComponents(details.address_components || [])
-                    company.value.address = first.label || company.value.address
-                    company.value.city = parsed.city || company.value.city
-                    company.value.psc = parsed.zip || company.value.psc
-                    company.value.latitude = details.geometry?.location?.lat ?? company.value.latitude
-                    company.value.longitude = details.geometry?.location?.lng ?? company.value.longitude
-                }
-            }
-        }
+        await resolveBeforeSave()
     } catch (err) {
         console.error('Address resolution before save failed', err)
         // continue to attempt save with whatever data we have
@@ -71,34 +57,8 @@ async function save() {
     } catch (e) {
         console.error('Failed to save company', e)
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť spoločnosť' })
-    }
-    finally {
+    } finally {
         saving.value = false
-    }
-}
-
-// Only perform reverse geocoding when the user clicks on the map.
-// const addressResolveToken = ref(0)
-async function onMapClick(payload: { lat: number | null; lon: number | null }) {
-    try {
-        const lat = payload.lat
-        const lon = payload.lon
-        company.value.latitude = lat
-        company.value.longitude = lon
-        if (lat && lon) { zoom.value = 15 }
-
-        if (!lat || !lon) return
-        const res = await api.get('/v1/geocode/reverse', { params: { lat, lon } })
-        if (res && res.data) {
-            const place = res.data
-            if (place.address) company.value.address = place.address
-            if (place.city) company.value.city = place.city
-            if (place.postcode) company.value.psc = place.postcode
-            addressQuery.value = mergeAddressParts(company.value.address, company.value.city, company.value.psc) || company.value.address
-            // trigger autocomplete to resolve canonical place and emit selected
-        }
-    } catch (err) {
-        console.error('Reverse geocode failed', err)
     }
 }
 
@@ -149,17 +109,7 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
-                            <AddressAutocomplete v-model="addressQuery" @selected="(s) => {
-                                const { city, street, zip, latitude, longitude, } = extractAddressFromPlace(s);
-                                company = {
-                                    ...company,
-                                    city: city || company.city,
-                                    address: street || company.address,
-                                    psc: zip || company.psc,
-                                    latitude: latitude || company.latitude,
-                                    longitude: longitude || company.longitude,
-                                }
-                            }" />
+                            <AddressAutocomplete v-model="addressQuery" @selected="(s) => onAutocompleteSelected(s)" />
                         </div>
                     </div>
 
@@ -167,11 +117,8 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
                         <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
                     </div>
                     <div class="mt-3">
-                        <MapSelector :latitude="company.latitude" :longitude="company.longitude" @update="({ lat, lon }) => {
-                            company.latitude = lat
-                            company.longitude = lon
-                            onMapClick({ lat, lon })
-                        }" />
+                        <MapSelector :latitude="company.latitude" :longitude="company.longitude"
+                            @update="({ lat, lon }) => onMapClickAddress(lat, lon)" />
                     </div>
                 </div>
 

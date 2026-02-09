@@ -117,8 +117,11 @@ class GeocodeController extends Controller
         return response()->json([
             'address' => $formatted ?: $parsed['streetOnly'],
             'city' => $parsed['city'],
-            'postcode' => $parsed['zip'],
+            'street' => $parsed['streetOnly'],
+            'zip' => $parsed['zip'],
+            'place_id' => $first['place_id'] ?? null,
             'components' => $parsed,
+            'raw' => $first,
         ], $r->status());
     }
 }
