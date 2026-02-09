@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
+import LoadingOverlay from '@/components/LoadingOverlay.vue';
 
 interface CPData {
     company_name: string;
@@ -87,6 +88,8 @@ function printPage() {
 </script>
 
 <template>
+  <LoadingOverlay :show="loading" text="" />
+  
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar
@@ -107,11 +110,8 @@ function printPage() {
       </template>
     </Toolbar>
 
-    <div v-if="loading" class="flex justify-center items-center py-20">
-      <ProgressSpinner />
-    </div>
 
-    <div v-else class="agreement-sheet-wrapper">
+    <div v-if="!loading" class="agreement-sheet-wrapper">
       <div id="agreement-sheet">
         <!-- TITLE -->
         <div class="text-center font-bold text-lg mb-4">

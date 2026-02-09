@@ -206,18 +206,22 @@ const options = computed<DataTableOptions<Patient>>(() => {
 </script>
 
 <template>
-    <div class="h-full flex flex-col overflow-hidden min-h-0">
-        <SecondaryNavbar />
+  <div class="h-full flex flex-col">
+    <SecondaryNavbar class="shrink-0" />
 
-        <UniversalDataTable v-if="options.endpointUrl" :key="tableKey" :options="options" ref="tableEl"
-            @action="(key, payload) => console.log('action emitted', key, payload)">
-        </UniversalDataTable>
-
-        <div v-else class="p-4 text-darkgrey">
-            Loading branch...
-        </div>
-    </div>
+      <UniversalDataTable
+        v-if="options.endpointUrl"
+        :key="tableKey"
+        :options="options"
+        ref="tableEl"
+        @action="(key, payload) => console.log('action emitted', key, payload)"
+      />
+      <div v-else class="p-4 text-darkgrey">
+        Loading branch...
+      </div>
+  </div>
 </template>
+
 
 <style scoped>
 .text-muted {

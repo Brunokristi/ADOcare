@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -297,6 +298,8 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
 </script>
 
 <template>
+  <LoadingOverlay :show="loading" text="" />
+
   <div class="flex flex-col gap-4 cover-sheet-page">
       <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
 
@@ -325,11 +328,7 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
       </template>
     </Toolbar>
 
-    <div v-if="loading" class="flex justify-center items-center py-20">
-      <ProgressSpinner />
-    </div>
-
-    <div v-else class="agreement-sheet-wrapper">
+    <div v-if="!loading" class="agreement-sheet-wrapper">
       <!-- PRINTED CONTENT -->
       <div id="print-root">
         <div v-for="(page, pageIdx) in pagedRecords" :key="pageIdx" class="travel-page">

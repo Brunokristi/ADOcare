@@ -6,6 +6,7 @@ import api from '@/services/api';
 import { toApiDate } from '@/utils/dateUtils';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
+import LoadingOverlay from '@/components/LoadingOverlay.vue';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -153,14 +154,10 @@ async function pollCalculationStatus(periodFrom: Date) {
   const branchId = authStore.currentBranch?.id;
   const userId = authStore.user?.id;
 
-  console.log('Starting to poll calculation status for month:', monthStr, 'branch:', branchId, 'user:', userId);
-
-  // Give the toast time to mount on the new page
   await new Promise(resolve => setTimeout(resolve, 500));
 
   const interval = setInterval(async () => {
     attempts++;
-    console.log(`Poll attempt ${attempts}/${maxAttempts}`);
 
     try {
       const res = await api.get('/v1/visits/timeline/status', {
@@ -171,17 +168,13 @@ async function pollCalculationStatus(periodFrom: Date) {
         },
       });
 
-      console.log('API Response:', res.data);
       const status = res.data?.data?.status;
-      console.log('Calculation status:', status);
 
       if (status === 'completed') {
         clearInterval(interval);
-        // Dismiss the info toast
         if (calculationToastId) {
           toast.removeGroup(calculationToastId);
         }
-        console.log('Calculation completed! Showing success toast.');
         toast.add({
           severity: 'success',
           summary: 'Výpočet dokončený',
@@ -194,7 +187,6 @@ async function pollCalculationStatus(periodFrom: Date) {
           toast.removeGroup(calculationToastId);
         }
         const errorMsg = res.data?.data?.error_message || 'Neznáma chyba';
-        console.log('Calculation failed:', errorMsg);
         toast.add({
           severity: 'error',
           summary: 'Chyba výpočtu',
@@ -207,7 +199,6 @@ async function pollCalculationStatus(periodFrom: Date) {
         if (calculationToastId) {
           toast.removeGroup(calculationToastId);
         }
-        console.log('Polling timeout');
         toast.add({
           severity: 'warn',
           summary: 'Časový limit',
@@ -268,8 +259,6 @@ async function onSubmit() {
       company: { id: authStore.currentBranch?.company_id},
       patients: selectedPatients.value.map(p => ({ id: p.id })),
     });
-
-    console.log('preview response', res.data);
 
     const sheet = res.data?.data?.sheet;
 
@@ -348,7 +337,8 @@ onMounted(() => {
 
 
 <template>
-  <div class="flex flex-col gap-6">
+  <LoadingOverlay :show="loading" text="Vygeneravám..." />
+  <div class="flex flex-col gap-6 relative">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <div class="grid grid-cols-12 gap-4">

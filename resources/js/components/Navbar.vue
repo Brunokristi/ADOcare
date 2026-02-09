@@ -96,7 +96,6 @@ const fetchPatientsURL = computed(() => {
 })
 async function fetchPatients(page: number) {
     try {
-        console.log(isAuthenticated.value, fetchPatientsURL.value)
         if (!isAuthenticated.value || !fetchPatientsURL.value) throw new Error('Niečo zlýhalo pri načítaní pacientov. Error 001.')
         const res = await api.fetchEntitiesPaginated<Patient>(fetchPatientsURL.value, {
             per_page: 20,
@@ -139,7 +138,6 @@ async function onLazyLoadPatients(event: VirtualScrollerLazyEvent) {
 
     if(authStore.isManager) return;
     const page = Math.floor(event.last / 20 + 1)
-    console.log('Lazy load patients', event, page)
     if (page <= lastLoadedPage) {
         patientsLoading.value = false
         return
@@ -195,8 +193,6 @@ onMounted(async () => {
         selectedBranchId.value = -1
     else
         selectedBranchId.value = authStore.currentBranch?.id ?? null;
-
-    console.log('Navbar mounted, selectedBranchId:', selectedBranchId.value);
 
 
 })

@@ -75,16 +75,6 @@ class KilometersExportController extends Controller
             ->orderBy('pp.date')
             ->get();
 
-        Log::info('Kilometers preview: rows fetched', [
-            'count' => $rows->count(),
-            'userId' => $userId,
-            'branchId' => $branchId,
-            'insuranceId' => $insuranceId,
-            'from' => $from,
-            'to' => $to,
-            'patientIdsCount' => count($patientIds),
-        ]);
-
         // If empty, nothing will be calculated.
         if ($rows->isEmpty()) {
             Log::warning('Kilometers preview: no rows matched query');
@@ -123,13 +113,6 @@ class KilometersExportController extends Controller
             } else {
                 $calledRouteService++;
 
-                Log::info('Calling route service for distance', [
-                    'pp_id' => $row->id,
-                    'date' => $dateString,
-                    'from' => [(float) $row->branch_lng, (float) $row->branch_lat],
-                    'to' => [(float) $row->patient_lng, (float) $row->patient_lat],
-                ]);
-
                 $distanceKm = $this->getDistanceFromRouteService(
                     (float) $row->branch_lat,
                     (float) $row->branch_lng,
@@ -143,13 +126,6 @@ class KilometersExportController extends Controller
             $totalKilometers += $distanceKm;
             $amount += $distanceKm * (float) $row->price;
         }
-
-        Log::info('Kilometers preview: loop summary', [
-            'skippedMissingCoords' => $skippedMissingCoords,
-            'calledRouteService' => $calledRouteService,
-            'totalKilometers' => $totalKilometers,
-            'amount' => $amount,
-        ]);
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
         $branchName = DB::table('branches')
@@ -180,8 +156,6 @@ class KilometersExportController extends Controller
             'patients' => $patientIds,
             'insuranceName' => $insuranceName,
         ];
-
-        Log::info('Preview generated', ['sheet' => $sheet]);
 
         return response()->json([
             'success' => true,
@@ -547,8 +521,6 @@ class KilometersExportController extends Controller
                 ],
             ];
 
-            Log::info('Route service request', ['url' => $url, 'payload' => $payload]);
-
             $response = Http::timeout($timeout)
                 ->acceptJson()
                 ->withHeaders([
@@ -556,11 +528,6 @@ class KilometersExportController extends Controller
                 ])
                 ->withBody(json_encode($payload), 'application/json')
                 ->send('GET', $url);
-
-            Log::info('Route service response', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
 
             if (!$response->successful()) {
                 Log::warning('Route service failed', [

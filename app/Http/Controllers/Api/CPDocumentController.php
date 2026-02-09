@@ -62,7 +62,7 @@ class CPDocumentController extends Controller
         $branch = Branch::findOrFail($validated['branch_id']);
         $company = $branch->company;
         $car = $user->cars()->first();
-        $representative = $branch->representative;
+        $representative = $company->representative;
 
 
         $companyName = $company ? $company->name : '';
@@ -99,8 +99,6 @@ class CPDocumentController extends Controller
             'document_id' => $document->id,
             'created_at' => now(),
         ];
-
-        Log::info('Creating CP Document', $cpData);
 
         Storage::disk('local')->put(
             'cps/' . now()->timestamp . '.json',

@@ -50,8 +50,6 @@ const options = ref<DataTableOptions<Macro>>({
                 icon: 'bi bi-pencil',
                 tooltip: 'Upraviť makro',
                 action: async (row: Macro) => {
-                    console.log('Opening edit macros');
-
                     openEdit(row);
                 }
             }] as ActionButtonOptions[]

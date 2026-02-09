@@ -105,8 +105,8 @@ async function onMapClick(payload: { lat: number | null; lon: number | null }) {
 </script>
 
 <template>
+    <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
     <div class="p-4">
-        <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
                 <div class="card mb-4">

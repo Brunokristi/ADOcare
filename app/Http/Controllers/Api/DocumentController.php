@@ -112,12 +112,6 @@ class DocumentController extends Controller
     {
         $this->authorize('delete', $document);
 
-        // Delete file from storage
-        \Log::info('Attempting to delete document file', [
-            'document_id' => $document->id,
-            'stored_path' => $document->path,
-        ]);
-
         if (Storage::disk('local')->exists($document->path)) {
             $deleted = Storage::disk('local')->delete($document->path);
             if (!$deleted) {
@@ -155,12 +149,7 @@ class DocumentController extends Controller
         
         $documents = Document::whereIn('id', $ids)->get();
         
-        // Delete files from storage
         foreach ($documents as $document) {
-            \Log::info('Attempting to delete document file (batch)', [
-                'document_id' => $document->id,
-                'stored_path' => $document->path,
-            ]);
 
             if (Storage::disk('local')->exists($document->path)) {
                 $deleted = Storage::disk('local')->delete($document->path);

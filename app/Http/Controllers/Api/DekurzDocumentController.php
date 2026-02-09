@@ -223,14 +223,6 @@ class DekurzDocumentController extends Controller
             ->sort()
             ->values();
 
-        Log::info('Fetched available Dekurz dates', [
-            'patient_id' => (int) $data['patient_id'],
-            'month'      => $month->toDateString(),
-            'from'       => $from,
-            'to'         => $to,
-            'dates_count'=> $isoDates->count(),
-        ]);
-
         return response()->json([
             'success' => true,
             'message' => 'Available dates retrieved',
@@ -353,25 +345,10 @@ class DekurzDocumentController extends Controller
 
         $missingDates = array_values(array_diff($neededDates, $existingDates));
 
-        Log::info('Dekurz timeline check', [
-            'month' => $month->format('Y-m'),
-            'from' => $from,
-            'to' => $to,
-            'user_id' => $userId,
-            'branch_id' => $branchId,
-            'patient_id' => $patientId,
-            'needed_dates_count' => count($neededDates),
-            'existing_dates_count' => count($existingDates),
-            'missing_dates_count' => count($missingDates),
-            'missing_dates_sample' => array_slice($missingDates, 0, 10),
-        ]);
-
         if (!count($missingDates)) {
-            return; // all good
+            return;
         }
 
-        // ✅ Recalculate whole month timeline (persist to DB)
-        // We'll call your VisitsController method directly (no HTTP roundtrip).
         $req = Request::create('/v1/visits/timeline', 'POST', [
             'month' => $month->toDateString(),
             'branch_id' => $branchId,
@@ -379,16 +356,8 @@ class DekurzDocumentController extends Controller
             'persist' => true,
         ]);
 
-        // Make sure Auth::id() inside controller isn't needed (we pass user_id anyway)
         $controller = app(VisitsController::class);
         $resp = $controller->monthTimeline($req);
-
-        Log::info('Dekurz triggered month timeline recalculation', [
-            'month' => $month->format('Y-m'),
-            'user_id' => $userId,
-            'branch_id' => $branchId,
-            'http_status' => method_exists($resp, 'status') ? $resp->status() : null,
-        ]);
     }
 
 

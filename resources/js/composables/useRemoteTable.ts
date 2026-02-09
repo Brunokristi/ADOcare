@@ -100,12 +100,7 @@ export function useRemoteTable<T = any>(
         page.value = p
 
         try {
-            console.log('[useRemoteTable] GET', endpointUrl, params.value)
-
             const res = (await api.get(endpointUrl, { params: params.value })).data
-            console.log('[useRemoteTable] loadPage response', res)
-
-            // res is the full Laravel paginator response with data, total, current_page, etc
             const parsed = extractRemote<T>(res)
 
             items.value = parsed.items

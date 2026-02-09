@@ -61,7 +61,6 @@ export const usePatientStore = defineStore('patient', {
                 if (useAuthStore().isManager) {
                     payload = { branch_id: patient.branch_id, nurse_id: patient.nurse_id }
                 }
-                console.log('Payload', payload);
 
                 await api.put(`/v1/patients/${patient.id}`, payload)
 

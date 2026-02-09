@@ -13,10 +13,6 @@ import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 
-/* -------------------------------------------------------------------------- */
-/*  Types                                                                     */
-/* -------------------------------------------------------------------------- */
-
 type Option = {
   id: number
   code: string
