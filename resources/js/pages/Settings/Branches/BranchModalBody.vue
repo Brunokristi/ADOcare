@@ -1,22 +1,40 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import useFormValidator, { required, email } from '@/composables/useFormValidator'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import type { IModalContentProps } from '@/types/ui'
 import type { Branch, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
-import { extractAddressFromPlace } from '@/composables/useAddressAutocomplete'
+import useAddressForm from '@/composables/useAddressForm'
 import MapSelector from '@/components/Address/MapSelector.vue'
+import AlertBar from '@/components/AlertBar.vue'
 
 const props = defineProps<IModalContentProps & { branchId?: number }>()
 const toast = useToast()
 
 const branch = ref<Partial<Branch>>({} as any)
 const loading = ref(false)
-const zoom = ref(13)
 const representativeOptions = ref<User[]>([])
-const addressQuery = ref('')
+const { addressQuery, init, onAutocompleteSelected, onMapClick: onMapClickAddress } = useAddressForm(branch)
+init()
+
+const alert = ref<{ severity: 'error' | 'success', message: string } | null>({ severity: 'error', message: '' })
+
+// Validation schema
+const validator = useFormValidator(
+    {
+        identificator: [required('Identifikátor je povinný')],
+        code: [required('Kód je povinný')],
+        email: [email('Neplatný email')],
+    },
+    () => ({
+        identificator: branch.value.identificator,
+        code: branch.value.code,
+        email: branch.value.email,
+    })
+)
 
 onMounted(async () => {
     loading.value = true
@@ -39,55 +57,56 @@ onMounted(async () => {
 })
 
 async function save() {
+    // validate before saving
+    const ok = validator.validateAll()
+    if (!ok) {
+        alert.value = { severity: 'error', message: 'Opravte chyby vo formulári a skúste to znova' }
+        return
+    }
+
     try {
         const payload = { ...branch.value }
         if (props.branchId) {
             await api.patch(`v1/branches/${props.branchId}`, payload)
-            toast.add({ severity: 'success', summary: 'Uložené', detail: 'Pobočka bola upravená' })
+            alert.value = { severity: 'success', message: 'Pobočka bola upravená' }
         } else {
             await api.post('v1/branches', payload)
-            toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Pobočka bola vytvorená' })
+            alert.value = { severity: 'success', message: 'Pobočka bola vytvorená' }
         }
         if (props.modalResolve) props.modalResolve(true)
     } catch (e) {
         console.error('Save branch failed', e)
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pobočku' })
+        alert.value = { severity: 'error', message: 'Nepodarilo se uložit pobočku' }
     }
 }
 
-// async function onMapClick(e: any) {
-//     try {
-//         const lat = e.latlng.lat
-//         const lon = e.latlng.lng
-//         branch.value.latitude = lat
-//         branch.value.longitude = lon
-//         // reverse geocode to fill address
-//         const res = await api.get('/v1/geocode/reverse', { params: { lat, lon } })
-//         if (res && res.data) {
-//             const place = res.data
-//             branch.value.address = place.address || branch.value.address
-//             branch.value.city = place.city || branch.value.city
-//             branch.value.psc = place.postcode || branch.value.psc
-//         }
-//     } catch (err) {
-//         console.error('Reverse geocode failed', err)
-//     }
-// }
+// handled by useAddressForm (onMapClick)
 </script>
 
 <template>
     <div class="p-3">
-        <div class="grid grid-cols-12 gap-4">
+
+        <form class="grid grid-cols-12 gap-4">
             <div class="col-span-12">
                 <h3 class="text-lg mb-2">Všeobecné informácie</h3>
+                <AlertBar v-if="alert?.message" :message="alert?.message" :severity="alert?.severity" :closable="false"
+                    class="mb-3" />
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm mb-1">Identifikátor</label>
-                        <InputText v-model="branch.identificator" class="w-full" />
+                        <InputText v-model="branch.identificator" required class="w-full"
+                            @blur="() => { validator.setTouched('identificator'); validator.validateField('identificator') }" />
+                        <div v-if="validator.getError('identificator')" class="text-red-600 text-sm mt-1">{{
+                            validator.getError('identificator') }}</div>
                     </div>
                     <div>
                         <label class="block text-sm mb-1">Kód</label>
-                        <InputText v-model="branch.code" class="w-full" />
+                        <InputText v-model="branch.code" required class="w-full"
+                            @blur="() => { validator.setTouched('code'); validator.validateField('code') }" />
+                        <div v-if="validator.getError('code')" class="text-red-600 text-sm mt-1">{{
+                            validator.getError('code') }}
+                        </div>
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm mb-1">Obozorný zástupca</label>
@@ -109,26 +128,15 @@ async function save() {
                 <h3 class="text-lg mb-2">Adresa</h3>
                 <div>
                     <label class="block text-sm mb-1">Adresa</label>
-                    <AddressAutocomplete v-model="addressQuery" @select="(place) => {
-                        const { city, street, zip, latitude, longitude, } = extractAddressFromPlace(place);
-                        branch = {
-                            ...branch,
-                            city: city || branch.city,
-                            address: street || branch.address,
-                            psc: zip || branch.psc,
-                            latitude: latitude || branch.latitude,
-                            longitude: longitude || branch.longitude,
-                        }
-                    }" />
+                    <AddressAutocomplete v-model="addressQuery" @selected="(place) => onAutocompleteSelected(place)" />
                 </div>
                 <div>
                     <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
                 </div>
                 <div class="mt-3">
                     <MapSelector :latitude="branch.latitude" :longitude="branch.longitude" @update="({ lat, lon }) => {
-                        branch.latitude = lat
-                        branch.longitude = lon
-                        // onMapClick({ lat, lon })
+                        if (lat == null || lon == null) return
+                        onMapClickAddress(lat, lon)
                     }" />
                 </div>
             </div>
@@ -142,7 +150,11 @@ async function save() {
                     </div>
                     <div>
                         <label class="block text-sm mb-1">Email</label>
-                        <InputText v-model="branch.email" class="w-full" />
+                        <InputText v-model="branch.email" class="w-full"
+                            @blur="() => { validator.setTouched('email'); validator.validateField('email') }" />
+                        <div v-if="validator.getError('email')" class="text-red-600 text-sm mt-1">{{
+                            validator.getError('email') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -169,6 +181,6 @@ async function save() {
             <div class="col-span-12 flex justify-end mt-4">
                 <Button label="Uložiť" class="bg-accent! px-md! text-white!" @click="save" />
             </div>
-        </div>
+        </form>
     </div>
 </template>
