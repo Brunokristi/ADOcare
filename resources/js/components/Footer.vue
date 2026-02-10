@@ -1,6 +1,6 @@
 <template>
-    <footer class="flex justify-center py-1 ">
-        <RouterLink to="/" class="flex items-center">
+    <footer class="flex justify-between items-center py-1 px-4">
+        <a href="/" class="flex items-center">
             <p
             class="text-white text-mini pr-1">
             adocare
@@ -10,6 +10,12 @@
             alt="Logo"
             class="h-4 w-auto"
             />
-        </RouterLink>
+        </a>
+
+        <div class="flex gap-2 p-0">
+            <a href="/bug" class="text-mini hover:underline text-accent">
+                nahlásiť chybu
+            </a>
+        </div>
     </footer>
 </template>
