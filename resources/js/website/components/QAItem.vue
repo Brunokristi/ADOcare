@@ -6,12 +6,14 @@ interface Props {
     label?: string
     text?: string
     color?: 'primary' | 'secondary' | 'warning' | 'success' | 'dark' | 'light'
+    textColor?: 'primary' | 'secondary' | 'warning' | 'success' | 'dark' | 'light'
     brandColors?: BrandColors
     open?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
     color: 'primary',
+    textColor: 'dark',
     open: false,
     brandColors: () => ({
         primary: '#5C9EAD',
@@ -55,12 +57,14 @@ const buttonColor = getColorValue(props.color)
                 backgroundColor: buttonColor,
             }"
         >
-            <span class="text-normal">{{ label }}</span>
+            <span class="text-normal" :style="{ color: getColorValue(props.textColor) }">{{ label }}</span>
             <i
                 :class="[
                     'bi text-normal',
                     isOpen ? 'bi-arrow-up' : 'bi-arrow-down'
                 ]"
+                :style="{ color: getColorValue(props.textColor) }"
+                
             ></i>
         </button>
 

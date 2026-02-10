@@ -16,7 +16,7 @@ const brandColors = computed<BrandColors>(() => {
 const email = ref('')
 const preference = ref('notify')
 const isSubmitting = ref(false)
-const submitMessage = ref<{ type: 'success' | 'error', text: string } | null>(null)
+const submitMessage = ref<{ type: 'success' | 'warning', label?: string, text: string } | null>(null)
 
 const handleSubmit = async (e: Event) => {
     e.preventDefault()
@@ -39,14 +39,14 @@ const handleSubmit = async (e: Event) => {
         const data = await response.json()
 
         if (response.ok) {
-            submitMessage.value = { type: 'success', text: 'Ďakujeme za vašu registráciu!' }
+            submitMessage.value = { type: 'success', label: 'úspech', text: 'ďakujeme za vašu registráciu.' }
             email.value = ''
             preference.value = 'notify'
         } else {
-            submitMessage.value = { type: 'error', text: data.message || 'Došlo k chybe pri odoslaní formulára.' }
+            submitMessage.value = { type: 'warning', label: 'chyba', text: data.message || 'došlo k chybe pri odoslaní formulára.' }
         }
     } catch (error) {
-        submitMessage.value = { type: 'error', text: 'Chyba pri komunikácii so serverom.' }
+        submitMessage.value = { type: 'warning', label: 'chyba', text: 'chyba pri komunikácii so serverom.' }
     } finally {
         isSubmitting.value = false
     }
@@ -87,12 +87,23 @@ const handleSubmit = async (e: Event) => {
                 <Button
                     label="odoslať"
                     color="light"
-                    text-color="dark"
+                    textColor="dark"
                     variant="light"
                     icon="bi-arrow-right"
                     align="right"
+                    type="submit"
+                    :disabled="isSubmitting"
                     :brand-colors="brandColors"
                 />
+
+                <div class="mt-4">
+                    <Message
+                        v-if="submitMessage"
+                        :label="submitMessage.label"
+                        :text="submitMessage.text"
+                        :type="submitMessage.type"
+                    />
+                </div>
             </form>
         </div>
 

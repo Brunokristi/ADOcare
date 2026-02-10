@@ -38,6 +38,19 @@ const navigateToLogin = () => {
                 :brand-colors="brandColors"
                 :height="'200px'"
             />
+
+            <span class="flex flex-col mt-4">
+                <p class="text-normal text-darkgrey text-end">teraz vážne</p>
+                <Button
+                    label="prehľad funkcionality"
+                    text-color="success"
+                    variant="light"
+                    icon="bi-arrow-right"
+                    align="right"
+                    :brand-colors="brandColors"
+                    @click="$router.push({ name: 'website-specification' })"
+                />
+            </span>
         </div>
 
         <div class="flex flex-col gap-3">
@@ -46,7 +59,6 @@ const navigateToLogin = () => {
                 text="Môžete nás kontaktovať cez telefón, email alebo formulár na tejto stránke."
                 color="light"
                 :brand-colors="brandColors"
-                :open="true"
             />
             <QAItem
                 label="Aké sú vaše otváracie hodiny?"
@@ -76,7 +88,7 @@ const navigateToLogin = () => {
             <div>
                 <Button
                     label="časté otázky"
-                    text-color="secondary"
+                    text-color="success"
                     variant="light"
                     icon="bi-arrow-right"
                     align="left"
@@ -84,18 +96,18 @@ const navigateToLogin = () => {
                     @click="$router.push({ name: 'website-contact' })"
                 />
                 <Button
-                    label="funkcie"
-                    text-color="secondary"
+                    label="kontakt"
+                    text-color="success"
                     variant="light"
                     icon="bi-arrow-right"
                     align="left"
-                    @click="$router.push({ name: 'website-specification' })"
+                    @click="$router.push({ name: 'website-contact' })"
                     :brand-colors="brandColors"
                 />
 
                 <Button
                     label="cenník"
-                    text-color="secondary"
+                    text-color="success"
                     variant="light"
                     icon="bi-arrow-right"
                     align="left"
@@ -105,7 +117,7 @@ const navigateToLogin = () => {
 
                 <Button
                     label="nahlásiť problém"
-                    text-color="secondary"
+                    text-color="success"
                     variant="light"
                     icon="bi-arrow-right"
                     align="left"
@@ -115,7 +127,7 @@ const navigateToLogin = () => {
 
                 <Button
                     label="aplikácia"
-                    text-color="secondary"
+                    text-color="success"
                     variant="light"
                     icon="bi-arrow-right"
                     align="left"

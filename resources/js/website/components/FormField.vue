@@ -70,10 +70,6 @@ const handleSelectOption = (value: string | number) => {
     isSelectOpen.value = false
 }
 
-const handleBlur = () => {
-    isSelectOpen.value = false
-}
-
 const fileCount = computed(() => {
     if (Array.isArray(props.modelValue)) {
         return props.modelValue.length
@@ -118,7 +114,6 @@ const fileCount = computed(() => {
                 <button
                     type="button"
                     @click="isSelectOpen = !isSelectOpen"
-                    @blur="handleBlur()"
                     :class="[
                         'w-full bg-transparent py-1 px-0 text-left',
                         'border-b-1 border-white transition-colors duration-200',
@@ -144,7 +139,7 @@ const fileCount = computed(() => {
                         v-for="(option, index) in options"
                         :key="option.value"
                         type="button"
-                        @click="handleSelectOption(option.value)"
+                        @mousedown.prevent="handleSelectOption(option.value)"
                         @mouseenter="hoveredIndex = index"
                         @mouseleave="hoveredIndex = null"
                         :class="[
@@ -178,7 +173,7 @@ const fileCount = computed(() => {
                     'w-full py-1 px-0 text-left',
                     'border-b-1 border-white transition-colors duration-200',
                     'focus:outline-none text-white text-normal',
-                    'flex items-center justify-between',
+                    'flex items-center justify-between cursor-pointer',
                 ]"
             >
                 <label

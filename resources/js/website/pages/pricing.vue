@@ -5,8 +5,10 @@ import { useRoute } from 'vue-router'
 import { getThemeColors } from '@/website/config/themes'
 import type { BrandColors } from '@/website/config/themes'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 
 const brandColors = computed<BrandColors>(() => {
     return getThemeColors(route.meta.theme as any)
@@ -59,7 +61,7 @@ const brandColors = computed<BrandColors>(() => {
                     icon="bi-arrow-right"
                     align="right"
                     :brand-colors="brandColors"
-                    :to="{ name: 'website-contact' }"
+                    @click="router.push({ name: 'website-contact' })"
                 />
             </span>
         </div>

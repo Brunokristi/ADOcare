@@ -32,7 +32,7 @@ export const colorThemes: Record<ThemeName, BrandColors> = {
         dark: '#5C9EAD',
         secondary: '#5C9EAD',
         warning: '#F72585',
-        success: '#47905D',
+        success: '#ffffff',
     }
 }
 
