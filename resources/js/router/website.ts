@@ -3,6 +3,10 @@ import type { RouteRecordRaw } from 'vue-router'
 import WebsiteMain from '@/website/pages/main.vue'
 import ContactPage from '@/website/pages/contact.vue'
 import WebsiteNav from '@/website/components/WebsiteNavigation.vue'
+import PrebookPage from '@/website/pages/prebook.vue'
+import BugPage from '@/website/pages/bug.vue'
+import PricingPage from '@/website/pages/pricing.vue'
+import SpecificationPage from '@/website/pages/specification.vue'
 import { getThemeColors, type ThemeName, type BrandColors } from '@/website/config/themes'
 
 declare module 'vue-router' {
@@ -22,7 +26,7 @@ const websiteRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Domov',
             requiresAuth: false,
-            theme: 'dark',
+            theme: 'accent',
         },
     },
     {
@@ -43,19 +47,42 @@ const websiteRoutes: Readonly<RouteRecordRaw[]> = [
             theme: 'light',
         },
     },
-
-
-    // {
-    //     path: '/services',
-    //     name: 'website-services',
-    //     component: ServicesPage,
-    //     meta: {
-    //         requiresAuth: false,
-    //         theme: 'light',
-    //     },
-    // },
-
-    // Redirect any other routes to home
+    {
+        path: '/prebook',
+        name: 'website-prebook',
+        component: PrebookPage,
+        meta: {
+            requiresAuth: false,
+            theme: 'dark',
+        },
+    },
+    {
+        path: '/bug',
+        name: 'website-bug',
+        component: BugPage,
+        meta: {
+            requiresAuth: false,
+            theme: 'dark',
+        },
+    },
+    {
+        path: '/pricing',
+        name: 'website-pricing',
+        component: PricingPage,
+        meta: {
+            requiresAuth: false,
+            theme: 'dark',
+        },
+    },
+    {
+        path: '/specification',
+        name: 'website-specification',
+        component: SpecificationPage,
+        meta: {
+            requiresAuth: false,
+            theme: 'dark',
+        },
+    },
     {
         path: '/:pathMatch(.*)*',
         redirect: { name: 'website-home' }
@@ -71,7 +98,6 @@ router.beforeEach((to, _from, next) => {
     if (to.meta.title) document.title = `${to.meta.title} | adocare`;
     else document.title = 'adocare';
 
-    // Set colors based on theme
     if (to.meta.theme) {
         to.meta.colors = getThemeColors(to.meta.theme)
     }

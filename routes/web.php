@@ -3,13 +3,15 @@
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'website');
-Route::view('/about', 'website');
-Route::view('/services', 'website');
 Route::view('/contact', 'website');
+Route::view('/nav', 'website');
+Route::view('/prebook', 'website');
+Route::view('/bug', 'website');
+Route::view('/pricing', 'website');
+Route::view('/specification', 'website');
 
-// Application (protected routes)
+Route::view('/app', 'app');
+
 Route::view('/app/{any}', 'app')->where('any', '.*');
-
-// Fallback for SPA
 Route::view('/{any}', 'app')->where('any', '^(?!api).*');
 

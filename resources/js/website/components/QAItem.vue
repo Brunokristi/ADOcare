@@ -82,7 +82,7 @@ const buttonColor = getColorValue(props.color)
                     backgroundColor: buttonColor,
                 }"
             >
-                <p class="text-normal">{{ text }}</p>
+                <p class="text-normal" :style="{ color: brandColors.secondary }">{{ text }}</p>
             </div>
         </Transition>
     </div>

@@ -88,6 +88,7 @@ const getContentStyles = () => {
 
 <template>
     <button
+        @click="$emit('click')"
         :class="[
             'w-full py-1 transition-all duration-200 flex',
             alignClasses[align],
