@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { ParsedAddress } from '@/composables/useAddressAutocomplete'
-import { searchAutocomplete, fetchPlaceDetails, parseComponents } from '@/composables/useAddressAutocomplete'
+import type { PlaceData } from '@/composables/address'
+import { searchAutocomplete, fetchPlaceDetails, parsePlaceDetailsToData } from '@/composables/address'
 import type { AutoCompleteCompleteEvent, AutoCompleteOptionSelectEvent } from 'primevue/autocomplete'
 
 const props = defineProps<{ modelValue: string | null }>()
-const emit = defineEmits<{ (e: 'update:modelValue', v: string | null): void; (e: 'selected', v: Partial<ParsedAddress & { latitude?: number; longitude?: number }>): void }>();
+const emit = defineEmits<{ (e: 'update:modelValue', v: string | null): void; (e: 'selected', v: PlaceData): void }>();
 
 const query = ref(props.modelValue ?? '')
 const suggestions = ref<any[]>([])
@@ -23,15 +23,10 @@ async function onSelect(e: AutoCompleteOptionSelectEvent) {
     if (!sel?.place_id) return
     try {
         const details = await fetchPlaceDetails(sel.place_id)
-        const parsed = details ? parseComponents(details.address_components || []) : { streetOnly: '', city: '', zip: '' }
-        const geo = details?.geometry?.location
-        const payload: any = { ...parsed }
-        if (geo) {
-            payload.latitude = geo.lat
-            payload.longitude = geo.lng
-        }
+        const payload = parsePlaceDetailsToData(details);
+
         // update model with the full suggestion label (user-visible address)
-        emit('update:modelValue', sel.label || parsed.streetOnly || null)
+        emit('update:modelValue', sel.label || payload.address || null)
         emit('selected', payload)
     } catch (err) {
         console.error('Address select failed', err)

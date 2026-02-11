@@ -7,7 +7,7 @@ import type { IModalContentProps } from '@/types/ui'
 import type { Branch, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
-import useAddressForm from '@/composables/useAddressForm'
+import { useAddressForm } from '@/composables/address'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import AlertBar from '@/components/AlertBar.vue'
 
@@ -17,7 +17,7 @@ const toast = useToast()
 const branch = ref<Partial<Branch>>({} as any)
 const loading = ref(false)
 const representativeOptions = ref<User[]>([])
-const { addressQuery, init, onAutocompleteSelected, onMapClick: onMapClickAddress } = useAddressForm(branch)
+const { addressQuery, init, onAutocompleteSelected, onMapClick } = useAddressForm(branch)
 init()
 
 const alert = ref<{ severity: 'error' | 'success', message: string } | null>({ severity: 'error', message: '' })
@@ -128,16 +128,13 @@ async function save() {
                 <h3 class="text-lg mb-2">Adresa</h3>
                 <div>
                     <label class="block text-sm mb-1">Adresa</label>
-                    <AddressAutocomplete v-model="addressQuery" @selected="(place) => onAutocompleteSelected(place)" />
+                    <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
                 </div>
                 <div>
                     <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
                 </div>
                 <div class="mt-3">
-                    <MapSelector :latitude="branch.latitude" :longitude="branch.longitude" @update="({ lat, lon }) => {
-                        if (lat == null || lon == null) return
-                        onMapClickAddress(lat, lon)
-                    }" />
+                    <MapSelector :latitude="branch.latitude" :longitude="branch.longitude" @update="onMapClick" />
                 </div>
             </div>
 
