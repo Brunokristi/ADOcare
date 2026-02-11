@@ -10,6 +10,12 @@ const router = createRouter({
     routes,
 })
 
+// Small navigation helpers placed on the router instance so callers can use
+// `router.dashboard()` and `router.manager()` instead of remembering paths.
+router.dashboard = async () => {
+    await router.push({ name: useAuthStore().isManager ? 'manager-dashboard' : 'dashboard' });
+};
+
 router.beforeEach(async (to, _from, next) => {
     const auth = useAuthStore();
 

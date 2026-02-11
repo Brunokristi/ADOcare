@@ -14,6 +14,7 @@ onBeforeMount(async () => {
 
     if (await auth.isAuthenticated()) {
         const redirect = (route.query.redirect as string) || '/';
+        if (redirect == '/') { router.dashboard(); return; }
         router.push(redirect);
     }
 });
@@ -39,7 +40,8 @@ async function submit() {
         await auth.login({ login: login.value, pin: pin.value });
 
         const redirect = (route.query.redirect as string) || '/';
-        router.push(redirect);
+        if (redirect == '/') router.dashboard();
+        else router.push(redirect);
     } catch {
         const message = "Nepodarilo sa prihlásiť. Skúste ešte raz."
 
@@ -66,15 +68,8 @@ async function submit() {
             <form @submit.prevent="submit" class="flex flex-col gap-6">
                 <div>
                     <label for="login" class="block text-normal mb-1">Prihlasovací kód</label>
-                    <InputText
-                        id="login"
-                        class="w-full"
-                        v-model="login"
-                    />
-                    <small
-                        v-if="submitted && !login"
-                        class="text-warning"
-                    >
+                    <InputText id="login" class="w-full" v-model="login" />
+                    <small v-if="submitted && !login" class="text-warning">
                         Prihlasovací kód je povinný.
                     </small>
                 </div>
@@ -83,35 +78,21 @@ async function submit() {
                     <label for="pin" class="block text-normal mb-1">PIN</label>
 
                     <IconField class="flex items-center w-full">
-                        <InputText
-                            id="pin"
-                            v-model="pin"
-                            :type="showPin ? 'text' : 'password'"
-                            class="w-full"
-                        />
+                        <InputText id="pin" v-model="pin" :type="showPin ? 'text' : 'password'" class="w-full" />
 
                         <InputIcon>
-                            <i
-                                :class="showPin ? 'bi bi-eye' : 'bi bi-eye-slash'"
-                                class="cursor-pointer"
-                                @click="togglePinVisibility"
-                            />
+                            <i :class="showPin ? 'bi bi-eye' : 'bi bi-eye-slash'" class="cursor-pointer"
+                                @click="togglePinVisibility" />
                         </InputIcon>
                     </IconField>
 
-                    <small
-                        v-if="submitted && !pin"
-                        class="text-warning"
-                    >
+                    <small v-if="submitted && !pin" class="text-warning">
                         PIN je povinný.
                     </small>
                 </div>
 
-                <Button
-                    type="submit"
-                    :disabled="loading"
-                    class="relative w-full flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey!"
-                >
+                <Button type="submit" :disabled="loading"
+                    class="relative w-full flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey!">
                     Prihlásiť sa
                     <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
                 </Button>

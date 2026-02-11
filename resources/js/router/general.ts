@@ -1,4 +1,3 @@
-import Dashboard from '@/pages/Dashboard.vue'
 import Login from '@/pages/LoginPage.vue'
 import Patients from '@/pages/Patients/PatientListPage.vue'
 import Settings from '@/pages/Settings.vue'
@@ -28,10 +27,11 @@ import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
 import PatientLeave from '@/pages/Patients/Leave/PatientLeavePage.vue'
 import type { RouteRecordRaw } from 'vue-router'
+import DashboardPage from '@/pages/DashboardPage.vue'
 
 
 const generalRoutes: Readonly<RouteRecordRaw[]> = [
-    { path: '/', name: 'home', component: Dashboard },
+    { path: '/dashboard', name: 'dashboard', component: DashboardPage },
     {
         path: '/login',
         name: 'login',

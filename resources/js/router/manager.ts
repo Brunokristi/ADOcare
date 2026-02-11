@@ -18,6 +18,7 @@ import Settings from "@/pages/Settings.vue";
 import Users from "@/pages/Settings/Users/UsersPage.vue";
 import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
+import DashboardPage from "@/pages/DashboardPage.vue";
 
 
 const managerRoutes: Readonly<RouteRecordRaw[]> = [
@@ -25,7 +26,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager',
         name: 'manager-dashboard',
-        component: Error,
+        component: DashboardPage,
         meta: {
             title: 'Manažérsky dashboard',
             managerSidebar: true,
