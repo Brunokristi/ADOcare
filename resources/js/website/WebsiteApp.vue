@@ -37,6 +37,7 @@ const brandColors = computed<BrandColors>(() => {
 
         <WebsiteFooter 
             v-if="route.meta.theme"
+            :key="route.meta.theme"
             class="flex-none"
             :brand-colors="brandColors"
         />

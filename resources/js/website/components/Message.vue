@@ -61,7 +61,7 @@ const messageColor = getColorValue()
                 backgroundColor: messageColor,
             }"
         >
-            <p class="text-normal">{{ text }}</p>
+            <p class="text-normal text-white">{{ text }}</p>
         </div>
     </div>
 </template>

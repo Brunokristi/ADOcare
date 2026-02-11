@@ -37,6 +37,9 @@ use App\Http\Controllers\Api\CityController;
 
 
 
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\BugReportController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +50,9 @@ Route::get('/user', function (Request $request) {
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
+
+Route::post('/subscribe', [SubscriptionController::class, 'subscribe']);
+Route::post('/bug-report', [BugReportController::class, 'store']);
 
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);

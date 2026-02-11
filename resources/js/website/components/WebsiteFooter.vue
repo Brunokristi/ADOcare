@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import router from '@/router';
+import { useRouter } from 'vue-router'
 import Button from './Button.vue'
 import FooterLogo from './FooterLogo.vue'
 import type { BrandColors } from '@/website/config/themes'
@@ -20,6 +20,8 @@ withDefaults(defineProps<Props>(), {
     }),
 })
 
+const router = useRouter()
+
 const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -34,8 +36,8 @@ const navigateToHome = () => {
             <Button
                 icon="bi-arrow-up"
                 label="hore"
-                color="light"
-                type="light"
+                textColor="light"
+                variant="light"
                 align="left"
                 @click="scrollToTop"
                 :brand-colors="brandColors"
@@ -43,8 +45,8 @@ const navigateToHome = () => {
             <Button
                 icon="bi-arrow-right"
                 label="úvod"
-                color="light"
-                type="light"
+                textColor="light"
+                variant="light"
                 align="left"
                 @click="navigateToHome"
                 :brand-colors="brandColors"
@@ -52,14 +54,12 @@ const navigateToHome = () => {
             />
 
             <FooterLogo
-                :primary="brandColors.primary"
-                :dark="brandColors.light"
                 :light="brandColors.dark"
+                :dark="brandColors.light"
                 :height="30"
                 class="mb-4"
 
             />
-
 
             <p class="text-normal text-left" :style="{ color: brandColors.light }">všetky práva vyhradené</p>
     </footer>

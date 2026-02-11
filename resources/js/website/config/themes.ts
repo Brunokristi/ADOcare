@@ -27,12 +27,12 @@ export const colorThemes: Record<ThemeName, BrandColors> = {
         success: '#47905D',
     },
     accent: {
-        primary: '#E94560',
-        light: '#F9F9F9',
-        dark: '#1A1A2E',
-        secondary: '#3498DB',
-        warning: '#0F3460',
-        success: '#47905D',
+        primary: '#5C9EAD',
+        light: '#333333',
+        dark: '#5C9EAD',
+        secondary: '#5C9EAD',
+        warning: '#F72585',
+        success: '#ffffff',
     }
 }
 
