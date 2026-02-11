@@ -29,21 +29,6 @@ class UserController extends Controller
         return $this->success(new UserCollection($results), 'Users retrieved');
     }
 
-    public function myCompanyUsers(Request $request)
-    {
-        $user = $request->user();
-        $company = $user->company;
-
-        if (!$company) {
-            return $this->success(new UserCollection(collect([])), 'Users retrieved');
-        }
-
-        $query = User::query()->whereHas('company', function ($q) use ($company) {
-            $q->where('company.id', $company->id);
-        });
-        $results = ApiQuery::apply(request(), $query);
-        return $this->success(new UserCollection($results), 'Users retrieved');
-    }
 
     public function store(\App\Http\Requests\StoreUserRequest $request)
     {
