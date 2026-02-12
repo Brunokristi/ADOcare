@@ -19,6 +19,13 @@ class DZCDocumentController extends Controller
     {
     }
 
+    /**
+     * List DZC documents for the current user.
+     *
+     * @group Documents
+     * @queryParam branch_id int optional Filter by branch id.
+     * @response 200 {"data": [{"id":1, "name":"dzc_..."}]}
+     */
     public function index(Request $request)
     {
         $query = Document::where('type', 'dzc')
@@ -37,6 +44,15 @@ class DZCDocumentController extends Controller
         return $this->success(['data' => $documents]);
     }
 
+    /**
+     * Create a DZC (Denný záznam ciest) document for the current user.
+     *
+     * @group Documents
+     * @bodyParam start date required Start date. Example: 2024-01-01
+     * @bodyParam end date required End date. Example: 2024-01-31
+     * @bodyParam branch_id integer required Branch ID. Example: 2
+     * @response 201 {"document_id":123, "dzc": {...}}
+     */
     public function store(StoreDZCRequest $request)
     {
         [$document, $payload] = $this->service->createDzc($request->validated(), $request->user());
@@ -44,6 +60,13 @@ class DZCDocumentController extends Controller
         return $this->success(['document_id' => $document->id, 'dzc' => $payload], 'Denný záznam ciest bol úspešne vytvorený', 201);
     }
 
+    /**
+     * Show DZC document payload.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 123
+     * @response 200 {"document": {...}, "dzc_data": {...}}
+     */
     public function show(Document $document)
     {
         $document->loadMissing('user');
@@ -56,6 +79,13 @@ class DZCDocumentController extends Controller
         return $this->success(['document' => $document, 'dzc_data' => $payload]);
     }
 
+    /**
+     * Export DZC as CSV.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 123
+     * @responsefile 200 dzc.csv
+     */
     public function exportCsv(Document $document)
     {
         $payload = $this->service->getDzcPayload($document);

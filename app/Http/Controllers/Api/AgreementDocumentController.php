@@ -22,6 +22,12 @@ class AgreementDocumentController extends Controller
     /**
      * Store a new agreement document and its JSON payload.
      *
+     * @group Documents
+     * @bodyParam date date required Agreement date. Example: 2024-01-01
+     * @bodyParam patient_id integer required Patient ID. Example: 1
+     * @bodyParam branch_id integer required Branch ID. Example: 2
+     * @response 201 {"document_id":123, "agreement": {...}}
+     *
      * @param  \App\Http\Requests\StoreAgreementRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -38,6 +44,10 @@ class AgreementDocumentController extends Controller
     /**
      * Return agreement payload for a document.
      * Uses route-model binding (accepts `Document $document` instead of an id).
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 123
+     * @response 200 {"document": {...}, "agreement_data": {...}}
      */
     public function show(Document $document)
     {
