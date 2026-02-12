@@ -67,6 +67,10 @@ class User extends Authenticatable
             'type' => 'string[]',
             'nullable' => false,
         ],
+        'branch_roles' => [
+            'type' => 'Array<{ branch_id: int, role_id: ?int, position: ?string }>',
+            'nullable' => false,
+        ],
     ];
 
 
@@ -143,6 +147,50 @@ class User extends Authenticatable
         $branchId = $branch instanceof Branch ? $branch->id : (int) $branch;
         $row = DB::table('user_branches')->where('user_id', $this->id)->where('branch_id', $branchId)->first();
         return $row?->role_id ?? null;
+    }
+
+    /**
+     * Computed map of branch_id => role info for branch-scoped roles.
+     * This reads the pivot `role_id` from the loaded `branches` relation and
+     * resolves the role position when available.
+     *
+     * @return array<string, mixed>
+     */
+    protected function branchRoles(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->computeBranchUserRoles()
+        );
+    }
+
+    /**
+     * Build a mapping of branch_id => ['branch_id' => int, 'role_id' => ?int, 'role' => ?array]
+     *
+     * @return array<int, array<string,mixed>>
+     */
+    public function computeBranchUserRoles(): array
+    {
+        // ensure branches are loaded to avoid extra queries in most callers
+        $branches = $this->relationLoaded('branches') ? $this->branches : $this->branches()->get();
+
+        $roleIds = collect($branches)->pluck('pivot.role_id')->filter()->unique()->values()->all();
+        $roles = [];
+        if (!empty($roleIds)) {
+            $roles = Role::whereIn('id', $roleIds)->get()->keyBy('id');
+        }
+
+        $map = [];
+        foreach ($branches as $branch) {
+            $roleId = $branch->pivot->role_id ?? null;
+            $role = $roleId ? ($roles->get($roleId) ?? null) : null;
+            $map[$branch->id] = [
+                'branch_id' => $branch->id,
+                'role_id' => $roleId,
+                'position' => $role?->position ?? null,
+            ];
+        }
+
+        return $map;
     }
 
     public function patients()

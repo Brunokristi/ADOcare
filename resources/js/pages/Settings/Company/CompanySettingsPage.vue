@@ -5,7 +5,7 @@ import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
-import useAddressForm from '@/composables/useAddressForm'
+import { useAddressForm } from '@/composables/address'
 import useFormValidator, { required, email } from '@/composables/useFormValidator'
 import AlertBar from '@/components/AlertBar.vue'
 import type { Company, User } from '@/types/models'
@@ -16,7 +16,7 @@ const company = ref<Company & { representative?: User }>({} as any)
 const loading = ref(true)
 const saving = ref(false)
 const representativeOptions = ref<User[]>([])
-const { addressQuery, init, onAutocompleteSelected, onMapClick: onMapClickAddress, resolveBeforeSave } = useAddressForm(company)
+const { addressQuery, init, onAutocompleteSelected, onMapClick, resolveBeforeSave } = useAddressForm(company)
 
 const alert = ref<{ severity: 'error' | 'success', message: string } | null>(null)
 
@@ -137,7 +137,7 @@ async function save() {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
-                            <AddressAutocomplete v-model="addressQuery" @selected="(s) => onAutocompleteSelected(s)" />
+                            <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
                         </div>
                     </div>
 
@@ -145,8 +145,7 @@ async function save() {
                         <label class="block text-sm mt-3">Zadajte pozíciu kliknutím na mapu</label>
                     </div>
                     <div class="mt-3">
-                        <MapSelector :latitude="company.latitude" :longitude="company.longitude"
-                            @update="({ lat, lon }) => onMapClickAddress(lat, lon)" />
+                        <MapSelector :latitude="company.latitude" :longitude="company.longitude" @update="onMapClick" />
                     </div>
                 </div>
 

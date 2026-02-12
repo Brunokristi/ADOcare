@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import appRouter from '@/router';
 import { capitalize } from '@/utils/formatUtils';
@@ -91,7 +91,8 @@ function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
 
 // use the same hierarchy you defined in router/index.ts
 const rawRoutes = appRouter.options.routes as RawRoute[];
-const sidebarItems = ref<SidebarItem[]>(buildSidebarItems(rawRoutes));
+// const sidebarItems = ref<SidebarItem[]>(buildSidebarItems(rawRoutes));
+const sidebarItems = computed(() => buildSidebarItems(rawRoutes));
 
 // open/close state per section (dose/settings/etc.), persisted
 type OpenState = Record<string, boolean>;

@@ -42,20 +42,20 @@ export const useAuthStore = defineStore('auth', {
 
                 this.user = await this.fetchUserProfile();
 
-                const savedRole = localStorage.getItem('current_role');
-                if (savedRole && this.user?.role_names.includes(savedRole)) {
-                    this.currentRole = savedRole;
-
-                } else if (this.user?.role_names.length) {
-                    this.currentRole = this.user.role_names[0] ?? null;
-                }
-
                 const savedBranchId = localStorage.getItem('current_branch_id');
-                if (savedBranchId) {
+                const currectRole = localStorage.getItem('current_role');
+                if (currectRole === 'manager' && this.user?.role_names?.includes('manager')) {
+                    this.currentRole = 'manager';
+
+                } else if (savedBranchId) {
                     const branch = this.user?.branches.find(b => b.id === parseInt(savedBranchId));
-                    if (branch) this.currentBranch = branch;
+                    if (branch) {
+                        this.currentBranch = branch;
+                        this.currentRole = this.user.branch_roles?.find(br => br.branch_id === branch.id)?.position ?? 'nurse';
+                    }
                 } else if (this.user?.branches.length) {
                     this.currentBranch = this.user.branches[0] ?? null;
+                    this.currentRole = this.user.branch_roles?.find(br => br.branch_id === this.currentBranch?.id)?.position ?? 'nurse';
                 }
             } catch {
                 this.clearAuth();

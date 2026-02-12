@@ -41,34 +41,6 @@ class CarController extends Controller
     }
 
     /**
-     * List cars for the user's company
-     *
-     * @group Cars
-     * @queryParam per_page int The number of items per page. Example: 15
-     * @queryParam q string Search query across `evc`. Example: "abc123"
-     * @queryParam filter[user_id] int Filter by user id. Example: 2
-     * @response 200 {
-     *  "data": [
-     *    {"id":1, "evc":"ABC", "company_id":4, "user_id":2}
-     *  ],
-     *  "meta": {"total":1}
-     * }
-     */
-    public function myCompanyCars(Request $request)
-    {
-        $user = $request->user();
-        $company = $user->company;
-
-        if (!$company) {
-            return $this->success(new CarCollection(collect([])), 'Cars retrieved');
-        }
-
-        $query = Car::query()->where('company_id', $company->id);
-        $results = ApiQuery::apply(request(), $query, searchable: ['evc', 'model', 'user' => ['first_name', 'last_name']], allowedFilters: ['user_id']);
-        return $this->success(new CarCollection($results), 'Cars retrieved');
-    }
-
-    /**
      * Create a car
      *
      * @group Cars

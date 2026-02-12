@@ -31,6 +31,9 @@ class UserResource extends JsonResource
             'branches' => $this->whenLoaded('branches', function () {
                 return $this->branches;
             }),
+            'branch_roles' => $this->whenLoaded('branches', function () {
+                return $this->branch_roles;
+            }),
             'company' => $this->whenLoaded('company', function () {
                 return $this->company;
             }),

@@ -4,124 +4,72 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Services\GeocodeService;
 
 class GeocodeController extends Controller
 {
-    private function key(): string
+    public function __construct(protected GeocodeService $service)
     {
-        return (string) config('services.google.maps_key');
+
     }
 
-    private function normalizeZip(?string $zip): string
-    {
-        $zip = (string) $zip;
-        return preg_replace('/\s+/', '', trim($zip)) ?: '';
-    }
-
-    private function pickComponent(array $components, string $type): string
-    {
-        foreach ($components as $c) {
-            $types = $c['types'] ?? [];
-            if (in_array($type, $types, true)) {
-                return trim((string) ($c['long_name'] ?? ''));
-            }
-        }
-        return '';
-    }
-
-    private function parseAddressComponents(array $components): array
-    {
-        $streetNumber = $this->pickComponent($components, 'street_number');
-        $route = $this->pickComponent($components, 'route');
-
-        // City comes back differently depending on area
-        $locality = $this->pickComponent($components, 'locality');
-        $postalTown = $this->pickComponent($components, 'postal_town');
-        $admin2 = $this->pickComponent($components, 'administrative_area_level_2');
-
-        $city = trim($locality ?: ($postalTown ?: $admin2));
-
-        $zip = $this->normalizeZip($this->pickComponent($components, 'postal_code'));
-
-        $streetOnly = trim(implode(' ', array_filter([$route, $streetNumber])));
-
-        return [
-            'streetOnly' => $streetOnly,
-            'city' => $city,
-            'zip' => $zip,
-        ];
-    }
-
-
+    /**
+     * Autocomplete place predictions for an input text.
+     *
+     * @group Geocoding
+     * @queryParam text string Partial address to complete. Example: "Hlavná 1, Bratislava"
+     * @response 200 {
+     *  "predictions": [
+     *      {"description":"Hlavná 1, Bratislava, Slovakia","place_id":"ChIJ..."}
+     *  ]
+     * }
+     *
+     * Returns the JSON from the Google Places Autocomplete API.
+     */
     public function autocomplete(Request $request)
     {
+
         $text = trim((string) $request->query('text'));
-        if ($text === '')
-            return response()->json(['predictions' => []]);
-
-        $r = Http::timeout(10)->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-            'input' => $text,
-            'key' => config('services.google.maps_key'),
-            'components' => 'country:sk',
-            'language' => 'sk',
-        ]);
-
-        return response()->json($r->json(), $r->status());
+        $res = $this->service->autocomplete($text);
+        return $this->success($res['body'], 'Autocomplete predictions retrieved', $res['status']);
     }
-
+    /**
+     * Fetch place details for a given place_id.
+     *
+     * @group Geocoding
+     * @queryParam place_id string required Google place_id to fetch details for. Example: "ChIJ..."
+     * @response 200 {
+     *  "result": {"formatted_address":"Hlavná 1, Bratislava","geometry":{...}}
+     * }
+     * @response 400 {"error":"Missing place_id"}
+     *
+     * Returns the JSON from the Google Place Details API.
+     */
     public function details(Request $request)
     {
+
         $placeId = trim((string) $request->query('place_id'));
-        if ($placeId === '') {
-            return response()->json(['error' => 'Missing place_id'], 400);
-        }
-
-        $r = Http::timeout(10)->get('https://maps.googleapis.com/maps/api/place/details/json', [
-            'place_id' => $placeId,
-            'key' => config('services.google.maps_key'),
-            'fields' => 'address_component,geometry,formatted_address',
-            'language' => 'sk',
-        ]);
-
-        return response()->json($r->json(), $r->status());
+        $res = $this->service->details($placeId);
+        return $this->success($res['body'], 'Place details retrieved', $res['status']);
     }
 
+    /**
+     * Reverse-geocode a latitude/longitude pair to an address.
+     *
+     * @group Geocoding
+     * @queryParam lat number required Latitude. Example: 48.1486
+     * @queryParam lon number required Longitude. Example: 17.1077
+     * @response 200 {"address":"Hlavná 1, Bratislava","city":"Bratislava","street":"Hlavná 1","zip":"81101","place_id":"ChIJ...","components":{}}
+     * @response 400 {"error":"Missing lat or lon"}
+     *
+     * Returns an object with address, city, street, zip, place_id and raw components.
+     */
     public function reverse(Request $request)
     {
-        $lat = trim((string) $request->query('lat'));
-        $lon = trim((string) $request->query('lon'));
-        if ($lat === '' || $lon === '') {
-            return response()->json(['error' => 'Missing lat or lon'], 400);
-        }
 
-        $r = Http::timeout(10)->get('https://maps.googleapis.com/maps/api/geocode/json', [
-            'latlng' => $lat . ',' . $lon,
-            'key' => config('services.google.geocoding_key'),
-            'language' => 'sk',
-            'result_type' => 'street_address|premise|route',
-        ]);
-
-        $json = $r->json();
-        $results = $json['results'] ?? [];
-        if (empty($results)) {
-            return response()->json(['address' => '', 'city' => '', 'postcode' => '']);
-        }
-
-        $first = $results[0];
-        $components = $first['address_components'] ?? [];
-        $parsed = $this->parseAddressComponents($components);
-        $formatted = trim((string) ($first['formatted_address'] ?? ''));
-
-        return response()->json([
-            'address' => $formatted ?: $parsed['streetOnly'],
-            'city' => $parsed['city'],
-            'street' => $parsed['streetOnly'],
-            'zip' => $parsed['zip'],
-            'place_id' => $first['place_id'] ?? null,
-            'components' => $parsed,
-            'raw' => $first,
-        ], $r->status());
+        $lat = $request->query('lat');
+        $lon = $request->query('lon');
+        $res = $this->service->reverse((float) $lat, (float) $lon);
+        return $this->success($res['body'], 'Reverse geocoding successful', $res['status']);
     }
 }

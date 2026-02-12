@@ -25,15 +25,7 @@ class BranchController extends Controller
         return $this->success(new BaseCollection($results), 'Branches retrieved');
     }
 
-    public function myCompanyBranches(Request $request)
-    {
-        $user = $request->user();
 
-        $companyId = $user->company->id;
-        $query = Branch::query()->where('company_id', $companyId);
-        $results = ApiQuery::apply(request(), $query);
-        return $this->success(new BaseCollection($results), 'Company branches retrieved');
-    }
 
     public function patients(Branch $branch)
     {
