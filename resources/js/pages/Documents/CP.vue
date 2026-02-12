@@ -89,7 +89,7 @@ function printPage() {
 
 <template>
   <LoadingOverlay :show="loading" text="" />
-  
+
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar
