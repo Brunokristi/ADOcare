@@ -15,7 +15,7 @@ class EnsureUserHasRole
     public function handle(Request $request, Closure $next, ?string $roles = null)
     {
         $user = $request->user();
-        if (! $user) {
+        if (!$user) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -35,7 +35,7 @@ class EnsureUserHasRole
             ->whereIn('roles.position', $wanted)
             ->exists();
 
-        if (! $exists) {
+        if (!$exists) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
