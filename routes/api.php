@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PatientPointController;
 use App\Http\Controllers\Api\PointsExportController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\MyCompanyController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\ReportMonthController;
 use App\Http\Controllers\Api\RoleController;
@@ -146,8 +147,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/patients/{patientId}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
 
     Route::post('/agreements', [AgreementDocumentController::class, 'store']);
-    Route::get('/agreements/{documentId}', [AgreementDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/agreements', [AgreementDocumentController::class, 'getByPatient']);
+    Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show']);
 
     Route::get('/cps', [CPDocumentController::class, 'index']);
     Route::post('/cps', [CPDocumentController::class, 'store']);
