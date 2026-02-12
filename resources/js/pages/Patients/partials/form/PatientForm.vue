@@ -303,6 +303,18 @@ watch(
     if (cityQuery.value !== next) cityQuery.value = next
   }
 )
+
+const doctorSelectRef = ref<any>(null)
+
+const onDoctorSelectShow = async () => {
+  await loadFavouriteDoctors()
+}
+
+const openDoctorsSettingsFromFooter = async () => {
+  doctorSelectRef.value?.hide?.()
+  window.open('/settings/doctors', '_blank', 'noopener,noreferrer')
+}
+
 </script>
 
 <template>
@@ -382,7 +394,9 @@ watch(
 
       <div class="col-span-6">
         <label class="block text-normal mb-1">Lekár</label>
+
         <Select
+          ref="doctorSelectRef"
           :disabled="disabled"
           v-model="localPatient.doctor_id"
           :options="doctorOptions"
@@ -391,8 +405,27 @@ watch(
           fluid
           filter
           :invalid="submitted && !localPatient.doctor_id"
-        />
-        <small v-if="submitted && errors.doctor_id" class="text-warning">{{ errors.doctor_id }}</small>
+          @show="onDoctorSelectShow"
+        >
+          <template #footer>
+            <div class="p-2 border-t">
+              <Button
+                label="Pridať nového lekára"
+                icon="pi pi-plus"
+                fluid
+                severity="secondary"
+                variant="text"
+                size="small"
+                type="button"
+                @click.prevent.stop="openDoctorsSettingsFromFooter"
+              />
+            </div>
+          </template>
+        </Select>
+
+        <small v-if="submitted && errors.doctor_id" class="text-warning">
+          {{ errors.doctor_id }}
+        </small>
       </div>
 
       <div class="col-span-6">

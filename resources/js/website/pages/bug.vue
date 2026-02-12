@@ -5,7 +5,7 @@ import Message from '../components/Message.vue'
 import { useRoute } from 'vue-router'
 import { getThemeColors } from '@/website/config/themes'
 import type { BrandColors } from '@/website/config/themes'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const route = useRoute()
 
@@ -16,12 +16,45 @@ const brandColors = computed<BrandColors>(() => {
 const email = ref('')
 const message = ref('')
 const screenshot = ref<File[] | null>(null)
+const website = ref('')
 const isLoading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 
+const emailError = ref('')
+const messageError = ref('')
+
+const validateForm = () => {
+    let isValid = true
+
+    emailError.value = ''
+    messageError.value = ''
+
+    if (!email.value.trim()) {
+        emailError.value = 'Email je povinný'
+        isValid = false
+    } 
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+        emailError.value = 'Neplatný formát emailu'
+        isValid = false
+    }
+
+    if (!message.value.trim()) {
+        messageError.value = 'Popis je povinný'
+        isValid = false
+    }
+
+    return isValid
+}
+
+
 const submitForm = async (e: Event) => {
     e.preventDefault()
+
+    if (!validateForm()) {
+        return
+    }
+
     isLoading.value = true
     errorMessage.value = ''
     successMessage.value = ''
@@ -29,7 +62,9 @@ const submitForm = async (e: Event) => {
     const formData = new FormData()
     formData.append('email', email.value)
     formData.append('message', message.value)
-    
+    formData.append('website', website.value)
+
+
     if (screenshot.value && Array.isArray(screenshot.value)) {
         screenshot.value.forEach((file, index) => {
             formData.append(`screenshot[${index}]`, file)
@@ -64,6 +99,16 @@ const submitForm = async (e: Event) => {
     }
 }
 
+
+watch(email, () => {
+    if (emailError.value) emailError.value = ''
+})
+
+watch(message, () => {
+    if (messageError.value) messageError.value = ''
+})
+
+
 </script>
 
 <template>
@@ -74,14 +119,15 @@ const submitForm = async (e: Event) => {
                     label="emailová adresa"
                     type="email"
                     v-model="email"
+                    :error="emailError"
                     :brand-colors="brandColors"
-                    required
                 />
 
                 <FormField
                     label="popis chyby / návrh"
                     type="textarea"
                     v-model="message"
+                    :error="messageError"
                     :brand-colors="brandColors"
                 />
                 
@@ -92,6 +138,16 @@ const submitForm = async (e: Event) => {
                     v-model="screenshot"
                     :brand-colors="brandColors"
                 />
+
+                <input
+                    v-model="website"
+                    type="text"
+                    name="website"
+                    autocomplete="off"
+                    tabindex="-1"
+                    class="absolute left-[-9999px] top-[-9999px]"
+                    />
+
 
                 <Button
                     label="odoslať"

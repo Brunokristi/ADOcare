@@ -37,6 +37,17 @@ class DoctorController extends Controller
 
         $query = $this->service->indexQuery($branchId);
 
+        $fav = request()->input('filter.is_favourite');
+        if ($branchId && $fav !== null && $fav !== '') {
+            $wantFav = in_array((string)$fav, ['1', 'true', 'yes'], true);
+
+            if ($wantFav) {
+                $query->whereNotNull('bfd.doctor_id');
+            } else {
+                $query->whereNull('bfd.doctor_id');
+            }
+        }
+
         $results = ApiQuery::apply(
             request(),
             $query,
@@ -47,11 +58,12 @@ class DoctorController extends Controller
                 'pzs',
                 'assigned_branches' => ['city', 'address', 'identificator'],
             ],
-            allowedFilters: ['first_name', 'last_name', 'title', 'zpr', 'pzs', 'is_favourite'],
+            allowedFilters: ['first_name', 'last_name', 'title', 'zpr', 'pzs'],
         );
 
         return $this->success(new BaseCollection($results), 'Doctors retrieved');
     }
+
 
 
     /**

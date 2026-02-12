@@ -53,6 +53,12 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: Doctors,
                 meta: { title: 'Spolupracujúci lekári', managerSidebar: true },
             },
+            {
+                path: 'documents',
+                name: 'manager-overview-documents',
+                component: Error,
+                meta: { title: 'Dokumenty', managerSidebar: true },
+            },
         ],
     },
     {
@@ -61,7 +67,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         component: Settings,
         redirect: { name: 'manager-settings-company' },
         meta: {
-            title: 'Nastavenia (Manažér)',
+            title: 'Nastavenia',
             sectionRoot: 'manager-settings',
             managerSidebar: true,
         },

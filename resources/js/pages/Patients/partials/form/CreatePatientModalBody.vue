@@ -43,7 +43,6 @@ const createPatient = async () => {
       life: 5000,
     })
 
-    // ✅ resolve with created patient (NOT the old patient.value before POST)
     if (props.modalResolve) {
       props.modalResolve(created)
     }

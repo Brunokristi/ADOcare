@@ -76,6 +76,7 @@ class DZCDocumentController extends Controller
             'mime_type' => 'application/json',
             'name' => 'dzc_' . now()->format('d.m.Y'),
             'path' => 'dzcs/' . now()->timestamp . '.json',
+            'branch_id' => $branchId,
         ]);
 
         $visitRows = DB::table('visits')

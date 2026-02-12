@@ -305,6 +305,13 @@ function validateForm() {
   return Object.keys(e).length === 0
 }
 
+const toLocalYMD = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 async function generateDocument() {
   submitted.value = true
 
@@ -318,7 +325,7 @@ async function generateDocument() {
       patient_id: patientId.value,
       medical_diagnosis_id: medicalDiagnosis.value?.id ?? null,
       nurse_diagnosis_id: nurseDiagnosis.value?.id ?? null,
-      date: date.value ? new Date(date.value).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      date: date.value ? toLocalYMD(date.value) : toLocalYMD(new Date()),
       epicrisis_description: epicrisisDescription.value,
       care_plan: carePlan.value,
       patient_mobility: patientMobility.value,

@@ -16,6 +16,7 @@ class Document extends Model
         'mime_type',
         'name',
         'path',
+        'branch_id',
     ];
 
     /**

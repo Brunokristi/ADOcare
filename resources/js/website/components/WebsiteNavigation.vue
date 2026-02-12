@@ -64,8 +64,8 @@ const navigateToLogin = () => {
 
         <div class="flex flex-col gap-3">
             <img 
-                src="/hero.png" 
-                alt="Hero" 
+                src="/nav.png" 
+                alt="Navigation" 
                 class="w-full h-auto"
             />
         </div>
