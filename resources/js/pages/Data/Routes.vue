@@ -214,7 +214,7 @@ async function onSubmit() {
         branch_id: authStore.currentBranch?.id,
       })
 
-      const documentId = res.data?.document_id
+      const documentId = res.data?.data?.document_id
       if (!documentId) throw new Error('Missing document_id from API response')
 
       toast.add({

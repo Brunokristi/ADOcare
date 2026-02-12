@@ -1,0 +1,192 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Document;
+use App\Models\Patient;
+use App\Models\Branch;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
+class DZCDocumentService
+{
+    public function createDzc(array $data, $actor): array
+    {
+        $branch = Branch::findOrFail($data['branch_id']);
+
+        $startDate = date('Y-m-d', strtotime($data['start']));
+        $endDate = date('Y-m-d', strtotime($data['end']));
+
+        $document = Document::create([
+            'patient_id' => null,
+            'user_id' => $actor->id,
+            'type' => 'dzc',
+            'mime_type' => 'application/json',
+            'name' => 'dzc_' . now()->format('d.m.Y'),
+            'path' => 'dzcs/' . now()->timestamp . '.json',
+            'branch_id' => $branch->id,
+        ]);
+
+        $user = $actor;
+        $userId = $actor->id;
+        $car = $user->cars()->first();
+
+        $visitRows = DB::table('visits')
+            ->leftJoin('patients', 'patients.id', '=', 'visits.patient_id')
+            ->where('visits.user_id', $userId)
+            ->where('visits.branch_id', $branch->id)
+            ->whereBetween('visits.date', [$startDate, $endDate])
+            ->orderBy('visits.date', 'ASC')
+            ->orderByRaw('COALESCE(visits.terrain_time, visits.administrative_time) ASC')
+            ->select([
+                'visits.date',
+                'visits.patient_id',
+                'patients.address as patient_address',
+                'patients.city as patient_city',
+                'patients.latitude as patient_lat',
+                'patients.longitude as patient_lng',
+                'visits.terrain_time',
+                'visits.administrative_time',
+                'visits.distance_to_location',
+                'visits.time_to_location',
+                'visits.time_on_location',
+            ])
+            ->get();
+
+        $visitsByDate = [];
+        foreach ($visitRows as $r) {
+            $d = $r->date;
+            if (!isset($visitsByDate[$d])) $visitsByDate[$d] = [];
+            $visitsByDate[$d][] = $r;
+        }
+
+        $patientAddresses = [];
+        $branchAddress = trim(($branch->address ?? '') . ', ' . ($branch->city ?? ''));
+
+        foreach ($visitsByDate as $date => $rows) {
+            $day = [];
+            $day[] = [
+                'type' => 'branch_start',
+                'address' => $branchAddress,
+                'arrival_time' => date('Y-m-d H:i:s', strtotime($date . ' ' . $branch->terrain_start_time) + rand(-240, 240)),
+                'kilometers' => 0,
+            ];
+
+            $lastReturnKm = null;
+            $lastReturnTime = null;
+
+            foreach ($rows as $r) {
+                $arrival = $r->terrain_time ?? $r->administrative_time;
+                if ($r->patient_id === null) {
+                    $lastReturnKm = round(((int)($r->distance_to_location ?? 0)) / 1000, 2);
+                    $lastReturnTime = $arrival;
+                    continue;
+                }
+
+                $day[] = [
+                    'type' => 'patient',
+                    'patient_id' => (int)$r->patient_id,
+                    'address' => (string)($r->patient_address ?? '') . ', ' . (string)($r->patient_city ?? ''),
+                    'arrival_time' => $arrival,
+                    'kilometers' => round(((int)($r->distance_to_location ?? 0)) / 1000, 2),
+                ];
+            }
+
+            $day[] = [
+                'type' => 'branch_end',
+                'address' => $branchAddress,
+                'arrival_time' => $lastReturnTime,
+                'kilometers' => $lastReturnKm,
+            ];
+
+            $patientAddresses[$date] = $day;
+        }
+
+        $dayRows = DB::table('visits')
+            ->join('branches', 'branches.id', '=', 'visits.branch_id')
+            ->where('visits.user_id', $userId)
+            ->where('visits.branch_id', $branch->id)
+            ->whereBetween('visits.date', [$startDate, $endDate])
+            ->groupBy('visits.date')
+            ->orderBy('visits.date')
+            ->selectRaw('
+                visits.date,
+                COUNT(*) as stops,
+                COALESCE(SUM(visits.time_to_location), 0) as travel_seconds,
+                COALESCE(SUM(visits.distance_to_location), 0) as distance_m,
+                MAX(branches.terrain_start_time) as terrain_start_time,
+                MAX(COALESCE(visits.terrain_time, visits.administrative_time)) as last_arrival
+            ')
+            ->get();
+
+        $dayTotals = [];
+        foreach ($dayRows as $r) {
+            $totalSeconds = 0;
+            if ($r->terrain_start_time && $r->last_arrival) {
+                $journeyDate = $r->date;
+                $start = strtotime($journeyDate . ' ' . $r->terrain_start_time);
+                $last = strtotime($r->last_arrival);
+                $totalSeconds = max(0, $last - $start);
+            }
+
+            $hours = intval($totalSeconds / 3600);
+            $minutes = intval(($totalSeconds % 3600) / 60);
+            $seconds = intval($totalSeconds % 60);
+            $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+            $dayTotals[$r->date] = [
+                'date' => $r->date,
+                'stops' => (int)$r->stops,
+                'distance_km' => round(((int)($r->distance_m) / 1000), 2),
+                'total_time' => $totalTime,
+            ];
+        }
+
+        $monthAgg = DB::table('visits')
+            ->where('user_id', $userId)
+            ->where('branch_id', $branch->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->selectRaw('
+                COUNT(*) as stops,
+                COALESCE(SUM(time_to_location), 0) as travel_seconds,
+                COALESCE(SUM(distance_to_location), 0) as distance_m,
+                MIN(date) as from_date,
+                MAX(date) as to_date
+            ')
+            ->first();
+
+        $monthTotals = [
+            'from' => $monthAgg?->from_date ?? $startDate,
+            'to' => $monthAgg?->to_date ?? $endDate,
+            'distance_km' => round(((int)($monthAgg->distance_m ?? 0)) / 1000, 2),
+        ];
+
+        $dzcData = [
+            'user_id' => $userId,
+            'user_name' => trim(($user->title ? $user->title . ' ' : '') . $user->first_name . ' ' . $user->last_name),
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'month' => date('m', strtotime($startDate)),
+            'year' => date('Y', strtotime($startDate)),
+            'car_model' => $car?->model ?? '',
+            'car_license_plate' => $car?->evc ?? '',
+            'branch_address' => $branchAddress ?? '',
+            'patient_addresses' => $patientAddresses,
+            'day_totals' => $dayTotals,
+            'month_totals' => $monthTotals,
+            'document_id' => $document->id,
+            'created_at' => now()->toISOString(),
+        ];
+
+        Storage::disk('local')->put($document->path, json_encode($dzcData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return [$document, $dzcData];
+    }
+
+    public function getDzcPayload(Document $document): ?array
+    {
+        if (! $document->path || ! Storage::disk('local')->exists($document->path)) return null;
+        $content = Storage::disk('local')->get($document->path);
+        return json_decode($content, true);
+    }
+}

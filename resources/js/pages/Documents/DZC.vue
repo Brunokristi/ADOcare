@@ -103,7 +103,7 @@ async function loadCP(documentId: string) {
   loading.value = true
   try {
     const res = await api.get(`/v1/dzcs/${documentId}`)
-    const cp = res.data?.dzc_data ?? {}
+    const cp = res.data?.data?.dzc_data ?? {}
 
     cpData.value = {
       user_id: Number(cp.user_id ?? 0),
