@@ -138,8 +138,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
 
-    Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
-    Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
+    Route::post('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'attach']);
+    Route::delete('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'detach']);
 
     Route::post('/proposals', [ProposalDocumentController::class, 'store']);
     Route::get('/proposals/{document}', [ProposalDocumentController::class, 'show']);
@@ -151,7 +151,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/cps', [CPDocumentController::class, 'index']);
     Route::post('/cps', [CPDocumentController::class, 'store']);
-    Route::get('/cps/{documentId}', [CPDocumentController::class, 'show']);
+    Route::get('/cps/{document}', [CPDocumentController::class, 'show']);
 
     Route::get('/dzcs', [DZCDocumentController::class, 'index']);
     Route::post('/dzcs', [DZCDocumentController::class, 'store']);
