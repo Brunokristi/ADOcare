@@ -22,9 +22,6 @@ class CPDocumentController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($request->has('branch_id')) {
-            // For CP documents, we can filter by the branch_id from request
-            // Since CP documents don't have a branch_id column, we'll just return all for the user
-            // But we can add filtering if needed
         }
 
         $documents = $query->get()->map(function ($doc) {
@@ -49,6 +46,8 @@ class CPDocumentController extends Controller
             'branch_id' => 'required|exists:branches,id',
         ]);
 
+        Log::info('branchId: ' . $validated['branch_id']);
+
         $document = Document::create([
             'patient_id' => null,
             'user_id' => Auth::id(),
@@ -56,6 +55,7 @@ class CPDocumentController extends Controller
             'mime_type' => 'application/json',
             'name' => 'cp_' . now()->format('d.m.Y'),
             'path' => 'cps/' . 'cp_' . now()->timestamp . '.json',
+            'branch_id' => $validated['branch_id'],
         ]);
 
         $user = Auth::user();

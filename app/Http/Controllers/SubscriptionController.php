@@ -11,8 +11,9 @@ class SubscriptionController extends Controller
     public function subscribe(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'preference' => 'required|in:notify,test',
+            'email' => ['required','email','max:255'],
+            'preference' => ['required','in:notify,test'],
+            'website' => ['nullable','max:0'],
         ]);
 
         if ($validator->fails()) {

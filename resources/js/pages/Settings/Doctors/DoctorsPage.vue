@@ -102,10 +102,13 @@ const options = ref<DataTableOptions<Doctor>>({
             class: 'bg-accent!',
             tooltip: 'Zobraziť len obľúbených',
             handler: async ({ remote }) => {
-                showFavouritesOnly.value = !showFavouritesOnly.value;
-                remote.setExtraParam('filter[is_favourite]', showFavouritesOnly.value ? 1 : undefined)
-                await remote.loadPage(1);
-            }
+                showFavouritesOnly.value = !showFavouritesOnly.value
+                remote.setExtraParam(
+                    'filter',
+                    showFavouritesOnly.value ? { is_favourite: 1 } : undefined
+                )
+                await remote.loadPage(1)
+                } 
         },
     ],
 })

@@ -15,6 +15,7 @@ class BugReportController extends Controller
                 'message' => 'required|string|min:5',
                 'screenshot' => 'nullable|array',
                 'screenshot.*' => 'nullable|file|max:5120',
+                'website' => ['nullable','string','max:0'],
             ]);
 
             $email = env('BUG_REPORT_EMAIL', 'brunokristian003@gmail.com');

@@ -5,7 +5,7 @@ import Message from '../components/Message.vue'
 import { useRoute } from 'vue-router'
 import { getThemeColors } from '@/website/config/themes'
 import type { BrandColors } from '@/website/config/themes'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const route = useRoute()
 
@@ -15,11 +15,42 @@ const brandColors = computed<BrandColors>(() => {
 
 const email = ref('')
 const preference = ref('notify')
+const website = ref('')
+const emailError = ref('')
+const preferenceError = ref('')
 const isSubmitting = ref(false)
 const submitMessage = ref<{ type: 'success' | 'warning', label?: string, text: string } | null>(null)
 
+const validateForm = () => {
+    let isValid = true
+
+    emailError.value = ''
+    preferenceError.value = ''
+
+    if (!email.value.trim()) {
+        emailError.value = 'Email je povinný'
+        isValid = false
+    } 
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+        emailError.value = 'Neplatný formát emailu'
+        isValid = false
+    }
+
+    if (!preference.value) {
+        preferenceError.value = 'Vyberte možnosť'
+        isValid = false
+    }
+
+    return isValid
+}
+
 const handleSubmit = async (e: Event) => {
     e.preventDefault()
+
+    if (!validateForm()) {
+        return
+    }
+
     isSubmitting.value = true
     submitMessage.value = null
 
@@ -33,24 +64,47 @@ const handleSubmit = async (e: Event) => {
             body: JSON.stringify({
                 email: email.value,
                 preference: preference.value,
+                website: website.value, // honeypot
             }),
         })
 
         const data = await response.json()
 
         if (response.ok) {
-            submitMessage.value = { type: 'success', label: 'úspech', text: 'ďakujeme za vašu registráciu.' }
+            submitMessage.value = {
+                type: 'success',
+                label: 'úspech',
+                text: 'ďakujeme za vašu registráciu.'
+            }
             email.value = ''
             preference.value = 'notify'
         } else {
-            submitMessage.value = { type: 'warning', label: 'chyba', text: data.message || 'došlo k chybe pri odoslaní formulára.' }
+            submitMessage.value = {
+                type: 'warning',
+                label: 'chyba',
+                text: data.message || 'došlo k chybe pri odoslaní formulára.'
+            }
         }
     } catch (error) {
-        submitMessage.value = { type: 'warning', label: 'chyba', text: 'chyba pri komunikácii so serverom.' }
+        submitMessage.value = {
+            type: 'warning',
+            label: 'chyba',
+            text: 'chyba pri komunikácii so serverom.'
+        }
     } finally {
         isSubmitting.value = false
     }
 }
+
+watch(email, () => {
+    if (emailError.value) emailError.value = ''
+})
+
+watch(preference, () => {
+    if (preferenceError.value) preferenceError.value = ''
+})
+
+
 </script>
 
 <template>
@@ -69,19 +123,29 @@ const handleSubmit = async (e: Event) => {
                     label="emailová adresa"
                     type="email"
                     v-model="email"
+                    :error="emailError"
                     :brand-colors="brandColors"
-                    required
                 />
 
                 <FormField
                     label=""
                     type="select"
                     v-model="preference"
+                    :error="preferenceError"
                     :options="[
                         { label: 'chcem byť informovaný o spustení aplikácie', value: 'notify' },
                         { label: 'chcem sa zúčastniť testovania aplikácie', value: 'test' },
                     ]"
                     :brand-colors="brandColors"
+                />
+
+                <input
+                    v-model="website"
+                    type="text"
+                    name="website"
+                    autocomplete="off"
+                    tabindex="-1"
+                    class="absolute left-[-9999px] top-[-9999px]"
                 />
 
                 <Button

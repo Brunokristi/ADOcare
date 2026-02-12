@@ -1,6 +1,6 @@
 <template>
     <footer class="flex justify-between items-center py-1 px-4">
-        <a href="/" class="flex items-center">
+        <a href="/" class="flex items-center" target="_blank">
             <p
             class="text-white text-mini pr-1">
             adocare
@@ -13,7 +13,7 @@
         </a>
 
         <div class="flex gap-2 p-0">
-            <a href="/bug" class="text-mini hover:underline text-accent">
+            <a href="/bug" class="text-mini hover:underline text-accent" target="_blank">
                 nahlásiť chybu
             </a>
         </div>

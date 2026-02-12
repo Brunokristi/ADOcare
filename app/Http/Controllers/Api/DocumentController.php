@@ -12,15 +12,24 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DocumentController extends Controller
 {
-    /**
-     * Display a listing of travel documents (CP and DZC) for current user.
-     */
     public function indexTravelDocuments(Request $request)
     {
-        $documents = Document::whereIn('type', ['cp', 'dzc'])
-            ->where('user_id', Auth::id())
+        $perPage = (int) $request->input('per_page', 25);
+
+        $branchId = $request->input('branch_id');
+        $branchId = is_numeric($branchId) ? (int) $branchId : null;
+
+        $query = Document::query()
+            ->whereIn('type', ['cp', 'dzc'])
+            ->where('user_id', Auth::id());
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $documents = $query
             ->orderBy('created_at', 'desc')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($perPage);
 
         return response()->json($documents);
     }

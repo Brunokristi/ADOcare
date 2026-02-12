@@ -9,6 +9,7 @@ export interface Document {
   path: string
   created_at: string | null
   updated_at: string | null
+  branch_id: number | null
   // relations
   patient: Patient
   user: User

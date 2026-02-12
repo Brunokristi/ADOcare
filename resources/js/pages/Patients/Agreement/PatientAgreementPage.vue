@@ -31,6 +31,13 @@ function validateForm(): boolean {
   return isDateValid.value && !!patientId.value;
 }
 
+const toLocalYMD = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 async function generateDocument() {
   submitted.value = true;
 
@@ -57,7 +64,7 @@ async function generateDocument() {
   try {
     const payload = {
       patient_id: patientId.value,
-      date: date.value ? new Date(date.value).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      date: date.value ? toLocalYMD(date.value) : toLocalYMD(new Date()),
       branch_id: currentBranch.value?.id,
     };
 
