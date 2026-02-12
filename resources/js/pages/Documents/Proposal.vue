@@ -63,7 +63,7 @@ async function loadProposal(documentId: string) {
 
   try {
     const res = await api.get(`/v1/proposals/${documentId}`);
-    const proposal = res.data?.proposal_data ?? {};
+    const proposal = res.data.data?.proposal_data ?? {};
 
     documentData.value = {
       facilityName: proposal.company_name ?? '',
