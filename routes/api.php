@@ -168,7 +168,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/patients/{patientId}/leave/latest', [LeaveDocumentController::class, 'latestByPatient']);
 
     Route::post('/records', [RecordDocumentController::class, 'store']);
-    Route::get('/records/{documentId}', [RecordDocumentController::class, 'show']);
+    Route::get('/records/{document}', [RecordDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
