@@ -142,9 +142,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
 
     Route::post('/proposals', [ProposalDocumentController::class, 'store']);
-    Route::get('/proposals/{documentId}', [ProposalDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/proposals', [ProposalDocumentController::class, 'getByPatient']);
-    Route::get('/patients/{patientId}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
+    Route::get('/proposals/{document}', [ProposalDocumentController::class, 'show']);
+    Route::get('/patients/{patient}/proposals', [ProposalDocumentController::class, 'getByPatient']);
+    Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
 
     Route::post('/agreements', [AgreementDocumentController::class, 'store']);
     Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show']);
