@@ -27,6 +27,24 @@ This guide is meant for both humans and automated agents that modify the codebas
 - Controllers & Services
 	- Controllers should handle request validation, authorization checks and transform request data into service calls. Move business logic to `app/Services/*` classes.
 	- Service methods should be focused, small, and independently testable.
+	- Prefer Laravel's route-model binding: **do not manually fetch an entity by ID when the ID is supplied in the route** — accept the model in the controller method signature and let the framework resolve it. This keeps controllers concise and leverages automatic 404 behavior and implicit authorization hooks (e.g. `$this->authorizeResource()`).
+
+		// Bad: controller fetching model manually
+		public function update(Request $request, $branchId)
+		{
+			$branch = Branch::findOrFail($branchId);
+			$this->authorize('update', $branch);
+			// ...
+		}
+
+		// Good: use route-model binding
+		public function update(Request $request, Branch $branch)
+		{
+			$this->authorize('update', $branch);
+			// ...
+		}
+
+		// Exception: fetch manually only when you need a different query (scoped lookup, soft-deleted include, or custom join).
 
 - Responses
 	- Always use the ApiResponse methods (`$this->success()` / `$this->error()`) in controllers.
@@ -55,6 +73,47 @@ This guide is meant for both humans and automated agents that modify the codebas
 
 - Validation
 	- Prefer FormRequest classes for complex request validation and authorization instead of inline `$request->validate()`.
+
+- Authorization & security policies
+	- Enforce authorization **server-side** for every endpoint — never rely on client-side checks.
+	- Preferred enforcement points (use the first that fits the requirement):
+		1. **Middleware** — coarse, route-level guards (roles, feature flags, subscription). Use when the check does not require a model instance and you want to fail fast.
+		2. **Policies / Gates** — model-scoped permissions (use `AuthServiceProvider` to register policies and call `$this->authorize('update', $model)`).
+		3. **FormRequest::authorize()** — request-level checks that depend on request input (e.g. `branch_id`) and should run alongside validation.
+		4. **Controller / service method checks** — only when authorization depends on runtime context not available elsewhere.
+
+	- Guidelines:
+		- Use middleware for broad access control (e.g. `->middleware('role:manager')`).
+		- Use policies for per-model permissions (e.g. `PatientPolicy::update`).
+		- Use FormRequest::authorize for validating request-scoped access (e.g. verifying the `branch_id` belongs to the user's company before creating a patient).
+		- Prefer `$this->authorize()` in controllers rather than ad-hoc DB checks — centralize logic in policies for testability.
+
+	- Examples:
+
+		- Middleware (route):
+
+			Route::post('/admin-only', [AdminController::class, 'store'])->middleware('role:admin');
+
+		- Policy (controller):
+
+			public function update(Branch $branch)
+			{
+				$this->authorize('update', $branch);
+				// ...
+			}
+
+		- FormRequest (authorize + rules):
+
+			public function authorize()
+			{
+				$branch = Branch::find($this->input('branch_id'));
+				return $this->user()->can('view', $branch);
+			}
+
+	- Security hygiene:
+		- Log unexpected authorization failures at WARN level (avoid sensitive data in logs).
+		- Deny by default; prefer explicit allow rules.
+		- Keep authorization logic DRY — centralize in policies/middleware rather than sprinkling checks across services.
 
 - Documentation & API docs
 	- When adding or changing API endpoints, update Scribe/OpenAPI docs and include examples in the PR.
