@@ -48,7 +48,7 @@ async function loadCP(documentId: string) {
 
   try {
     const res = await api.get(`/v1/cps/${documentId}`);
-    const cp = res.data?.cp_data ?? {};
+    const cp = res.data?.data?.cp_data ?? {};
 
     cpData.value = {
         company_name: cp.company_name ?? '',
