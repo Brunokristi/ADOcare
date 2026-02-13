@@ -337,7 +337,7 @@ onMounted(() => {
 
 
 <template>
-  <LoadingOverlay :show="loading" text="Vygeneravám..." />
+  <LoadingOverlay :show="loading" />
   <div class="flex flex-col gap-6 relative">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">

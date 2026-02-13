@@ -18,8 +18,8 @@ interface DocumentData {
   patientPreviousAddress: string;
 
   prescriptionNote: string;
-  doctorDiagnosis: string;
-  nurseDiagnosis: string;
+  doctorDiagnoses: string[];
+  nurseDiagnoses: string[];
 
   patientCategory?: PatientCategory;
 
@@ -44,8 +44,8 @@ const documentData = ref<DocumentData>({
   patientCurrentAddress: '',
   patientPreviousAddress: '',
   prescriptionNote: '',
-  doctorDiagnosis: '',
-  nurseDiagnosis: '',
+  doctorDiagnoses: [],
+  nurseDiagnoses: [],
   patientCategory: undefined,
   carePlan: '',
   treatmentOutcomes: '',
@@ -65,6 +65,15 @@ async function loadProposal(documentId: string) {
     const res = await api.get(`/v1/proposals/${documentId}`);
     const proposal = res.data?.proposal_data ?? {};
 
+    // Handle both single string and array formats for diagnoses
+    const doctorDiagnoses = Array.isArray(proposal.diagnosis)
+      ? proposal.diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
+      : (proposal.diagnosis ? [proposal.diagnosis] : []);
+
+    const nurseDiagnoses = Array.isArray(proposal.nurse_diagnosis)
+      ? proposal.nurse_diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
+      : (proposal.nurse_diagnosis ? [proposal.nurse_diagnosis] : []);
+
     documentData.value = {
       facilityName: proposal.company_name ?? '',
       facilityAddress: proposal.company_address ?? '',
@@ -74,8 +83,8 @@ async function loadProposal(documentId: string) {
       patientCurrentAddress: proposal.patient_address ?? '',
       patientPreviousAddress: proposal.patient_previous_address ?? '',
       prescriptionNote: proposal.epicrisis ?? '',
-      doctorDiagnosis: proposal.diagnosis ?? '',
-      nurseDiagnosis: proposal.nurse_diagnosis ?? '',
+      doctorDiagnoses,
+      nurseDiagnoses,
       patientCategory: Array.isArray(proposal.mobility) ? proposal.mobility[0] : undefined,
       carePlan: proposal.care_plan ?? '',
       treatmentOutcomes: formatProcedures(proposal.procedures ?? []),
@@ -227,11 +236,25 @@ function printPage() {
                 <tr>
                   <td class="border border-black p-2 w-1/2">
                     Lekárska diagnóza:<br />
-                    <strong>{{ documentData.doctorDiagnosis.split(' - ')[0]}}</strong>
+                    <strong>
+                      <div v-if="documentData.doctorDiagnoses.length > 0">
+                        <div v-for="(diagnosis, index) in documentData.doctorDiagnoses" :key="index" class="mb-1">
+                          {{ diagnosis.split(' - ')[0] }}
+                        </div>
+                      </div>
+                      <div v-else>-</div>
+                    </strong>
                   </td>
                   <td class="border border-black p-2 w-1/2">
                     Sesterská diagnóza:<br />
-                    <strong>{{ documentData.nurseDiagnosis.split(' - ')[0] }}</strong>
+                    <strong>
+                      <div v-if="documentData.nurseDiagnoses.length > 0">
+                        <div v-for="(diagnosis, index) in documentData.nurseDiagnoses" :key="index" class="mb-1">
+                          {{ diagnosis.split(' - ')[0] }}
+                        </div>
+                      </div>
+                      <div v-else>-</div>
+                    </strong>
                   </td>
                 </tr>
               </tbody>

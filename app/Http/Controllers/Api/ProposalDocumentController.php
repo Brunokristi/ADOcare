@@ -18,8 +18,10 @@ class ProposalDocumentController extends Controller
     {
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'medical_diagnosis_id' => 'nullable|exists:diagnoses,id',
-            'nurse_diagnosis_id' => 'nullable|exists:nurse_diagnoses,id',
+            'medical_diagnosis_ids' => 'nullable|array',
+            'medical_diagnosis_ids.*' => 'nullable|exists:diagnoses,id',
+            'nurse_diagnosis_ids' => 'nullable|array',
+            'nurse_diagnosis_ids.*' => 'nullable|exists:nurse_diagnoses,id',
             'date' => 'required|date',
             'epicrisis_description' => 'required|string',
             'care_plan' => 'required|string',
@@ -53,17 +55,29 @@ class ProposalDocumentController extends Controller
         $userName = $user->first_name . ' ' . $user->last_name . ' ' . $user->title;
         $doctorName = ($doctor->title ?? '') . ' ' . $doctor->first_name . ' ' . $doctor->last_name;
 
-        $diagnosis = null;
-        if (!empty($validated['medical_diagnosis_id'])) {
-            $diagnosis = \DB::table('diagnoses')->find((int) $validated['medical_diagnosis_id']);
+        $diagnoses = [];
+        if (!empty($validated['medical_diagnosis_ids'])) {
+            foreach ($validated['medical_diagnosis_ids'] as $diagnosisId) {
+                if ($diagnosisId) {
+                    $diagnosis = \DB::table('diagnoses')->find((int) $diagnosisId);
+                    if ($diagnosis) {
+                        $diagnoses[] = $diagnosis->code . ' - ' . $diagnosis->description;
+                    }
+                }
+            }
         }
-        $diagnosis = ($diagnosis) ? $diagnosis->code . ' - ' . $diagnosis->description : null;
 
-        $nurseDiagnosis = null;
-        if (!empty($validated['nurse_diagnosis_id'])) {
-            $nurseDiagnosis = \DB::table('nurse_diagnoses')->find((int) $validated['nurse_diagnosis_id']);
+        $nurseDiagnoses = [];
+        if (!empty($validated['nurse_diagnosis_ids'])) {
+            foreach ($validated['nurse_diagnosis_ids'] as $nurseDiagnosisId) {
+                if ($nurseDiagnosisId) {
+                    $nurseDiagnosis = \DB::table('nurse_diagnoses')->find((int) $nurseDiagnosisId);
+                    if ($nurseDiagnosis) {
+                        $nurseDiagnoses[] = $nurseDiagnosis->code . ' - ' . $nurseDiagnosis->description;
+                    }
+                }
+            }
         }
-        $nurseDiagnosis = ($nurseDiagnosis) ? $nurseDiagnosis->code . ' - ' . $nurseDiagnosis->description : null;
 
         $epicrisis = $validated['epicrisis_description'];
         $carePlan = $validated['care_plan'];
@@ -93,8 +107,8 @@ class ProposalDocumentController extends Controller
             'patient_birth_number' => $patientBirthNumber,
             'patient_address' => $patientAddress,
             'insurance_code' => $insuranceCode,
-            'diagnosis' => $diagnosis,
-            'nurse_diagnosis' => $nurseDiagnosis,
+            'diagnosis' => $diagnoses,
+            'nurse_diagnosis' => $nurseDiagnoses,
             'epicrisis' => $epicrisis,
             'care_plan' => $carePlan,
             'mobility' => $mobility,

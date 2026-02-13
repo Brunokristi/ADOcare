@@ -29,18 +29,42 @@ class CalculateVisitsTimeline implements ShouldQueue
     public function handle(): void
     {
         $data = $this->data;
+
+        $runId = bin2hex(random_bytes(6)); // short run id for log correlation
         $persist = (bool)($data['persist'] ?? true);
         $tz = 'Europe/Bratislava';
 
-        $userId = (int) ($data['user_id'] ?? null);
-        $branchId = (int) $data['branch_id'];
+        $userId = (int)($data['user_id'] ?? 0);
+        $branchId = (int)($data['branch_id'] ?? 0);
         $procedureCodes = $data['procedure_codes'] ?? ['3439', '3440'];
         $filterPatientIds = array_values(array_filter(array_map('intval', $data['patients'] ?? [])));
 
-        $monthDate = Carbon::parse($data['month'])->toDateString();
-        $month = Carbon::parse($monthDate)->setTimezone($tz);
+        if ($userId <= 0 || $branchId <= 0) {
+            Log::error('CalculateVisitsTimeline: invalid input', [
+                'run_id' => $runId,
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'data_keys' => array_keys($data),
+            ]);
+            return;
+        }
+
+        $monthDate = Carbon::parse($data['month'] ?? now($tz))->toDateString();
+        $month = Carbon::parse($monthDate, $tz);
         $from = $month->copy()->startOfMonth()->toDateString();
         $to   = $month->copy()->endOfMonth()->toDateString();
+
+        Log::info('CalculateVisitsTimeline: start', [
+            'run_id' => $runId,
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'month' => $monthDate,
+            'persist' => $persist,
+            'from' => $from,
+            'to' => $to,
+            'procedure_codes' => $procedureCodes,
+            'filter_patient_ids_count' => count($filterPatientIds),
+        ]);
 
         try {
             $branch = DB::table('branches')
@@ -51,7 +75,6 @@ class CalculateVisitsTimeline implements ShouldQueue
             if (!$branch) {
                 throw new \Exception('Branch not found');
             }
-
             if ($branch->latitude === null || $branch->longitude === null) {
                 throw new \Exception('Branch has missing coordinates (latitude/longitude).');
             }
@@ -69,13 +92,22 @@ class CalculateVisitsTimeline implements ShouldQueue
                 ? substr((string)$branch->administrative_start_time, 0, 5)
                 : null;
 
+            Log::info('CalculateVisitsTimeline: branch loaded', [
+                'run_id' => $runId,
+                'branch_lat' => (float)$branch->latitude,
+                'branch_lng' => (float)$branch->longitude,
+                'per_location_seconds' => $perLocationSeconds,
+                'terrain_start' => $startTimeHHmm,
+                'administrative_start' => $administrativeStartTimeHHmm,
+            ]);
+
             $rows = DB::table('patient_points as pp')
                 ->join('patients as p', 'p.id', '=', 'pp.patient_id')
                 ->where('pp.user_id', $userId)
                 ->where('pp.branch_id', $branchId)
                 ->whereBetween('pp.date', [$from, $to])
-                ->when(!empty($procedureCodes), fn ($q) => $q->whereIn('pp.procedure_code', $procedureCodes))
-                ->when(!empty($filterPatientIds), fn ($q) => $q->whereIn('pp.patient_id', $filterPatientIds))
+                ->when(!empty($procedureCodes), fn($q) => $q->whereIn('pp.procedure_code', $procedureCodes))
+                ->when(!empty($filterPatientIds), fn($q) => $q->whereIn('pp.patient_id', $filterPatientIds))
                 ->select([
                     'pp.id as patient_point_id',
                     'pp.date',
@@ -91,9 +123,14 @@ class CalculateVisitsTimeline implements ShouldQueue
                 ->orderBy('pp.id')
                 ->get();
 
+            Log::info('CalculateVisitsTimeline: patient_points loaded', [
+                'run_id' => $runId,
+                'rows' => $rows->count(),
+            ]);
+
             $visitsByDay = [];
             foreach ($rows as $r) {
-                $day = Carbon::parse($r->date)->toDateString();
+                $day = Carbon::parse($r->date, $tz)->toDateString();
                 $visitsByDay[$day] ??= [];
                 $visitsByDay[$day][] = $r;
             }
@@ -104,13 +141,14 @@ class CalculateVisitsTimeline implements ShouldQueue
                 $startUnix = Carbon::parse($date . ' ' . $startTimeHHmm . ':00', $tz)->timestamp;
 
                 $dayVisits = $visitsByDay[$date] ?? [];
-                $timeline = $this->solveDayTimeline($date, $dayVisits, $branch, $startUnix, $perLocationSeconds);
+                $timeline = $this->solveDayTimeline($runId, $date, $dayVisits, $branch, $startUnix, $perLocationSeconds);
 
                 $days[] = $timeline;
             }
 
             if ($persist) {
-                $this->persistMonthTimelinesIntoVisits(
+                $inserted = $this->persistMonthTimelinesIntoVisits(
+                    runId: $runId,
                     from: $from,
                     to: $to,
                     userId: $userId,
@@ -122,54 +160,60 @@ class CalculateVisitsTimeline implements ShouldQueue
                     tz: $tz,
                     perLocationSeconds: $perLocationSeconds
                 );
+
+                Log::info('CalculateVisitsTimeline: persisted visits', [
+                    'run_id' => $runId,
+                    'inserted' => $inserted,
+                ]);
             }
 
-            $existingRecord = DB::table('visit_calculations')
-                ->where('user_id', $userId)
-                ->where('branch_id', $branchId)
-                ->where('month', $monthDate)
-                ->first();
-            
-            $updateResult = DB::table('visit_calculations')
-                ->updateOrInsert(
-                    [
-                        'user_id' => $userId,
-                        'branch_id' => $branchId,
-                        'month' => $monthDate,
-                    ],
-                    [
-                        'status' => 'completed',
-                        'completed_at' => now(),
-                        'error_message' => null,
-                    ]
-                );
+            DB::table('visit_calculations')->updateOrInsert(
+                [
+                    'user_id' => $userId,
+                    'branch_id' => $branchId,
+                    'month' => $monthDate,
+                ],
+                [
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                    'error_message' => null,
+                ]
+            );
 
-        } catch (\Exception $e) {
+            Log::info('CalculateVisitsTimeline: completed', [
+                'run_id' => $runId,
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+                'month' => $monthDate,
+            ]);
+        } catch (\Throwable $e) {
             Log::error('CalculateVisitsTimeline: Calculation failed', [
+                'run_id' => $runId,
                 'user_id' => $userId,
                 'branch_id' => $branchId,
                 'month_date' => $monthDate,
                 'error' => $e->getMessage(),
+                'exception' => get_class($e),
             ]);
 
-            DB::table('visit_calculations')
-                ->updateOrInsert(
-                    [
-                        'user_id' => $userId,
-                        'branch_id' => $branchId,
-                        'month' => $monthDate,
-                    ],
-                    [
-                        'status' => 'failed',
-                        'error_message' => $e->getMessage(),
-                    ]
-                );
+            DB::table('visit_calculations')->updateOrInsert(
+                [
+                    'user_id' => $userId,
+                    'branch_id' => $branchId,
+                    'month' => $monthDate,
+                ],
+                [
+                    'status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                ]
+            );
 
             throw $e;
         }
     }
 
     private function persistMonthTimelinesIntoVisits(
+        string $runId,
         string $from,
         string $to,
         int $userId,
@@ -184,6 +228,7 @@ class CalculateVisitsTimeline implements ShouldQueue
         $now = now()->setTimezone($tz)->format('Y-m-d H:i:s');
 
         return DB::transaction(function () use (
+            $runId,
             $from,
             $to,
             $userId,
@@ -199,35 +244,66 @@ class CalculateVisitsTimeline implements ShouldQueue
                 ->whereBetween('date', [$from, $to])
                 ->delete();
 
+            Log::info('CalculateVisitsTimeline: deleted existing visits', [
+                'run_id' => $runId,
+                'deleted' => $deleted,
+                'from' => $from,
+                'to' => $to,
+                'user_id' => $userId,
+                'branch_id' => $branchId,
+            ]);
+
             $buffer = [];
             $inserted = 0;
+
+            // Safety net: prevent duplicates inside this transaction even if solver/mapping goes wrong
+            $seenKeys = [];
 
             foreach ($days as $day) {
                 $date = $day['date'] ?? null;
                 if (!$date) continue;
 
                 $locations = $day['locations'] ?? [];
-                
+
                 $adminCursor = null;
                 if ($administrativeStartTimeHHmm) {
                     $adminCursor = Carbon::parse($date . ' ' . $administrativeStartTimeHHmm . ':00', $tz);
-                    // Add random variation: -5 to +5 minutes
-                    $minuteVariation = rand(-5, 5);
-                    $adminCursor->addMinutes($minuteVariation);
+                    $adminCursor->addMinutes(rand(-5, 5)); // small variation
                 }
 
                 foreach ($locations as $location) {
                     $arriveUnix = (int)($location['arrive_unix'] ?? 0);
+                    if ($arriveUnix <= 0) continue;
 
-                    if ($arriveUnix <= 0) {
+                    $patientId = (int)($location['patient_id'] ?? 0);
+                    if ($patientId <= 0) {
+                        Log::warning('CalculateVisitsTimeline: skipping location without patient_id', [
+                            'run_id' => $runId,
+                            'date' => $date,
+                            'arrive_unix' => $arriveUnix,
+                            'lat' => $location['lat'] ?? null,
+                            'lng' => $location['lng'] ?? null,
+                        ]);
                         continue;
                     }
 
+                    $uniqueKey = $date . '|' . $patientId . '|' . $userId . '|' . $branchId;
+                    if (isset($seenKeys[$uniqueKey])) {
+                        Log::warning('CalculateVisitsTimeline: duplicate visit row prevented before insert', [
+                            'run_id' => $runId,
+                            'date' => $date,
+                            'patient_id' => $patientId,
+                            'user_id' => $userId,
+                            'branch_id' => $branchId,
+                        ]);
+                        continue;
+                    }
+                    $seenKeys[$uniqueKey] = true;
+
                     $terrainTime = Carbon::createFromTimestamp($arriveUnix, $tz);
-                    $patientId = (int)($location['patient_id'] ?? 0) ?: null;
                     $administrativeTime = null;
 
-                    if ($patientId && $adminCursor) {
+                    if ($adminCursor) {
                         $paperSeconds = $this->paperworkSecondsForPatient($date, $patientId, $userId, $branchId);
                         $administrativeTime = $adminCursor->copy();
                         $adminCursor->addSeconds($paperSeconds);
@@ -266,16 +342,15 @@ class CalculateVisitsTimeline implements ShouldQueue
         });
     }
 
-    private function solveDayTimeline(string $dateYmd, array $visits, object $branch, int $startUnix, int $perLocationSeconds): array
+    private function solveDayTimeline(string $runId, string $dateYmd, array $visits, object $branch, int $startUnix, int $perLocationSeconds): array
     {
-        $validVisits = array_values(array_filter($visits, function ($v) {
-            return $v->patient_lat !== null && $v->patient_lng !== null;
-        }));
+        // Keep only visits with coordinates
+        $validVisits = array_values(array_filter($visits, fn($v) => $v->patient_lat !== null && $v->patient_lng !== null));
 
         if (!count($validVisits)) {
             return [
                 'date' => $dateYmd,
-                'stops' => [],
+                'locations' => [],
                 'summary' => [
                     'start_unix' => $startUnix,
                     'end_unix' => $startUnix,
@@ -285,9 +360,38 @@ class CalculateVisitsTimeline implements ShouldQueue
             ];
         }
 
+        // Dedupe patient_id per day (in case patient_points has multiple entries for same patient/day)
+        $seenPid = [];
+        $deduped = [];
+        foreach ($validVisits as $v) {
+            $pid = (int)$v->patient_id;
+            if ($pid <= 0) continue;
+            if (isset($seenPid[$pid])) continue;
+            $seenPid[$pid] = true;
+            $deduped[] = $v;
+        }
+        $validVisits = $deduped;
+
+        // Log same-coordinate groups (this is OK, but important to know)
+        $coordGroups = [];
+        foreach ($validVisits as $v) {
+            $k = sprintf('%.7f,%.7f', (float)$v->patient_lng, (float)$v->patient_lat);
+            $coordGroups[$k] = ($coordGroups[$k] ?? 0) + 1;
+        }
+        $dupeCoordGroups = array_filter($coordGroups, fn($c) => $c > 1);
+        if ($dupeCoordGroups) {
+            Log::warning('CalculateVisitsTimeline: multiple patients share same coordinates for day', [
+                'run_id' => $runId,
+                'date' => $dateYmd,
+                'groups' => count($dupeCoordGroups),
+                'examples' => array_slice($dupeCoordGroups, 0, 5, true),
+            ]);
+        }
+
+        // Build jittered points list (NO associative map by rounded coords)
         $points = [];
         $timeSpending = [];
-        $metaBySentKey = [];
+        $pointMeta = []; // indexed list aligned with $points
 
         $baseEps = 0.000001;
 
@@ -301,12 +405,20 @@ class CalculateVisitsTimeline implements ShouldQueue
             $points[] = [$lngJ, $latJ];
             $timeSpending[] = $perLocationSeconds;
 
-            $sentKey = sprintf('%.7f,%.7f', $lngJ, $latJ);
-
-            $metaBySentKey[$sentKey] = [
+            $pointMeta[] = [
                 'patient_id' => (int)$v->patient_id,
+                'latJ' => $latJ,
+                'lngJ' => $lngJ,
+                'used' => false,
             ];
         }
+
+        Log::debug('CalculateVisitsTimeline: day points prepared', [
+            'run_id' => $runId,
+            'date' => $dateYmd,
+            'valid_visits_count' => count($validVisits),
+            'points_count' => count($points),
+        ]);
 
         $payload = [
             'start_location' => [(float)$branch->longitude, (float)$branch->latitude],
@@ -318,15 +430,16 @@ class CalculateVisitsTimeline implements ShouldQueue
 
         $json = $this->callTspSolver($payload, $dateYmd);
         if ($json === null) {
-            return ['date' => $dateYmd, 'error' => 'TSP solver call failed', 'stops' => []];
+            return ['date' => $dateYmd, 'error' => 'TSP solver call failed', 'locations' => []];
         }
 
         $legs = data_get($json, 'response', []);
         if (!is_array($legs) || !count($legs)) {
-            return ['date' => $dateYmd, 'error' => 'TSP solver returned empty response', 'stops' => []];
+            return ['date' => $dateYmd, 'error' => 'TSP solver returned empty response', 'locations' => []];
         }
 
         $locations = [];
+        $unmatched = 0;
 
         foreach ($legs as $leg) {
             $end = $leg['end'] ?? null;
@@ -336,13 +449,71 @@ class CalculateVisitsTimeline implements ShouldQueue
                 continue;
             }
 
+            $endLng = (float)$end[0];
+            $endLat = (float)$end[1];
+
+            // Find nearest unused point (handles identical original coordinates safely)
+            $bestIdx = null;
+            $bestDist2 = null;
+
+            foreach ($pointMeta as $idx => $m) {
+                if ($m['used']) continue;
+
+                $dLat = $m['latJ'] - $endLat;
+                $dLng = $m['lngJ'] - $endLng;
+                $dist2 = ($dLat * $dLat) + ($dLng * $dLng);
+
+                if ($bestDist2 === null || $dist2 < $bestDist2) {
+                    $bestDist2 = $dist2;
+                    $bestIdx = $idx;
+                }
+            }
+
+            $patientId = null;
+
+            // Tight threshold: jitter is around 1e-6, squared ~1e-12; allow a bit for solver float noise
+            if ($bestIdx !== null && $bestDist2 !== null && $bestDist2 < 1e-8) {
+                $patientId = $pointMeta[$bestIdx]['patient_id'];
+                $pointMeta[$bestIdx]['used'] = true;
+            } else {
+                $unmatched++;
+            }
+
             $locations[] = [
-                'lat' => (float)$end[1],
-                'lng' => (float)$end[0],
-                'arrive_unix' => (int) data_get($ts, 'arrive_end_point', 0),
+                'lat' => $endLat,
+                'lng' => $endLng,
+                'arrive_unix' => (int)data_get($ts, 'arrive_end_point', 0),
                 'distance_km' => round((float)($leg['length'] ?? 0) / 1000, 2),
-                'patient_id' => $metaBySentKey[sprintf('%.7f,%.7f', (float)$end[0], (float)$end[1])]['patient_id'] ?? null,
+                'patient_id' => $patientId,
             ];
+        }
+
+        // Log duplicates (should not happen after nearest-unused matching)
+        $pidCounts = [];
+        foreach ($locations as $loc) {
+            $pid = $loc['patient_id'] ?? null;
+            if (!$pid) continue;
+            $pidCounts[$pid] = ($pidCounts[$pid] ?? 0) + 1;
+        }
+        $dupes = array_filter($pidCounts, fn($c) => $c > 1);
+        if ($dupes) {
+            Log::warning('CalculateVisitsTimeline: duplicate patient_ids after matching (unexpected)', [
+                'run_id' => $runId,
+                'date' => $dateYmd,
+                'duplicates' => $dupes,
+                'locations_count' => count($locations),
+                'valid_visits_count' => count($validVisits),
+            ]);
+        }
+
+        if ($unmatched > 0) {
+            Log::warning('CalculateVisitsTimeline: solver endpoints unmatched to input points', [
+                'run_id' => $runId,
+                'date' => $dateYmd,
+                'unmatched' => $unmatched,
+                'locations_count' => count($locations),
+                'points_count' => count($points),
+            ]);
         }
 
         return [
@@ -356,7 +527,7 @@ class CalculateVisitsTimeline implements ShouldQueue
         try {
             $baseUrl  = rtrim(config('services.route_service.base_url'), '/');
             $endpoint = ltrim(config('services.route_service.endpoint', '/tsp-solver'), '/');
-            $timeout  = (int) config('services.route_service.timeout', 12);
+            $timeout  = (int)config('services.route_service.timeout', 12);
 
             $url = "{$baseUrl}/{$endpoint}";
 
@@ -379,6 +550,7 @@ class CalculateVisitsTimeline implements ShouldQueue
             Log::error('TSP call exception in job', [
                 'date' => $dateYmd,
                 'error' => $e->getMessage(),
+                'exception' => get_class($e),
             ]);
             return null;
         }
