@@ -161,18 +161,116 @@ function buildMondayWednesdayFridayForCurrentView(): Date[] {
   return selected
 }
 
+function getEasterDate(year: number): Date {
+  // Computus algorithm for calculating Easter Sunday
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day)
+}
+
+function getSlovakHolidaysForMonth(year: number, month: number): Date[] {
+  const holidays: Date[] = []
+  
+  // Fixed holidays
+  const fixedHolidays = [
+    [0, 1],   // January 1 - New Year's Day
+    [0, 6],   // January 6 - Epiphany
+    [4, 1],   // May 1 - Labour Day
+    [4, 8],   // May 8 - Victory in Europe Day
+    [6, 5],   // July 5 - Saints Cyril and Method
+    [7, 29],  // August 29 - Slovak National Uprising
+    [8, 1],   // September 1 - Constitution Day
+    [8, 15],  // September 15 - Day of the Seven Sorrows of Mary
+    [9, 28],  // October 28 - Establishment of Czechoslovak State
+    [9, 30],  // October 30 - Independence Day
+    [10, 1],  // November 1 - All Saints' Day
+    [10, 17], // November 17 - Freedom and Democracy Day
+    [11, 24], // December 24 - Christmas Eve
+    [11, 25], // December 25 - Christmas Day
+    [11, 26], // December 26 - Boxing Day
+  ]
+
+  for (const [m, d] of fixedHolidays) {
+    if (m === month) {
+      holidays.push(new Date(year, m, d))
+    }
+  }
+
+  // Easter-based holidays
+  const easter = getEasterDate(year)
+  const goodFriday = new Date(easter)
+  goodFriday.setDate(goodFriday.getDate() - 2)
+  const easterMonday = new Date(easter)
+  easterMonday.setDate(easterMonday.getDate() + 1)
+
+  if (goodFriday.getMonth() === month) holidays.push(goodFriday)
+  if (easter.getMonth() === month) holidays.push(easter)
+  if (easterMonday.getMonth() === month) holidays.push(easterMonday)
+
+  return holidays
+}
+
+function buildHolidaysForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const holidayDates = getSlovakHolidaysForMonth(y, m)
+  const holidaySet = new Set(holidayDates.map((d) => toApiDate(d)))
+
+  const selected: Date[] = []
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    if (holidaySet.has(toApiDate(d))) {
+      selected.push(d)
+    }
+  }
+  return selected
+}
+
 function buildWeekendsForCurrentView(): Date[] {
   const y = viewDate.value.getFullYear()
   const m = viewDate.value.getMonth()
   const last = new Date(y, m + 1, 0).getDate()
 
   const selected: Date[] = []
+  
+  // Add weekends
   for (let day = 1; day <= last; day++) {
     const d = new Date(y, m, day)
     const dow = d.getDay()
     if (dow === 0 || dow === 6) selected.push(d)
   }
+
+  // Add holidays
+  const holidayDates = getSlovakHolidaysForMonth(y, m)
+  const holidaySet = new Set(holidayDates.map((d) => toApiDate(d)))
+  
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    if (holidaySet.has(toApiDate(d)) && !selected.find(sel => toApiDate(sel) === toApiDate(d))) {
+      selected.push(d)
+    }
+  }
+
   return selected
+}
+
+async function selectHolidays() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildHolidaysForCurrentView())
 }
 
 function truncate(text: string, max = 60) {
@@ -841,13 +939,6 @@ onMounted(() => {
                   <div class="flex gap-2">
                     <Button
                       size="small"
-                      label="Po-Pia"
-                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @mousedown.prevent
-                      @click.prevent="selectWorkingDays"
-                    />
-                    <Button
-                      size="small"
                       label="Po-Ne"
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
                       @mousedown.prevent
@@ -855,7 +946,14 @@ onMounted(() => {
                     />
                     <Button
                       size="small"
-                      label="Po, St, Pia"
+                      label="Po-Pia"
+                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
+                      @mousedown.prevent
+                      @click.prevent="selectWorkingDays"
+                    />
+                    <Button
+                      size="small"
+                      label="3x"
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
                       @mousedown.prevent
                       @click.prevent="selectMondayWednesdayFriday"
@@ -866,6 +964,13 @@ onMounted(() => {
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
                       @mousedown.prevent
                       @click.prevent="selectWeekends"
+                    />
+                    <Button
+                      size="small"
+                      label="†"
+                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
+                      @mousedown.prevent
+                      @click.prevent="selectHolidays"
                     />
                   </div>
 
