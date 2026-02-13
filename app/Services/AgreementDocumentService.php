@@ -39,6 +39,7 @@ class AgreementDocumentService
             'company_address' => $branch->company?->address ?? '',
             'company_name' => $branch->company?->name ?? '',
             'company_city' => $branch->company?->city ?? '',
+            'branch_city' => $branch->city ?? '',
             'user_name' => $representative?->title . ' ' . $representative?->first_name . ' ' . $representative?->last_name,
             'user_contact' => $representative?->phone ?? '',
             'patient_name' => trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '') . ' ' . ($patient->title ?? '')),
