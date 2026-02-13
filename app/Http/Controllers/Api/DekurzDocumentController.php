@@ -12,117 +12,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\PatientPoint;
-use App\Http\Controllers\Api\VisitsController;
+use App\Http\Requests\StoreDekurzRequest;
+use App\Services\DekurzDocumentService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 
 class DekurzDocumentController extends Controller
 {
-    public function store(Request $request)
+    public function store(StoreDekurzRequest $request, DekurzDocumentService $service)
     {
-        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
-            'dekurz_number' => 'required|string|max:50',
-            'month' => 'nullable|date',
-            'sections' => 'required|array|min:1',
-            'sections.*.text' => 'required|string',
-            'sections.*.dates' => 'required|array|min:1',
-            'sections.*.dates.*' => 'required|date_format:Y-m-d',
-            'branch_id' => 'required|integer|exists:branches,id',
-        ]);
-
-        $patient = Patient::findOrFail($validated['patient_id']);
-
-        $document = Document::create([
-            'patient_id' => $patient->id,
-            'user_id' => Auth::id(),
-            'type' => 'dekurz',
-            'mime_type' => 'application/json',
-            'name' => 'dekurz_' . now()->format('d.m.Y'),
-            'path' => 'dekurz/' . now()->timestamp . '.json',
-        ]);
-
-        // normalize sections
-        $sections = collect($validated['sections'])->map(function ($s) {
-            $dates = collect($s['dates'])
-                ->map(fn ($d) => date('Y-m-d', strtotime($d)))
-                ->unique()
-                ->sort()
-                ->values()
-                ->all();
-
-            return [
-                'text' => (string) $s['text'],
-                'dates' => $dates,
-            ];
-        })->values()->all();
-
-        $month = $validated['month'] ?? null;
-        $dailyTexts = $this->buildDailyTexts($sections);
-        $neededDates = array_keys($dailyTexts);
-
-        if ($month) {
-            $this->ensureMonthTimelineExistsOrCreate(
-                monthYmd: $month,
-                branchId: (int)$validated['branch_id'],
-                userId: (int)Auth::id(),
-                patientId: (int)$patient->id,
-                neededDates: $neededDates
-            );
-        }
-
-        $daysWithTimes = $this->attachVisitTimesForPatient(
-            dailyTexts: $dailyTexts,
-            patientId: (int)$patient->id,
-            userId: (int)Auth::id(),
-            branchId: (int)$validated['branch_id']
-        );
-
-        $daysWithTimes = $this->attachVisitTimesForPatient(
-            dailyTexts: $dailyTexts,
-            patientId: (int)$patient->id,
-            userId: (int)Auth::id(),
-            branchId: (int)$validated['branch_id']
-        );
-
-        $user = Auth::user();
-        $branch = Branch::findOrFail((int)$validated['branch_id']);
-        $company = $branch->company;
-        $insurance = $patient->insuranceCompany;
-
-        $userName = trim(($user->title ?? '') . ' ' . ($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
-        $companyName = $company ? $company->name : '';
-        $companyAddress = $company ? $company->address : '' . ', ' . ($company->city ?? '');
-        $insuranceCode = $insurance ? $insurance->branch_code : '';
-        $patinetAddress = trim(($patient->address ?? '') . ', ' . ($patient->city ?? '') . ', ' . ($patient->postal_code ?? ''));
-
-
-
-        $dekurzData = [
-            'document_id' => $document->id,
-            'created_at' => now(),
-            'user_id' => Auth::id(),
-            'user_name' => $userName,
-            'company_name' => $companyName,
-            'company_address' => $companyAddress,
-            'insurance_code' => $insuranceCode,
-            'patient_personal_number' => $patient->personal_number,
-            'patient_address' => $patinetAddress,
-            'patient_id' => $patient->id,
-            'patient_name' => trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')),
-            'dekurz_number' => $validated['dekurz_number'],
-            'month' => $month,
-
-            'sections' => $sections,
-
-            'days' => $daysWithTimes,
-        ];
-
-        Storage::disk('local')->put(
-            'dekurz/' . now()->timestamp . '.json',
-            json_encode($dekurzData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-        );
+        $document = $service->create($request->validated(), Auth::user());
 
         return response()->json([
             'success' => true,
@@ -131,38 +31,19 @@ class DekurzDocumentController extends Controller
         ], 201);
     }
 
-    public function show($documentId)
+    public function show(Document $document, DekurzDocumentService $service)
     {
-        $documentId = (int) $documentId;
+        $document->loadMissing(['user', 'patient']);
 
-        $document = Document::with(['user', 'patient'])->findOrFail($documentId);
-
-        $dekurzFile = null;
-
-        if ($document->path && Storage::disk('local')->exists($document->path)) {
-            $dekurzFile = json_decode(Storage::disk('local')->get($document->path), true);
-        } else {
-            $files = Storage::disk('local')->files('dekurz');
-            foreach ($files as $file) {
-                $content = json_decode(Storage::disk('local')->get($file), true);
-                if (($content['document_id'] ?? null) === $documentId) {
-                    $dekurzFile = $content;
-                    break;
-                }
-            }
-        }
-
-        if (!$dekurzFile) {
+        $dekurzFile = $service->findDekurzFileForDocument($document);
+        if (! $dekurzFile) {
             return response()->json(['message' => 'Dekurz data not found'], 404);
         }
 
-        return response()->json([
-            'document' => $document,
-            'dekurz_data' => $dekurzFile,
-        ]);
+        return response()->json(['document' => $document, 'dekurz_data' => $dekurzFile]);
     }
 
-    public function last(Request $request)
+    public function last(Request $request, DekurzDocumentService $service)
     {
         $data = $request->validate([
             'patient_id' => 'required|integer|exists:patients,id',
@@ -170,195 +51,35 @@ class DekurzDocumentController extends Controller
 
         $doc = Document::query()
             ->where('type', 'dekurz')
-            ->where('patient_id', (int)$data['patient_id'])
+            ->where('patient_id', (int) $data['patient_id'])
             ->orderByDesc('id')
             ->first();
 
-        if (!$doc) {
+        if (! $doc) {
             return response()->json(['success' => true, 'data' => null]);
         }
 
-        if (!$doc->path || !Storage::disk('local')->exists($doc->path)) {
+        $dekurz = $service->findDekurzFileForDocument($doc);
+        if (! $dekurz) {
             return response()->json(['success' => true, 'data' => null]);
         }
 
-        $json = json_decode(Storage::disk('local')->get($doc->path), true);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'document_id' => $doc->id,
-                'sections' => $json['sections'] ?? [],
-            ],
-        ]);
+        return response()->json(['success' => true, 'data' => ['document_id' => $doc->id, 'sections' => $dekurz['sections'] ?? []]]);
     }
 
-    public function availableDates(Request $request)
+    public function availableDates(Request $request, DekurzDocumentService $service)
     {
         $data = $request->validate([
             'patient_id' => 'required|integer|exists:patients,id',
-            'month'      => 'required|date',
+            'month' => 'required|date',
         ]);
 
-        $month = Carbon::parse($data['month'])->setTimezone('Europe/Bratislava');
-        $from  = $month->copy()->startOfMonth()->toDateString();
-        $to    = $month->copy()->endOfMonth()->toDateString();
+        $result = $service->getAvailableDates((int) $data['patient_id'], $data['month']);
 
-        $dates = PatientPoint::query()
-            ->where('patient_id', (int) $data['patient_id'])
-            ->whereIn('procedure_code', ['3439', '3440'])
-            ->whereBetween('date', [$from, $to])
-            ->orderBy('date')
-            ->distinct()
-            ->pluck('date');
-
-        $isoDates = $dates
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->unique()
-            ->values();
-
-        $days = $isoDates
-            ->map(fn ($d) => (int) Carbon::parse($d)->day)
-            ->unique()
-            ->sort()
-            ->values();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Available dates retrieved',
-            'data' => [
-                'month_from' => $from,
-                'month_to'   => $to,
-                'dates'      => $isoDates,
-                'days'       => $days,
-            ],
-        ]);
+        return response()->json(['success' => true, 'message' => 'Available dates retrieved', 'data' => $result]);
     }
 
-    private function buildDailyTexts(array $sections): array
-    {
-        // Returns: ['2026-01-01' => "combined text...", ...]
-        $byDate = [];
-
-        foreach ($sections as $s) {
-            $text = trim((string)($s['text'] ?? ''));
-            $dates = $s['dates'] ?? [];
-
-            if ($text === '' || !is_array($dates) || !count($dates)) {
-                continue;
-            }
-
-            foreach ($dates as $d) {
-                $date = Carbon::parse($d)->toDateString();
-
-                // append in a nice way
-                if (!isset($byDate[$date])) {
-                    $byDate[$date] = $text;
-                } else {
-                    // separate blocks cleanly
-                    $byDate[$date] .= "\n\n" . $text;
-                }
-            }
-        }
-
-        // normalize whitespace a bit
-        foreach ($byDate as $date => $txt) {
-            $byDate[$date] = preg_replace("/\n{3,}/", "\n\n", trim($txt));
-        }
-
-        ksort($byDate);
-
-        return $byDate;
-    }
-
-    private function attachVisitTimesForPatient(array $dailyTexts, int $patientId, int $userId, int $branchId): array
-    {
-        if (!$branchId) {
-            // no branch => cannot match visits reliably
-            return array_map(fn ($text, $date) => [
-                'date' => $date,
-                'text' => $text,
-                'terrain_time' => null,
-                'administrative_time' => null,
-            ], $dailyTexts, array_keys($dailyTexts));
-        }
-
-        $dates = array_keys($dailyTexts);
-
-        $rows = DB::table('visits')
-            ->where('patient_id', $patientId)
-            ->where('user_id', $userId)
-            ->where('branch_id', $branchId)
-            ->whereIn('date', $dates)
-            ->select(['date', 'terrain_time', 'administrative_time'])
-            ->get()
-            ->keyBy('date');
-
-        $out = [];
-        foreach ($dailyTexts as $date => $text) {
-            $row = $rows[$date] ?? null;
-
-            $out[] = [
-                'date' => $date,
-                'text' => $text,
-
-                // if missing (timeline not generated), these will be null
-                'terrain_time' => $row->terrain_time ?? null,
-                'administrative_time' => $row->administrative_time ?? null,
-            ];
-        }
-
-        return $out;
-    }
-
-    private function ensureMonthTimelineExistsOrCreate(
-        string $monthYmd,
-        int $branchId,
-        int $userId,
-        int $patientId,
-        array $neededDates // array of 'Y-m-d'
-    ): void {
-        $tz = 'Europe/Bratislava';
-
-        $month = Carbon::parse($monthYmd)->setTimezone($tz);
-        $from = $month->copy()->startOfMonth()->toDateString();
-        $to   = $month->copy()->endOfMonth()->toDateString();
-
-        // If no dates needed, skip
-        $neededDates = array_values(array_unique(array_filter($neededDates)));
-        if (!count($neededDates)) {
-            return;
-        }
-
-        // Check if we already have ALL needed dates for this patient with both times filled
-        $existingDates = DB::table('visits')
-            ->where('user_id', $userId)
-            ->where('branch_id', $branchId)
-            ->where('patient_id', $patientId)
-            ->whereIn('date', $neededDates)
-            ->whereNotNull('terrain_time')
-            ->whereNotNull('administrative_time')
-            ->distinct()
-            ->pluck('date')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->all();
-
-        $missingDates = array_values(array_diff($neededDates, $existingDates));
-
-        if (!count($missingDates)) {
-            return;
-        }
-
-        $req = Request::create('/v1/visits/timeline', 'POST', [
-            'month' => $month->toDateString(),
-            'branch_id' => $branchId,
-            'user_id' => $userId,
-            'persist' => true,
-        ]);
-
-        $controller = app(VisitsController::class);
-        $resp = $controller->monthTimeline($req);
-    }
+    // heavy lifting moved into `DekurzDocumentService` — controller kept thin
 
 
 }
