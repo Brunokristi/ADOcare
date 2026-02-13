@@ -21,13 +21,15 @@ import DocumentDZC from '@/pages/Documents/DZC.vue'
 import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
 import DocumentLeave from '@/pages/Documents/Leave.vue'
 import DocumentRecord from '@/pages/Documents/Record.vue'
-import PatientProposal from '@/pages/Patients/Proposal/PatientProposalPage.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
 import PatientLeave from '@/pages/Patients/Leave/PatientLeavePage.vue'
 import type { RouteRecordRaw } from 'vue-router'
 import DashboardPage from '@/pages/DashboardPage.vue'
+import { defineAsyncComponent } from 'vue'
+
+const PatientProposal = defineAsyncComponent(() => import('@/pages/Patients/Proposal/PatientProposalPage.vue'))
 
 
 const generalRoutes: Readonly<RouteRecordRaw[]> = [

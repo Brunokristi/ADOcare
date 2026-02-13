@@ -37,8 +37,8 @@ patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 
-const medicalDiagnosis = ref<Diagnosis | null>(null)
-const nurseDiagnosis = ref<NurseDiagnosis | null>(null)
+const medicalDiagnoses = ref<Diagnosis[]>([])
+const nurseDiagnoses = ref<NurseDiagnosis[]>([])
 
 const errors = ref<Record<string, string>>({})
 const submitted = ref(false)
@@ -52,9 +52,10 @@ const expectedDuration = ref('')
 
 const procedures = ref<SelectedProcedure[]>([{ procedure: null, frequency: '' }])
 
-const filteredDiagnoses = ref<Diagnosis[]>([])
-const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 const filteredProcedures = ref<ProcedureOption[]>([])
+
+const allDiagnoses = ref<Diagnosis[]>([])
+const allNurseDiagnoses = ref<NurseDiagnosis[]>([])
 
 const mobilityOptions = [
   { label: 'H - pacient/ka s obmedzenou pohyblivosťou (50%)', value: 'H' },
@@ -181,11 +182,24 @@ async function preloadFromLatestProposal() {
     patientMobility.value = Array.isArray(p.mobility) ? [...p.mobility] : []
     expectedDuration.value = p.expected_duration ?? ''
 
-    const medCode = parseCodeFromText(p.diagnosis ?? '')
-    const nurCode = parseCodeFromText(p.nurse_diagnosis ?? '')
+    // Handle multiple diagnoses from latest proposal
+    if (Array.isArray(p.diagnosis) && p.diagnosis.length) {
+      const diagnosisPromises = p.diagnosis.map((d: string) => {
+        const code = parseCodeFromText(d)
+        return fetchDiagnosisByCode(code)
+      })
+      const diagnosisResults = await Promise.all(diagnosisPromises)
+      medicalDiagnoses.value = diagnosisResults.filter((d): d is Diagnosis => d !== null)
+    }
 
-    medicalDiagnosis.value = await fetchDiagnosisByCode(medCode)
-    nurseDiagnosis.value = await fetchNurseDiagnosisByCode(nurCode)
+    if (Array.isArray(p.nurse_diagnosis) && p.nurse_diagnosis.length) {
+      const nurseDiagnosisPromises = p.nurse_diagnosis.map((d: string) => {
+        const code = parseCodeFromText(d)
+        return fetchNurseDiagnosisByCode(code)
+      })
+      const nurseDiagnosisResults = await Promise.all(nurseDiagnosisPromises)
+      nurseDiagnoses.value = nurseDiagnosisResults.filter((d): d is NurseDiagnosis => d !== null)
+    }
 
     if (Array.isArray(p.procedures) && p.procedures.length) {
       const mapped: SelectedProcedure[] = []
@@ -213,31 +227,61 @@ async function preloadFromLatestProposal() {
   }
 }
 
-watch(
-  () => patientId.value,
-  async (id) => {
-    if (id) await preloadFromLatestProposal()
-  },
-  { immediate: true }
-)
+async function loadDiagnoses() {
+  try {
+    const res = await api.get('/v1/diagnoses', {
+      params: { paginate: 0 }
+    })
+
+    const arr = extractArray(res.data) as Diagnosis[]
+    allDiagnoses.value = arr.map(d => ({
+      id: d.id,
+      code: d.code ?? '',
+      description: d.description ?? ''
+    }))
+    console.log('Loaded diagnoses:', allDiagnoses.value.length)
+  } catch (e) {
+    console.error('Failed to load diagnoses', e)
+    allDiagnoses.value = []
+  }
+}
 
 async function searchDiagnoses(event: { query: string }) {
   try {
     const q = (event.query ?? '').trim()
 
     const res = await api.get('/v1/diagnoses', {
-      params: { q, per_page: 25, page: 1, sort: 'code' }
+      params: { q, paginate: 0 }
     })
 
     const arr = extractArray(res.data) as Diagnosis[]
-    filteredDiagnoses.value = arr.map(d => ({
+    allDiagnoses.value = arr.map(d => ({
       id: d.id,
       code: d.code ?? '',
       description: d.description ?? ''
     }))
   } catch (e) {
     console.error('Failed to load diagnoses', e)
-    filteredDiagnoses.value = []
+    allDiagnoses.value = []
+  }
+}
+
+async function loadNurseDiagnoses() {
+  try {
+    const res = await api.get('/v1/nurse-diagnoses', {
+      params: { paginate: 0 }
+    })
+
+    const arr = extractArray(res.data) as NurseDiagnosis[]
+    allNurseDiagnoses.value = arr.map(d => ({
+      id: d.id,
+      code: d.code ?? '',
+      description: d.description ?? ''
+    }))
+    console.log('Loaded nurse diagnoses:', allNurseDiagnoses.value.length)
+  } catch (e) {
+    console.error('Failed to load nurse diagnoses', e)
+    allNurseDiagnoses.value = []
   }
 }
 
@@ -246,18 +290,37 @@ async function searchNurseDiagnoses(event: { query: string }) {
     const q = (event.query ?? '').trim()
 
     const res = await api.get('/v1/nurse-diagnoses', {
-      params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 }
+      params: { q, paginate: 0 }
     })
 
     const arr = extractArray(res.data) as NurseDiagnosis[]
-    filteredNurseDiagnoses.value = arr.map(d => ({
+    allNurseDiagnoses.value = arr.map(d => ({
       id: d.id,
       code: d.code ?? '',
       description: d.description ?? ''
     }))
   } catch (e) {
     console.error('Failed to load nurse diagnoses', e)
-    filteredNurseDiagnoses.value = []
+    allNurseDiagnoses.value = []
+  }
+}
+
+async function loadProcedures() {
+  try {
+    const res = await api.get('/v1/procedures', {
+      params: { paginate: 0 }
+    })
+
+    const arr = extractArray(res.data) as ProcedureOption[]
+    filteredProcedures.value = arr.map(p => ({
+      id: p.id,
+      code: p.code ?? '',
+      description: p.description ?? ''
+    }))
+    console.log('Loaded procedures:', filteredProcedures.value.length)
+  } catch (e) {
+    console.error('Failed to load procedures', e)
+    filteredProcedures.value = []
   }
 }
 
@@ -266,7 +329,7 @@ async function searchProcedures(event: { query: string }) {
     const q = (event.query ?? '').trim()
 
     const res = await api.get('/v1/procedures', {
-      params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 }
+      params: { q, paginate: 0 }
     })
 
     const arr = extractArray(res.data) as ProcedureOption[]
@@ -276,10 +339,21 @@ async function searchProcedures(event: { query: string }) {
       description: p.description ?? ''
     }))
   } catch (e) {
-    console.error('Failed to load procedures', e)
+    console.error('Failed to search procedures', e)
     filteredProcedures.value = []
   }
 }
+
+// Preload latest proposal when patient changes
+watch(
+  () => patientId.value,
+  async (id: number) => {
+    if (id) {
+      await preloadFromLatestProposal()
+    }
+  },
+  { immediate: true }
+)
 
 function addProcedure() {
   procedures.value.push({ procedure: null, frequency: '' })
@@ -293,8 +367,8 @@ function validateForm() {
   const e: Record<string, string> = {}
 
   if (!patientId.value || patientId.value === 0) e.patient = 'Pacient nie je vybratý.'
-  if (!medicalDiagnosis.value?.id) e.medicalDiagnosis = 'Lekárska diagnóza je povinná.'
-  if (!nurseDiagnosis.value?.id) e.nurseDiagnosis = 'Sesterská diagnóza je povinná.'
+  if (medicalDiagnoses.value.length === 0) e.medicalDiagnosis = 'Vyberte aspoň jednu lekársku diagnózu.'
+  if (nurseDiagnoses.value.length === 0) e.nurseDiagnosis = 'Vyberte aspoň jednu sestersku diagnózu.'
   if (!date.value) e.date = 'Dátum je povinný.'
   if (!epicrisisDescription.value?.trim()) e.epicrisisDescription = 'Epizóda a zdôvodnenie sú povinné.'
   if (!carePlan.value?.trim()) e.carePlan = 'Plán ošetrovateľskej starostlivosti je povinný.'
@@ -323,8 +397,8 @@ async function generateDocument() {
   try {
     const payload = {
       patient_id: patientId.value,
-      medical_diagnosis_id: medicalDiagnosis.value?.id ?? null,
-      nurse_diagnosis_id: nurseDiagnosis.value?.id ?? null,
+      medical_diagnosis_ids: medicalDiagnoses.value.map(d => d.id),
+      nurse_diagnosis_ids: nurseDiagnoses.value.map(d => d.id),
       date: date.value ? toLocalYMD(date.value) : toLocalYMD(new Date()),
       epicrisis_description: epicrisisDescription.value,
       care_plan: carePlan.value,
@@ -368,19 +442,17 @@ async function generateDocument() {
         <div class="grid grid-cols-3 gap-4">
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
-            <AutoComplete
-              v-model="medicalDiagnosis"
-              :suggestions="filteredDiagnoses"
-              @complete="searchDiagnoses"
-              :virtualScrollerOptions="{ itemSize: 38 }"
-              optionLabel="code"
-              dropdown
-              dropdownMode="blank"
-              :minLength="0"
-              completeOnFocus
+            <MultiSelect
+              v-model="medicalDiagnoses"
+              :options="allDiagnoses"
+              optionLabel="description"
+              placeholder="Vyberte diagnózy"
+              display="chip"
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               :invalid="submitted && !!errors.medicalDiagnosis"
+              @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
@@ -388,25 +460,23 @@ async function generateDocument() {
                   <span>{{ slotProps.option.description }}</span>
                 </div>
               </template>
-            </AutoComplete>
+            </MultiSelect>
             <small v-if="submitted && errors.medicalDiagnosis" class="text-warning">{{ errors.medicalDiagnosis }}</small>
           </div>
 
           <div>
             <label class="block text-normal mb-2">Sesterská diagnóza</label>
-            <AutoComplete
-              v-model="nurseDiagnosis"
-              :suggestions="filteredNurseDiagnoses"
-              @complete="searchNurseDiagnoses"
-              :virtualScrollerOptions="{ itemSize: 38 }"
-              optionLabel="code"
-              dropdown
-              dropdownMode="blank"
-              :minLength="0"
-              completeOnFocus
+            <MultiSelect
+              v-model="nurseDiagnoses"
+              :options="allNurseDiagnoses"
+              optionLabel="description"
+              placeholder="Vyberte diagnózy"
+              display="chip"
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               :invalid="submitted && !!errors.nurseDiagnosis"
+              @complete="searchNurseDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }"
             >
               <template #option="slotProps">
                 <div class="flex flex-col">
@@ -414,7 +484,7 @@ async function generateDocument() {
                   <span>{{ slotProps.option.description }}</span>
                 </div>
               </template>
-            </AutoComplete>
+            </MultiSelect>
             <small v-if="submitted && errors.nurseDiagnosis" class="text-warning">{{ errors.nurseDiagnosis }}</small>
           </div>
 
