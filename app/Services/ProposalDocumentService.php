@@ -30,16 +30,24 @@ class ProposalDocumentService
         $company = $actor->company;
         $doctor = $patient->doctor;
 
-        $diagnosis = null;
-        if (!empty($data['medical_diagnosis_id'])) {
-            $d = DB::table('diagnoses')->find((int) $data['medical_diagnosis_id']);
-            $diagnosis = $d ? ($d->code . ' - ' . $d->description) : null;
+        $diagnosis = [];
+        if (!empty($data['medical_diagnosis_ids']) && is_array($data['medical_diagnosis_ids'])) {
+            foreach ($data['medical_diagnosis_ids'] as $diagId) {
+                $d = DB::table('diagnoses')->find((int) $diagId);
+                if ($d) {
+                    $diagnosis[] = $d->code . ' - ' . $d->description;
+                }
+            }
         }
 
-        $nurseDiagnosis = null;
-        if (!empty($data['nurse_diagnosis_id'])) {
-            $nd = DB::table('nurse_diagnoses')->find((int) $data['nurse_diagnosis_id']);
-            $nurseDiagnosis = $nd ? ($nd->code . ' - ' . $nd->description) : null;
+        $nurseDiagnosis = [];
+        if (!empty($data['nurse_diagnosis_ids']) && is_array($data['nurse_diagnosis_ids'])) {
+            foreach ($data['nurse_diagnosis_ids'] as $nurseDiagId) {
+                $nd = DB::table('nurse_diagnoses')->find((int) $nurseDiagId);
+                if ($nd) {
+                    $nurseDiagnosis[] = $nd->code . ' - ' . $nd->description;
+                }
+            }
         }
 
         $procedures = [];

@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\TextBlockController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GeocodeController;
 use \App\Http\Controllers\Api\MacroController;
+use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\DekurzController;
 use App\Http\Controllers\Api\NurseDiagnosisController;
 use App\Http\Controllers\Api\DocumentController;
@@ -108,6 +109,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
     Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class);
     Route::apiResourceComplete('macros', MacroController::class);
+    Route::get('/plans', [PlanController::class, 'index']);
     Route::apiResourceComplete('procedures', ProcedureController::class);
     Route::apiResourceComplete('patient-points', PatientPointController::class);
     Route::apiResourceComplete('report-months', ReportMonthController::class);

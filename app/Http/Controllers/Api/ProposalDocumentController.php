@@ -23,8 +23,8 @@ class ProposalDocumentController extends Controller
         *
         * @group Documents
         * @bodyParam patient_id integer required Patient ID. Example: 1
-        * @bodyParam medical_diagnosis_id integer nullable Diagnosis ID. Example: 2
-        * @bodyParam nurse_diagnosis_id integer nullable Nurse diagnosis ID. Example: 3
+        * @bodyParam medical_diagnosis_ids integer[] nullable Array of medical diagnosis IDs. Example: [1, 2]
+        * @bodyParam nurse_diagnosis_ids integer[] nullable Array of nurse diagnosis IDs. Example: [3, 4]
         * @bodyParam date date required Document date. Example: 2024-01-01
         * @bodyParam epicrisis_description string required
         * @bodyParam care_plan string required
