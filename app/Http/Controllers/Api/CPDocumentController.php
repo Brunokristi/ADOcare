@@ -8,135 +8,77 @@ use App\Http\Resources\BaseCollection;
 use App\Models\Branch;
 use App\Models\Document;
 use App\Models\Patient;
+use App\Services\CPDocumentService;
+use App\Http\Requests\StoreCPRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class CPDocumentController extends Controller
 {
+    public function __construct(private CPDocumentService $service)
+    {
+    }
+
+    /**
+     * List CP documents for current user.
+     *
+     * @group Documents
+     * @queryParam branch_id int optional Filter by branch id.
+     * @response 200 {"data": [{"id":1, "name":"cp_..."}]}
+     */
     public function index(Request $request)
     {
         $query = Document::where('type', 'cp')
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc');
 
-        if ($request->has('branch_id')) {
-        }
-
-        $documents = $query->get()->map(function ($doc) {
-            return [
-                'id' => $doc->id,
-                'name' => $doc->name,
-                'type' => $doc->type,
-                'mime_type' => $doc->mime_type,
-                'created_at' => $doc->created_at,
-                'path' => $doc->path,
-            ];
-        });
-
-        return response()->json(['data' => $documents]);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date',
-            'branch_id' => 'required|exists:branches,id',
+        $documents = $query->get()->map(fn($doc) => [
+            'id' => $doc->id,
+            'name' => $doc->name,
+            'type' => $doc->type,
+            'mime_type' => $doc->mime_type,
+            'created_at' => $doc->created_at,
+            'path' => $doc->path,
         ]);
 
-        Log::info('branchId: ' . $validated['branch_id']);
-
-        $document = Document::create([
-            'patient_id' => null,
-            'user_id' => Auth::id(),
-            'type' => 'cp',
-            'mime_type' => 'application/json',
-            'name' => 'cp_' . now()->format('d.m.Y'),
-            'path' => 'cps/' . 'cp_' . now()->timestamp . '.json',
-            'branch_id' => $validated['branch_id'],
-        ]);
-
-        $user = Auth::user();
-        $branch = Branch::findOrFail($validated['branch_id']);
-        $company = $branch->company;
-        $car = $user->cars()->first();
-        $representative = $company->representative;
-
-
-        $companyName = $company ? $company->name : '';
-        $ico = $company ? $company->ico : '';
-        $userName = $user->title . ' ' . $user->first_name . ' ' . $user->last_name;
-        $userId = $user ? $user->id : null;
-        $city = $company ? $company->city : '';
-        $startDate = $validated['start'];
-        $endDate = $validated['end'];
-        $month = date('m', strtotime($startDate));
-        $year = date('Y', strtotime($startDate));
-        $carModel = $car ? $car->model : '';
-        $carLicensePlate = $car ? $car->evc : '';
-        $representativeName = $representative->title . ' ' . ($representative ? $representative->first_name . ' ' . $representative->last_name : '');
-        $lastdayPreviousMonth = date("Y-m-d", strtotime("last day of previous month", strtotime($startDate)));
-        while (in_array(date('N', strtotime($lastdayPreviousMonth)), [6, 7])) {
-            $lastdayPreviousMonth = date("Y-m-d", strtotime($lastdayPreviousMonth . " -1 day"));
-        }        
-
-        $cpData = [
-            'company_name' => $companyName,
-            'user_id' => $userId,
-            'ico' => $ico,
-            'city' => $city,
-            'user_name' => $userName,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'month' => $month,
-            'year' => $year,
-            'car_model' => $carModel,
-            'car_license_plate' => $carLicensePlate,
-            'representative_name' => $representativeName,
-            'lastday_previous_month' => $lastdayPreviousMonth,
-            'document_id' => $document->id,
-            'created_at' => now(),
-        ];
-
-        Storage::disk('local')->put(
-            'cps/' . now()->timestamp . '.json',
-            json_encode($cpData, JSON_PRETTY_PRINT)
-        );
-         
-        return response()->json([
-            'success' => true,
-            'document_id' => $document->id,
-            'message' => 'Cestovný príkaz bol úspešne vytvorený',
-        ], 201);
+        return $this->success(['data' => $documents]);
     }
 
-    public function show($documentId)
+    /**
+     * Create a CP (Cestovný príkaz) document for the current user.
+     *
+     * @group Documents
+     * @bodyParam start date required Start date. Example: 2024-01-01
+     * @bodyParam end date required End date. Example: 2024-01-31
+     * @bodyParam branch_id integer required Branch ID. Example: 2
+     * @response 201 {"document_id":123, "cp": {"document_id":123}}
+     */
+    public function store(StoreCPRequest $request)
     {
-        $documentId = (int) $documentId;
-        $document = Document::with(['user'])->findOrFail($documentId);
+        [$document, $payload] = $this->service->createCp($request->validated(), $request->user());
 
-        $cpFile = null;
+        return $this->success([
+            'document_id' => $document->id,
+            'cp' => $payload,
+        ], 'Cestovný príkaz bol úspešne vytvorený', 201);
+    }
 
-        $files = Storage::disk('local')->files('cps');
-        foreach ($files as $file) {
-            $content = json_decode(Storage::disk('local')->get($file), true);
-            if ($content['document_id'] === $documentId) {
-                $cpFile = $content;
-                break;
-            }
+    /**
+     * Show CP document payload.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 123
+     * @response 200 {"document": {...}, "cp_data": {...}}
+     */
+    public function show(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $payload = $this->service->getCpPayload($document);
+        if (! $payload) {
+            return $this->error('Cestovný príkaz data not found', 404);
         }
 
-        if (!$cpFile) {
-            return response()->json(['message' => 'Cestovný príkaz data not found'], 404);
-        }
-
-        $responseData = [
-            'document' => $document,
-            'cp_data' => $cpFile,
-        ];
-
-        return response()->json($responseData);
+        return $this->success(['document' => $document, 'cp_data' => $payload]);
     }
 }

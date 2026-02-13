@@ -48,7 +48,7 @@ async function loadCP(documentId: string) {
 
   try {
     const res = await api.get(`/v1/cps/${documentId}`);
-    const cp = res.data?.cp_data ?? {};
+    const cp = res.data?.data?.cp_data ?? {};
 
     cpData.value = {
         company_name: cp.company_name ?? '',
@@ -89,7 +89,7 @@ function printPage() {
 
 <template>
   <LoadingOverlay :show="loading" text="" />
-  
+
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar

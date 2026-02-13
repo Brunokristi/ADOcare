@@ -169,7 +169,7 @@ async function preloadFromLatestProposal() {
   loadingPrefill.value = true
   try {
     const res = await api.get(`/v1/patients/${patientId.value}/proposals/latest`)
-    const p = res.data?.proposal_data
+    const p = res.data.data?.proposal_data
     if (!p) return
 
     if (p.date) {
@@ -414,7 +414,7 @@ async function generateDocument() {
 
     const res = await api.post('/v1/proposals', payload)
 
-    if (res.data?.document_id) {
+    if (res.data.data?.document_id) {
       toast.add({
         severity: 'success',
         summary: 'Úspešne',

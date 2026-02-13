@@ -23,9 +23,11 @@ return new class extends Migration {
             $table->unsignedBigInteger('nurse_id')->nullable()->after('branch_id');
         });
 
-        // backup pivot table
-        if (!Schema::hasTable('patient_branch_users_backup')) {
-            DB::statement('CREATE TABLE patient_branch_users_backup AS TABLE patient_branch_users');
+        // backup pivot table (Postgres-only SQL guarded for other drivers)
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            if (!Schema::hasTable('patient_branch_users_backup')) {
+                DB::statement('CREATE TABLE patient_branch_users_backup AS TABLE patient_branch_users');
+            }
         }
 
         // pick one pivot row per patient (largest id) and use it to populate patients

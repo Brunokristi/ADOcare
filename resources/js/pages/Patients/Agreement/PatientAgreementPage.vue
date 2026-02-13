@@ -69,8 +69,8 @@ async function generateDocument() {
     };
 
     const res = await api.post('/v1/agreements', payload);
-
-    if (res.data?.document_id) {
+    const data = res.data.data;
+    if (data?.document_id) {
       toast.add({
         severity: 'success',
         summary: 'Úspešne vytvorené',
@@ -80,7 +80,7 @@ async function generateDocument() {
 
       router.push({
         name: 'documents-agreement',
-        params: { documentId: res.data.document_id },
+        params: { documentId: data.document_id },
       });
     }
   } catch (err: any) {

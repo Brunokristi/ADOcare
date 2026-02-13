@@ -22,6 +22,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'id',
         'first_name',
         'last_name',
         'email',
@@ -147,6 +148,46 @@ class User extends Authenticatable
         $branchId = $branch instanceof Branch ? $branch->id : (int) $branch;
         $row = DB::table('user_branches')->where('user_id', $this->id)->where('branch_id', $branchId)->first();
         return $row?->role_id ?? null;
+    }
+
+    /**
+     * Check if user belongs to given company.
+     */
+    public function isInCompany(int $companyId): bool
+    {
+        return $this->company_id !== null && (int) $this->company_id === $companyId;
+    }
+
+    /**
+     * Check if user is assigned to the given branch.
+     */
+    public function isInBranch(int $branchId): bool
+    {
+        return $this->branches()->where('branch_id', $branchId)->exists();
+    }
+
+    /**
+     * Check whether the user has a specific role on a branch (pivot.role_id -> roles.position).
+     */
+    public function hasBranchRole(int $branchId, string $rolePosition): bool
+    {
+        $roleId = DB::table('user_branches')
+            ->where('user_id', $this->id)
+            ->where('branch_id', $branchId)
+            ->value('role_id');
+
+        if (!$roleId)
+            return false;
+
+        return DB::table('roles')->where('id', $roleId)->where('position', $rolePosition)->exists();
+    }
+
+    /**
+     * Alias for hasRole() — explicit naming for policies.
+     */
+    public function hasGlobalRole(string $rolePosition): bool
+    {
+        return $this->hasRole($rolePosition);
     }
 
     /**

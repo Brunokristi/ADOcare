@@ -63,7 +63,7 @@ async function loadProposal(documentId: string) {
 
   try {
     const res = await api.get(`/v1/proposals/${documentId}`);
-    const proposal = res.data?.proposal_data ?? {};
+    const proposal = res.data.data?.proposal_data ?? {};
 
     // Handle both single string and array formats for diagnoses
     const doctorDiagnoses = Array.isArray(proposal.diagnosis)

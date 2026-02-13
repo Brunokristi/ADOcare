@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PatientPointController;
 use App\Http\Controllers\Api\PointsExportController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\MyCompanyController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\ReportMonthController;
 use App\Http\Controllers\Api\RoleController;
@@ -98,10 +99,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);
     Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
 
-    Route::get('/my-company/branches', [BranchController::class, 'myCompanyBranches']);
-    Route::get('/my-company', [CompanyController::class, 'myCompany']);
-    Route::get('/my-company/cars', [CarController::class, 'myCompanyCars']);
-    Route::get('/my-company/users', [UserController::class, 'myCompanyUsers']);
+    Route::get('/my-company/branches', [MyCompanyController::class, 'branches']);
+    Route::get('/my-company', [MyCompanyController::class, 'show']);
+    Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
+    Route::get('/my-company/users', [MyCompanyController::class, 'users']);
 
     Route::apiResourceComplete('doctors', DoctorController::class);
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
@@ -137,26 +138,25 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
 
-    Route::post('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'attach']);
-    Route::delete('/branches/{branch}/doctors/{doctor}', [\App\Http\Controllers\Api\BranchDoctorController::class, 'detach']);
+    Route::post('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'attach']);
+    Route::delete('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'detach']);
 
     Route::post('/proposals', [ProposalDocumentController::class, 'store']);
-    Route::get('/proposals/{documentId}', [ProposalDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/proposals', [ProposalDocumentController::class, 'getByPatient']);
-    Route::get('/patients/{patientId}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
+    Route::get('/proposals/{document}', [ProposalDocumentController::class, 'show']);
+    Route::get('/patients/{patient}/proposals', [ProposalDocumentController::class, 'getByPatient']);
+    Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
 
     Route::post('/agreements', [AgreementDocumentController::class, 'store']);
-    Route::get('/agreements/{documentId}', [AgreementDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/agreements', [AgreementDocumentController::class, 'getByPatient']);
+    Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show']);
 
     Route::get('/cps', [CPDocumentController::class, 'index']);
     Route::post('/cps', [CPDocumentController::class, 'store']);
-    Route::get('/cps/{documentId}', [CPDocumentController::class, 'show']);
+    Route::get('/cps/{document}', [CPDocumentController::class, 'show']);
 
     Route::get('/dzcs', [DZCDocumentController::class, 'index']);
     Route::post('/dzcs', [DZCDocumentController::class, 'store']);
-    Route::get('/dzcs/{documentId}', [DZCDocumentController::class, 'show']);
-    Route::get('/dzcs/{documentId}/csv', [DZCDocumentController::class, 'exportCsv']);
+    Route::get('/dzcs/{document}', [DZCDocumentController::class, 'show']);
+    Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv']);
 
     Route::post('/dekurz', [DekurzDocumentController::class, 'store']);
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates']);
@@ -168,7 +168,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/patients/{patientId}/leave/latest', [LeaveDocumentController::class, 'latestByPatient']);
 
     Route::post('/records', [RecordDocumentController::class, 'store']);
-    Route::get('/records/{documentId}', [RecordDocumentController::class, 'show']);
+    Route::get('/records/{document}', [RecordDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
