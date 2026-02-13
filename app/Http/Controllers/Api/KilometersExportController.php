@@ -15,7 +15,7 @@ class KilometersExportController extends Controller
     public function preview(Request $request)
     {
         $data = $request->validate([
-            'batchNumber' => 'required|integer',
+            'batchNumber' => 'required|string',
             'batchType.code' => 'required|string',
             'insurance.id' => 'required|integer',
             'period' => 'required|array|size:2',

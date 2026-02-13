@@ -539,6 +539,48 @@ async function onSubmit() {
     return
   }
 
+  // Validation: Check for conflicting procedure codes (3440 and 3439 cannot be on same date)
+  const procedureCode = procedure.value?.code
+  const conflictingCode = procedureCode === '3440' ? '3439' : procedureCode === '3439' ? '3440' : null
+
+  if (conflictingCode) {
+    // Check if patient already has records with the conflicting code on any of the selected dates
+    const selectedDateStrings = dates.value.map((d) => toApiDate(d))
+    const hasConflict = records.value.some((r) => {
+      const recordDateStr = r.date ? toApiDate(r.date) : null
+      return recordDateStr && selectedDateStrings.includes(recordDateStr) && r.procedure?.code === conflictingCode
+    })
+
+    if (hasConflict) {
+      toast.add({
+        severity: 'error',
+        summary: 'Konflikt kódov',
+        detail: `Kód ${conflictingCode} nemôže byť na rovnakom dátume ako kód ${procedureCode}.`,
+        life: 4000,
+      })
+      return
+    }
+  }
+
+  // Validation: Check for duplicates of codes 3440 and 3439
+  if (procedureCode === '3440' || procedureCode === '3439') {
+    const selectedDateStrings = dates.value.map((d) => toApiDate(d))
+    const hasDuplicate = records.value.some((r) => {
+      const recordDateStr = r.date ? toApiDate(r.date) : null
+      return recordDateStr && selectedDateStrings.includes(recordDateStr) && r.procedure?.code === procedureCode
+    })
+
+    if (hasDuplicate) {
+      toast.add({
+        severity: 'error',
+        summary: 'Duplikát kódu',
+        detail: `Pacient už má kód ${procedureCode} na rovnakom dátume.`,
+        life: 4000,
+      })
+      return
+    }
+  }
+
   try {
     // 1) update patient reference_date once
     const refDate = toApiDate(referralDate.value)
@@ -689,11 +731,11 @@ const pointTableOptions = computed<DataTableOptions<PatientPointApi>>(() => {
     },
 
     columns: [
-      { field: 'date', header: 'Dátum', sortable: true, render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : '') },
-      { field: 'diagnosis_code', header: 'Diagnóza', sortable: true, render: (v: string | null) => v ?? '' },
-      { field: 'procedure_code', header: 'Výkon', sortable: true, render: (v: string | null) => v ?? '' },
+      { field: 'date', header: 'Dátum', sortable: true, searchable: true, render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : '') },
+      { field: 'diagnosis_code', header: 'Diagnóza', sortable: true, searchable: true, render: (v: string | null) => v ?? '' },
+      { field: 'procedure_code', header: 'Výkon', sortable: true, searchable: true, render: (v: string | null) => v ?? '' },
       { field: 'quantity', header: 'Počet', sortable: true, render: (v: number | null) => v ?? '' },
-      { field: 'reference_date', header: 'Dátum odporučenia', sortable: true, render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : '') },
+      { field: 'reference_date', header: 'Dátum odporučenia', sortable: true, searchable: true, render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : '') },
       {
         field: 'edit',
         header: '',
