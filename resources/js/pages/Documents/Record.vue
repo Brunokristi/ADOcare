@@ -373,7 +373,7 @@ async function loadRecord(documentId: string) {
   loading.value = true
   try {
     const res = await api.get(`/v1/records/${documentId}`)
-    const record = res.data?.record_data ?? {}
+    const record = res.data?.data?.record_data ?? {}
 
     documentData.value = {
       facilityName: record.company_name ?? '',
@@ -417,7 +417,7 @@ function formatValue(value: any, fieldId?: string): string {
   }
 
   const strValue = String(value ?? '')
-  
+
   // Format dates to Slovak format (DD.MM.YYYY)
   if (/^\d{4}-\d{2}-\d{2}$/.test(strValue)) {
     const [year, month, day] = strValue.split('-')

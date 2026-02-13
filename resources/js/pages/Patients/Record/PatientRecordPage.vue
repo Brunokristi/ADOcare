@@ -1800,7 +1800,7 @@ async function preloadFromLatestRecord() {
 
   try {
     const res = await api.get(`/v1/patients/${patientId.value}/records/latest`)
-    const recordData = res.data?.record_data?.form_data
+    const recordData = res?.data.data?.record_data?.form_data
 
     if (!recordData) return
 
@@ -1870,7 +1870,7 @@ async function saveRecord() {
       life: 3000
     })
 
-    const documentId = res.data?.document_id ?? null
+    const documentId = res.data?.data?.document_id ?? null
     if (documentId) {
       router.push({ name: 'documents-record', params: { documentId } })
     }
