@@ -245,32 +245,24 @@ function printPage() {
 }
 
 @media print {
-    body {
-        margin: 0;
-        padding: 0;
-    }
+  body { margin: 0; padding: 0; }
+  body * { visibility: hidden !important; }
 
-    body * {
-        visibility: hidden !important;
-    }
+  #agreement-sheet,
+  #agreement-sheet * {
+    visibility: visible !important;
+  }
 
-    #agreement-sheet,
-    #agreement-sheet * {
-        visibility: visible !important;
-    }
+  #agreement-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 auto!important;
+    box-shadow: none !important;
+  }
 
-    #agreement-sheet {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        margin: 0 auto;
-        box-shadow: none;
-    }
-
-    .no-print,
-    .p-toolbar {
-        display: none !important;
-    }
+  .no-print,
+  .p-toolbar {
+    display: none !important;
+  }
 }
 </style>
