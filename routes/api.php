@@ -163,7 +163,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/dekurz', [DekurzDocumentController::class, 'store']);
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates']);
     Route::get('/dekurz/last', [DekurzDocumentController::class, 'last']);
-    Route::get('/dekurz/{documentId}', [DekurzDocumentController::class, 'show']);
+    Route::get('/dekurz/{document}', [DekurzDocumentController::class, 'show']);
 
     Route::post('/leave-documents', [LeaveDocumentController::class, 'store']);
     Route::get('/leave-documents/{documentId}', [LeaveDocumentController::class, 'show']);
