@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, type ComponentPublicInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
@@ -28,17 +28,27 @@ interface SelectedProcedure {
   frequency: string
 }
 
+interface Plan {
+  id: number
+  name: string
+  text: string
+}
+
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
 
-// ensure patient is loaded similarly to your working page
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 
+// ✅ selected (multiple)
 const medicalDiagnoses = ref<Diagnosis[]>([])
 const nurseDiagnoses = ref<NurseDiagnosis[]>([])
+
+// ✅ suggestions (remote)
+const filteredDiagnoses = ref<Diagnosis[]>([])
+const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 
 const errors = ref<Record<string, string>>({})
 const submitted = ref(false)
@@ -51,11 +61,12 @@ const patientMobility = ref<string[]>([])
 const expectedDuration = ref('')
 
 const procedures = ref<SelectedProcedure[]>([{ procedure: null, frequency: '' }])
-
 const filteredProcedures = ref<ProcedureOption[]>([])
 
-const allDiagnoses = ref<Diagnosis[]>([])
-const allNurseDiagnoses = ref<NurseDiagnosis[]>([])
+// ✅ Plans
+const plans = ref<Plan[]>([])
+const plansLoading = ref(false)
+const planScrollRefs = ref<Record<string, HTMLElement>>({})
 
 const mobilityOptions = [
   { label: 'H - pacient/ka s obmedzenou pohyblivosťou (50%)', value: 'H' },
@@ -71,6 +82,8 @@ const durationOptions = [
 ]
 
 const frequencyOptions = [
+  { label: 'V pracovné dni', value: 'weekdays' },
+  { label: 'Počas víkendov a sviatkov', value: 'weekends' },
   { label: 'Denne', value: 'daily' },
   { label: 'Každý druhý deň', value: 'every_other_day' },
   { label: '3x týždenne', value: 'three_times_weekly' },
@@ -83,7 +96,6 @@ const frequencyOptions = [
 
 function extractArray(raw: any): any[] {
   if (Array.isArray(raw)) return raw
-
   const candidates = [
     raw?.data,
     raw?.data?.items,
@@ -93,10 +105,7 @@ function extractArray(raw: any): any[] {
     raw?.items,
     raw?.items?.data
   ]
-
-  for (const c of candidates) {
-    if (Array.isArray(c)) return c
-  }
+  for (const c of candidates) if (Array.isArray(c)) return c
   return []
 }
 
@@ -105,13 +114,15 @@ function parseCodeFromText(v: string): string {
 }
 
 const reverseFrequencyMap: Record<string, string> = {
-  'Denne': 'daily',
+  Denne: 'daily',
   'Každý druhý deň': 'every_other_day',
   '3x týždenne': 'three_times_weekly',
   '2x týždenne': 'twice_weekly',
   '1x týždenne': 'once_weekly',
   '2x mesačne': 'twice_monthly',
   '1x mesačne': 'once_monthly',
+  'V pracovné dni': 'weekdays',
+  'Počas víkendov a sviatkov': 'weekends',
   'Podľa potreby': 'as_needed'
 }
 
@@ -122,45 +133,26 @@ function normalizeFrequencyToEnum(v: string): string {
 
 async function fetchDiagnosisByCode(code: string): Promise<Diagnosis | null> {
   if (!code) return null
-
-  // use same API shape as your working page: q can be ''
-  const res = await api.get('/v1/diagnoses', {
-    params: { q: code, per_page: 50, page: 1, sort: 'code' }
-  })
-
+  const res = await api.get('/v1/diagnoses', { params: { q: code, per_page: 50, page: 1, sort: 'code' } })
   const arr = extractArray(res.data) as Diagnosis[]
   const match = arr.find(d => (d.code ?? '').toLowerCase() === code.toLowerCase())
-  return match
-    ? { id: match.id, code: match.code ?? '', description: match.description ?? '' }
-    : null
+  return match ? { id: match.id, code: match.code ?? '', description: match.description ?? '' } : null
 }
 
 async function fetchNurseDiagnosisByCode(code: string): Promise<NurseDiagnosis | null> {
   if (!code) return null
-
-  const res = await api.get('/v1/nurse-diagnoses', {
-    params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 }
-  })
-
+  const res = await api.get('/v1/nurse-diagnoses', { params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 } })
   const arr = extractArray(res.data) as NurseDiagnosis[]
   const match = arr.find(d => (d.code ?? '').toLowerCase() === code.toLowerCase())
-  return match
-    ? { id: match.id, code: match.code ?? '', description: match.description ?? '' }
-    : null
+  return match ? { id: match.id, code: match.code ?? '', description: match.description ?? '' } : null
 }
 
 async function fetchProcedureByCode(code: string): Promise<ProcedureOption | null> {
   if (!code) return null
-
-  const res = await api.get('/v1/procedures', {
-    params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 }
-  })
-
+  const res = await api.get('/v1/procedures', { params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 } })
   const arr = extractArray(res.data) as ProcedureOption[]
   const match = arr.find(p => (p.code ?? '').toLowerCase() === code.toLowerCase())
-  return match
-    ? { id: match.id, code: match.code ?? '', description: match.description ?? '' }
-    : null
+  return match ? { id: match.id, code: match.code ?? '', description: match.description ?? '' } : null
 }
 
 async function preloadFromLatestProposal() {
@@ -182,23 +174,18 @@ async function preloadFromLatestProposal() {
     patientMobility.value = Array.isArray(p.mobility) ? [...p.mobility] : []
     expectedDuration.value = p.expected_duration ?? ''
 
-    // Handle multiple diagnoses from latest proposal
     if (Array.isArray(p.diagnosis) && p.diagnosis.length) {
-      const diagnosisPromises = p.diagnosis.map((d: string) => {
-        const code = parseCodeFromText(d)
-        return fetchDiagnosisByCode(code)
-      })
-      const diagnosisResults = await Promise.all(diagnosisPromises)
+      const diagnosisResults = await Promise.all(
+        p.diagnosis.map((d: string) => fetchDiagnosisByCode(parseCodeFromText(d)))
+      )
       medicalDiagnoses.value = diagnosisResults.filter((d): d is Diagnosis => d !== null)
     }
 
     if (Array.isArray(p.nurse_diagnosis) && p.nurse_diagnosis.length) {
-      const nurseDiagnosisPromises = p.nurse_diagnosis.map((d: string) => {
-        const code = parseCodeFromText(d)
-        return fetchNurseDiagnosisByCode(code)
-      })
-      const nurseDiagnosisResults = await Promise.all(nurseDiagnosisPromises)
-      nurseDiagnoses.value = nurseDiagnosisResults.filter((d): d is NurseDiagnosis => d !== null)
+      const nurseResults = await Promise.all(
+        p.nurse_diagnosis.map((d: string) => fetchNurseDiagnosisByCode(parseCodeFromText(d)))
+      )
+      nurseDiagnoses.value = nurseResults.filter((d): d is NurseDiagnosis => d !== null)
     }
 
     if (Array.isArray(p.procedures) && p.procedures.length) {
@@ -214,12 +201,7 @@ async function preloadFromLatestProposal() {
       procedures.value = mapped.length ? mapped : [{ procedure: null, frequency: '' }]
     }
 
-    toast.add({
-      severity: 'info',
-      summary: 'Načítané',
-      detail: 'Texty načítané z histórie.',
-      life: 2500,
-    })
+    toast.add({ severity: 'info', summary: 'Načítané', detail: 'Texty načítané z histórie.', life: 2500 })
   } catch (e: any) {
     if (e?.response?.status !== 404) console.error('Prefill failed:', e)
   } finally {
@@ -227,133 +209,91 @@ async function preloadFromLatestProposal() {
   }
 }
 
-async function loadDiagnoses() {
-  try {
-    const res = await api.get('/v1/diagnoses', {
-      params: { paginate: 0 }
-    })
-
-    const arr = extractArray(res.data) as Diagnosis[]
-    allDiagnoses.value = arr.map(d => ({
-      id: d.id,
-      code: d.code ?? '',
-      description: d.description ?? ''
-    }))
-    console.log('Loaded diagnoses:', allDiagnoses.value.length)
-  } catch (e) {
-    console.error('Failed to load diagnoses', e)
-    allDiagnoses.value = []
-  }
-}
-
+// ✅ remote search for diagnoses / nurse diagnoses / procedures
 async function searchDiagnoses(event: { query: string }) {
   try {
-    const q = (event.query ?? '').trim()
-
-    const res = await api.get('/v1/diagnoses', {
-      params: { q, paginate: 0 }
-    })
-
+    const q = (event?.query ?? '').trim()
+    const res = await api.get('/v1/diagnoses', { params: { q, per_page: 25, page: 1, sort: 'code' } })
     const arr = extractArray(res.data) as Diagnosis[]
-    allDiagnoses.value = arr.map(d => ({
-      id: d.id,
-      code: d.code ?? '',
-      description: d.description ?? ''
-    }))
+    filteredDiagnoses.value = arr.map(d => ({ id: d.id, code: d.code ?? '', description: d.description ?? '' }))
   } catch (e) {
     console.error('Failed to load diagnoses', e)
-    allDiagnoses.value = []
-  }
-}
-
-async function loadNurseDiagnoses() {
-  try {
-    const res = await api.get('/v1/nurse-diagnoses', {
-      params: { paginate: 0 }
-    })
-
-    const arr = extractArray(res.data) as NurseDiagnosis[]
-    allNurseDiagnoses.value = arr.map(d => ({
-      id: d.id,
-      code: d.code ?? '',
-      description: d.description ?? ''
-    }))
-    console.log('Loaded nurse diagnoses:', allNurseDiagnoses.value.length)
-  } catch (e) {
-    console.error('Failed to load nurse diagnoses', e)
-    allNurseDiagnoses.value = []
+    filteredDiagnoses.value = []
   }
 }
 
 async function searchNurseDiagnoses(event: { query: string }) {
   try {
-    const q = (event.query ?? '').trim()
-
-    const res = await api.get('/v1/nurse-diagnoses', {
-      params: { q, paginate: 0 }
-    })
-
+    const q = (event?.query ?? '').trim()
+    const res = await api.get('/v1/nurse-diagnoses', { params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 } })
     const arr = extractArray(res.data) as NurseDiagnosis[]
-    allNurseDiagnoses.value = arr.map(d => ({
-      id: d.id,
-      code: d.code ?? '',
-      description: d.description ?? ''
-    }))
+    filteredNurseDiagnoses.value = arr.map(d => ({ id: d.id, code: d.code ?? '', description: d.description ?? '' }))
   } catch (e) {
     console.error('Failed to load nurse diagnoses', e)
-    allNurseDiagnoses.value = []
-  }
-}
-
-async function loadProcedures() {
-  try {
-    const res = await api.get('/v1/procedures', {
-      params: { paginate: 0 }
-    })
-
-    const arr = extractArray(res.data) as ProcedureOption[]
-    filteredProcedures.value = arr.map(p => ({
-      id: p.id,
-      code: p.code ?? '',
-      description: p.description ?? ''
-    }))
-    console.log('Loaded procedures:', filteredProcedures.value.length)
-  } catch (e) {
-    console.error('Failed to load procedures', e)
-    filteredProcedures.value = []
+    filteredNurseDiagnoses.value = []
   }
 }
 
 async function searchProcedures(event: { query: string }) {
   try {
-    const q = (event.query ?? '').trim()
-
-    const res = await api.get('/v1/procedures', {
-      params: { q, paginate: 0 }
-    })
-
+    const q = (event?.query ?? '').trim()
+    const res = await api.get('/v1/procedures', { params: { q, per_page: 25, page: 1, sort: 'code', paginate: 0 } })
     const arr = extractArray(res.data) as ProcedureOption[]
-    filteredProcedures.value = arr.map(p => ({
-      id: p.id,
-      code: p.code ?? '',
-      description: p.description ?? ''
-    }))
+    filteredProcedures.value = arr.map(p => ({ id: p.id, code: p.code ?? '', description: p.description ?? '' }))
   } catch (e) {
     console.error('Failed to search procedures', e)
     filteredProcedures.value = []
   }
 }
 
-// Preload latest proposal when patient changes
 watch(
   () => patientId.value,
   async (id: number) => {
-    if (id) {
-      await preloadFromLatestProposal()
-    }
+    if (id) await preloadFromLatestProposal()
   },
   { immediate: true }
 )
+
+onMounted(() => {
+  loadPlans()
+})
+
+async function loadPlans() {
+  plansLoading.value = true
+  try {
+    const res = await api.get('/v1/plans')
+    const arr = extractArray(res.data) as Plan[]
+    plans.value = arr
+  } catch (e) {
+    console.error('Failed to load plans', e)
+    plans.value = []
+  } finally {
+    plansLoading.value = false
+  }
+}
+
+function setMacroScrollRef(id: string) {
+  return (el: Element | ComponentPublicInstance | null) => {
+    if (el instanceof HTMLElement) planScrollRefs.value[id] = el
+  }
+}
+
+function scrollMacros(id: string, direction: number) {
+  const ref = planScrollRefs.value[id]
+  if (ref) {
+    const scrollAmount = 200
+    ref.scrollLeft += direction * scrollAmount
+  }
+}
+
+function appendToSectionText(text: string) {
+  // Append to care plan (assuming this is the "care plan" section)
+  if (carePlan.value) {
+    carePlan.value += '\n' + text
+  } else {
+    carePlan.value = text
+  }
+}
 
 function addProcedure() {
   procedures.value.push({ procedure: null, frequency: '' })
@@ -361,6 +301,10 @@ function addProcedure() {
 
 function removeProcedure(index: number) {
   if (procedures.value.length > 1) procedures.value.splice(index, 1)
+}
+
+function removeMedicalDiagnosis(diagnosis: Diagnosis) {
+  medicalDiagnoses.value = medicalDiagnoses.value.filter(d => d.id !== diagnosis.id)
 }
 
 function validateForm() {
@@ -405,16 +349,14 @@ async function generateDocument() {
       patient_mobility: patientMobility.value,
       expected_duration: expectedDuration.value,
       procedures: procedures.value
-        .filter(p => p.procedure)
-        .map(p => ({
-          procedure_id: p.procedure?.id ?? null,
-          frequency: p.frequency
-        }))
+        .filter(p => p.procedure?.id)
+        .map(p => ({ procedure_id: p.procedure!.id, frequency: p.frequency }))
     }
 
     const res = await api.post('/v1/proposals', payload)
 
-    if (res.data.data?.document_id) {
+    const documentId = res.data?.data?.document_id
+    if (documentId) {
       toast.add({
         severity: 'success',
         summary: 'Úspešne',
@@ -422,10 +364,7 @@ async function generateDocument() {
         life: 3000
       })
 
-      router.push({
-        name: 'documents-proposal',
-        params: { documentId: res.data.document_id }
-      })
+      router.push({ name: 'documents-proposal', params: { documentId } })
     }
   } catch (err: any) {
     console.error('Failed to generate document:', err)
@@ -439,55 +378,85 @@ async function generateDocument() {
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
-        <div class="grid grid-cols-3 gap-4">
+        <div>
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
-            <MultiSelect
+
+            <AutoComplete
               v-model="medicalDiagnoses"
-              :options="allDiagnoses"
-              optionLabel="description"
-              placeholder="Vyberte diagnózy"
-              display="chip"
+              :suggestions="filteredDiagnoses"
+              multiple
+              :minLength="1"
+              dropdown
+              completeOnFocus
+              optionLabel="code"
+              @complete="searchDiagnoses"
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               :invalid="submitted && !!errors.medicalDiagnosis"
-              @complete="searchDiagnoses"
-              :virtualScrollerOptions="{ itemSize: 38 }"
             >
-              <template #option="slotProps">
+              <template #option="{ option }">
                 <div class="flex flex-col">
-                  <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                  <span>{{ slotProps.option.description }}</span>
+                  <span class="shrink-0 font-medium">{{ option.code }}</span>
+                  <span>{{ option.description }}</span>
                 </div>
               </template>
-            </MultiSelect>
+
+              <template #chip="{ value }">
+                <div class="inline-flex items-center gap-2 bg-darkgrey text-lightgrey px-3 py-1 rounded-md text-normal">
+                  <span class="whitespace-nowrap text-normal">{{ value.code }}</span>
+                  <i
+                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                    @click.stop="removeMedicalDiagnosis(value)"
+                  ></i>
+                </div>
+              </template>
+            </AutoComplete>
+
             <small v-if="submitted && errors.medicalDiagnosis" class="text-warning">{{ errors.medicalDiagnosis }}</small>
           </div>
+        </div>
 
+        <div>
           <div>
             <label class="block text-normal mb-2">Sesterská diagnóza</label>
-            <MultiSelect
+
+            <AutoComplete
               v-model="nurseDiagnoses"
-              :options="allNurseDiagnoses"
-              optionLabel="description"
-              placeholder="Vyberte diagnózy"
-              display="chip"
+              :suggestions="filteredNurseDiagnoses"
+              multiple
+              :minLength="1"
+              dropdown
+              completeOnFocus
+              optionLabel="code"
+              @complete="searchNurseDiagnoses"
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               :invalid="submitted && !!errors.nurseDiagnosis"
-              @complete="searchNurseDiagnoses"
-              :virtualScrollerOptions="{ itemSize: 38 }"
             >
-              <template #option="slotProps">
+              <template #option="{ option }">
                 <div class="flex flex-col">
-                  <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                  <span>{{ slotProps.option.description }}</span>
+                  <span class="shrink-0 font-medium">{{ option.code }}</span>
+                  <span>{{ option.description }}</span>
                 </div>
               </template>
-            </MultiSelect>
+
+              <template #chip="{ value }">
+                <div class="inline-flex items-center gap-2 bg-darkgrey text-lightgrey px-3 py-1 rounded-md text-normal">
+                  <span class="whitespace-nowrap text-normal">{{ value.code }}</span>
+                  <i
+                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                    @click.stop="nurseDiagnoses = nurseDiagnoses.filter(d => d.id !== value.id)"
+                  ></i>
+                </div>
+              </template>
+            </AutoComplete>
+
             <small v-if="submitted && errors.nurseDiagnosis" class="text-warning">{{ errors.nurseDiagnosis }}</small>
           </div>
+        </div>
 
+        <div>
           <div>
             <label class="block text-normal mb-2">Dátum</label>
             <DatePicker
@@ -503,9 +472,7 @@ async function generateDocument() {
         </div>
 
         <div>
-          <label class="block text-normal mb-2">
-            Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej starostlivosti
-          </label>
+          <label class="block text-normal mb-2">Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej starostlivosti</label>
           <Textarea
             v-model="epicrisisDescription"
             class="w-full border-none!"
@@ -528,6 +495,60 @@ async function generateDocument() {
           <small v-if="submitted && errors.carePlan" class="text-warning">{{ errors.carePlan }}</small>
         </div>
 
+        <div class="w-full">
+          <label class="block text-normal mb-2">Plány starostlivosti</label>
+
+          <div v-if="!plansLoading && !plans.length" class="opacity-70">
+            Nemáte žiadne plány. Skúste opustiť stránku a znova sa načítať.
+          </div>
+
+          <div v-else class="relative">
+            <button
+              type="button"
+              class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                     flex items-center justify-center cursor-pointer hover:bg-grey"
+              @click.prevent="scrollMacros('care-plan', -1)"
+              title="Doľava"
+            >
+              <i class="bi bi-chevron-left text-darkgrey" />
+            </button>
+
+            <button
+              type="button"
+              class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+                     flex items-center justify-center cursor-pointer hover:bg-grey"
+              @click.prevent="scrollMacros('care-plan', 1)"
+              title="Doprava"
+            >
+              <i class="bi bi-chevron-right text-darkgrey" />
+            </button>
+
+            <!-- chips row -->
+            <div
+              :ref="setMacroScrollRef('care-plan')"
+              class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-3 px-10 mb-2"
+              style="scrollbar-width: thin;"
+            >
+              <button
+                v-for="plan in plans"
+                :key="plan.id"
+                type="button"
+                class="shrink-0 px-3 py-1 rounded-md bg-accent
+                       text-white text-normal border border-transparent
+                       hover:cursor-pointer hover:bg-darkgrey
+                       "
+                @pointerdown.stop
+                @mousedown.stop
+                @touchstart.stop
+                @click.prevent.stop="appendToSectionText(plan.text)"
+                :title="plan.text"
+              >
+                {{ plan.name }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label class="block text-normal mb-2">Mobilita pacienta</label>
           <div class="flex flex-col gap-2">
@@ -536,7 +557,6 @@ async function generateDocument() {
               <label :for="`mobility-${idx}`" class="text-normal cursor-pointer">{{ option.label }}</label>
             </div>
           </div>
-          <small v-if="submitted && errors.patientMobility" class="text-warning">{{ errors.patientMobility }}</small>
         </div>
 
         <div>
@@ -570,10 +590,10 @@ async function generateDocument() {
                 class="w-full"
                 inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
               >
-                <template #option="slotProps">
+                <template #option="{ option }">
                   <div class="flex flex-col">
-                    <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                    <span>{{ slotProps.option.description }}</span>
+                    <span class="shrink-0 font-medium">{{ option.code }}</span>
+                    <span>{{ option.description }}</span>
                   </div>
                 </template>
               </AutoComplete>
@@ -608,6 +628,7 @@ async function generateDocument() {
               @click.prevent="removeProcedure(idx)"
             />
           </div>
+
           <small v-if="submitted && errors.procedures" class="text-warning">{{ errors.procedures }}</small>
         </div>
       </section>

@@ -116,6 +116,8 @@ function translateFrequency(value: string): string {
     once_weekly: '1x týždenne',
     twice_monthly: '2x mesačne',
     once_monthly: '1x mesačne',
+    weekdays: 'V pracovné dni',
+    weekends: 'Počas víkendov a sviatkov',
     as_needed: 'Podľa potreby',
   };
   return frequencyMap[value] ?? value;
@@ -237,23 +239,19 @@ function printPage() {
                   <td class="border border-black p-2 w-1/2">
                     Lekárska diagnóza:<br />
                     <strong>
-                      <div v-if="documentData.doctorDiagnoses.length > 0">
-                        <div v-for="(diagnosis, index) in documentData.doctorDiagnoses" :key="index" class="mb-1">
-                          {{ diagnosis.split(' - ')[0] }}
-                        </div>
-                      </div>
-                      <div v-else>-</div>
+                      {{ documentData.doctorDiagnoses.length > 0
+                        ? documentData.doctorDiagnoses.map((d: string) => d.split(' - ')[0]).join(', ')
+                        : '-'
+                      }}
                     </strong>
                   </td>
                   <td class="border border-black p-2 w-1/2">
                     Sesterská diagnóza:<br />
                     <strong>
-                      <div v-if="documentData.nurseDiagnoses.length > 0">
-                        <div v-for="(diagnosis, index) in documentData.nurseDiagnoses" :key="index" class="mb-1">
-                          {{ diagnosis.split(' - ')[0] }}
-                        </div>
-                      </div>
-                      <div v-else>-</div>
+                      {{ documentData.nurseDiagnoses.length > 0
+                        ? documentData.nurseDiagnoses.map((d: string) => d.split(' - ')[0]).join(', ')
+                        : '-'
+                      }}
                     </strong>
                   </td>
                 </tr>

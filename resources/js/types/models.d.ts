@@ -427,6 +427,23 @@ export interface Patient {
   insurance_company_exists: boolean
 }
 
+export interface Plan {
+  // columns
+  id: number
+  company_id: number
+  name: string
+  text: string
+  sort_order: number
+  created_at: string | null
+  updated_at: string | null
+  deleted_at: string | null
+  // relations
+  company: Company
+  // counts
+  // exists
+  company_exists: boolean
+}
+
 export interface Macro {
   // columns
   id: number

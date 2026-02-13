@@ -23,8 +23,10 @@ class StoreProposalRequest extends FormRequest
     {
         return [
             'patient_id' => 'required|exists:patients,id',
-            'medical_diagnosis_id' => 'nullable|exists:diagnoses,id',
-            'nurse_diagnosis_id' => 'nullable|exists:nurse_diagnoses,id',
+            'medical_diagnosis_ids' => 'nullable|array',
+            'medical_diagnosis_ids.*' => 'nullable|exists:diagnoses,id',
+            'nurse_diagnosis_ids' => 'nullable|array',
+            'nurse_diagnosis_ids.*' => 'nullable|exists:nurse_diagnoses,id',
             'date' => 'required|date',
             'epicrisis_description' => 'required|string',
             'care_plan' => 'required|string',
