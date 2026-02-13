@@ -373,7 +373,7 @@ async function loadRecord(documentId: string) {
   loading.value = true
   try {
     const res = await api.get(`/v1/records/${documentId}`)
-    const record = res.data?.data?.record_data ?? {}
+    const record = res.data?.data?.record_data ?? res.data?.record_data ?? {}
 
     documentData.value = {
       facilityName: record.company_name ?? '',
