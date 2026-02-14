@@ -8,6 +8,7 @@ interface AgreementData {
     company_name: string;
     company_address: string;
     company_city: string;
+    branch_city: string;
     user_name: string;
     user_contact: string;
     patient_name: string;
@@ -23,6 +24,7 @@ const agreementData = ref<AgreementData>({
     company_name: '',
     company_address: '',
     company_city: '',
+    branch_city: '',
     user_name: '',
     user_contact: '',
     patient_name: '',
@@ -46,6 +48,7 @@ async function loadAgreement(documentId: string) {
             company_name: agreement.company_name ?? '',
             company_address: agreement.company_address ?? '',
             company_city: agreement.company_city ?? '',
+            branch_city: agreement.branch_city ?? '',
             user_name: agreement.user_name ?? '',
             user_contact: agreement.user_contact ?? '',
             patient_name: agreement.patient_name ?? '',
@@ -191,7 +194,7 @@ function printPage() {
                         <tr>
                             <td class="border border-black p-2 w-3/4">
                                 V:<br />
-                                <strong>{{ agreementData.company_city }}</strong>
+                                <strong>{{ agreementData.branch_city }}</strong>
                             </td>
                             <td class="border border-black p-2 w-1/4">
                                 Dátum:<br />
@@ -242,32 +245,24 @@ function printPage() {
 }
 
 @media print {
-    body {
-        margin: 0;
-        padding: 0;
-    }
+  body { margin: 0; padding: 0; }
+  body * { visibility: hidden !important; }
 
-    body * {
-        visibility: hidden !important;
-    }
+  #agreement-sheet,
+  #agreement-sheet * {
+    visibility: visible !important;
+  }
 
-    #agreement-sheet,
-    #agreement-sheet * {
-        visibility: visible !important;
-    }
+  #agreement-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 auto!important;
+    box-shadow: none !important;
+  }
 
-    #agreement-sheet {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        margin: 0 auto;
-        box-shadow: none;
-    }
-
-    .no-print,
-    .p-toolbar {
-        display: none !important;
-    }
+  .no-print,
+  .p-toolbar {
+    display: none !important;
+  }
 }
 </style>

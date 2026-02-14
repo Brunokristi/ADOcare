@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, markRaw } from 'vue'
+import { ref, computed, onMounted, watch, markRaw, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
 
@@ -45,14 +45,13 @@ type PatientPointApi = {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Stores & Refs                                                             */
+/* Stores & refs                                                              */
 /* -------------------------------------------------------------------------- */
 
 const patientStore = usePatientStore()
 patientStore.loadFromStorage()
 
 const authStore = useAuthStore()
-
 const { current: currentPatient } = storeToRefs(patientStore)
 const { user, currentBranch } = storeToRefs(authStore)
 
@@ -64,9 +63,13 @@ const toast = useToast()
 
 const isLoading = ref(false)
 
-// MULTI DATE: Date[]
-const dates = ref<Date[]>([new Date()])
+// MULTI DATE
+const dates = ref<Date[]>([])
 const referralDate = ref<Date | null>(null)
+
+// DatePicker instance + controlled view date (robust month tracking)
+const multiDatePickerRef = ref<any>(null)
+const viewDate = ref<Date>(new Date()) // always 1st day of displayed month
 
 const diagnosis = ref<Option | null>(null)
 const filteredDiagnoses = ref<Option[]>([])
@@ -77,7 +80,6 @@ const filteredProcedures = ref<Option[]>([])
 const quantity = ref<number | null>(1)
 const submitted = ref(false)
 
-// local cache for duplicate detection + quick local updates (still useful)
 const records = ref<RecordEntry[]>([])
 
 /* Edit dialog */
@@ -90,21 +92,194 @@ const pointRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 const tableKey = computed(() => `patient-points-${currentPatient.value?.id ?? 'none'}`)
 
 /* -------------------------------------------------------------------------- */
-/*  Helpers                                                                   */
+/* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
+
+async function setDatesAndKeepView(selected: Date[]) {
+  // capture the view month/year BEFORE we change v-model
+  syncViewDateFromPicker()
+  const keep = new Date(viewDate.value.getFullYear(), viewDate.value.getMonth(), 1)
+
+  // set dates (this is what triggers the jump)
+  dates.value = normalizeSelectedDates(selected)
+
+  // force the view back (PrimeVue updates view AFTER model update)
+  await nextTick()
+  viewDate.value = keep
+
+  // extra safety (some versions need one more frame)
+  requestAnimationFrame(() => {
+    viewDate.value = keep
+
+    // optional: also poke the internal state if it exists in your version
+    const dp = multiDatePickerRef.value
+    if (dp) {
+      if (typeof dp.currentMonth === 'number') dp.currentMonth = keep.getMonth()
+      if (typeof dp.currentYear === 'number') dp.currentYear = keep.getFullYear()
+      if (typeof dp.viewMonth === 'number') dp.viewMonth = keep.getMonth()
+      if (typeof dp.viewYear === 'number') dp.viewYear = keep.getFullYear()
+      if (typeof dp.updateViewDate === 'function') dp.updateViewDate(keep)
+    }
+  })
+}
+
+function buildWorkingDaysForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const selected: Date[] = []
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    const dow = d.getDay()
+    if (dow >= 1 && dow <= 5) selected.push(d)
+  }
+  return selected
+}
+
+function buildAllDaysForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const selected: Date[] = []
+  for (let day = 1; day <= last; day++) selected.push(new Date(y, m, day))
+  return selected
+}
+
+function buildMondayWednesdayFridayForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const selected: Date[] = []
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    const dow = d.getDay()
+    if (dow === 1 || dow === 3 || dow === 5) selected.push(d)
+  }
+  return selected
+}
+
+function getEasterDate(year: number): Date {
+  // Computus algorithm for calculating Easter Sunday
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day)
+}
+
+function getSlovakHolidaysForMonth(year: number, month: number): Date[] {
+  const holidays: Date[] = []
+  
+  // Fixed holidays
+  const fixedHolidays = [
+    [0, 1],   // January 1 - New Year's Day
+    [0, 6],   // January 6 - Epiphany
+    [4, 1],   // May 1 - Labour Day
+    [4, 8],   // May 8 - Victory in Europe Day
+    [6, 5],   // July 5 - Saints Cyril and Method
+    [7, 29],  // August 29 - Slovak National Uprising
+    [8, 1],   // September 1 - Constitution Day
+    [8, 15],  // September 15 - Day of the Seven Sorrows of Mary
+    [9, 28],  // October 28 - Establishment of Czechoslovak State
+    [9, 30],  // October 30 - Independence Day
+    [10, 1],  // November 1 - All Saints' Day
+    [10, 17], // November 17 - Freedom and Democracy Day
+    [11, 24], // December 24 - Christmas Eve
+    [11, 25], // December 25 - Christmas Day
+    [11, 26], // December 26 - Boxing Day
+  ]
+
+  for (const [m, d] of fixedHolidays) {
+    if (m === month) {
+      holidays.push(new Date(year, m, d))
+    }
+  }
+
+  // Easter-based holidays
+  const easter = getEasterDate(year)
+  const goodFriday = new Date(easter)
+  goodFriday.setDate(goodFriday.getDate() - 2)
+  const easterMonday = new Date(easter)
+  easterMonday.setDate(easterMonday.getDate() + 1)
+
+  if (goodFriday.getMonth() === month) holidays.push(goodFriday)
+  if (easter.getMonth() === month) holidays.push(easter)
+  if (easterMonday.getMonth() === month) holidays.push(easterMonday)
+
+  return holidays
+}
+
+function buildHolidaysForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const holidayDates = getSlovakHolidaysForMonth(y, m)
+  const holidaySet = new Set(holidayDates.map((d) => toApiDate(d)))
+
+  const selected: Date[] = []
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    if (holidaySet.has(toApiDate(d))) {
+      selected.push(d)
+    }
+  }
+  return selected
+}
+
+function buildWeekendsForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const selected: Date[] = []
+  
+  // Add weekends
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    const dow = d.getDay()
+    if (dow === 0 || dow === 6) selected.push(d)
+  }
+
+  // Add holidays
+  const holidayDates = getSlovakHolidaysForMonth(y, m)
+  const holidaySet = new Set(holidayDates.map((d) => toApiDate(d)))
+  
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    if (holidaySet.has(toApiDate(d)) && !selected.find(sel => toApiDate(sel) === toApiDate(d))) {
+      selected.push(d)
+    }
+  }
+
+  return selected
+}
+
+async function selectHolidays() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildHolidaysForCurrentView())
+}
 
 function truncate(text: string, max = 60) {
   if (!text) return ''
   return text.length > max ? text.slice(0, max) + '…' : text
 }
 
-/* -------------------------------------------------------------------------- */
-/*  API helpers: your API is wrapped (success + BaseCollection)               */
-/* -------------------------------------------------------------------------- */
-
 function extractArray(raw: any): any[] {
   if (Array.isArray(raw)) return raw
-
   const candidates = [
     raw?.data,
     raw?.data?.items,
@@ -114,16 +289,12 @@ function extractArray(raw: any): any[] {
     raw?.items,
     raw?.items?.data,
   ]
-
-  for (const c of candidates) {
-    if (Array.isArray(c)) return c
-  }
-
+  for (const c of candidates) if (Array.isArray(c)) return c
   return []
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Form reset helpers                                                        */
+/* Form reset                                                                 */
 /* -------------------------------------------------------------------------- */
 
 function todayOnly() {
@@ -137,15 +308,16 @@ function safePatientReferralDate(): Date {
 
   const d = new Date(raw)
   if (isNaN(d.getTime())) return todayOnly()
-
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
 function resetFormForNewPatient() {
-  const t = todayOnly()
-
-  dates.value = [t]
+  dates.value = []
   referralDate.value = safePatientReferralDate()
+
+  // set the picker view month to referral month (or today if none)
+  const base = referralDate.value ?? todayOnly()
+  viewDate.value = new Date(base.getFullYear(), base.getMonth(), 1)
 
   diagnosis.value = null
   procedure.value = null
@@ -158,7 +330,7 @@ function resetFormForNewPatient() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  API: Load existing patient points (local cache)                           */
+/* Load patient points                                                        */
 /* -------------------------------------------------------------------------- */
 
 async function loadRecordsForPatient() {
@@ -168,7 +340,6 @@ async function loadRecordsForPatient() {
   }
 
   isLoading.value = true
-
   try {
     const { data } = await api.get('v1/patient-points', {
       params: { patient_id: currentPatient.value.id, paginate: false },
@@ -202,24 +373,16 @@ async function loadRecordsForPatient() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Lookup: Diagnoses & Procedures                                            */
+/* Lookup                                                                     */
 /* -------------------------------------------------------------------------- */
 
 async function searchDiagnoses(event: { query: string }) {
   try {
     const q = (event.query ?? '').trim()
-
     const res = await api.get('v1/diagnoses', {
-      params: {
-        q,
-        per_page: 25,
-        page: 1,
-        sort: 'code',
-      },
+      params: { q, per_page: 25, page: 1, sort: 'code' },
     })
-
     const arr = extractArray(res.data)
-
     filteredDiagnoses.value = (arr as Diagnosis[]).map((d) => ({
       id: d.id,
       code: (d as any).code ?? '',
@@ -234,18 +397,10 @@ async function searchDiagnoses(event: { query: string }) {
 async function searchProcedures(event: { query: string }) {
   try {
     const q = (event.query ?? '').trim()
-
     const res = await api.get('v1/procedures', {
-      params: {
-        q,
-        per_page: 25,
-        page: 1,
-        sort: 'code',
-      },
+      params: { q, per_page: 25, page: 1, sort: 'code' },
     })
-
     const arr = extractArray(res.data)
-
     filteredProcedures.value = (arr as Procedure[]).map((p) => ({
       id: p.id,
       code: (p as any).code ?? '',
@@ -258,7 +413,7 @@ async function searchProcedures(event: { query: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Normalization helpers                                                     */
+/* Normalize dates                                                            */
 /* -------------------------------------------------------------------------- */
 
 function parseDateInput(raw: unknown): Date | null {
@@ -272,7 +427,6 @@ function parseDateInput(raw: unknown): Date | null {
   if (!match) return null
 
   const [, dStr, mStr, yStr] = match as RegExpMatchArray
-
   const day = Number(dStr)
   const month = Number(mStr)
   let year = Number(yStr)
@@ -281,14 +435,7 @@ function parseDateInput(raw: unknown): Date | null {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null
 
   const result = new Date(year, month - 1, day)
-  if (
-    result.getFullYear() !== year ||
-    result.getMonth() !== month - 1 ||
-    result.getDate() !== day
-  ) {
-    return null
-  }
-
+  if (result.getFullYear() !== year || result.getMonth() !== month - 1 || result.getDate() !== day) return null
   return result
 }
 
@@ -311,37 +458,83 @@ function normalizeSelectedDates(input: unknown): Date[] {
     .map(([, d]) => d)
 }
 
+/* -------------------------------------------------------------------------- */
+/* Robust DatePicker view month tracking                                      */
+/* -------------------------------------------------------------------------- */
+
+function readPickerViewMonthYear(): { year: number; month: number } | null {
+  const dp = multiDatePickerRef.value
+  if (!dp) return null
+
+  const year =
+    dp.currentYear ??
+    dp.viewYear ??
+    dp.overlayVisibleYear ??
+    dp.year ??
+    null
+
+  const month =
+    dp.currentMonth ??
+    dp.viewMonth ??
+    dp.overlayVisibleMonth ??
+    dp.month ??
+    null
+
+  if (typeof year === 'number' && typeof month === 'number') return { year, month }
+  return null
+}
+
+function syncViewDateFromPicker() {
+  const v = readPickerViewMonthYear()
+  if (!v) return
+  viewDate.value = new Date(v.year, v.month, 1)
+}
+
+/* Buttonbar selection helpers (always use currently displayed month) */
+async function selectWorkingDays() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildWorkingDaysForCurrentView())
+}
+
+async function selectAllDays() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildAllDaysForCurrentView())
+}
+
+async function selectMondayWednesdayFriday() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildMondayWednesdayFridayForCurrentView())
+}
+
+async function selectWeekends() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildWeekendsForCurrentView())
+}
+
+/* -------------------------------------------------------------------------- */
+/* Ensure selected diagnosis/procedure                                        */
+/* -------------------------------------------------------------------------- */
+
 async function ensureDiagnosisSelected(): Promise<boolean> {
   const value = diagnosis.value as unknown
   if (value && typeof value === 'object' && 'id' in (value as any)) return true
 
   const raw = (value as string | undefined) ?? ''
   const code = raw.trim()
-
   if (!code) {
     diagnosis.value = null
     return false
   }
 
   try {
-    const res = await api.get('v1/diagnoses', {
-      params: { q: code, per_page: 50, page: 1, sort: 'code' },
-    })
-
+    const res = await api.get('v1/diagnoses', { params: { q: code, per_page: 50, page: 1, sort: 'code' } })
     const arr = extractArray(res.data) as any[]
     const match = arr.find((d) => String(d.code ?? '').toLowerCase() === code.toLowerCase())
-
     if (!match) {
       diagnosis.value = null
       return false
     }
-
-    diagnosis.value = {
-      id: match.id,
-      code: match.code ?? '',
-      description: match.description ?? '',
-    }
-
+    diagnosis.value = { id: match.id, code: match.code ?? '', description: match.description ?? '' }
     return true
   } catch (e) {
     console.error('Failed to resolve diagnosis by code', e)
@@ -356,31 +549,20 @@ async function ensureProcedureSelected(): Promise<boolean> {
 
   const raw = (value as string | undefined) ?? ''
   const code = raw.trim()
-
   if (!code) {
     procedure.value = null
     return false
   }
 
   try {
-    const res = await api.get('v1/procedures', {
-      params: { q: code, per_page: 50, page: 1, sort: 'code' },
-    })
-
+    const res = await api.get('v1/procedures', { params: { q: code, per_page: 50, page: 1, sort: 'code' } })
     const arr = extractArray(res.data) as any[]
     const match = arr.find((p) => String(p.code ?? '').toLowerCase() === code.toLowerCase())
-
     if (!match) {
       procedure.value = null
       return false
     }
-
-    procedure.value = {
-      id: match.id,
-      code: match.code ?? '',
-      description: match.description ?? '',
-    }
-
+    procedure.value = { id: match.id, code: match.code ?? '', description: match.description ?? '' }
     return true
   } catch (e) {
     console.error('Failed to resolve procedure by code', e)
@@ -390,7 +572,7 @@ async function ensureProcedureSelected(): Promise<boolean> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Payload builders                                                          */
+/* Payload builders                                                           */
 /* -------------------------------------------------------------------------- */
 
 function buildPatientPointPayloadForDate(dateOverride: Date) {
@@ -424,112 +606,8 @@ function buildPatientPointPayloadForDate(dateOverride: Date) {
   }
 }
 
-function buildPayloadFromApiRow(row: PatientPointApi, dateOverride: Date) {
-  if (!currentPatient.value) throw new Error('No patient selected')
-
-  const patient = currentPatient.value as any
-  const fullName = `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim()
-
-  const doctorRel = patient.doctor ?? null
-  const doctorId = doctorRel?.id ?? patient.doctor_id ?? null
-
-  return {
-    date: toApiDate(dateOverride),
-
-    patient_personal_number: patient.personal_number,
-    patient_name: fullName,
-    patient_id: patient.id,
-
-    diagnosis_code: row.diagnosis_code ?? '',
-    diagnosis_id: row.diagnosis_id ?? null,
-
-    procedure_code: row.procedure_code ?? '',
-    procedure_id: row.procedure_id ?? null,
-
-    doctor_pzs: doctorRel?.pzs ?? null,
-    doctor_zpr: doctorRel?.zpr ?? null,
-    doctor_id: doctorId,
-
-    reference_date: row.reference_date ?? toApiDate(referralDate.value),
-    user_id: user.value?.id ?? null,
-    branch_id: currentBranch.value!.id,
-    quantity: row.quantity ?? quantity.value,
-  }
-}
-
 /* -------------------------------------------------------------------------- */
-/*  Date picker helpers                                                       */
-/* -------------------------------------------------------------------------- */
-
-function selectWorkingDays() {
-  const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
-  const selectedDates: Date[] = []
-
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
-
-  for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(currentYear, currentMonth, day)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) selectedDates.push(date)
-  }
-
-  dates.value = selectedDates
-}
-
-function selectMondayWednesdayFriday() {
-  const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
-  const selectedDates: Date[] = []
-
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
-
-  for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(currentYear, currentMonth, day)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) selectedDates.push(date)
-  }
-
-  dates.value = selectedDates
-}
-
-function selectAllDays() {
-  const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
-  const selectedDates: Date[] = []
-
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
-
-  for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(currentYear, currentMonth, day)
-    selectedDates.push(date)
-  }
-
-  dates.value = selectedDates
-}
-
-function selectWeekends() {
-  const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
-  const selectedDates: Date[] = []
-
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
-
-  for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(currentYear, currentMonth, day)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek === 0 || dayOfWeek === 6) selectedDates.push(date)
-  }
-
-  dates.value = selectedDates
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Submit (create)                                                           */
+/* Submit                                                                     */
 /* -------------------------------------------------------------------------- */
 
 async function onSubmit() {
@@ -541,63 +619,78 @@ async function onSubmit() {
   const diagnosisOk = await ensureDiagnosisSelected()
   const procedureOk = await ensureProcedureSelected()
 
-  if (
-    !dates.value.length ||
-    !diagnosisOk ||
-    !procedureOk ||
-    !referralDate.value ||
-    !quantity.value ||
-    quantity.value <= 0
-  ) {
+  if (!dates.value.length || !diagnosisOk || !procedureOk || !referralDate.value || !quantity.value || quantity.value <= 0) {
     return
   }
 
-  // referral date must be older than all selected dates
-  if (referralDate.value) {
-    const referralDateOnly = new Date(
-      referralDate.value.getFullYear(),
-      referralDate.value.getMonth(),
-      referralDate.value.getDate(),
-    )
-
-    for (const d of dates.value) {
-      const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-      if (referralDateOnly >= dateOnly) {
-        toast.add({
-          severity: 'error',
-          summary: 'Neplatný dátum',
-          detail: 'Dátum referálu musí byť staršie ako dátumy výkonov.',
-          life: 3000,
-        })
-        return
-      }
+  const referralDateOnly = new Date(referralDate.value.getFullYear(), referralDate.value.getMonth(), referralDate.value.getDate())
+  for (const d of dates.value) {
+    const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    if (referralDateOnly > dateOnly) {
+      toast.add({ severity: 'error', summary: 'Neplatný dátum', detail: 'Dátum referálu musí byť staršie ako dátumy výkonov.', life: 3000 })
+      return
     }
   }
 
   if (!currentPatient.value) {
-    toast.add({
-      severity: 'error',
-      summary: 'Chýbajúci pacient',
-      detail: 'Najprv vyberte pacienta.',
-      life: 3000,
-    })
+    toast.add({ severity: 'error', summary: 'Chýbajúci pacient', detail: 'Najprv vyberte pacienta.', life: 3000 })
     return
+  }
+
+  // Validation: Check for conflicting procedure codes (3440 and 3439 cannot be on same date)
+  const procedureCode = procedure.value?.code
+  const conflictingCode = procedureCode === '3440' ? '3439' : procedureCode === '3439' ? '3440' : null
+
+  if (conflictingCode) {
+    // Check if patient already has records with the conflicting code on any of the selected dates
+    const selectedDateStrings = dates.value.map((d) => toApiDate(d))
+    const hasConflict = records.value.some((r) => {
+      const recordDateStr = r.date ? toApiDate(r.date) : null
+      return recordDateStr && selectedDateStrings.includes(recordDateStr) && r.procedure?.code === conflictingCode
+    })
+
+    if (hasConflict) {
+      toast.add({
+        severity: 'error',
+        summary: 'Konflikt kódov',
+        detail: `Kód ${conflictingCode} nemôže byť na rovnakom dátume ako kód ${procedureCode}.`,
+        life: 4000,
+      })
+      return
+    }
+  }
+
+  // Validation: Check for duplicates of codes 3440 and 3439
+  if (procedureCode === '3440' || procedureCode === '3439') {
+    const selectedDateStrings = dates.value.map((d) => toApiDate(d))
+    const hasDuplicate = records.value.some((r) => {
+      const recordDateStr = r.date ? toApiDate(r.date) : null
+      return recordDateStr && selectedDateStrings.includes(recordDateStr) && r.procedure?.code === procedureCode
+    })
+
+    if (hasDuplicate) {
+      toast.add({
+        severity: 'error',
+        summary: 'Duplikát kódu',
+        detail: `Pacient už má kód ${procedureCode} na rovnakom dátume.`,
+        life: 4000,
+      })
+      return
+    }
   }
 
   try {
     // 1) update patient reference_date once
     const refDate = toApiDate(referralDate.value)
 
-    await api.put(`v1/patients/${currentPatient.value.id}`, {
-      reference_date: refDate,
-    })
+    await api.put(`v1/patients/${currentPatient.value.id}`, { reference_date: refDate })
 
     patientStore.setPatient({
       ...(currentPatient.value as Patient),
       reference_date: refDate,
     })
 
-    // 2) duplicate detection based on full cache (paginate:false)
+    // 2) duplicate detection (local cache)
     const existingKeys = new Set(
       records.value.map((r) => {
         const d = r.date ? toApiDate(r.date) : ''
@@ -617,7 +710,7 @@ async function onSubmit() {
       createdCount++
     }
 
-    // 4) refresh cache + remote table
+    // 4) refresh
     if (createdCount > 0) {
       await loadRecordsForPatient()
       pointRemote.value?.reload?.()
@@ -627,10 +720,7 @@ async function onSubmit() {
     toast.add({
       severity: createdCount > 0 ? 'success' : 'info',
       summary: createdCount > 0 ? 'Uložené' : 'Nič nové',
-      detail:
-        createdCount > 0
-          ? `Uložené záznamy: ${createdCount}`
-          : 'Vybrané dátumy už existujú v tabuľke.',
+      detail: createdCount > 0 ? `Uložené záznamy: ${createdCount}` : 'Vybrané dátumy už existujú v tabuľke.',
       life: 3000,
     })
 
@@ -639,34 +729,21 @@ async function onSubmit() {
     submitted.value = false
   } catch (error: any) {
     console.error('Create failed:', error)
-
-    const msg = error?.response?.data?.errors
-      ? (Object.values(error.response.data.errors).flat() as any[])[0]
-      : error?.response?.data?.message
-
-    toast.add({
-      severity: 'error',
-      summary: 'Neuložené',
-      detail: msg ?? 'Záznamy sa nepodarilo uložiť.',
-      life: 6000,
-    })
+    const msg = error?.response?.data?.errors ? (Object.values(error.response.data.errors).flat() as any[])[0] : error?.response?.data?.message
+    toast.add({ severity: 'error', summary: 'Neuložené', detail: msg ?? 'Záznamy sa nepodarilo uložiť.', life: 6000 })
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Edit dialog helpers                                                       */
+/* Edit dialog                                                                */
 /* -------------------------------------------------------------------------- */
 
 function apiRowToRecordEntry(row: PatientPointApi): RecordEntry {
   return {
     id: row.id,
     date: row.date ? new Date(row.date) : null,
-    diagnosis: row.diagnosis_id
-      ? { id: row.diagnosis_id, code: row.diagnosis_code ?? '', description: '' }
-      : null,
-    procedure: row.procedure_id
-      ? { id: row.procedure_id, code: row.procedure_code ?? '', description: '' }
-      : null,
+    diagnosis: row.diagnosis_id ? { id: row.diagnosis_id, code: row.diagnosis_code ?? '', description: '' } : null,
+    procedure: row.procedure_id ? { id: row.procedure_id, code: row.procedure_code ?? '', description: '' } : null,
     referralDate: row.reference_date ? new Date(row.reference_date) : null,
     quantity: row.quantity ?? null,
   }
@@ -717,11 +794,8 @@ async function savePoint() {
     pointRemote.value?.reload?.()
   } catch (error: any) {
     console.error('Failed to update point', error)
-
-    const msg = error?.response?.data?.errors
-      ? (Object.values(error.response.data.errors).flat() as string[])[0]
-      : error?.response?.data?.message ?? 'Záznam sa nepodarilo upraviť.'
-
+    const msg =
+      error?.response?.data?.errors ? (Object.values(error.response.data.errors).flat() as string[])[0] : error?.response?.data?.message ?? 'Záznam sa nepodarilo upraviť.'
     toast.add({
       severity: 'error',
       summary: 'Chyba',
@@ -732,7 +806,7 @@ async function savePoint() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  UniversalDataTable options                                                */
+/* Table options                                                              */
 /* -------------------------------------------------------------------------- */
 
 const pointsEndpointUrl = computed(() => (currentPatient.value?.id ? 'v1/patient-points' : ''))
@@ -746,124 +820,38 @@ const pointTableOptions = computed<DataTableOptions<PatientPointApi>>(() => {
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,
-
-    // filter by patient
     extraParams: patientId ? { patient_id: patientId } : {},
 
     afterInit: ({ remote }) => {
       pointRemote.value = remote
-      // If your backend supports sort=-date
       remote.setSort?.('-date')
       remote.loadPage?.(1)
     },
 
     columns: [
-      {
-        field: 'date',
-        header: 'Dátum',
-        sortable: true,
-        render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : ''),
-      },
-      {
-        field: 'diagnosis_code',
-        header: 'Diagnóza',
-        sortable: true,
-        render: (v: string | null) => v ?? '',
-      },
-      {
-        field: 'procedure_code',
-        header: 'Výkon',
-        sortable: true,
-        render: (v: string | null) => v ?? '',
-      },
-      {
-        field: 'quantity',
-        header: 'Počet',
-        sortable: true,
-        render: (v: number | null) => (v ?? ''),
-      },
-      {
-        field: 'reference_date',
-        header: 'Dátum odporučenia',
-        sortable: true,
-        render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : ''),
-      },
+      { field: 'date', header: 'Dátum', sortable: true, searchable: true, render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : '') },
+      { field: 'diagnosis_code', header: 'Diagnóza', sortable: true, searchable: true, render: (v: string | null) => v ?? '' },
+      { field: 'procedure_code', header: 'Výkon', sortable: true, searchable: true, render: (v: string | null) => v ?? '' },
+      { field: 'quantity', header: 'Počet', sortable: true, render: (v: number | null) => v ?? '' },
+      { field: 'reference_date', header: 'Dátum odporučenia', sortable: true, searchable: true, render: (v: string | null) => (v ? new Date(v).toLocaleDateString('sk-SK') : '') },
       {
         field: 'edit',
         header: '',
         width: '3rem',
         component: markRaw(ActionButtons),
         componentOptions: [
-          {
-            icon: 'bi bi-pencil',
-            color: 'info',
-            tooltip: 'Upraviť záznam',
-            action: (row: PatientPointApi) => editRecordFromApiRow(row),
-          },
+          { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť záznam', action: (row: PatientPointApi) => editRecordFromApiRow(row) },
         ],
       },
     ],
 
     actions: [
       {
-        key: 'duplicate',
-        icon: 'bi bi-copy',
-        class:
-          '!h-7 !bg-accent !border-accent !text-white hover:!bg-darkgrey hover:!border-darkgrey',
-        disabled: ({ selectedRows }) => selectedRows.length === 0,
-        handler: async ({ selectedRows, remote }) => {
-          if (!currentPatient.value) {
-            toast.add({
-              severity: 'warn',
-              summary: 'Chýbajúci pacient',
-              detail: 'Najprv vyberte pacienta.',
-              life: 4000,
-            })
-            return
-          }
-
-          const today = new Date()
-
-          try {
-            for (const original of selectedRows as PatientPointApi[]) {
-              const payload = buildPayloadFromApiRow(original, today)
-              await api.post('v1/patient-points', payload)
-            }
-
-            await loadRecordsForPatient()
-            await remote.loadPage(remote.page.value)
-
-            toast.add({
-              severity: 'success',
-              summary: 'Duplikované',
-              detail: 'Vybrané záznamy boli duplikované.',
-              life: 3000,
-            })
-          } catch (error: any) {
-            console.error('Failed to duplicate patient points', error)
-
-            const msg = error?.response?.data?.errors
-              ? (Object.values(error.response.data.errors).flat() as string[])[0]
-              : error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo duplikovať.'
-
-            toast.add({
-              severity: 'error',
-              summary: 'Chyba pri duplikovaní',
-              detail: msg,
-              life: 6000,
-            })
-          }
-        },
-      },
-      {
         key: 'delete',
         icon: 'bi bi-eraser',
         class: '!h-7 !bg-warning !border-warning !text-white',
         disabled: ({ selectedRows }) => selectedRows.length === 0,
-
-        // Confirmation handled by UniversalDataTable
         confirm: 'Naozaj si prajete vymazať vybrané záznamy?',
-
         handler: async ({ selectedRows, remote }) => {
           const idsToDelete = (selectedRows as PatientPointApi[]).map((r) => r.id)
 
@@ -881,9 +869,7 @@ const pointTableOptions = computed<DataTableOptions<PatientPointApi>>(() => {
             })
           } catch (error: any) {
             console.error('Failed to delete patient points', error)
-
             const msg = error?.response?.data?.message ?? 'Niektoré záznamy sa nepodarilo vymazať.'
-
             toast.add({
               severity: 'error',
               summary: 'Chyba pri mazaní',
@@ -898,17 +884,16 @@ const pointTableOptions = computed<DataTableOptions<PatientPointApi>>(() => {
 })
 
 /* -------------------------------------------------------------------------- */
-/*  Lifecycle                                                                 */
+/* Lifecycle                                                                  */
 /* -------------------------------------------------------------------------- */
 
-// IMPORTANT: watch only patient id so updating the same patient object does not reset form
 watch(
   () => currentPatient.value?.id,
   async (newId) => {
     if (!newId) {
       records.value = []
       referralDate.value = null
-      dates.value = [todayOnly()]
+      dates.value = []
       diagnosis.value = null
       procedure.value = null
       quantity.value = 1
@@ -933,10 +918,12 @@ onMounted(() => {
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
         <div class="grid grid-cols-15 gap-4">
-          <!-- Dátum (MULTI) -->
+          <!-- MULTI DATE -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum</label>
+
             <DatePicker
+              ref="multiDatePickerRef"
               v-model="dates"
               selectionMode="multiple"
               dateFormat="dd.mm.yy"
@@ -944,6 +931,7 @@ onMounted(() => {
               showButtonBar
               class="w-full"
               :manualInput="false"
+              :viewDate="viewDate"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #buttonbar="{ clearCallback }">
@@ -951,43 +939,55 @@ onMounted(() => {
                   <div class="flex gap-2">
                     <Button
                       size="small"
-                      label="Pon-Pia"
+                      label="Po-Ne"
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @click="selectWorkingDays"
+                      @mousedown.prevent
+                      @click.prevent="selectAllDays"
                     />
                     <Button
                       size="small"
-                      label="Pon-Ned"
+                      label="Po-Pia"
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @click="selectAllDays"
+                      @mousedown.prevent
+                      @click.prevent="selectWorkingDays"
                     />
                     <Button
                       size="small"
-                      label="Pon, Str, Pia"
+                      label="3x"
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @click="selectMondayWednesdayFriday"
+                      @mousedown.prevent
+                      @click.prevent="selectMondayWednesdayFriday"
                     />
                     <Button
                       size="small"
-                      label="Sobota-Nedeľa"
+                      label="So-Ne"
                       class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @click="selectWeekends"
+                      @mousedown.prevent
+                      @click.prevent="selectWeekends"
+                    />
+                    <Button
+                      size="small"
+                      label="†"
+                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
+                      @mousedown.prevent
+                      @click.prevent="selectHolidays"
                     />
                   </div>
+
                   <div class="flex gap-2">
                     <Button
                       size="small"
                       severity="danger"
                       class="bg-warning! border-transparent! text-white! text-mini! px-2! bi bi-dash-circle"
-                      @click="clearCallback"
+                      @mousedown.prevent
+                      @click.prevent="clearCallback"
                     />
                   </div>
                 </div>
               </template>
             </DatePicker>
-            <small v-if="submitted && (!dates || !dates.length)" class="text-warning">
-              Dátum je povinný.
-            </small>
+
+            <small v-if="submitted && (!dates || !dates.length)" class="text-warning">Dátum je povinný.</small>
           </div>
 
           <!-- Diagnóza -->
@@ -1009,11 +1009,11 @@ onMounted(() => {
               <template #option="slotProps">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                  <span class="">{{ truncate(slotProps.option.description, 40) }}</span>
+                  <span>{{ truncate(slotProps.option.description, 40) }}</span>
                 </div>
               </template>
             </AutoComplete>
-            <small v-if="submitted && !diagnosis" class="text-warning"> Diagnóza je povinná. </small>
+            <small v-if="submitted && !diagnosis" class="text-warning">Diagnóza je povinná.</small>
           </div>
 
           <!-- Výkon -->
@@ -1039,7 +1039,7 @@ onMounted(() => {
                 </div>
               </template>
             </AutoComplete>
-            <small v-if="submitted && !procedure" class="text-warning"> Výkon je povinný. </small>
+            <small v-if="submitted && !procedure" class="text-warning">Výkon je povinný.</small>
           </div>
 
           <!-- Počet -->
@@ -1052,9 +1052,7 @@ onMounted(() => {
               :max="100"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-warning">
-              Počet je povinný.
-            </small>
+            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-warning">Počet je povinný.</small>
           </div>
 
           <!-- Dátum odporučenia -->
@@ -1068,9 +1066,7 @@ onMounted(() => {
               :manualInput="false"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             />
-            <small v-if="submitted && !referralDate" class="text-warning">
-              Dátum je povinný.
-            </small>
+            <small v-if="submitted && !referralDate" class="text-warning">Dátum je povinný.</small>
           </div>
         </div>
       </section>
@@ -1086,20 +1082,15 @@ onMounted(() => {
       </div>
     </form>
 
-    <!-- Table (UniversalDataTable) -->
     <div class="overflow-x-auto">
-      <UniversalDataTable
-        v-if="currentPatient?.id"
-        :key="tableKey"
-        :options="pointTableOptions"
-      />
+      <UniversalDataTable v-if="currentPatient?.id" :key="tableKey" :options="pointTableOptions" />
       <div v-else class="text-mini text-accent py-2">Najprv vyberte pacienta.</div>
     </div>
 
-    <!-- Edit dialog (unchanged UI; works with pencil action) -->
+    <!-- Edit dialog -->
     <Dialog v-model:visible="pointDialog" :style="{ width: '600px' }" header="Upraviť záznam" :modal="true">
-      <div class="flex flex-col gap-6" v-if="editPoint">
-        <div class="col-span-12">
+      <div v-if="editPoint" class="flex flex-col gap-6">
+        <div>
           <label class="block text-normal mb-1">Dátum</label>
           <DatePicker
             v-model="editPoint.date"
@@ -1108,10 +1099,10 @@ onMounted(() => {
             class="w-full"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
           />
-          <small v-if="editSubmitted && !editPoint.date" class="text-warning"> Dátum je povinný. </small>
+          <small v-if="editSubmitted && !editPoint.date" class="text-warning">Dátum je povinný.</small>
         </div>
 
-        <div class="col-span-12">
+        <div>
           <label class="block text-normal mb-1">Diagnóza</label>
           <AutoComplete
             v-model="editPoint.diagnosis"
@@ -1130,10 +1121,10 @@ onMounted(() => {
               <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
             </template>
           </AutoComplete>
-          <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning"> Diagnóza je povinná. </small>
+          <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning">Diagnóza je povinná.</small>
         </div>
 
-        <div class="col-span-12">
+        <div>
           <label class="block text-normal mb-1">Výkon</label>
           <AutoComplete
             v-model="editPoint.procedure"
@@ -1152,10 +1143,10 @@ onMounted(() => {
               <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
             </template>
           </AutoComplete>
-          <small v-if="editSubmitted && !editPoint.procedure" class="text-warning"> Výkon je povinný. </small>
+          <small v-if="editSubmitted && !editPoint.procedure" class="text-warning">Výkon je povinný.</small>
         </div>
 
-        <div class="col-span-12">
+        <div>
           <label class="block text-normal mb-1">Počet</label>
           <InputNumber
             :modelValue="editPoint.quantity"
@@ -1168,7 +1159,7 @@ onMounted(() => {
           </small>
         </div>
 
-        <div class="col-span-12">
+        <div>
           <label class="block text-normal mb-1">Dátum odporučenia</label>
           <DatePicker
             v-model="editPoint.referralDate"
@@ -1177,18 +1168,12 @@ onMounted(() => {
             class="w-full"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
           />
-          <small v-if="editSubmitted && !editPoint.referralDate" class="text-warning">
-            Dátum odporučenia je povinný.
-          </small>
+          <small v-if="editSubmitted && !editPoint.referralDate" class="text-warning">Dátum odporučenia je povinný.</small>
         </div>
       </div>
 
       <template #footer>
-        <Button
-          label="Uložiť"
-          class="!bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey"
-          @click="savePoint"
-        />
+        <Button label="Uložiť" class="!bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey" @click="savePoint" />
       </template>
     </Dialog>
   </div>

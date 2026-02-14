@@ -19,7 +19,7 @@ const submitted = ref(false)
 const date = ref<Date>(new Date())
 const selectedProblems = ref<string[]>([])
 const other_findings = ref('')
-const results = ref(`${formatDateForText(new Date())} ukončená ošetrovateľská starostlivosť`)
+const results = ref('')
 const education = ref('')
 const received = ref('')
 
@@ -50,14 +50,51 @@ function formatDateForText(d: Date) {
   return `${dd}.${mm}.${yyyy}`
 }
 
-watch(
-  () => date.value,
-  (newDate) => {
-    if (newDate && !Number.isNaN(newDate.getTime())) {
-      const formattedDate = formatDateForText(newDate)
-      results.value = `${formattedDate} ukončená ošetrovateľská starostlivosť`
-    }
+async function loadLastPatientPointDate() {
+  
+  if (!patientId.value) {
+    return
   }
+
+  try {
+    const { data } = await api.get('v1/patient-points', {
+      params: { patient_id: patientId.value, paginate: false, sort: '-date' }
+    })
+
+    // Extract records from various possible response structures
+    let records: any[] = []
+    if (Array.isArray(data)) {
+      records = data
+    } else if (data?.data) {
+      records = Array.isArray(data.data) ? data.data : data.data?.items ? data.data.items : []
+    } else if (data?.items) {
+      records = Array.isArray(data.items) ? data.items : []
+    }
+
+
+    if (records.length > 0) {
+      const firstRecord = records[0]
+      
+      if (firstRecord.date) {
+        const lastDate = new Date(firstRecord.date)
+
+        if (!isNaN(lastDate.getTime())) {
+          const formattedDate = formatDateForText(lastDate)
+          results.value = `${formattedDate} ukončená ošetrovateľská starostlivosť`
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load last patient point date', err)
+  }
+}
+
+watch(
+  () => patientId.value,
+  () => {
+    loadLastPatientPointDate()
+  },
+  { immediate: true }
 )
 
 function validateForm() {
