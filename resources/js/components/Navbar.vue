@@ -127,7 +127,8 @@ watch(
 </script>
 
 <template>
-    <nav class="px-3 py-2 flex items-center justify-end bg-darkgrey text-lightgrey min-h-10" :key="authStore.currentRole ?? 'default'">
+    <nav class="px-3 py-2 flex items-center justify-end bg-darkgrey text-lightgrey min-h-10"
+        :key="authStore.currentRole ?? 'default'">
         <div v-if="isAuthenticated" class="flex items-center gap-2 text-normal">
             <Button icon="bi bi-arrow-left" text
                 class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
@@ -184,11 +185,10 @@ watch(
             </span>
 
             <!-- Branch select (only for non-managers) -->
-            <Select v-if="!authStore.isManager" @change="(e) => applyBranchSelection(e.value)" :options="branchOptions" optionLabel="label"
+            <Select @change="(e) => applyBranchSelection(e.value)" :options="branchOptions" optionLabel="label"
                 optionValue="id" placeholder="Vyberte pobočku" labelClass="text-white!"
                 dropdownIcon="bi bi-chevron-down text-white!" :key="authStore.currentBranch?.id ?? ''"
-                v-model="selectedBranchId"
-                class="w-60 h-7! flex items-center bg-tag2! border-none!" />
+                v-model="selectedBranchId" class="w-60 h-7! flex items-center bg-tag2! border-none!" />
 
             <!-- Company name -->
             <span v-if="companyName" class="h-7 flex items-center rounded-md bg-tag2 text-lightgrey px-3 text-normal">
