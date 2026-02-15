@@ -21,7 +21,7 @@ const tableKey = computed(() => `users-${auth.currentBranch?.id ?? 'global'}`)
 async function openEditUser(userId: number) {
     const result = await openModal(markRaw(UserModalBody), { userId }, { header: 'Upraviť používateľa', style: { width: '800px' } })
     if (result) {
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Používateľ bol uložený' })
+        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Používateľ bol uložený', life: 3000 })
         actionRemote.value?.reload()
     }
 }
@@ -49,7 +49,7 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
-        { field: 'role_names', header: 'Roly', sortable: true, render: (v) => v.join(', ') },
+        { field: 'role_names', header: 'Roly', sortable: true, render: (v) => v.map(translateRoleName).join(', ') },
         { field: 'phone', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {
@@ -80,6 +80,12 @@ const options = computed<DataTableOptions<User>>(() => ({
         }
     ]
 }))
+
+function translateRoleName(role: string): string {
+  if (role === 'nurse') return 'sestra'
+  if (role === 'manager') return 'manažér'
+  return role
+}
 </script>
 
 <template>

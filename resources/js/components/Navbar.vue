@@ -75,43 +75,60 @@ function toggleSidebar() {
 /* ------------ LIFECYCLE ------------ */
 
 onMounted(async () => {
-    patientStore.loadFromStorage()
     await authStore.waitUntilInitialized()
-    if (authStore.isManager)
+    
+    // Handle role-specific initialization
+    if (authStore.isManager) {
+        // Manager: clear patient data and set manager branch
+        patientStore.clear()
         selectedBranchId.value = -1
-    else
+        await applyBranchSelection(-1)
+        await router.dashboard()
+    } else {
+        // Nurse: load patient data for current branch
+        patientStore.loadFromStorage()
         selectedBranchId.value = authStore.currentBranch?.id ?? null
-
-    // inform patients composable of current branch and load
-    setBranchId(authStore.currentBranch?.id ?? null)
-    await loadPatients()
-
+        setBranchId(authStore.currentBranch?.id ?? null)
+        await loadPatients()
+    }
 })
 
 /* reload patients when branch changes */
 watch(
     () => authStore.currentBranch?.id,
     () => {
-        setBranchId(authStore.currentBranch?.id ?? null)
-        loadPatients()
-        selectedBranchId.value = authStore.currentBranch?.id ?? (authStore.isManager ? -1 : null)
+        if (!authStore.isManager) {
+            setBranchId(authStore.currentBranch?.id ?? null)
+            loadPatients()
+            selectedBranchId.value = authStore.currentBranch?.id ?? null
+        }
     }
 )
 
+/* handle role changes (nurse ↔ manager) */
 watch(
-    () => [authStore.currentBranch?.id, authStore.currentRole] as const,
-    ([newBranch, newRole], [oldBranch, oldRole]) => {
-        if (!oldBranch && !oldRole) return
-        if (newBranch !== oldBranch || newRole !== oldRole) {
+    () => authStore.currentRole,
+    async (newRole, oldRole) => {
+        // Only trigger on actual role change, not on initial load
+        if (!oldRole) return
+        
+        if (newRole === 'manager') {
             patientStore.clear()
-            router.dashboard();
+            selectedBranchId.value = -1
+            await applyBranchSelection(-1)
+            await router.dashboard()
+        } else if (oldRole === 'manager') {
+            selectedBranchId.value = authStore.currentBranch?.id ?? null
+            setBranchId(authStore.currentBranch?.id ?? null)
+            await loadPatients()
+            await router.dashboard()
         }
     }
 )
 </script>
 
 <template>
-    <nav class="px-3 py-2 flex items-center justify-end bg-darkgrey text-lightgrey min-h-10">
+    <nav class="px-3 py-2 flex items-center justify-end bg-darkgrey text-lightgrey min-h-10" :key="authStore.currentRole ?? 'default'">
         <div v-if="isAuthenticated" class="flex items-center gap-2 text-normal">
             <Button icon="bi bi-arrow-left" text
                 class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
@@ -167,11 +184,12 @@ watch(
                 {{ fullName }}
             </span>
 
-            <!-- Branch select -->
-            <Select @change="(e) => applyBranchSelection(e.value)" :options="branchOptions" optionLabel="label"
+            <!-- Branch select (only for non-managers) -->
+            <Select v-if="!authStore.isManager" @change="(e) => applyBranchSelection(e.value)" :options="branchOptions" optionLabel="label"
                 optionValue="id" placeholder="Vyberte pobočku" labelClass="text-white!"
                 dropdownIcon="bi bi-chevron-down text-white!" :key="authStore.currentBranch?.id ?? ''"
-                v-model="selectedBranchId" class="w-60 h-7! flex items-center bg-tag2! border-none!" />
+                v-model="selectedBranchId" 
+                class="w-60 h-7! flex items-center bg-tag2! border-none!" />
 
             <!-- Company name -->
             <span v-if="companyName" class="h-7 flex items-center rounded-md bg-tag2 text-lightgrey px-3 text-normal">

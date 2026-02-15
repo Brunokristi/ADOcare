@@ -69,7 +69,9 @@ export default {
         /* ---------- INPUTS / TEXTAREA ---------- */
 
         inputtext: {
-            root: { class: 'bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! outline-none! ring-0! shadow-none! focus:outline-none! focus:ring-0! focus:shadow-none!' },
+            root: {
+                class: `${baseField} bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! [&.p-disabled]:!opacity-50 [&.p-disabled]:!cursor-not-allowed [&.p-disabled]:!bg-lightgrey!`
+            },
         },
 
         textarea: {
@@ -118,7 +120,13 @@ export default {
         /* ---------- SELECT ---------- */
 
         select: {
-            root: { class: `${baseField} flex! items-center! gap-1!` },
+            root: ({ props }) => ({
+                class: `
+            ${baseField} 
+            flex! items-center! gap-1!
+            ${props.disabled ? 'bg-transparent! opacity-50!' : ''}
+        `
+            }),
             dropdown: { class: `${baseNoOutline} border-0! bg-transparent! px-1!` },
             dropDownIcon: { class: 'text-sm!' },
             label: { class: 'text-normal! text-darkgrey! truncate!' },

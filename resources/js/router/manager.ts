@@ -29,7 +29,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         component: DashboardPage,
         meta: {
             title: 'Manažérsky dashboard',
-            managerSidebar: true,
+            managerSidebar: false,
         },
     },
     {
@@ -96,6 +96,12 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: Cars,
                 meta: { title: 'Autá', managerSidebar: true, navbar: true, },
             },
+            {
+                path: 'plans',
+                name: 'manager-settings-plans',
+                component: Error,
+                meta: { title: 'Plány', managerSidebar: true },
+            },
         ],
     },
     {
@@ -104,7 +110,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         component: Error,
         meta: {
             title: 'Reporty',
-            managerSidebar: true,
+            managerSidebar: false,
         },
     },
 ];

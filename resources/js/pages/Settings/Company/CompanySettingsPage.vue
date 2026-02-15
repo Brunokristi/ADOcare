@@ -74,10 +74,10 @@ async function save() {
     try {
         const payload = { ...company.value }
         await api.patch(`v1/companies/${company.value.id}`, payload)
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená' })
+        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená', life: 3000 })
     } catch (e) {
         console.error('Failed to save company', e)
-        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť spoločnosť' })
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť spoločnosť', life: 5000 })
     } finally {
         saving.value = false
     }
@@ -87,7 +87,7 @@ async function save() {
 
 <template>
     <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
-    <div class="p-4">
+    <div class="py-8">
         <div v-if="alert?.message" class="mb-4">
             <AlertBar :message="alert.message" :severity="alert.severity" :closable="true" />
         </div>
@@ -95,7 +95,7 @@ async function save() {
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
                 <div class="card mb-4">
-                    <h3 class="text-lg mb-2">Všeobecné informácie</h3>
+                    <h3 class="text-accent text-normal mb-2">Všeobecné informácie</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm mb-1">Názov</label>
@@ -133,7 +133,7 @@ async function save() {
                 </div>
 
                 <div class="card mb-4">
-                    <h3 class="text-lg mb-2">Adresa</h3>
+                    <h3 class="text-accent text-normal mb-2">Adresa</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
@@ -150,7 +150,7 @@ async function save() {
                 </div>
 
                 <div class="card mb-4">
-                    <h3 class="text-lg mb-2">Kontaktné informácie</h3>
+                    <h3 class="text-accent text-normal mb-2">Kontaktné informácie</h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm mb-1">Telefón</label>
@@ -182,7 +182,7 @@ async function save() {
                 </div>
 
                 <div class="flex justify-end">
-                    <Button label="Uložiť" class="bg-accent!" @click="save" :disabled="saving || loading" />
+                    <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" :disabled="saving || loading" />
                 </div>
             </div>
         </div>

@@ -14,6 +14,7 @@ const user = ref<Partial<User & { password: string }>>({ first_name: '', last_na
 const branchAssignments = ref<Array<{ branch_id?: number | null; working_time?: number | null; role_id?: number | null }>>([])
 const branchOptions = ref<Branch[]>([])
 const branchRoles = ref<Role[]>([])
+const showPassword = ref(false)
 
 onMounted(async () => {
     if (props.userId) {
@@ -57,7 +58,7 @@ const save = async () => {
         if (props.modalResolve) props.modalResolve(resp.data.data)
     } catch (err) {
         console.error('Nepodarilo sa uložiť používateľa', err)
-        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť používateľa' })
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť používateľa', life: 3000 })
     }
 }
 
@@ -71,6 +72,10 @@ function confirmDeleteAssignment(idx: number) {
 
     const ok = window.confirm('Priradenie obsahuje údaje. Naozaj ho chcete odstrániť?')
     if (ok) branchAssignments.value.splice(idx, 1)
+}
+
+function togglePasswordVisibility() {
+    showPassword.value = !showPassword.value
 }
 </script>
 
@@ -109,7 +114,7 @@ function confirmDeleteAssignment(idx: number) {
             </div>
         </div>
 
-        <h4 class="mt-2">Prihlásenie</h4>
+        <h4 class="text-accent text-normal mt-2">Prihlásenie</h4>
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm mb-1">Prihlasovacie meno</label>
@@ -117,11 +122,17 @@ function confirmDeleteAssignment(idx: number) {
             </div>
             <div>
                 <label class="block text-sm mb-1">Heslo</label>
-                <InputText v-model="user.password" type="password" class="w-full" />
+                <IconField class="flex items-center w-full">
+                    <InputText v-model="user.password" :type="showPassword ? 'text' : 'password'" class="w-full" />
+                    <InputIcon>
+                        <i :class="showPassword ? 'bi bi-eye' : 'bi bi-eye-slash'" class="cursor-pointer"
+                            @click="togglePasswordVisibility" />
+                    </InputIcon>
+                </IconField>
             </div>
         </div>
 
-        <h4 class="mt-2">Priradenia pobočiek</h4>
+        <h4 class="text-accent text-normal mt-2">Priradenia pobočiek</h4>
         <div class="space-y-3">
             <div v-for="(assign, idx) in branchAssignments" :key="idx" class="grid grid-cols-12 gap-2 items-end">
                 <div class="col-span-4">
@@ -132,25 +143,36 @@ function confirmDeleteAssignment(idx: number) {
                 <div class="col-span-3">
                     <label class="block text-sm mb-1">Rola</label>
                     <Select v-model="assign.role_id" :options="branchRoles" optionLabel="position" optionValue="id"
-                        class="w-full" showClear />
+                        class="w-full" />
                 </div>
                 <div class="col-span-4">
                     <label class="block text-sm mb-1">Úväzok</label>
-                    <InputNumber v-model="assign.working_time" :min="0" :max="1" :step="0.1" class="w-full" />
+                    <InputNumber
+                    v-model="assign.working_time"
+                    mode="decimal"
+                    locale="sk-SK"
+                    :min="0"
+                    :max="1"
+                    :step="0.1"
+                    :minFractionDigits="1"
+                    :maxFractionDigits="2"
+                    :useGrouping="false"
+                    class="w-full"
+                    />
                 </div>
                 <div class="col-span-1">
-                    <Button icon="bi bi-trash" class="h-7!" severity="danger" @click="confirmDeleteAssignment(idx)" />
+                    <Button icon="bi bi-eraser" class="h-7! bg-warning!" severity="danger" @click="confirmDeleteAssignment(idx)" />
                 </div>
             </div>
             <div>
-                <Button label="Pridať pobočku" class="p-button-text"
+                <Button label="Pridať pobočku" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
                     @click="branchAssignments.push({ branch_id: null, working_time: null, role_id: null })" />
             </div>
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
-            <Button label="Zrušiť" text @click="props.modalResolve && props.modalResolve(null)" />
-            <Button label="Uložiť" class="bg-accent!" @click="save" />
+            <Button label="Zrušiť" text @click="props.modalResolve && props.modalResolve(null)" class="text-accent! px-2!" />
+            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! " @click="save" />
         </div>
     </div>
 </template>

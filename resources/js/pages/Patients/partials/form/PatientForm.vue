@@ -325,34 +325,43 @@ const openDoctorsSettingsFromFooter = async () => {
       </div>
 
       <div class="col-span-4">
-        <label class="block text-normal mb-1">Meno</label>
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Meno
+        </label>
         <InputText
           :disabled="disabled"
           v-model.trim="localPatient.first_name"
           fluid
           :invalid="submitted && !localPatient.first_name"
-        />
+:class="{ '!bg-transparent': disabled, '!opacity-50': disabled }"        />
         <small v-if="submitted && errors.first_name" class="text-warning">{{ errors.first_name }}</small>
       </div>
 
       <div class="col-span-4">
-        <label class="block text-normal mb-1">Priezvisko</label>
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Priezvisko
+        </label>
         <InputText
           :disabled="disabled"
           v-model.trim="localPatient.last_name"
           fluid
           :invalid="submitted && !localPatient.last_name"
+          :class="{ '!bg-transparent': disabled, '!opacity-50': disabled }"
         />
         <small v-if="submitted && errors.last_name" class="text-warning">{{ errors.last_name }}</small>
       </div>
 
       <div class="col-span-4">
-        <label class="block text-normal mb-1">Titul</label>
-        <InputText :disabled="disabled" v-model.trim="localPatient.title" fluid />
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Titul
+        </label>
+        <InputText :disabled="disabled" v-model.trim="localPatient.title" fluid :class="{ '!opacity-50': disabled }" />
       </div>
 
       <div class="col-span-4">
-        <label class="block text-normal mb-1">Rodné číslo</label>
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Rodné číslo
+        </label>
         <InputText
           :disabled="disabled"
           v-model="localPatient.personal_number"
@@ -361,13 +370,16 @@ const openDoctorsSettingsFromFooter = async () => {
           pattern="[0-9]*"
           fluid
           :invalid="submitted && !localPatient.personal_number"
+          :class="{ '!opacity-50': disabled }"
           @input="onPersonalNumberInput"
         />
         <small v-if="submitted && errors.personal_number" class="text-warning">{{ errors.personal_number }}</small>
       </div>
 
       <div class="col-span-4">
-        <label class="block text-normal mb-1">Pohlavie</label>
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Pohlavie
+        </label>
         <Select
           :disabled="disabled"
           v-model="localPatient.sex"
@@ -376,13 +388,16 @@ const openDoctorsSettingsFromFooter = async () => {
           optionValue="value"
           fluid
           :invalid="submitted && !localPatient.sex"
+          :class="{ '!opacity-50': disabled }"
         />
         <small v-if="submitted && errors.sex" class="text-warning">{{ errors.sex }}</small>
       </div>
 
       <div class="col-span-4">
-        <label class="block text-normal mb-1">Kontakt</label>
-        <InputText :disabled="disabled" v-model.trim="localPatient.contact" fluid />
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Kontakt
+        </label>
+        <InputText :disabled="disabled" v-model.trim="localPatient.contact" fluid :class="{ '!opacity-50': disabled }" />
         <small v-if="submitted && errors.contact" class="text-warning">{{ errors.contact }}</small>
       </div>
     </div>
@@ -393,7 +408,9 @@ const openDoctorsSettingsFromFooter = async () => {
       </div>
 
       <div class="col-span-6">
-        <label class="block text-normal mb-1">Lekár</label>
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Lekár
+        </label>
 
         <Select
           ref="doctorSelectRef"
@@ -405,6 +422,7 @@ const openDoctorsSettingsFromFooter = async () => {
           fluid
           filter
           :invalid="submitted && !localPatient.doctor_id"
+          :class="{ '!opacity-50': disabled }"
           @show="onDoctorSelectShow"
         >
           <template #footer>
@@ -429,7 +447,9 @@ const openDoctorsSettingsFromFooter = async () => {
       </div>
 
       <div class="col-span-6">
-        <label class="block text-normal mb-1">Poisťovňa</label>
+        <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+          Poisťovňa
+        </label>
         <Select
           :disabled="disabled"
           v-model="localPatient.insurance_company_id"
@@ -438,6 +458,7 @@ const openDoctorsSettingsFromFooter = async () => {
           optionValue="id"
           fluid
           :invalid="submitted && !localPatient.insurance_company_id"
+          :class="{ '!opacity-50': disabled }"
         />
         <small v-if="submitted && errors.insurance_company_id" class="text-warning">
           {{ errors.insurance_company_id }}
@@ -452,7 +473,9 @@ const openDoctorsSettingsFromFooter = async () => {
 
       <div class="col-span-4 flex flex-col gap-4">
         <div>
-          <label class="block text-normal mb-1">Ulica</label>
+          <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+            Ulica
+          </label>
           <AutoComplete
             :disabled="disabled"
             v-model="addressQuery"
@@ -464,12 +487,15 @@ const openDoctorsSettingsFromFooter = async () => {
             :minLength="3"
             fluid
             :invalid="submitted && !!errors.street"
+            :class="{ '!opacity-50': disabled }"
           />
           <small v-if="submitted && errors.street" class="text-warning">{{ errors.street }}</small>
         </div>
 
         <div>
-          <label class="block text-normal mb-1">Mesto</label>
+          <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+            Mesto
+          </label>
           <AutoComplete
             :disabled="disabled"
             v-model="cityQuery"
@@ -479,13 +505,16 @@ const openDoctorsSettingsFromFooter = async () => {
             @item-select="onCitySelect"
             fluid
             :invalid="submitted && !!errors.city"
+            :class="{ '!opacity-50': disabled }"
           />
           <small v-if="submitted && errors.city" class="text-warning">{{ errors.city }}</small>
         </div>
 
         <div>
-          <label class="block text-normal mb-1">PSČ</label>
-          <InputText :disabled="disabled" v-model.trim="localPatient.zip" fluid :invalid="submitted && !!errors.zip" />
+          <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+            PSČ
+          </label>
+          <InputText :disabled="disabled" v-model.trim="localPatient.zip" fluid :invalid="submitted && !!errors.zip" :class="{ '!opacity-50': disabled }" />
           <small v-if="submitted && errors.zip" class="text-warning">{{ errors.zip }}</small>
         </div>
 
@@ -500,7 +529,7 @@ const openDoctorsSettingsFromFooter = async () => {
           :center="center"
           :zoom="zoom"
           :useGlobalLeaflet="false"
-          class="w-full h-full rounded-md overflow-hidden"
+          :class="['w-full h-full rounded-md overflow-hidden', disabled && '!opacity-50 pointer-events-none']"
         >
           <l-tile-layer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

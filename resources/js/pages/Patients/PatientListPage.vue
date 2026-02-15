@@ -9,7 +9,7 @@ import { usePatientStore } from '@/stores/patientStore'
 import router from '@/router'
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
 import CreatePatientModalBody from './partials/form/CreatePatientModalBody.vue'
-import DeleteConfirmationModalBody from './partials/DeleteConfirmationModalBody.vue'
+import DeleteConfirmationModalBody from './partials/form/DeleteConfirmationModalBody.vue'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
@@ -17,7 +17,6 @@ import { formatBranchFullName, formatUserFullName } from '@/utils/formatUtils'
 
 const patientStore = usePatientStore()
 
-// still used for Edit/Create
 const { openModal } = useModal()
 
 const authStore = useAuthStore()
