@@ -72,9 +72,15 @@ class PatientService
         $patient->delete();
     }
 
-    public function deleteManyByIds(array $ids): void
+    public function deleteManyByIds(array $ids, bool $deletePatientPoints = false): void
     {
-        Patient::whereIn('id', $ids)->delete();
+        DB::transaction(function () use ($ids, $deletePatientPoints) {
+            if ($deletePatientPoints) {
+                // Delete all patient_points for the patients being deleted
+                \App\Models\PatientPoint::whereIn('patient_id', $ids)->delete();
+            }
+            Patient::whereIn('id', $ids)->delete();
+        });
     }
 
     public function deleteManyInBranch(array $ids, Branch $branch): void
