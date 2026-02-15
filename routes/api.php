@@ -104,6 +104,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/my-company', [MyCompanyController::class, 'show']);
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
+    Route::get('/my-company/doctors', [MyCompanyController::class, 'doctors']);
 
     Route::apiResourceComplete('doctors', DoctorController::class);
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);

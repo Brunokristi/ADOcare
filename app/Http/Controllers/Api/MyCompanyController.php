@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\CarCollection;
+use App\Http\Resources\DoctorCollection;
 use App\Http\Resources\UserCollection;
 use App\Models\Branch;
 use App\Models\Car;
+use App\Models\Doctor;
 use App\Models\User;
 use Illuminate\Http\Request;
 use \App\Http\Controllers\Controller;
@@ -88,4 +90,23 @@ class MyCompanyController extends Controller
         $results = ApiQuery::apply($request, $query);
         return $this->success(new UserCollection($results), 'Users retrieved');
     }
+
+    public function doctors()
+    {
+        $user = request()->user();
+        $company = $user->company;
+
+        if (!$company) {
+            return $this->success(new DoctorCollection(collect([])), 'Doctors retrieved');
+        }
+
+        $query = Doctor::query()->whereHas('assigned_branches', function ($q) use ($company) {
+            $q->where('company_id', $company->id);
+        });
+
+        $results = ApiQuery::apply(request(), $query);
+
+        return $this->success(new DoctorCollection($results), 'Doctors retrieved');
+    }
+
 }
