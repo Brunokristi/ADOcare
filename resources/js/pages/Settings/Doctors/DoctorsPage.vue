@@ -136,8 +136,10 @@ if (useAuthStore().isManager) {
             <template #col-assigned_branches="{ row }">
                 <div class="flex flex-wrap max-h-24 overflow-y-auto">
                     <template v-if="row.assigned_branches && row.assigned_branches.length">
-                        <tag v-for="branch in row.assigned_branches" :key="branch.id" class="mr-1 mb-1"
-                            :value="formatBranchFullName(branch)"></tag>
+                        <tag v-for="branch in row.assigned_branches" :key="branch.id" 
+                            class="mr-1 mb-1 bg-accent! text-white! text-normal! border-none! py-1! px-2! rounded-md!"
+                             :value="formatBranchFullName(branch)">
+                        </tag>
                     </template>
                     <span v-else>-</span>
                 </div>

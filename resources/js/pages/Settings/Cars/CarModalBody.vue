@@ -53,12 +53,12 @@ const save = async () => {
     <div class="flex flex-col gap-4">
         <div>
             <label class="block text-sm mb-1">Model</label>
-            <InputText v-model="car.model" />
+            <InputText v-model="car.model" class="w-full"/>
         </div>
 
         <div>
             <label class="block text-sm mb-1">EVČ</label>
-            <InputText v-model="car.evc" />
+            <InputText v-model="car.evc" class="w-full"/>
         </div>
         <div>
             <label class="block text-sm mb-1">Majiteľ</label>
@@ -76,8 +76,8 @@ const save = async () => {
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
-            <Button label="Zrušiť" text @click="() => { if (props.modalResolve) props.modalResolve(null) }" />
-            <Button label="Uložiť" class="bg-accent!" @click="save" />
+            <Button label="Zrušiť" text @click="() => { if (props.modalResolve) props.modalResolve(null) }" class="text-accent! px-2!" />
+            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" />
         </div>
     </div>
 </template>

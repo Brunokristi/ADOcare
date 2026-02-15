@@ -142,7 +142,10 @@ class PatientController extends Controller
      */
     public function destroyMany(PatientDeleteManyRequest $request)
     {
-        $this->service->deleteManyByIds($request->input('ids'));
+        $this->service->deleteManyByIds(
+            $request->input('ids'),
+            $request->boolean('delete_patient_points', false)
+        );
 
         return $this->success(null, 'Deleted');
     }

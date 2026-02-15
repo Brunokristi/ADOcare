@@ -91,7 +91,7 @@ if (props.isManagerView) {
             <div class="col-span-6">
                 <label class="block text-normal mb-1">Prevádzka</label>
                 <Select v-model="patient.branch_id" :options="branchOptions" optionLabel="address" optionValue="id"
-                    fluid filter :invalid="submitted && !patient.branch_id">
+                    fluid :invalid="submitted && !patient.branch_id">
                     <template #value="slotProps">
                         <span v-if="slotProps.value">
                             {{formatBranchFullName(branchOptions.find(b => b.id === slotProps.value) as Branch)}}</span>

@@ -8,8 +8,8 @@ import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { usePatientStore } from '@/stores/patientStore'
 import router from '@/router'
 import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
-import api from '@/services/api'
 import CreatePatientModalBody from './partials/form/CreatePatientModalBody.vue'
+import DeleteConfirmationModalBody from './partials/form/DeleteConfirmationModalBody.vue'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
@@ -17,7 +17,6 @@ import { formatBranchFullName, formatUserFullName } from '@/utils/formatUtils'
 
 const patientStore = usePatientStore()
 
-// still used for Edit/Create
 const { openModal } = useModal()
 
 const authStore = useAuthStore()
@@ -140,14 +139,14 @@ const options = computed<DataTableOptions<Patient>>(() => {
             {
                 key: 'delete',
                 disabled: ({ selectedRows }) => selectedRows.length === 0,
-                confirm: 'Naozaj vymazať vybraných pacientov?',
                 icon: 'bi bi-eraser',
                 class: 'bg-warning!',
                 handler: async ({ selectedRows, remote }) => {
-                    await api.delete('v1/patients', {
-                        data: { ids: selectedRows.map((r) => r.id) },
-                    })
-                    await remote.loadPage(remote.page.value)
+                    await openModal(
+                        markRaw(DeleteConfirmationModalBody),
+                        { title: 'Vymazať', selectedRows, remote },
+                        { style: { width: '60%' } },
+                    )
                 },
             },
             {
