@@ -17,7 +17,8 @@ class DeleteManyBranchesRequest extends FormRequest
 
         if ($user->hasRole('manager')) {
             $ids = $this->input('ids', []);
-            if (empty($ids)) return false;
+            if (empty($ids))
+                return false;
 
             $branches = Branch::whereIn('id', $ids)->get();
             foreach ($branches as $branch) {

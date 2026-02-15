@@ -93,6 +93,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
 
     Route::apiResourceComplete('branches', BranchController::class);
+    Route::delete('branches/delete-many', [BranchController::class, 'destroyMany']);
     Route::get('branches/{branch}/patients', [BranchPatientController::class, 'index']);
     Route::post('branches/{branch}/patients', [BranchPatientController::class, 'store']);
     Route::get('branches/{branch}/nurses', [BranchController::class, 'nurses']);
