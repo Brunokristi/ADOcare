@@ -76,14 +76,13 @@ function toggleSidebar() {
 
 onMounted(async () => {
     await authStore.waitUntilInitialized()
-    
+
     // Handle role-specific initialization
     if (authStore.isManager) {
         // Manager: clear patient data and set manager branch
         patientStore.clear()
         selectedBranchId.value = -1
         await applyBranchSelection(-1)
-        await router.dashboard()
     } else {
         // Nurse: load patient data for current branch
         patientStore.loadFromStorage()
@@ -111,7 +110,7 @@ watch(
     async (newRole, oldRole) => {
         // Only trigger on actual role change, not on initial load
         if (!oldRole) return
-        
+
         if (newRole === 'manager') {
             patientStore.clear()
             selectedBranchId.value = -1
@@ -188,7 +187,7 @@ watch(
             <Select v-if="!authStore.isManager" @change="(e) => applyBranchSelection(e.value)" :options="branchOptions" optionLabel="label"
                 optionValue="id" placeholder="Vyberte pobočku" labelClass="text-white!"
                 dropdownIcon="bi bi-chevron-down text-white!" :key="authStore.currentBranch?.id ?? ''"
-                v-model="selectedBranchId" 
+                v-model="selectedBranchId"
                 class="w-60 h-7! flex items-center bg-tag2! border-none!" />
 
             <!-- Company name -->
