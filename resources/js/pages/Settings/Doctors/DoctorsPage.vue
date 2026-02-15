@@ -116,7 +116,7 @@ const options = ref<DataTableOptions<Doctor>>({
 // remove zpr, pzs, is_favourite and all actions if user is manager
 if (useAuthStore().isManager) {
     options.value.endpointUrl = 'v1/my-company/doctors' // managers should only see doctors that are assigned to a branch, so we switch to the endpoint that applies company-level filtering by assigned branches
-    options.value.columns = options.value.columns?.filter(c => !['zpr', 'pzs', 'is_favourite'].includes(c.field ?? ''));
+    options.value.columns = options.value.columns?.filter(c => !['is_favourite'].includes(c.field ?? ''));
     options.value.actions = options.value.actions?.filter(a => a.key !== 'show_favourites_only');
     options.value.extraParams = { count: 'assigned_patients', with: 'assigned_branches', };
 
