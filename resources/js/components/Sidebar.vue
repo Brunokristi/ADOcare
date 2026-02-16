@@ -123,14 +123,14 @@ watch(
     <aside class="flex flex-col w-64 h-full bg-darkgrey! border-0! text-darkgrey! p-4 space-y-4 overflow-y-auto">
         <template v-for="item in sidebarItems" :key="item.key">
             <RouterLink v-if="!item.children || !item.children.length"
-                class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-white text-tag2! hover:bg-tag2 hover:!text-white" :to="item.path">
+                class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-white text-tag2! hover:bg-tag2 hover:!text-white text-normal" :to="item.path">
                 {{ item.label }}
                 <i class="bi bi-chevron-right"></i>
             </RouterLink>
 
             <div v-else>
                 <button
-                    class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-tag2 text-white! hover:bg-tag2 cursor-pointer"
+                    class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-tag2 text-white! hover:bg-tag2 cursor-pointer text-normal"
                     @click="toggle(item.key)">
                     <span>{{ item.label }}</span>
                     <i :class="isOpen(item.key) ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
