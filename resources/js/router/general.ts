@@ -280,66 +280,6 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
 
         ]
     },
-
-
-    {
-        path: '/settings',
-        name: 'settings',
-        component: Settings,
-        redirect: { name: 'doctors' },
-        meta: {
-            title: 'Nastavenia',
-            sectionRoot: 'settings',
-            sidebar: true
-
-        },
-        children: [
-            {
-                path: 'doctors',
-                name: 'doctors',
-                component: Doctors,
-                meta: {
-                    title: 'Lekári',
-                    link: 'lekári',
-                    sidebar: true,
-                    navbar: true,
-                },
-            },
-            {
-                path: 'procedures',
-                name: 'procedures',
-                component: Procedures,
-                meta: {
-                    title: 'Výkony',
-                    link: 'výkony',
-                    sidebar: true,
-                    navbar: true,
-                },
-            },
-            {
-                path: 'diagnoses',
-                name: 'diagnoses',
-                component: Diagnoses,
-                meta: {
-                    title: 'Diagnózy',
-                    link: 'diagnózy',
-                    sidebar: true,
-                    navbar: true,
-                },
-            },
-            {
-                path: 'macros',
-                name: 'macros',
-                component: Macros,
-                meta: {
-                    title: 'Makrá',
-                    link: 'makrá',
-                    sidebar: true,
-                    navbar: true,
-                },
-            },
-        ],
-    },
     {
         path: '/accounting',
         name: 'accounting',
@@ -363,6 +303,78 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 },
             },
         ]
+    },
+    {
+        path: '/settings',
+        name: 'settings',
+        component: Settings,
+        redirect: { name: 'doctors' },
+        meta: {
+            title: 'Nastavenia',
+            sectionRoot: 'settings',
+            sidebar: true
+
+        },
+        children: [
+            {
+                path: 'doctors',
+                name: 'doctors',
+                component: Doctors,
+                meta: {
+                    title: 'Spolupracujúci lekári',
+                    link: 'spolupracujúci lekári',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+            {
+                path: 'macros',
+                name: 'macros',
+                component: Macros,
+                meta: {
+                    title: 'Makrá',
+                    link: 'makrá',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+        ],
+    },
+    {
+        path: '/overview',
+        name: 'overview',
+        component: Settings,
+        redirect: { name: 'doctors' },
+        meta: {
+            title: 'Prehľady',
+            sectionRoot: 'overview',
+            sidebar: true
+
+        },
+        children: [
+            {
+                path: 'procedures',
+                name: 'procedures',
+                component: Procedures,
+                meta: {
+                    title: 'Výkony',
+                    link: 'výkony',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+            {
+                path: 'diagnoses',
+                name: 'diagnoses',
+                component: Diagnoses,
+                meta: {
+                    title: 'Diagnózy',
+                    link: 'diagnózy',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
+        ],
     },
 ];
 

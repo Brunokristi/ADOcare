@@ -92,7 +92,6 @@ const options = ref<DataTableOptions<Macro>>({
 
 <template>
     <div class="h-full flex flex-col overflow-hidden min-h-0">
-
         <UniversalDataTable :options="options" />
     </div>
 </template>
