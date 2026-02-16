@@ -16,7 +16,7 @@ const options = ref<DataTableOptions<Doctor>>({
     rowKey: 'id',
     endpointUrl: `v1/doctors`,
     extraParams: {
-    ...(branchId ? { mark_favourites_for_branch_id: branchId } : {}),
+        ...(branchId ? { mark_favourites_for_branch_id: branchId } : {}),
     },
     defaultPageSize: 50,
     pageSizeOptions: [25, 50, 100],
@@ -108,16 +108,17 @@ const options = ref<DataTableOptions<Doctor>>({
                     showFavouritesOnly.value ? { is_favourite: 1 } : undefined
                 )
                 await remote.loadPage(1)
-                } 
+            }
         },
     ],
 })
 
 // remove zpr, pzs, is_favourite and all actions if user is manager
 if (useAuthStore().isManager) {
-    options.value.columns = options.value.columns?.filter(c => !['zpr', 'pzs', 'is_favourite'].includes(c.field ?? ''));
+    options.value.endpointUrl = 'v1/my-company/doctors' // managers should only see doctors that are assigned to a branch, so we switch to the endpoint that applies company-level filtering by assigned branches
+    options.value.columns = options.value.columns?.filter(c => !['is_favourite'].includes(c.field ?? ''));
     options.value.actions = options.value.actions?.filter(a => a.key !== 'show_favourites_only');
-    options.value.extraParams = { count: 'assigned_patients', with: 'assigned_branches' };
+    options.value.extraParams = { count: 'assigned_patients', with: 'assigned_branches', };
 
     // Add Pocet pacientov and pobocky columns
     options.value.columns?.push(
@@ -136,9 +137,9 @@ if (useAuthStore().isManager) {
             <template #col-assigned_branches="{ row }">
                 <div class="flex flex-wrap max-h-24 overflow-y-auto">
                     <template v-if="row.assigned_branches && row.assigned_branches.length">
-                        <tag v-for="branch in row.assigned_branches" :key="branch.id" 
+                        <tag v-for="branch in row.assigned_branches" :key="branch.id"
                             class="mr-1 mb-1 bg-accent! text-white! text-normal! border-none! py-1! px-2! rounded-md!"
-                             :value="formatBranchFullName(branch)">
+                            :value="formatBranchFullName(branch)">
                         </tag>
                     </template>
                     <span v-else>-</span>

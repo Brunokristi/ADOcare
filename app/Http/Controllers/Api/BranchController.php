@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
+use App\Http\Requests\StoreBranchRequest;
+use App\Http\Requests\UpdateBranchRequest;
+use App\Http\Requests\DeleteBranchRequest;
+use App\Http\Requests\DeleteManyBranchesRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\DoctorCollection;
@@ -63,9 +67,14 @@ class BranchController extends Controller
     }
 
 
-    public function store(\App\Http\Requests\StoreBranchRequest $request)
+    public function store(StoreBranchRequest $request)
     {
-        $item = Branch::create($request->all());
+        $data = $request->validated();
+        // if company_id is not provided, set it to the company of the authenticated user
+        if (!isset($data['company_id'])) {
+            $data['company_id'] = auth()->user()->company_id;
+        }
+        $item = Branch::create($data);
         return $this->success($item, 'Created', Response::HTTP_CREATED);
     }
 
@@ -74,13 +83,20 @@ class BranchController extends Controller
         return $this->success($branch, 'Branch retrieved');
     }
 
-    public function update(\App\Http\Requests\UpdateBranchRequest $request, Branch $branch)
+    public function update(UpdateBranchRequest $request, Branch $branch)
     {
         $branch->update($request->all());
         return $this->success($branch, 'Updated');
     }
 
-    public function destroy(Branch $branch)
+    public function destroyMany(DeleteManyBranchesRequest $request)
+    {
+        $ids = $request->input('ids');
+        Branch::whereIn('id', $ids)->delete();
+        return $this->success(null, 'Branches deleted', Response::HTTP_NO_CONTENT);
+    }
+
+    public function destroy(DeleteBranchRequest $request, Branch $branch)
     {
         $branch->delete();
         return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);

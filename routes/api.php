@@ -93,6 +93,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
 
     Route::apiResourceComplete('branches', BranchController::class);
+    Route::delete('branches/delete-many', [BranchController::class, 'destroyMany']);
     Route::get('branches/{branch}/patients', [BranchPatientController::class, 'index']);
     Route::post('branches/{branch}/patients', [BranchPatientController::class, 'store']);
     Route::get('branches/{branch}/nurses', [BranchController::class, 'nurses']);
@@ -104,6 +105,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/my-company', [MyCompanyController::class, 'show']);
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
+    Route::get('/my-company/doctors', [MyCompanyController::class, 'doctors']);
 
     Route::apiResourceComplete('doctors', DoctorController::class);
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
