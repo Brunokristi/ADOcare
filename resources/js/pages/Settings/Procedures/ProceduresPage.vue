@@ -7,8 +7,10 @@ import api from '@/services/api'
 import type { InsuranceCompany, Procedure } from '@/types/models'
 import useModal from '@/composables/useModal'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const { openModal } = useModal()
+const authStore = useAuthStore()
 const actionRemote = ref<any | null>(null)
 
 async function openEdit(row: Procedure) {
@@ -43,21 +45,32 @@ onMounted(async () => {
             return ret
         })
 
-        options.value.columns = [
+        const editColumn: ColumnDef<Procedure> = {
+            field: 'edit',
+            header: '',
+            width: '3rem',
+            component: markRaw(ActionButtons),
+            componentOptions: [
+                {
+                    color: 'info',
+                    icon: 'bi bi-pencil',
+                    tooltip: 'Upraviť',
+                    action: (row: Procedure) => openEdit(row),
+                }
+            ]
+        }
+
+        const columns = [
             { field: 'code', header: 'Kód', sortable: true },
             { field: 'description', header: 'Popis' },
             ...companyCols,
-            {
-                field: 'edit', header: '', width: '3rem', component: markRaw(ActionButtons), componentOptions: [
-                    {
-                        color: 'info',
-                        icon: 'bi bi-pencil',
-                        tooltip: 'Upraviť',
-                        action: (row: Procedure) => openEdit(row),
-                    }
-                ]
-            },
         ]
+
+        if (authStore.isManager) {
+            columns.push(editColumn)
+        }
+
+        options.value.columns = columns
     } catch (e) {
         console.error('Failed to load companies', e)
         companies.value = []
@@ -76,34 +89,7 @@ const options = ref<DataTableOptions<any>>({
         { field: 'prices_summary', header: 'Ceny', width: '30%' },
     ],
     afterInit: ({ remote }) => { actionRemote.value = remote },
-    actions: [
-        // edit handled by per-row column button
-        // {
-        //     key: 'delete',
-        //     label: '',
-        //     icon: 'bi bi-eraser',
-        //     class: 'bg-warning!',
-        //     disabled: ({ selectedRows }: any) => !selectedRows || selectedRows.length === 0,
-        //     confirm: 'Naozaj vymazať vybrané záznamy?',
-        //     handler: async ({ remote, selectedRows }: any) => {
-        //         try {
-        //             for (const r of selectedRows ?? []) {
-        //                 await api.delete(`/v1/procedures/${r.id}`)
-        //             }
-        //         } catch (err) {
-        //             console.error('Delete failed', err)
-        //         } finally {
-        //             await remote.loadPage(1)
-        //         }
-        //     },
-        // },
-        // {
-        //     key: 'add',
-        //     label: '',
-        //     icon: 'bi bi-plus',
-        //     handler: async () => openCreate(),
-        // },
-    ],
+    actions: authStore.isManager ? [] : [],
 })
 </script>
 

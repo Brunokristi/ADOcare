@@ -19,6 +19,7 @@ import Users from "@/pages/Settings/Users/UsersPage.vue";
 import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 import DashboardPage from "@/pages/DashboardPage.vue";
+import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 
 
 const managerRoutes: Readonly<RouteRecordRaw[]> = [
@@ -101,6 +102,15 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'manager-settings-plans',
                 component: Error,
                 meta: { title: 'Plány', managerSidebar: true },
+            },
+            {
+                path: 'procedures',
+                name: 'manager-settings-procedures',
+                component: Procedures,
+                meta: {
+                    title: 'Výkony',
+                    managerSidebar: true,
+                },
             },
         ],
     },

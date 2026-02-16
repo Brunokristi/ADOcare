@@ -120,26 +120,26 @@ watch(
 </script>
 
 <template>
-    <aside class="flex flex-col w-64 h-full bg-tag3 border-0! text-darkgrey! p-4 space-y-1">
-        <!-- Loop through all sidebar items built from routes -->
+    <aside class="flex flex-col w-64 h-full bg-darkgrey! border-0! text-darkgrey! p-4 space-y-4 overflow-y-auto">
         <template v-for="item in sidebarItems" :key="item.key">
             <RouterLink v-if="!item.children || !item.children.length"
-                class="w-full text-left px-3 py-2 rounded-md hover:bg-almostwhite hover:text-accent!" :to="item.path">
+                class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-white text-tag2! hover:bg-tag2 hover:!text-white" :to="item.path">
                 {{ item.label }}
+                <i class="bi bi-chevron-right"></i>
             </RouterLink>
 
             <div v-else>
                 <button
-                    class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-almostwhite hover:text-accent!"
+                    class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-tag2 text-white! hover:bg-tag2 cursor-pointer"
                     @click="toggle(item.key)">
                     <span>{{ item.label }}</span>
                     <i :class="isOpen(item.key) ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
                 </button>
 
-                <ul v-show="isOpen(item.key)" class="mt-1 ml-4 space-y-1 text-mini">
+                <ul v-show="isOpen(item.key)" class="mt-1 space-y-1 text-mini">
                     <li v-for="child in item.children" :key="child.key">
                         <RouterLink :to="child.path"
-                            class="block px-3 py-1 rounded-md hover:bg-almostwhite hover:text-accent!">
+                            class="block px-3 py-1 rounded-md text-white hover:bg-tag2">
                             {{ child.label }}
                         </RouterLink>
                     </li>
