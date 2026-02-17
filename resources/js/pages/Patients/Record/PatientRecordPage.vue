@@ -1489,7 +1489,7 @@ const defaultSpec: FormSpec = {
  */
 const answers = reactive<Record<string, any>>({
   // basic
-  diagnosis: null as DiagnosisOption | null,
+  diagnosis: [] as DiagnosisOption[],
   recommendedPharmacy: '',
   admissionDate: '',
 
@@ -1775,6 +1775,35 @@ async function searchDiagnoses(event: { query: string }) {
   }
 }
 
+function parseCodeFromText(v: string): string {
+  return (String(v ?? '').split(' - ')[0] ?? '').trim()
+}
+
+async function fetchDiagnosisByCode(code: string): Promise<DiagnosisOption | null> {
+  if (!code) return null
+  const res = await api.get('/v1/diagnoses', { params: { q: code, per_page: 50, page: 1, sort: 'code' } })
+  const arr = extractArray(res.data) as DiagnosisOption[]
+  const match = arr.find(d => (d.code ?? '').toLowerCase() === code.toLowerCase())
+  return match ? { id: match.id, code: match.code ?? '', description: match.description ?? '' } : null
+}
+
+async function fetchNurseDiagnosisByCode(code: string): Promise<NurseDiagnosis | null> {
+  if (!code) return null
+  const res = await api.get('/v1/nurse-diagnoses', { params: { q: code, per_page: 50, page: 1, sort: 'code', paginate: 0 } })
+  const arr = extractArray(res.data) as NurseDiagnosis[]
+  const match = arr.find(d => (d.code ?? '').toLowerCase() === code.toLowerCase())
+  return match ? { id: match.id, code: match.code ?? '', description: match.description ?? '' } : null
+}
+
+function removeDoctorDiagnosis(d: DiagnosisOption) {
+  answers.diagnosis = (answers.diagnosis ?? []).filter((x: DiagnosisOption) => x.id !== d.id)
+}
+
+function removeNurseDiagnosis(d: NurseDiagnosis) {
+  answers['nursingDiagnoses.list'] = (answers['nursingDiagnoses.list'] ?? []).filter((x: NurseDiagnosis) => x.id !== d.id)
+}
+
+
 async function searchNurseDiagnoses(event: { query: string }) {
   try {
     const q = (event.query ?? '').trim()
@@ -1811,27 +1840,64 @@ async function preloadFromLatestRecord() {
       }
     })
 
-    // Special handling for diagnosis (single object with code/description)
     if (recordData.diagnosis) {
-      if (typeof recordData.diagnosis === 'object' && recordData.diagnosis.id) {
-        answers.diagnosis = {
-          id: recordData.diagnosis.id,
-          code: recordData.diagnosis.code ?? '',
-          description: recordData.diagnosis.description ?? ''
-        }
-      } else if (typeof recordData.diagnosis === 'string') {
-        // If it's a string, try to parse it or keep it as is
-        answers.diagnosis = recordData.diagnosis
-      }
+      const raw = recordData.diagnosis
+
+      const rawList: any[] = Array.isArray(raw) ? raw : [raw]
+
+      const mapped = await Promise.all(
+        rawList
+          .filter(Boolean)
+          .map(async (item: any) => {
+            // already object
+            if (typeof item === 'object' && item.id) {
+              return {
+                id: item.id,
+                code: item.code ?? '',
+                description: item.description ?? ''
+              } as DiagnosisOption
+            }
+
+            // string (maybe "CODE - desc")
+            if (typeof item === 'string') {
+              const code = parseCodeFromText(item)
+              return await fetchDiagnosisByCode(code)
+            }
+
+            return null
+          })
+      )
+
+      answers.diagnosis = mapped.filter((x): x is DiagnosisOption => x !== null)
     }
 
-    // Special handling for nursing diagnoses (array of objects)
-    if (recordData['nursingDiagnoses.list'] && Array.isArray(recordData['nursingDiagnoses.list'])) {
-      answers['nursingDiagnoses.list'] = recordData['nursingDiagnoses.list'].map((nd: any) => ({
-        id: nd.id,
-        code: nd.code ?? '',
-        description: nd.description ?? ''
-      }))
+    if (recordData['nursingDiagnoses.list']) {
+      const raw = recordData['nursingDiagnoses.list']
+
+      const rawList: any[] = Array.isArray(raw) ? raw : [raw]
+
+      const mapped = await Promise.all(
+        rawList
+          .filter(Boolean)
+          .map(async (item: any) => {
+            if (typeof item === 'object' && item.id) {
+              return {
+                id: item.id,
+                code: item.code ?? '',
+                description: item.description ?? ''
+              } as NurseDiagnosis
+            }
+
+            if (typeof item === 'string') {
+              const code = parseCodeFromText(item)
+              return await fetchNurseDiagnosisByCode(code)
+            }
+
+            return null
+          })
+      )
+
+      answers['nursingDiagnoses.list'] = mapped.filter((x): x is NurseDiagnosis => x !== null)
     }
 
     toast.add({
@@ -2020,73 +2086,64 @@ watchEffect(() => {
           v-else-if="field.type === 'autocomplete'"
           v-model="answers.diagnosis"
           :suggestions="filteredDiagnoses"
-          @complete="searchDiagnoses"
-          :virtualScrollerOptions="{ itemSize: 38 }"
-          optionLabel="code"
+          multiple
+          :minLength="1"
           dropdown
-          dropdownMode="blank"
-          :minLength="0"
           completeOnFocus
+          optionLabel="code"
+          @complete="searchDiagnoses"
           class="w-full"
           inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0! text-normal"
         >
-          <template #option="slotProps">
+          <template #option="{ option }">
             <div class="flex flex-col">
-              <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-              <span>{{ slotProps.option.description }}</span>
+              <span class="shrink-0 font-medium">{{ option.code }}</span>
+              <span>{{ option.description }}</span>
+            </div>
+          </template>
+
+          <template #chip="{ value }">
+            <div class="inline-flex items-center gap-2 bg-darkgrey text-lightgrey px-3 py-1 rounded-md text-normal">
+              <span class="whitespace-nowrap text-normal">{{ value.code }}</span>
+              <i
+                class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                @click.stop="removeDoctorDiagnosis(value)"
+              />
             </div>
           </template>
         </AutoComplete>
 
-        <!-- nursing-diagnoses-autocomplete -->
-        <div v-else-if="field.type === 'nursing-diagnoses-autocomplete'" class="flex flex-col gap-3">
-          <AutoComplete
-            :suggestions="filteredNurseDiagnoses"
-            @complete="searchNurseDiagnoses"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            optionLabel="code"
-            dropdown
-            dropdownMode="blank"
-            :minLength="0"
-            completeOnFocus
-            class="w-full"
-            inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0! text-normal"
-            @item-select="(e: any) => {
-              const selected = getValue(field.id) ?? []
-              if (!selected.find((d: any) => d.id === e.value.id)) {
-                answers[field.id] = [...selected, e.value]
-              }
-            }"
-          >
-            <template #option="slotProps">
-              <div class="flex flex-col">
-                <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
-                <span>{{ slotProps.option.description }}</span>
-              </div>
-            </template>
-          </AutoComplete>
-
-          <!-- Display selected nursing diagnoses -->
-          <div v-if="(getValue(field.id) ?? []).length > 0" class="flex flex-col gap-2">
-            <div
-              v-for="(nd, idx) in getValue(field.id)"
-              :key="nd.id"
-              class="flex items-center justify-between bg-darkgrey p-3 rounded-md"
-            >
-              <div class="flex flex-col">
-                <span class="font-medium text-normal text-white">{{ nd.code }}</span>
-                <span class="text-sm text-white">{{ nd.description }}</span>
-              </div>
-              <button
-                type="button"
-                @click="answers[field.id] = getValue(field.id).filter((_: any, i: number) => i !== idx)"
-                class="text-warning"
-              >
-                <i class="bi bi-x-lg" />
-              </button>
+        <AutoComplete
+          v-else-if="field.type === 'nursing-diagnoses-autocomplete'"
+          v-model="answers['nursingDiagnoses.list']"
+          :suggestions="filteredNurseDiagnoses"
+          multiple
+          :minLength="1"
+          dropdown
+          completeOnFocus
+          optionLabel="code"
+          @complete="searchNurseDiagnoses"
+          class="w-full"
+          inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0! text-normal"
+        >
+          <template #option="{ option }">
+            <div class="flex flex-col">
+              <span class="shrink-0 font-medium">{{ option.code }}</span>
+              <span>{{ option.description }}</span>
             </div>
-          </div>
-        </div>
+          </template>
+
+          <template #chip="{ value }">
+            <div class="inline-flex items-center gap-2 bg-darkgrey text-lightgrey px-3 py-1 rounded-md text-normal">
+              <span class="whitespace-nowrap text-normal">{{ value.code }}</span>
+              <i
+                class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                @click.stop="removeNurseDiagnosis(value)"
+              />
+            </div>
+          </template>
+        </AutoComplete>
+
 
         <!-- radio -->
         <div v-else-if="field.type === 'radio'" class="flex flex-col gap-2">

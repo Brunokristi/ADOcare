@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import api from '@/services/api';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
 import ActionButtons from '@/components/table-columns/ActionButtons.vue';
-import type { DataTableOptions } from '@/types/datatable'
+import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 
 
 const props = defineProps<{ patientId: number }>();
@@ -21,6 +21,7 @@ type PatientDocument = {
 const loading = ref(false);
 const documents = ref<PatientDocument[]>([]);
 const error = ref<string | null>(null);
+const documentRemote = ref<RemoteTableReturn>({} as RemoteTableReturn);
 
 const loadDocuments = async () => {
     loading.value = true;
@@ -61,6 +62,7 @@ const formatDocumentType = (type?: string) => {
         'agreement': 'Dohoda',
         'dekurz': 'Dekurz',
         'leave': 'Prepúšťacia správa',
+        'record': 'Ošetrovateľský záznam',
         'other': 'Iné'
     };
     return typeMap[type || ''] || type || '';
@@ -81,6 +83,11 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
     pageSizeOptions: [10, 25, 50],
     selectable: true,
 
+    afterInit: ({ remote }) => {
+        documentRemote.value = remote
+        remote.setSort?.('-created_at')
+        remote.loadPage?.(1)
+    },
 
     columns: [
         {
@@ -124,7 +131,7 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
             disabled: ({ selectedRows }: { selectedRows: PatientDocument[] }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
             class: 'bg-warning!',
-            confirm: 'Delete selected?',
+            confirm: 'Vymazať vybrané dokumenty?',
             handler: async ({ selectedRows, remote }: { selectedRows: PatientDocument[]; remote: any }) => {
                 try {
                     await api.delete('v1/documents', {

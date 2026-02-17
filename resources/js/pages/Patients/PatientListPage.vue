@@ -7,7 +7,6 @@ import { useAuthStore } from '@/stores/auth'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { usePatientStore } from '@/stores/patientStore'
 import router from '@/router'
-import SecondaryNavbar from '@/components/SecondaryNavbar.vue'
 import CreatePatientModalBody from './partials/form/CreatePatientModalBody.vue'
 import DeleteConfirmationModalBody from './partials/form/DeleteConfirmationModalBody.vue'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
@@ -73,7 +72,8 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     if (!row) return ''
                     const parts = []
                     if (row.address) parts.push(row.address)
-                    return parts.join(', ') || ''
+                    const address = parts.join(', ') || ''
+                    return address.length > 50 ? address.substring(0, 40) + '...' : address
                 },
             },
             { field: 'city', header: 'Mesto', sortable: true },
@@ -96,7 +96,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                         tooltip: 'Pripnúť pacienta',
                         action: (row: Patient) => {
                             patientStore.setPatient(row)
-                            router.push(`patient/points`)
+                            router.push(`/patient/points`)
                         },
                     },
                 ],
@@ -205,9 +205,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
-    <SecondaryNavbar class="shrink-0" />
-
+    <div class="h-full flex flex-col overflow-hidden min-h-0">
       <UniversalDataTable
         v-if="options.endpointUrl"
         :key="tableKey"
@@ -215,9 +213,6 @@ const options = computed<DataTableOptions<Patient>>(() => {
         ref="tableEl"
         @action="(key, payload) => console.log('action emitted', key, payload)"
       />
-      <div v-else class="p-4 text-darkgrey">
-        Loading branch...
-      </div>
   </div>
 </template>
 

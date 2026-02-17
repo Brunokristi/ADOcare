@@ -60,6 +60,15 @@ const fullName = computed(() =>
                     <i class="bi bi-arrow-right text-lg"></i>
                 </Button>
             </RouterLink>
+
+            <RouterLink to="/accounting/routes" class="block w-70">
+                <Button
+                    class="w-full h-12 bg-darkgrey! border-0! text-white rounded-md flex justify-between! items-center px-4! hover:bg-accent!"
+                >
+                    <span>Cestovné</span>
+                    <i class="bi bi-arrow-right text-lg"></i>
+                </Button>
+            </RouterLink>
             </div>
         </section>
     </div>

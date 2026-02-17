@@ -22,6 +22,7 @@ import DashboardPage from "@/pages/DashboardPage.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 
 
+
 const managerRoutes: Readonly<RouteRecordRaw[]> = [
 
     {
@@ -36,7 +37,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager/overview',
         name: 'manager-overview',
-        // component: Error,
+        component: Settings,
         meta: {
             title: 'Prehľady',
             managerSidebar: true,
@@ -46,19 +47,19 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'patients',
                 name: 'manager-overview-patients',
                 component: Patients,
-                meta: { title: 'Pacienti', managerSidebar: true },
+                meta: { title: 'Pacienti', managerSidebar: true, navbar: true, link: 'pacienti' },
             },
             {
                 path: 'doctors',
                 name: 'manager-overview-doctors',
                 component: Doctors,
-                meta: { title: 'Spolupracujúci lekári', managerSidebar: true },
+                meta: { title: 'Spolupracujúci lekári', managerSidebar: true, navbar: true, link: 'spolupracujúci lekári' },
             },
             {
                 path: 'documents',
                 name: 'manager-overview-documents',
                 component: Error,
-                meta: { title: 'Dokumenty', managerSidebar: true },
+                meta: { title: 'Dokumenty', managerSidebar: true, navbar: true, link: 'dokumenty' },
             },
         ],
     },

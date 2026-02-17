@@ -255,10 +255,9 @@ class PatientController extends Controller
      */
     public function documents(Request $request, Patient $patient)
     {
-        $query = Document::where('patient_id', $patient->id)
-            ->orderByDesc('created_at');
+        $query = Document::where('patient_id', $patient->id);
 
-        $results = ApiQuery::apply($request, $query, searchable: ['name', 'type']);
+        $results = ApiQuery::apply($request, $query, ['name', 'type'], 'all', ['sort' => '-created_at']);
 
         return $this->success(new BaseCollection($results), 'Patient documents retrieved');
     }

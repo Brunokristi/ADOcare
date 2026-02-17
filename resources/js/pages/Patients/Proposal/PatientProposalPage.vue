@@ -393,7 +393,6 @@ async function generateDocument() {
               @complete="searchDiagnoses"
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
-              :invalid="submitted && !!errors.medicalDiagnosis"
             >
               <template #option="{ option }">
                 <div class="flex flex-col">
@@ -432,7 +431,6 @@ async function generateDocument() {
               @complete="searchNurseDiagnoses"
               class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
-              :invalid="submitted && !!errors.nurseDiagnosis"
             >
               <template #option="{ option }">
                 <div class="flex flex-col">
