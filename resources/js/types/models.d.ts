@@ -278,6 +278,28 @@ export interface Branch {
   favourite_doctors_exists: boolean
 }
 
+export interface Total {
+  // columns
+  id: number
+  user_id: number
+  month: string
+  insurance_company_id: number
+  points_total: number
+  kilometers_total: number
+  created_at: string | null
+  updated_at: string | null
+  branch_id: number | null
+  // relations
+  user: User
+  insurance_company: InsuranceCompany
+  branch: Branch
+  // counts
+  // exists
+  user_exists: boolean
+  insurance_company_exists: boolean
+  branch_exists: boolean
+}
+
 export interface Procedure {
   // columns
   id: number
