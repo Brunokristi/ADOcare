@@ -42,5 +42,8 @@ function onMapClick(e: any) {
             <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <LMarker v-if="props.latitude && props.longitude" :lat-lng="[props.latitude, props.longitude]" />
         </LMap>
+        <LMap v-else :center="center" :zoom="zoom" :useGlobalLeaflet="false" style="height:100%" @click="onMapClick">
+            <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        </LMap>
     </div>
 </template>
