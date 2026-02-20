@@ -10,18 +10,18 @@ const props = defineProps<IModalContentProps & { userId?: number; baseUrl?: stri
 
 const toast = useToast()
 
-const user = ref<Partial<User & { password: string }>>({ first_name: '', last_name: '', title: '', code: '', phone_number: '', email: '', login: '', password: '' })
+const user = ref<Partial<User>>({ first_name: '', last_name: '', title: '', code: '', phone_number: '', email: '', login: '', pin: '' })
 const branchAssignments = ref<Array<{ branch_id?: number | null; working_time?: number | null; role_id?: number | null }>>([])
 const branchOptions = ref<Branch[]>([])
 const branchRoles = ref<Role[]>([])
-const showPassword = ref(false)
+const showPin = ref(false)
 
 onMounted(async () => {
     if (props.userId) {
         try {
             const data = await api.fetchEntity<User>(`v1/users/${props.userId}`)
             user.value = data
-            // populate branch assignments from loaded relation (use pivot.working_time)
+            // branchAssignments now mirror pivot role stored on user_branches
             branchAssignments.value = (data.branches ?? []).map((b: any) => ({ branch_id: b.id, working_time: b.pivot?.working_time ?? null, role_id: b.pivot?.role_id ?? null }))
         } catch (e) {
             console.error('Nepodarilo sa načítať používateľa', e)
@@ -34,16 +34,17 @@ onMounted(async () => {
         console.error('Nepodarilo sa načítať pobočky', e)
     }
 
-    // roles are managed via user_roles; not part of per-branch pivot
+    // primary/system role is stored in user.role_id (accessible as user.role when loaded);
+    // branch-specific roles are on the user_branches pivot
 })
 
 const save = async () => {
     try {
         if (props.userId) {
-            // don't send empty password on update
+            // don't send empty pin on update
             const payload: Record<string, any> = { ...user.value }
-            if (!payload.password) delete payload.password
-            // include branch assignments (working_time stored on pivot)
+            if (!payload.pin) delete payload.pin
+            // include branch assignments (role_id stored on pivot)
             payload.branches = branchAssignments.value.map(b => ({ branch_id: b.branch_id, working_time: b.working_time, role_id: b.role_id }))
 
             const resp = await api.patch(`v1/users/${props.userId}`, payload)
@@ -54,7 +55,7 @@ const save = async () => {
         // create
         const payload: Record<string, any> = { ...user.value }
         payload.branches = branchAssignments.value.map(b => ({ branch_id: b.branch_id, working_time: b.working_time, role_id: b.role_id }))
-        const resp = await api.post('v1/my-company/users', payload)
+        const resp = await api.post('v1/users/', payload)
         if (props.modalResolve) props.modalResolve(resp.data.data)
     } catch (err) {
         console.error('Nepodarilo sa uložiť používateľa', err)
@@ -75,7 +76,7 @@ function confirmDeleteAssignment(idx: number) {
 }
 
 function togglePasswordVisibility() {
-    showPassword.value = !showPassword.value
+    showPin.value = !showPin.value
 }
 </script>
 
@@ -123,9 +124,9 @@ function togglePasswordVisibility() {
             <div>
                 <label class="block text-sm mb-1">Heslo</label>
                 <IconField class="flex items-center w-full">
-                    <InputText v-model="user.password" :type="showPassword ? 'text' : 'password'" class="w-full" />
+                    <InputText v-model="user.pin" :type="showPin ? 'text' : 'pin'" class="w-full" />
                     <InputIcon>
-                        <i :class="showPassword ? 'bi bi-eye' : 'bi bi-eye-slash'" class="cursor-pointer"
+                        <i :class="showPin ? 'bi bi-eye' : 'bi bi-eye-slash'" class="cursor-pointer"
                             @click="togglePasswordVisibility" />
                     </InputIcon>
                 </IconField>
@@ -147,32 +148,27 @@ function togglePasswordVisibility() {
                 </div>
                 <div class="col-span-4">
                     <label class="block text-sm mb-1">Úväzok</label>
-                    <InputNumber
-                    v-model="assign.working_time"
-                    mode="decimal"
-                    locale="sk-SK"
-                    :min="0"
-                    :max="1"
-                    :step="0.1"
-                    :minFractionDigits="1"
-                    :maxFractionDigits="2"
-                    :useGrouping="false"
-                    class="w-full"
-                    />
+                    <InputNumber v-model="assign.working_time" mode="decimal" locale="sk-SK" :min="0" :max="1"
+                        :step="0.1" :minFractionDigits="1" :maxFractionDigits="2" :useGrouping="false" class="w-full" />
                 </div>
                 <div class="col-span-1">
-                    <Button icon="bi bi-eraser" class="h-7! bg-warning!" severity="danger" @click="confirmDeleteAssignment(idx)" />
+                    <Button icon="bi bi-eraser" class="h-7! bg-warning!" severity="danger"
+                        @click="confirmDeleteAssignment(idx)" />
                 </div>
             </div>
             <div>
-                <Button label="Pridať pobočku" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
+                <Button label="Pridať pobočku"
+                    class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
                     @click="branchAssignments.push({ branch_id: null, working_time: null, role_id: null })" />
             </div>
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
-            <Button label="Zrušiť" text @click="props.modalResolve && props.modalResolve(null)" class="text-accent! px-2!" />
-            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! " @click="save" />
+            <Button label="Zrušiť" text @click="props.modalResolve && props.modalResolve(null)"
+                class="text-accent! px-2!" />
+            <Button label="Uložiť"
+                class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! "
+                @click="save" />
         </div>
     </div>
 </template>

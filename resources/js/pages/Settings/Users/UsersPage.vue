@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, markRaw, ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
-import type { User } from '@/types/models'
+import type { Role, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
@@ -39,7 +39,7 @@ const options = computed<DataTableOptions<User>>(() => ({
     endpointUrl: 'v1/my-company/users',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
-    extraParams: { with: 'roles' },
+    extraParams: { with: 'role' },
     selectable: true,
     afterInit: ({ remote }) => {
         actionRemote.value = remote
@@ -49,8 +49,8 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
-        { field: 'role_names', header: 'Roly', sortable: true, render: (v) => v.map(translateRoleName).join(', ') },
-        { field: 'phone', header: 'Telefón', sortable: false },
+        { field: 'system_role', header: 'Systémová rola', sortable: true, render: (v: Role) => v ? v.name : '' },
+        { field: 'phone_number', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {
             field: 'edit', header: '', width: '3rem', component: markRaw(ActionButtons), componentOptions: [
@@ -82,9 +82,9 @@ const options = computed<DataTableOptions<User>>(() => ({
 }))
 
 function translateRoleName(role: string): string {
-  if (role === 'nurse') return 'sestra'
-  if (role === 'manager') return 'manažér'
-  return role
+    if (role === 'nurse') return 'sestra'
+    if (role === 'manager') return 'manažér'
+    return role
 }
 </script>
 

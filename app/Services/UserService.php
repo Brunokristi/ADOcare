@@ -46,7 +46,7 @@ class UserService
                 $user->branches()->sync($sync);
         }
 
-        return $user->fresh()->load(['branches', 'role']);
+        return $user->fresh()->load(['branches', 'roles']);
     }
 
     /**
@@ -80,6 +80,6 @@ class UserService
             $user->branches()->sync($sync);
         }
 
-        return $user->fresh()->load(['branches', 'role']);
+        return $user->fresh()->load(['branches', 'roles']);
     }
 }
