@@ -8,7 +8,7 @@ import useAuthStore from '@/stores/auth'
 import type { Doctor, InsuranceCompany, Patient } from '@/types/models'
 
 const props = defineProps<{
-    patient: Patient
+    patient?: Patient
     submitted?: boolean
     errors?: { [key: string]: string } | null
     disabled?: boolean
@@ -24,7 +24,9 @@ const errors = computed(() => props.errors ?? {})
 
 const authStore = useAuthStore()
 
-const localPatient = ref<Patient>({ ...(props.patient ?? ({} as Patient)) })
+// using a single typed empty object avoids repeating `as Patient` everywhere
+const emptyPatient: Patient = {} as Patient
+const localPatient = ref<Patient>(props.patient ? { ...props.patient } : emptyPatient)
 
 // -------------------- Doctors / Insurance --------------------
 const sexOptions = [
@@ -117,11 +119,11 @@ const openDoctorsSettingsFromFooter = async () => {
 watch(
     () => props.patient,
     (p) => {
-        const next = { ...(p ?? ({} as Patient)) }
+        const next: Patient = p ? { ...p } : emptyPatient
         localPatient.value = next
 
         // initialize addressEntity (composable expects `psc` for postal code)
-        addressEntity.value = { ...next, psc: (next as any).zip ?? next.psc }
+        addressEntity.value = { ...next, psc: next.zip }
         initAddressForm()
     },
     { immediate: true, deep: true }
@@ -132,12 +134,12 @@ watch(
     localPatient,
     (val) => {
         try {
-            const parentVal = props.patient ?? ({} as Patient)
+            const parentVal: Patient = props.patient ?? emptyPatient
             if (JSON.stringify(val) !== JSON.stringify(parentVal)) {
-                emit('update:patient', { ...(val as Patient) })
+                emit('update:patient', { ...val })
             }
         } catch {
-            emit('update:patient', { ...(val as Patient) })
+            emit('update:patient', { ...val })
         }
     },
     { deep: true }
