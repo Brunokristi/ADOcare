@@ -18,8 +18,13 @@ import Settings from "@/pages/Settings.vue";
 import Users from "@/pages/Settings/Users/UsersPage.vue";
 import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
-import DashboardPage from "@/pages/DashboardPage.vue";
+import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
+import MonthStats from "@/pages/Manager/MonthStats.vue";
+import Totals from "@/pages/Manager/Totals.vue";
+import QuarterStats from "@/pages/Manager/QuarterStats.vue";
+import Manager from "@/pages/Manager.vue";
+
 
 
 const managerRoutes: Readonly<RouteRecordRaw[]> = [
@@ -27,16 +32,49 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager',
         name: 'manager-dashboard',
-        component: DashboardPage,
+        component: DashboardManager,
         meta: {
             title: 'Manažérsky dashboard',
             managerSidebar: false,
         },
     },
     {
+        path: '/manager/reports',
+        name: 'manager-reports',
+        component: Manager,
+        meta: {
+            title: 'Reporty',
+            managerSidebar: true,
+        },
+        children: [
+            {
+                path: 'monthly',
+                name: 'manager-month-stats',
+                component: MonthStats,
+                meta: {
+                    title: 'Výkonnosť za mesiac',
+                    managerSidebar: true,
+                    link: 'výkonnosť za mesiac',
+                    navbar: true,
+                },
+            },
+            {
+                path: 'trends',
+                name: 'manager-trends',
+                component: QuarterStats,
+                meta: {
+                    title: 'Trendy',
+                    managerSidebar: true,
+                    link: 'trendy',
+                    navbar: true,
+                },
+            },
+        ],
+    },
+    {
         path: '/manager/overview',
         name: 'manager-overview',
-        // component: Error,
+        component: Settings,
         meta: {
             title: 'Prehľady',
             managerSidebar: true,
@@ -46,19 +84,19 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'patients',
                 name: 'manager-overview-patients',
                 component: Patients,
-                meta: { title: 'Pacienti', managerSidebar: true },
+                meta: { title: 'Pacienti', managerSidebar: true, navbar: true, link: 'pacienti' },
             },
             {
                 path: 'doctors',
                 name: 'manager-overview-doctors',
                 component: Doctors,
-                meta: { title: 'Spolupracujúci lekári', managerSidebar: true },
+                meta: { title: 'Spolupracujúci lekári', managerSidebar: true, navbar: true, link: 'spolupracujúci lekári' },
             },
             {
                 path: 'documents',
                 name: 'manager-overview-documents',
                 component: Error,
-                meta: { title: 'Dokumenty', managerSidebar: true },
+                meta: { title: 'Dokumenty', managerSidebar: true, navbar: true, link: 'dokumenty' },
             },
         ],
     },
@@ -115,11 +153,11 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         ],
     },
     {
-        path: '/manager/reports',
-        name: 'manager-reports',
-        component: Error,
+        path: '/manager/financial',
+        name: 'manager-financial-stats',
+        component: Totals,
         meta: {
-            title: 'Reporty',
+            title: 'Zaznamenať aktivitu',
             managerSidebar: false,
         },
     },

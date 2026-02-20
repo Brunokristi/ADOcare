@@ -25,11 +25,11 @@ class RecordDocumentService
         $doctor = $patient->doctor;
 
         $companyName = $company ? $company->name : '';
-        $companyAddress = $company ? $company->address : '';
+        $companyAddress = $company->address . ', ' . $company->city . ', ' . $company->psc;
         $patientName = $patient->title . ' ' . $patient->first_name . ' ' . $patient->last_name;
         $patientBirthNumber = $patient->personal_number;
         $patientContact = $patient->contact;
-        $patientAddress = $patient->address . ', ' . $patient->city . ', ' . $patient->postal_code;
+        $patientAddress = $patient->address . ', ' . $patient->city . ', ' . $patient->zip;
         $insuranceCode = $patient->insuranceCompany->branch_code ?? '';
         $userName = trim((string) (($user->title ?? '') . ' ' . ($user->first_name ?? '') . ' ' . ($user->last_name ?? '')));
         $doctorName = $doctor ? trim((string) (($doctor->title ?? '') . ' ' . ($doctor->first_name ?? '') . ' ' . ($doctor->last_name ?? ''))) : '';
@@ -39,7 +39,7 @@ class RecordDocumentService
 
         $processedRecordData = $data['record_data'];
         $processedRecordData['diagnosis'] = $diagnosis;
-        $processedRecordData['nursingDiagnoses']['list'] = $nurseDiagnoses;
+        $processedRecordData['nursingDiagnoses.list'] = $nurseDiagnoses;
 
         $recordData = [
             'company_address' => $companyAddress,
@@ -67,29 +67,36 @@ class RecordDocumentService
         Storage::disk('local')->put($filename, json_encode($recordData, JSON_PRETTY_PRINT));
     }
 
-    protected function resolveDiagnosis(array $recordData): ?string
+    protected function resolveDiagnosis(array $recordData): array
     {
+        $result = [];
         if (empty($recordData['diagnosis']) || !is_array($recordData['diagnosis'])) {
-            return null;
+            return $result;
         }
 
-        $diagnosisData = $recordData['diagnosis'];
-        if (!empty($diagnosisData['id'])) {
-            $diagnosisRecord = DB::table('diagnoses')->find((int) $diagnosisData['id']);
-            return $diagnosisRecord ? ($diagnosisRecord->code . ' - ' . $diagnosisRecord->description) : null;
+        foreach ($recordData['diagnosis'] as $d) {
+            if (!empty($d['id'])) {
+                $diagnosisRecord = DB::table('diagnoses')->find((int) $d['id']);
+                if ($diagnosisRecord) {
+                    $result[] = $diagnosisRecord->code . ' - ' . $diagnosisRecord->description;
+                }
+            }
         }
 
-        return null;
+        return $result;
     }
 
     protected function resolveNurseDiagnoses(array $recordData): array
     {
         $result = [];
-        if (empty($recordData['nursingDiagnoses']['list']) || !is_array($recordData['nursingDiagnoses']['list'])) {
+        // Check for flat key first (from frontend), then nested structure
+        $nurseDiagData = $recordData['nursingDiagnoses.list'] ?? $recordData['nursingDiagnoses']['list'] ?? null;
+        
+        if (empty($nurseDiagData) || !is_array($nurseDiagData)) {
             return $result;
         }
 
-        foreach ($recordData['nursingDiagnoses']['list'] as $nd) {
+        foreach ($nurseDiagData as $nd) {
             if (!empty($nd['id'])) {
                 $nrec = DB::table('nurse_diagnoses')->find((int) $nd['id']);
                 if ($nrec) {

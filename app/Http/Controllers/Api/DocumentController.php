@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Filters\ApiQuery;
 use App\Models\Document;
 use App\Models\Patient;
 use Illuminate\Http\Request;
@@ -37,16 +38,22 @@ class DocumentController extends Controller
     /**
      * Display a listing of documents for a patient.
      */
-    public function index($patientId)
+    public function index(Request $request, $patientId)
     {
         $patient = Patient::findOrFail($patientId);
         $this->authorize('view', $patient);
 
-        $documents = Document::where('patient_id', $patientId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Document::where('patient_id', $patientId);
 
-        return response()->json($documents);
+        $results = ApiQuery::apply(
+            $request,
+            $query,
+            ['name', 'type', 'created_at'],
+            [],
+            ['sort' => '-created_at']
+        );
+
+        return response()->json($results);
     }
 
     /**

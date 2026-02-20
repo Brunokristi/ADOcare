@@ -213,7 +213,6 @@ function printPage() {
 
 
 <style>
-/* A4 root */
 #nursing-sheet {
   width: 210mm;
   height: 297mm;
@@ -278,6 +277,7 @@ function printPage() {
   margin: 0;
 }
 
+
 @media print {
   body { margin: 0; padding: 0; }
   body * { visibility: hidden !important; }
@@ -288,12 +288,10 @@ function printPage() {
   }
 
   #nursing-sheet {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    margin: 0 auto;
-    box-shadow: none;
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 auto!important;
+    box-shadow: none !important;
   }
 
   .no-print,

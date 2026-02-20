@@ -935,54 +935,43 @@ onMounted(() => {
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
             >
               <template #buttonbar="{ clearCallback }">
-                <div class="flex justify-between w-full gap-2">
-                  <div class="flex gap-2">
-                    <Button
-                      size="small"
-                      label="Po-Ne"
-                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @mousedown.prevent
-                      @click.prevent="selectAllDays"
-                    />
-                    <Button
-                      size="small"
-                      label="Po-Pia"
-                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @mousedown.prevent
-                      @click.prevent="selectWorkingDays"
-                    />
-                    <Button
-                      size="small"
-                      label="3x"
-                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @mousedown.prevent
-                      @click.prevent="selectMondayWednesdayFriday"
-                    />
-                    <Button
-                      size="small"
-                      label="So-Ne"
-                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @mousedown.prevent
-                      @click.prevent="selectWeekends"
-                    />
-                    <Button
-                      size="small"
-                      label="†"
-                      class="bg-darkgrey! border-transparent! text-white! text-mini! px-2!"
-                      @mousedown.prevent
-                      @click.prevent="selectHolidays"
-                    />
-                  </div>
-
-                  <div class="flex gap-2">
-                    <Button
-                      size="small"
-                      severity="danger"
-                      class="bg-warning! border-transparent! text-white! text-mini! px-2! bi bi-dash-circle"
-                      @mousedown.prevent
-                      @click.prevent="clearCallback"
-                    />
-                  </div>
+                <div class="flex flex-wrap justify-start w-full gap-2">
+                  <Button
+                    label="Po-Ne"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectAllDays"
+                  />
+                  <Button
+                    label="Po-Pia"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectWorkingDays"
+                  />
+                  <Button
+                    label="Po, St, Pia"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectMondayWednesdayFriday"
+                  />
+                  <Button
+                    label="So, Ne, Sviatky"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectWeekends"
+                  />
+                  <Button
+                    label="Sviatky"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectHolidays"
+                  />
+                  <Button
+                    label="zrušiť výber"
+                    class="bg-warning! border-transparent! text-white! text-normal! px-2!"
+                    @mousedown.prevent
+                    @click.prevent="clearCallback"
+                  />
                 </div>
               </template>
             </DatePicker>

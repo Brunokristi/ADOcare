@@ -36,6 +36,8 @@ use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAli
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
 use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
+use App\Http\Controllers\Api\ManagerController;
+use App\Http\Controllers\Api\TotalsController;
 
 
 
@@ -106,6 +108,17 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
     Route::get('/my-company/doctors', [MyCompanyController::class, 'doctors']);
+
+    Route::group(['prefix' => 'manager'], function () {
+        Route::get('/user-statistics', [ManagerController::class, 'userStatistics']);
+        Route::get('/doctor-statistics', [ManagerController::class, 'doctorStatistics']);
+        Route::get('/user-totals', [ManagerController::class, 'userTotals']);
+        Route::get('/branch-statistics', [ManagerController::class, 'branchStatistics']);
+        Route::get('/branch-totals', [ManagerController::class, 'branchTotals']);
+        Route::get('/user-totals-aggregated', [ManagerController::class, 'userTotalsAggregated']);
+    });
+
+    Route::apiResourceComplete('totals', TotalsController::class);
 
     Route::apiResourceComplete('doctors', DoctorController::class);
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);

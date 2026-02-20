@@ -43,16 +43,6 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         }
     },
     {
-        path: '/patients',
-        name: 'patients',
-        component: Patients,
-        meta: {
-            title: 'Pacienti',
-            sidebar: true,
-        },
-    },
-
-    {
         path: '/data',
         name: 'data',
         component: Data,
@@ -307,7 +297,6 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/settings',
         name: 'settings',
-        component: Settings,
         redirect: { name: 'doctors' },
         meta: {
             title: 'Nastavenia',
@@ -352,6 +341,17 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
 
         },
         children: [
+            {
+                path: 'patients',
+                name: 'patients',
+                component: Patients,
+                meta: {
+                    title: 'Pacienti',
+                    link: 'pacienti',
+                    sidebar: true,
+                    navbar: true,
+                },
+            },
             {
                 path: 'procedures',
                 name: 'procedures',
