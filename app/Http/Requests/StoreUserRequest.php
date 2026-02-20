@@ -18,7 +18,7 @@ class StoreUserRequest extends FormRequest
             'last_name' => 'required|string',
             'email' => 'nullable|email',
             'login' => 'nullable|string',
-            'password' => 'nullable|string',
+            'pin' => 'nullable|string',
             'branches' => 'sometimes|array',
             'branches.*.branch_id' => 'required_with:branches|integer|exists:branches,id',
             'branches.*.working_time' => 'nullable|numeric|min:0|max:1',

@@ -15,8 +15,15 @@ class UserService
      */
     public function create(array $data): User
     {
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
+        if (isset($data['pin'])) {
+            $data['pin'] = Hash::make($data['pin']);
+        }
+
+        $companyId = $data['company_id'] ?? null;
+        if (!$companyId) {
+            // Otherwise get company_id from currently authenticated user if available
+            $currentUser = auth()->user();
+            $data['company_id'] = $currentUser->company_id;
         }
 
         $branches = $data['branches'] ?? null;
@@ -39,7 +46,7 @@ class UserService
                 $user->branches()->sync($sync);
         }
 
-        return $user->fresh()->load(['branches', 'roles']);
+        return $user->fresh()->load(['branches', 'role']);
     }
 
     /**
@@ -73,6 +80,6 @@ class UserService
             $user->branches()->sync($sync);
         }
 
-        return $user->fresh()->load(['branches', 'roles']);
+        return $user->fresh()->load(['branches', 'role']);
     }
 }
