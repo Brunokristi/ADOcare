@@ -19,6 +19,14 @@ class Role extends Model
         'scope' => RoleScope::class,
     ];
 
+    /**
+     * We append a human-readable name to every role so that API clients
+     * can display it without needing to map the `position` string
+     * themselves.  This is essentially a lightweight mutation/accessor on
+     * the model.
+     */
+    protected $appends = ['name'];
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'user_roles', 'role_id', 'user_id');
@@ -42,5 +50,26 @@ class Role extends Model
     public function isGlobal(): bool
     {
         return $this->scope === RoleScope::GLOBAL;
+    }
+
+    /**
+     * Human-friendly label for the role.  Defaults to a title-cased version
+     * of the `position` value, but callers can override if necessary.
+     *
+     * Example: 'branch_manager' -> 'Branch Manager'
+     */
+    public function getNameAttribute(): string
+    {
+        // translate the position into Slovak; use the `lang` files so
+        // translators can override or improve the wording.  fall back to
+        // a humanized version if no translation exists.
+        $key = 'roles.' . $this->position;
+        $translated = __($key);
+        if ($translated === $key) {
+            // no translation found, so humanize the position string
+            $translated = str_replace('_', ' ', $this->position);
+            $translated = ucwords($translated);
+        }
+        return $translated;
     }
 }
