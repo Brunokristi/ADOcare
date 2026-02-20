@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Models\Concerns\CompanyBranchScopes;
+
 class Patient extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, CompanyBranchScopes;
 
     protected $table = 'patients';
 
@@ -38,4 +40,5 @@ class Patient extends Model
     {
         return $this->belongsTo(InsuranceCompany::class, 'insurance_company_id');
     }
+
 }

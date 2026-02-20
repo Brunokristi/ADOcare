@@ -36,6 +36,7 @@ class ApiQuery
      * - `paginate` => default paginate boolean
      * - `all` => default for returning all records
      * - `with` => default relations to eager load (comma-separated string)
+     * - `scope` => default scope parameters (e.g. ['company' => 4])
      */
     public static function apply(Request $request, Builder|\Illuminate\Database\Query\Builder $query, array|string $searchable = [], array|string $allowedFilters = 'all', array $defaults = [])
     {
@@ -51,6 +52,7 @@ class ApiQuery
             'all' => 'sometimes|boolean',
             'paginate' => 'sometimes|in:true,false,1,0',
             'with' => 'sometimes|string|max:255',
+            'scope' => 'sometimes|array',
         ]);
 
 
@@ -78,7 +80,26 @@ class ApiQuery
         $with = $request->input('with', $defaults['with'] ?? null);
         if ($with) {
             $relations = array_map('trim', explode(',', $with));
-            $query->with($relations);
+            // When eager-loading we may need to automatically constrain the
+            // related query based on the current "scope" (company, branch,
+            // etc). The rules are:
+            //   * admins see everything (no constraint)
+            //   * managers are limited to their company
+            //   * nurses (and others) are limited to a branch when a branch
+            //     context is provided, otherwise they fall back to company.
+            //   * request may also supply an explicit scope array via
+            //     `scope[company]=...` or `scope[branch]=...`; such scopes
+            //     are honoured provided the user is permitted to ask for
+            //     them.
+
+            $scoped = [];
+            foreach ($relations as $rel) {
+                $scoped[$rel] = function ($q) use ($request) {
+                    // $q may be an Eloquent builder or a Relation instance
+                    static::applyScopeToRelation($q, $request);
+                };
+            }
+            $query->with($scoped);
         }
     }
 
@@ -98,7 +119,16 @@ class ApiQuery
 
         // Only apply when the builder supports withCount (Eloquent builder)
         if (method_exists($query, 'withCount')) {
-            $query->withCount($relations);
+            // we may need to scope the counted relations just like we scope
+            // eager loads.  wrap each relation in a closure that applies
+            // the appropriate company/branch scope.
+            $scoped = [];
+            foreach ($relations as $rel) {
+                $scoped[$rel] = function ($q) use ($request) {
+                    static::applyScopeToRelation($q, $request);
+                };
+            }
+            $query->withCount($scoped);
         }
     }
 
@@ -306,5 +336,86 @@ class ApiQuery
         }
 
         return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Constrain a relation query according to the current user/request
+     * scope.  This is invoked from `applyWith` for every relationship that
+     * the client asked to be loaded.
+     *
+     * The scopes are applied in the following order of precedence:
+     *
+     * 1. explicit `scope` request parameters (`company` or `branch`)
+     * 2. role-based defaults (admins = none, managers = company)
+     * 3. fall back to branch (from route) or company for other roles
+     *
+     * Related models must expose the appropriate query scopes
+     * (`forCompany`/`forBranch`) for this helper to invoke them; if the
+     * method does not exist we simply leave the relation unmodified.
+     */
+    protected static function applyScopeToRelation($q, Request $request): void
+    {
+        $user = $request->user();
+        if (!$user) {
+            return;
+        }
+
+        // we may have been handed a Relation; if so we need to operate on its
+        // underlying query builder when applying scopes, but we still want to
+        // inspect the related model for `scopeFor*` methods.
+        if ($q instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
+            $related = $q->getRelated();
+            $builder = $q->getQuery();
+        } else {
+            $related = $q->getModel();
+            $builder = $q;
+        }
+
+        // replace $q with the builder for scope application below
+        $q = $builder;
+
+        // explicit parameters take priority
+        $scopes = (array) $request->input('scope', []);
+
+        if (isset($scopes['company'])) {
+            $companyId = (int) $scopes['company'];
+            if ($user->hasRole('admin') || $user->company_id === $companyId) {
+                if (method_exists($related, 'scopeForCompany')) {
+                    $q->forCompany($companyId);
+                }
+                return;
+            }
+        }
+
+        if (isset($scopes['branch'])) {
+            $branchId = (int) $scopes['branch'];
+            if (method_exists($related, 'scopeForBranch')) {
+                $q->forBranch($branchId);
+            }
+            return;
+        }
+
+        // role-based defaults
+        if ($user->hasRole('admin')) {
+            return;
+        }
+
+        if ($user->hasRole('manager')) {
+            if (method_exists($related, 'scopeForCompany')) {
+                $q->forCompany($user->company_id);
+            }
+            return;
+        }
+
+        // other roles: try branch, then company
+        $branch = $request->route('branch') ?? null;
+        if ($branch && method_exists($related, 'scopeForBranch')) {
+            $q->forBranch($branch->id);
+            return;
+        }
+
+        if (method_exists($related, 'scopeForCompany') && $user->company_id) {
+            $q->forCompany($user->company_id);
+        }
     }
 }

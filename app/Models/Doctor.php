@@ -25,7 +25,7 @@ class Doctor extends Model
 
     public function assigned_patients()
     {
-        return $this->hasManyThrough(Patient::class, Branch::class, 'id', 'branch_id', 'id', 'company_id');
+        return $this->hasMany(Patient::class, 'doctor_id')->whereNull('deleted_at');
     }
 
     public function assigned_branches()

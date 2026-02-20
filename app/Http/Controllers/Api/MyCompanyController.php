@@ -104,7 +104,7 @@ class MyCompanyController extends Controller
             $q->where('company_id', $company->id);
         });
 
-        $results = ApiQuery::apply(request(), $query);
+        $results = ApiQuery::apply(request(), $query, searchable: ['first_name', 'last_name']);
 
         return $this->success(new DoctorCollection($results), 'Doctors retrieved');
     }

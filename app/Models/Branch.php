@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Concerns\CompanyBranchScopes;
+
 class Branch extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyBranchScopes;
 
     protected $table = 'branches';
 
@@ -49,6 +51,7 @@ class Branch extends Model
     {
         return $this->hasMany(ReportMonth::class, 'branch_id');
     }
+
 
     public function cars()
     {

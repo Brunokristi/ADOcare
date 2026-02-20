@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Concerns\CompanyBranchScopes;
+
 class Car extends Model
 {
-    use HasFactory;
+    use HasFactory, CompanyBranchScopes;
 
     protected $table = 'cars';
 
