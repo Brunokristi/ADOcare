@@ -20,7 +20,10 @@ class CarResource extends JsonResource
             'model' => $this->model,
             'company_id' => $this->company_id,
             'user_id' => $this->user_id,
-            'user' => new UserResource($this->whenLoaded('user')),
+            'user' => $this->whenLoaded('user', function () {
+                return new UserResource($this->user);
+            }),
+            'user_exists' => $this->when($this->relationLoaded('user') ?: $this->user()->exists(), true),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

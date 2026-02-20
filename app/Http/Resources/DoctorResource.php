@@ -22,16 +22,19 @@ class DoctorResource extends JsonResource
                 return $this->patients ? PatientResource::collection($this->patients) : null;
             }),
             'patients_count' => $this->whenCounted('patients', $this->patients_count ?? $this->patients()->count()),
+            'patients_exists' => $this->when($this->relationLoaded('patients') ?: $this->patients()->exists(), true),
 
             'assigned_patients' => $this->whenLoaded('assigned_patients', function () {
                 return $this->assigned_patients ? PatientResource::collection($this->assigned_patients) : null;
             }),
             'assigned_patients_count' => $this->whenCounted('assigned_patients', $this->assigned_patients_count ?? $this->assigned_patients()->count()),
+            'assigned_patients_exists' => $this->when($this->relationLoaded('assigned_patients') ?: $this->assigned_patients()->exists(), true),
 
             'assigned_branches' => $this->whenLoaded('assigned_branches', function () {
                 return $this->assigned_branches ? BranchResource::collection($this->assigned_branches) : null;
             }),
             'assigned_branches_count' => $this->whenCounted('assigned_branches', $this->assigned_branches_count ?? $this->assigned_branches()->count()),
+            'assigned_branches_exists' => $this->when($this->relationLoaded('assigned_branches') ?: $this->assigned_branches()->exists(), true),
         ];
     }
 }

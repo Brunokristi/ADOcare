@@ -24,21 +24,15 @@ class ReportMonthResource extends JsonResource
             'updated_at' => $this->updated_at,
 
             'user' => $this->whenLoaded('user', function () {
-                return [
-                    'id' => $this->user?->id,
-                    'first_name' => $this->user?->first_name,
-                    'last_name' => $this->user?->last_name,
-                ];
+                return new UserResource($this->user);
             }),
 
             'branch' => $this->whenLoaded('branch', function () {
-                return [
-                    'id' => $this->branch?->id,
-                    'code' => $this->branch?->code,
-                ];
+                return new BranchResource($this->branch);
             }),
 
             'visits_count' => $this->whenCounted('visits'),
+            'visits_exists' => $this->when($this->relationLoaded('visits') ?: $this->visits()->exists(), true),
         ];
     }
 }

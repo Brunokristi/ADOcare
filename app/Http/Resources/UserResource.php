@@ -23,20 +23,25 @@ class UserResource extends JsonResource
             'updated_at' => $this->updated_at,
 
             'roles' => $this->whenLoaded('roles', function () {
-                return $this->roles->map(fn($r) => ['id' => $r->id, 'position' => $r->position]);
+                return RoleResource::collection($this->roles);
             }),
+            'roles_count' => $this->whenCounted('roles'),
+            'roles_exists' => $this->when($this->relationLoaded('roles') ?: $this->roles()->exists(), true),
 
             'role_names' => $this->role_names,
 
             'branches' => $this->whenLoaded('branches', function () {
-                return $this->branches;
+                return BranchResource::collection($this->branches);
             }),
+            'branches_count' => $this->whenCounted('branches'),
+            'branches_exists' => $this->when($this->relationLoaded('branches') ?: $this->branches()->exists(), true),
             'branch_roles' => $this->whenLoaded('branches', function () {
                 return $this->branch_roles;
             }),
             'company' => $this->whenLoaded('company', function () {
-                return $this->company;
+                return new CompanyResource($this->company);
             }),
+            'company_exists' => $this->when($this->relationLoaded('company') ?: $this->company()->exists(), true),
 
         ];
     }

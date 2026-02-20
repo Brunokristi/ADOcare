@@ -40,78 +40,30 @@ class PatientResource extends JsonResource
             // relations
 
             'nurse' => $this->whenLoaded('nurse', function () {
-                return $this->nurse ? [
-                    'id' => $this->nurse->id,
-                    'first_name' => $this->nurse->first_name,
-                    'last_name' => $this->nurse->last_name,
-                    'email' => $this->nurse->email,
-                    'created_at' => $this->nurse->created_at,
-                    'updated_at' => $this->nurse->updated_at,
-                ] : null;
+                return $this->nurse ? new UserResource($this->nurse) : null;
             }),
 
             'doctor' => $this->whenLoaded('doctor', function () {
-                return [
-                    'id' => $this->doctor?->id,
-                    'first_name' => $this->doctor?->first_name,
-                    'last_name' => $this->doctor?->last_name,
-                    'title' => $this->doctor?->title,
-                    'zpr' => $this->doctor?->zpr,
-                    'pzs' => $this->doctor?->pzs,
-                    'created_at' => $this->doctor?->created_at,
-                    'updated_at' => $this->doctor?->updated_at,
-                ];
+                return new DoctorResource($this->doctor);
             }),
 
             'insurance_company' => $this->whenLoaded('insuranceCompany', function () {
-                return [
-                    'id' => $this->insuranceCompany?->id,
-                    'name' => $this->insuranceCompany?->name,
-                    'address' => $this->insuranceCompany?->address,
-                    'city' => $this->insuranceCompany?->city,
-                    'psc' => $this->insuranceCompany?->psc,
-                    'ico' => $this->insuranceCompany?->ico,
-                    'dic' => $this->insuranceCompany?->dic,
-                    'ic_dph' => $this->insuranceCompany?->ic_dph,
-                    'register' => $this->insuranceCompany?->register,
-                    'code' => $this->insuranceCompany?->code,
-                    'branch_code' => $this->insuranceCompany?->branch_code,
-                    'created_at' => $this->insuranceCompany?->created_at,
-                    'updated_at' => $this->insuranceCompany?->updated_at,
-                ];
+                return new InsuranceCompanyResource($this->insuranceCompany);
             }),
 
             'visits' => $this->whenLoaded('visits', function () {
-                return $this->visits->map(function ($visit) {
-                    return [
-                        'id' => $visit->id,
-                        'date' => $visit->date,
-                        'examination' => $visit->examination,
-                        'statement' => $visit->statement,
-                        'patient_id' => $visit->patient_id,
-                        'month_id' => $visit->month_id,
-                        'created_at' => $visit->created_at,
-                        'updated_at' => $visit->updated_at,
-                    ];
-                });
+                return VisitResource::collection($this->visits);
             }),
 
             'branch' => $this->whenLoaded('branch', function () {
-                return $this->branch ? [
-                    'id' => $this->branch->id,
-                    'name' => $this->branch->name ?? null,
-                    'address' => $this->branch->address ?? null,
-                    'city' => $this->branch->city ?? null,
-                    'created_at' => $this->branch->created_at ?? null,
-                    'updated_at' => $this->branch->updated_at ?? null,
-                ] : null;
+                return new BranchResource($this->branch);
             }),
 
             // counts + exists flags
-            'visits_count' => $this->whenCounted('visits', $this->visits_count ?? $this->visits()->count()),
-            'doctor_exists' => $this->doctor()->exists(),
-            'visits_exists' => $this->visits()->exists(),
-            'insurance_company_exists' => $this->insuranceCompany()->exists(),
+            'visits_count' => $this->whenCounted('visits'),
+            'doctor_exists' => $this->when($this->relationLoaded('doctor') ?: $this->doctor()->exists(), true),
+            'visits_exists' => $this->when($this->relationLoaded('visits') ?: $this->visits()->exists(), true),
+            'insurance_company_exists' => $this->when($this->relationLoaded('insuranceCompany') ?: $this->insuranceCompany()->exists(), true),
         ];
     }
 }

@@ -35,7 +35,9 @@ class BranchResource extends JsonResource
             }),
 
             'users_count' => $this->whenCounted('users'),
+            'users_exists' => $this->when($this->relationLoaded('users') ?: $this->users()->exists(), true),
             'report_months_count' => $this->whenCounted('reportMonths'),
+            'report_months_exists' => $this->when($this->relationLoaded('reportMonths') ?: $this->reportMonths()->exists(), true),
         ];
     }
 }

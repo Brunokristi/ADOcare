@@ -24,9 +24,18 @@ class VisitResource extends JsonResource
             'distance_to_location' => $this->distance_to_location,
             'time_to_location' => $this->time_to_location,
 
-            'patient' => $this->whenLoaded('patient'),
-            'user' => $this->whenLoaded('user'),
-            'branch' => $this->whenLoaded('branch'),
+            'patient' => $this->whenLoaded('patient', function () {
+                return new PatientResource($this->patient);
+            }),
+            'patient_exists' => $this->when($this->relationLoaded('patient') ?: $this->patient()->exists(), true),
+            'user' => $this->whenLoaded('user', function () {
+                return new UserResource($this->user);
+            }),
+            'user_exists' => $this->when($this->relationLoaded('user') ?: $this->user()->exists(), true),
+            'branch' => $this->whenLoaded('branch', function () {
+                return new BranchResource($this->branch);
+            }),
+            'branch_exists' => $this->when($this->relationLoaded('branch') ?: $this->branch()->exists(), true),
         ];
     }
 }

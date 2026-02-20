@@ -29,20 +29,14 @@ class PatientPointResource extends JsonResource
             'updated_at' => $this->updated_at,
 
             'patient' => $this->whenLoaded('patient', function () {
-                return [
-                    'id' => $this->patient?->id,
-                    'first_name' => $this->patient?->first_name,
-                    'last_name' => $this->patient?->last_name,
-                ];
+                return new PatientResource($this->patient);
             }),
+            'patient_exists' => $this->when($this->relationLoaded('patient') ?: $this->patient()->exists(), true),
 
             'doctor' => $this->whenLoaded('doctor', function () {
-                return [
-                    'id' => $this->doctor?->id,
-                    'first_name' => $this->doctor?->first_name ?? null,
-                    'last_name' => $this->doctor?->last_name ?? null,
-                ];
+                return new DoctorResource($this->doctor);
             }),
+            'doctor_exists' => $this->when($this->relationLoaded('doctor') ?: $this->doctor()->exists(), true),
         ];
     }
 }
