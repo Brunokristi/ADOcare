@@ -22,7 +22,7 @@ class CPDocumentService
             'type' => 'cp',
             'mime_type' => 'application/json',
             'name' => 'cp_' . now()->format('d.m.Y'),
-            'path' => 'cps/cp_' . now()->timestamp . '.json',
+            'path' => 'cps/' . now()->timestamp . '.json',
             'branch_id' => $branch->id,
         ]);
 

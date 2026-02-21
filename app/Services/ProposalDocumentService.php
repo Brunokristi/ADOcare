@@ -24,8 +24,8 @@ class ProposalDocumentService
             'type' => 'proposal',
             'mime_type' => 'application/json',
             'name' => 'navrh_' . now()->format('d.m.Y'),
-            'path' => 'proposals/navrh_' . now()->timestamp . '.json',
-        ]);
+            'path' => 'proposals/' . now()->timestamp . '.json',        
+            ]);
 
         $company = $actor->company;
         $doctor = $patient->doctor;
