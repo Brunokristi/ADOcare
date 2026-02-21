@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
 use App\Http\Resources\BaseCollection;
+use App\Http\Resources\RoleResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -34,28 +35,35 @@ class RoleController extends Controller
         return $this->success(new BaseCollection($results), 'Company roles retrieved');
     }
 
-    public function globalRoles()
+    public function systemRoles()
     {
-        $query = Role::query()->where('scope', 'global');
+        $query = Role::query()->where('scope', 'system');
         $results = ApiQuery::apply(request(), $query);
-        return $this->success(new BaseCollection($results), 'Global roles retrieved');
+        return $this->success(new BaseCollection($results), 'System roles retrieved');
+    }
+
+    public function allRoles()
+    {
+        $query = Role::query();
+        $results = ApiQuery::apply(request(), $query);
+        return $this->success(new BaseCollection($results), 'All roles retrieved');
     }
 
     public function store(\App\Http\Requests\StoreRoleRequest $request)
     {
         $item = Role::create($request->all());
-        return $this->success($item, 'Created', Response::HTTP_CREATED);
+        return $this->success(new RoleResource($item), 'Created', Response::HTTP_CREATED);
     }
 
     public function show(Role $role)
     {
-        return $this->success($role, 'Role retrieved');
+        return $this->success(new RoleResource($role), 'Role retrieved');
     }
 
     public function update(\App\Http\Requests\UpdateRoleRequest $request, Role $role)
     {
         $role->update($request->all());
-        return $this->success($role, 'Updated');
+        return $this->success(new RoleResource($role), 'Updated');
     }
 
     public function destroy(Role $role)

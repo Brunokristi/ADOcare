@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import type { IModalContentProps } from '@/types/ui'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import type { Branch, Role, User } from '@/types/models'
+import { useAuthStore } from '@/stores/auth'
 import type Button from 'primevue/button'
 
 const props = defineProps<IModalContentProps & { userId?: number; baseUrl?: string }>()
 
 const toast = useToast()
+const auth = useAuthStore()
 
 const user = ref<Partial<User>>({ first_name: '', last_name: '', title: '', code: '', phone_number: '', email: '', login: '', pin: '' })
 const branchAssignments = ref<Array<{ branch_id?: number | null; working_time?: number | null; role_id?: number | null }>>([])
@@ -16,6 +18,7 @@ const branchOptions = ref<Branch[]>([])
 const branchRoles = ref<Role[]>([])
 const globalRoles = ref<Role[]>([])
 const showPin = ref(false)
+const isAdmin = computed(() => auth.user?.role?.position === 'admin')
 
 onMounted(async () => {
     if (props.userId) {
@@ -46,6 +49,8 @@ const save = async () => {
             // don't send empty pin on update
             const payload: Record<string, any> = { ...user.value }
             if (!payload.pin) delete payload.pin
+            // remove role_id if caller isn't allowed
+            if (!isAdmin.value) delete payload.role_id
             // include branch assignments (role_id stored on pivot)
             payload.branches = branchAssignments.value.map(b => ({ branch_id: b.branch_id, working_time: b.working_time, role_id: b.role_id }))
 
@@ -56,6 +61,7 @@ const save = async () => {
 
         // create
         const payload: Record<string, any> = { ...user.value }
+        if (!isAdmin.value) delete payload.role_id
         payload.branches = branchAssignments.value.map(b => ({ branch_id: b.branch_id, working_time: b.working_time, role_id: b.role_id }))
         const resp = await api.post('v1/users/', payload)
         if (props.modalResolve) props.modalResolve(resp.data.data)
@@ -136,10 +142,10 @@ function togglePasswordVisibility() {
         </div>
 
         <!-- system/global role selection -->
-        <div class="grid grid-cols-2 gap-4 mt-2">
+        <div v-if="isAdmin" class="grid grid-cols-2 gap-4 mt-2">
             <div>
                 <label class="block text-sm mb-1">Systémová rola</label>
-                <Select v-model="user.role_id" :options="globalRoles" optionLabel="position" optionValue="id"
+                <Select v-model="user.role_id" :options="globalRoles" optionLabel="name" optionValue="id"
                     class="w-full" />
             </div>
         </div>

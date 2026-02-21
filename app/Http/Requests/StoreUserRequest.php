@@ -8,7 +8,12 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // Only admins may assign a system role when creating a user.
+        if ($this->user() && $this->user()->hasGlobalRole('admin')) {
+            return true;
+        }
+        // if no role_id is provided we allow creation (default handled by seeder)
+        return !$this->filled('role_id');
     }
 
     public function rules(): array

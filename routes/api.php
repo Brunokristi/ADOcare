@@ -131,7 +131,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::group(['prefix' => 'roles'], function () {
         Route::get('/branch', [RoleController::class, 'branchRoles']);
         Route::get('/company', [RoleController::class, 'companyRoles']);
-        Route::get('/all', [RoleController::class, 'globalRoles']);
+        Route::get('/system', [RoleController::class, 'systemRoles']);
+        Route::get('/all', [RoleController::class, 'allRoles']);
     });
     Route::apiResourceComplete('roles', RoleController::class);
 

@@ -15,6 +15,11 @@ class UserService
      */
     public function create(array $data): User
     {
+        // only administrators may set the global/system role
+        if (isset($data['role_id']) && !auth()->user()?->hasGlobalRole('admin')) {
+            unset($data['role_id']);
+        }
+
         if (isset($data['pin'])) {
             $data['pin'] = Hash::make($data['pin']);
         }
@@ -58,6 +63,11 @@ class UserService
      */
     public function update(User $user, array $data): User
     {
+        // remove any attempted role change if caller isn't admin
+        if (isset($data['role_id']) && !auth()->user()?->hasGlobalRole('admin')) {
+            unset($data['role_id']);
+        }
+
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         }

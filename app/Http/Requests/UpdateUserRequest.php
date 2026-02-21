@@ -8,7 +8,12 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // Only admins may change the system role
+        if ($this->user() && $this->user()->hasGlobalRole('admin')) {
+            return true;
+        }
+        // if the client is not attempting to modify role_id we permit update
+        return !$this->filled('role_id');
     }
 
     public function rules(): array
