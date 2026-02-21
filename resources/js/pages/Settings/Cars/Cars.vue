@@ -5,7 +5,7 @@ import type { Car, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
-import CarModalBody from './CarModalBody.vue'
+import CarForm from './CarForm.vue'
 import api from '@/services/api'
 import useAuthStore from '@/stores/auth'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
@@ -20,7 +20,7 @@ const tableKey = computed(() => `cars-${auth.currentBranch?.id ?? 'global'}`)
 const { openModal } = useModal()
 
 async function openEditCar(carId: number) {
-    const result = await openModal(markRaw(CarModalBody), { carId }, { header: 'Upraviť auto', style: { width: '600px' } })
+    const result = await openModal(markRaw(CarForm), { carId }, { header: 'Upraviť auto', style: { width: '600px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Auto uložené' })
         actionRemote.value?.reload()
@@ -28,7 +28,7 @@ async function openEditCar(carId: number) {
 }
 
 async function openCreateCar() {
-    const result = await openModal(CarModalBody, {}, { header: 'Pridať auto', style: { width: '600px' } })
+    const result = await openModal(CarForm, {}, { header: 'Pridať auto', style: { width: '600px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Auto vytvorené' })
         actionRemote.value?.reload()

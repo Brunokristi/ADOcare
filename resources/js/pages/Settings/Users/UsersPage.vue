@@ -5,7 +5,7 @@ import type { Role, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
-import UserModalBody from './UserModalBody.vue'
+import UserForm from './UserForm.vue'
 import api from '@/services/api'
 import useAuthStore from '@/stores/auth'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
@@ -19,7 +19,7 @@ const { openModal } = useModal()
 const tableKey = computed(() => `users-${auth.currentBranch?.id ?? 'global'}`)
 
 async function openEditUser(userId: number) {
-    const result = await openModal(markRaw(UserModalBody), { userId }, { header: 'Upraviť používateľa', style: { width: '800px' } })
+    const result = await openModal(markRaw(UserForm), { userId }, { header: 'Upraviť používateľa', style: { width: '800px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Používateľ bol uložený', life: 3000 })
         actionRemote.value?.reload()
@@ -27,7 +27,7 @@ async function openEditUser(userId: number) {
 }
 
 async function openCreateUser() {
-    const result = await openModal(markRaw(UserModalBody), {}, { header: 'Pridať používateľa', style: { width: '800px' } })
+    const result = await openModal(markRaw(UserForm), {}, { header: 'Pridať používateľa', style: { width: '800px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Používateľ bol vytvorený' })
         actionRemote.value?.reload()
