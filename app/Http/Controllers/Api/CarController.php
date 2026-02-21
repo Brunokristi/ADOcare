@@ -94,4 +94,14 @@ class CarController extends Controller
         $car->delete();
         return $this->success(null, 'Deleted');
     }
+
+    public function destroyMany(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return response()->json(['message' => 'No IDs provided'], 400);
+        }
+        Car::whereIn('id', $ids)->delete();
+        return $this->success(null, 'Cars deleted successfully');
+    }
 }

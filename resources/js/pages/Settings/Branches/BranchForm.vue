@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import useFormValidator, { required, email } from '@/composables/useFormValidator'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import type { IModalContentProps } from '@/types/ui'
@@ -19,6 +18,7 @@ const branch = ref<Partial<Branch>>({
 } as any)
 const loading = ref(false)
 const representativeOptions = ref<User[]>([])
+const submitted = ref(false)
 
 // Use a reactive form bucket for DatePicker values (most reliable with PrimeVue)
 const form = reactive({
@@ -26,28 +26,11 @@ const form = reactive({
   administrative_start_time: null as Date | null,
 })
 
-const alert = ref<{ severity: 'error' | 'success'; message: string } | null>({
-  severity: 'error',
-  message: '',
-})
+const alert = ref<{ severity: 'error' | 'success'; message: string } | null>(null)
 
 // Address form wiring
 const { addressQuery, init, onAutocompleteSelected, onMapClick } = useAddressForm(branch)
 init()
-
-// Validation schema
-const validator = useFormValidator(
-  {
-    identificator: [required('Identifikátor je povinný')],
-    code: [required('Kód je povinný')],
-    email: [email('Neplatný email')],
-  },
-  () => ({
-    identificator: branch.value.identificator,
-    code: branch.value.code,
-    email: branch.value.email,
-  })
-)
 
 // Helpers: parse "HH:mm" -> Date (today) without timezone string parsing issues
 function parseHHmmToDate(hhmm: string | null | undefined): Date | null {
@@ -100,9 +83,19 @@ onMounted(async () => {
 })
 
 async function save() {
-  const ok = validator.validateAll()
-  if (!ok) {
-    alert.value = { severity: 'error', message: 'Opravte chyby vo formulári a skúste to znova' }
+  submitted.value = true
+
+  // Validate required fields
+  if (
+    !branch.value.identificator ||
+    !branch.value.code ||
+    !branch.value.representative_id ||
+    !addressQuery.value ||
+    !form.terrain_start_time ||
+    !form.administrative_start_time ||
+    branch.value.per_location_time === null ||
+    branch.value.per_location_time === undefined
+  ) {
     return
   }
 
@@ -125,7 +118,7 @@ async function save() {
   } catch (e) {
     console.error('Save branch failed', e)
     toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pobočku' })
-    alert.value = { severity: 'error', message: 'Nepodarilo se uložiť pobočku' }
+    alert.value = { severity: 'error', message: 'Nepodarilo sa uložiť pobočku' }
   }
 }
 </script>
@@ -150,30 +143,26 @@ async function save() {
             <label class="block text-normal mb-1">Identifikátor</label>
             <InputText
               v-model="branch.identificator"
-              required
               class="w-full"
-              @blur="() => { validator.setTouched('identificator'); validator.validateField('identificator') }"
             />
-            <div v-if="validator.getError('identificator')" class="text-red-600 text-normal mt-1">
-              {{ validator.getError('identificator') }}
-            </div>
+            <small v-if="submitted && !branch.identificator" class="text-warning">
+              Identifikátor je povinný.
+            </small>
           </div>
 
           <div>
             <label class="block text-normal mb-1">Kód</label>
             <InputText
               v-model="branch.code"
-              required
               class="w-full"
-              @blur="() => { validator.setTouched('code'); validator.validateField('code') }"
             />
-            <div v-if="validator.getError('code')" class="text-red-600 text-normal mt-1">
-              {{ validator.getError('code') }}
-            </div>
+            <small v-if="submitted && !branch.code" class="text-warning">
+              Kód je povinný.
+            </small>
           </div>
 
           <div class="col-span-2">
-            <label class="block text-normal mb-1">Obozorný zástupca</label>
+            <label class="block text-normal mb-1">Odborný zástupca</label>
             <Select
               v-model="branch.representative_id"
               :options="representativeOptions"
@@ -191,6 +180,9 @@ async function save() {
                 </span>
               </template>
             </Select>
+            <small v-if="submitted && !branch.representative_id" class="text-warning">
+              Odborný zástupca je povinný.
+            </small>
           </div>
         </div>
       </div>
@@ -200,6 +192,9 @@ async function save() {
         <div>
           <label class="block text-normal mb-1">Adresa</label>
           <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
+          <small v-if="submitted && !addressQuery" class="text-warning">
+            Adresa je povinná.
+          </small>
         </div>
         <div>
           <label class="block text-normal mt-3">Zadajte pozíciu kliknutím na mapu</label>
@@ -221,11 +216,7 @@ async function save() {
             <InputText
               v-model="branch.email"
               class="w-full"
-              @blur="() => { validator.setTouched('email'); validator.validateField('email') }"
             />
-            <div v-if="validator.getError('email')" class="text-red-600 text-normal mt-1">
-              {{ validator.getError('email') }}
-            </div>
           </div>
         </div>
       </div>
@@ -242,10 +233,13 @@ async function save() {
                 class="w-full"
                 inputClass="w-full"
                 />
+            <small v-if="submitted && !form.terrain_start_time" class="text-warning">
+              Začiatok ošetrovania je povinný.
+            </small>
           </div>
 
           <div>
-            <label class="block text-normal mb-1">Začiatok administratívny</label>
+            <label class="block text-normal mb-1">Začiatok administratívy</label>
             <DatePicker
                 v-model="form.administrative_start_time"
                 timeOnly
@@ -253,11 +247,17 @@ async function save() {
                 class="w-full"
                 inputClass="w-full"
                 />
+            <small v-if="submitted && !form.administrative_start_time" class="text-warning">
+              Začiatok administratívy je povinný.
+            </small>
           </div>
 
           <div>
             <label class="block text-normal mb-1">Čas na pacienta (min)</label>
             <InputNumber v-model="branch.per_location_time" :min="0" class="w-full" />
+            <small v-if="submitted && (branch.per_location_time === null || branch.per_location_time === undefined)" class="text-warning">
+              Čas na pacienta je povinný.
+            </small>
           </div>
         </div>
       </div>

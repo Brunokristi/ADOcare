@@ -10,7 +10,6 @@
 // Reporty
 
 import Cars from "@/pages/Settings/Cars/Cars.vue";
-import Error from "@/pages/ErrorPage.vue";
 import CompanySettings from "@/pages/Settings/Company/CompanySettingsPage.vue";
 import Patients from "@/pages/Patients/PatientListPage.vue";
 import Branches from "@/pages/Settings/Branches/BranchesPage.vue";
@@ -24,6 +23,8 @@ import MonthStats from "@/pages/Manager/MonthStats.vue";
 import Totals from "@/pages/Manager/Totals.vue";
 import QuarterStats from "@/pages/Manager/QuarterStats.vue";
 import Manager from "@/pages/Manager.vue";
+import Documents from "@/pages/Manager/Documents.vue";
+import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 
 
 
@@ -95,7 +96,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: 'documents',
                 name: 'manager-overview-documents',
-                component: Error,
+                component: Documents,
                 meta: { title: 'Dokumenty', managerSidebar: true, navbar: true, link: 'dokumenty' },
             },
         ],
@@ -115,31 +116,31 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'company',
                 name: 'manager-settings-company',
                 component: () => CompanySettings,
-                meta: { title: 'Spoločnosť', managerSidebar: true, navbar: true, overflow: true },
+                meta: { title: 'Spoločnosť', link: 'spoločnosť', managerSidebar: true, navbar: true, overflow: true },
             },
             {
                 path: 'branches',
                 name: 'manager-settings-branches',
                 component: Branches,
-                meta: { title: 'Pobočky', managerSidebar: true, navbar: true, },
+                meta: { title: 'Pobočky', link: 'pobočky', managerSidebar: true, navbar: true, },
             },
             {
                 path: 'users',
                 name: 'manager-settings-users',
                 component: () => Users,
-                meta: { title: 'Používatelia', managerSidebar: true, navbar: true, },
+                meta: { title: 'Používatelia', link: 'používatelia', managerSidebar: true, navbar: true, },
             },
             {
                 path: 'cars',
                 name: 'manager-settings-cars',
                 component: Cars,
-                meta: { title: 'Autá', managerSidebar: true, navbar: true, },
+                meta: { title: 'Autá', link: 'autá', managerSidebar: true, navbar: true, },
             },
             {
                 path: 'plans',
                 name: 'manager-settings-plans',
-                component: Error,
-                meta: { title: 'Plány', managerSidebar: true },
+                component: PlansPage,
+                meta: { title: 'Plány', link: 'plány', managerSidebar: true, navbar: true, },
             },
             {
                 path: 'procedures',
@@ -147,7 +148,9 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: Procedures,
                 meta: {
                     title: 'Výkony',
+                    link: 'výkony',
                     managerSidebar: true,
+                    navbar: true,
                 },
             },
         ],

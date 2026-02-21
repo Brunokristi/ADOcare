@@ -6,8 +6,6 @@ import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import { useAddressForm } from '@/composables/address'
-import useFormValidator, { required, email } from '@/composables/useFormValidator'
-import AlertBar from '@/components/AlertBar.vue'
 import type { Company, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 
@@ -15,21 +13,9 @@ const toast = useToast()
 const company = ref<Company & { representative?: User }>({} as any)
 const loading = ref(true)
 const saving = ref(false)
+const submitted = ref(false)
 const representativeOptions = ref<User[]>([])
 const { addressQuery, init, onAutocompleteSelected, onMapClick, resolveBeforeSave } = useAddressForm(company)
-
-const alert = ref<{ severity: 'error' | 'success', message: string } | null>(null)
-
-const validator = useFormValidator(
-    {
-        name: [required('Názov je povinný')],
-        email: [email('Neplatný email')],
-    },
-    () => ({
-        name: company.value.name,
-        email: company.value.email,
-    })
-)
 
 init()
 
@@ -49,23 +35,32 @@ onMounted(async () => {
         }
     } catch (e) {
         console.error('Failed to load company', e)
-        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať spoločnosť' })
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať spoločnosť', life: 5000 })
     } finally {
         loading.value = false
     }
 })
 
 async function save() {
+    submitted.value = true
     if (!company.value.id) return
+
+    // Validate required fields
+    if (
+        !company.value.name ||
+        !company.value.register ||
+        !company.value.ico ||
+        !company.value.dic ||
+        !addressQuery.value ||
+        !company.value.representative_id
+    ) {
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyplňte povinné údaje', life: 5000 })
+        return
+    }
+
     saving.value = true
     // Best-effort: if address provided but city/psc/coords missing, try to resolve via autocomplete
     try {
-        const ok = validator.validateAll()
-        if (!ok) {
-            alert.value = { severity: 'error', message: 'Opravte chyby vo formulári a skúste to znova' }
-            saving.value = false
-            return
-        }
         await resolveBeforeSave()
     } catch (err) {
         console.error('Address resolution before save failed', err)
@@ -88,10 +83,6 @@ async function save() {
 <template>
     <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
     <div class="py-8">
-        <div v-if="alert?.message" class="mb-4">
-            <AlertBar :message="alert.message" :severity="alert.severity" :closable="true" />
-        </div>
-
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
                 <div class="card mb-4">
@@ -99,22 +90,31 @@ async function save() {
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm mb-1">Názov</label>
-                            <InputText v-model="company.name" class="w-full"
-                                @blur="() => { validator.setTouched('name'); validator.validateField('name') }" />
-                            <div v-if="validator.getError('name')" class="text-red-600 text-sm mt-1">{{
-                                validator.getError('name') }}</div>
+                            <InputText v-model="company.name" class="w-full" />
+                            <small v-if="submitted && !company.name" class="text-warning">
+                              Názov je povinný.
+                            </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">Zapísaná v registri</label>
                             <InputText v-model="company.register" class="w-full" />
+                            <small v-if="submitted && !company.register" class="text-warning">
+                              Zapísaná v registri je povinná.
+                            </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">IČO</label>
                             <InputText v-model="company.ico" class="w-full" />
+                            <small v-if="submitted && !company.ico" class="text-warning">
+                              IČO je povinné.
+                            </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">DIČ</label>
                             <InputText v-model="company.dic" class="w-full" />
+                            <small v-if="submitted && !company.dic" class="text-warning">
+                              DIČ je povinné.
+                            </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">IČ DPH</label>
@@ -138,6 +138,9 @@ async function save() {
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
                             <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
+                            <small v-if="submitted && !addressQuery" class="text-warning">
+                              Adresa je povinná.
+                            </small>
                         </div>
                     </div>
 
@@ -158,10 +161,7 @@ async function save() {
                         </div>
                         <div>
                             <label class="block text-sm mb-1">Email</label>
-                            <InputText v-model="company.email" class="w-full"
-                                @blur="() => { validator.setTouched('email'); validator.validateField('email') }" />
-                            <div v-if="validator.getError('email')" class="text-red-600 text-sm mt-1">{{
-                                validator.getError('email') }}</div>
+                            <InputText v-model="company.email" class="w-full" />
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Zodpovedná osoba</label>
@@ -177,6 +177,9 @@ async function save() {
                                     </span>
                                 </template>
                             </Select>
+                            <small v-if="submitted && !company.representative_id" class="text-warning">
+                              Zodpovedná osoba je povinná.
+                            </small>
                         </div>
                     </div>
                 </div>

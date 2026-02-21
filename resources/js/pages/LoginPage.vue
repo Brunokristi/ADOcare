@@ -5,10 +5,12 @@ import auth from '@/services/auth';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
+const authStore = useAuthStore();
 
 onBeforeMount(async () => {
 
@@ -39,9 +41,17 @@ async function submit() {
     try {
         await auth.login({ login: login.value, pin: pin.value });
 
-        const redirect = (route.query.redirect as string) || '/';
-        if (redirect == '/') router.dashboard();
-        else router.push(redirect);
+        // Wait for authStore to be fully initialized with user data
+        await authStore.waitUntilInitialized();
+
+        const redirect = (route.query.redirect as string) || null;
+        if (redirect) {
+            router.push(redirect);
+        } else if (authStore.isManager) {
+            router.push('/manager');
+        } else {
+            router.push('/dashboard');
+        }
     } catch (e: any) {
         const message = e.response?.data?.message ||
             "Nepodarilo sa prihlásiť. Skúste ešte raz."
