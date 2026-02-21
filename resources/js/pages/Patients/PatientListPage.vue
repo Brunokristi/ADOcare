@@ -7,8 +7,8 @@ import { useAuthStore } from '@/stores/auth'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { usePatientStore } from '@/stores/patientStore'
 import router from '@/router'
-import CreatePatientModalBody from './partials/form/CreatePatientModalBody.vue'
-import DeleteConfirmationModalBody from './partials/form/DeleteConfirmationModalBody.vue'
+import CreatePatientForm from './partials/form/CreatePatientForm.vue'
+import DeleteConfirmationForm from './partials/form/DeleteConfirmationForm.vue'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
@@ -143,7 +143,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 class: 'bg-warning!',
                 handler: async ({ selectedRows, remote }) => {
                     await openModal(
-                        markRaw(DeleteConfirmationModalBody),
+                        markRaw(DeleteConfirmationForm),
                         { title: 'Vymazať', selectedRows, remote },
                         { style: { width: '60%' } },
                     )
@@ -155,7 +155,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 class: 'bg-accent!',
                 handler: async () => {
                     await openModal(
-                        markRaw(CreatePatientModalBody),
+                        markRaw(CreatePatientForm),
                         { title: 'Pridať Pacienta' },
                         { style: { width: '90%' } },
                     )
@@ -206,14 +206,9 @@ const options = computed<DataTableOptions<Patient>>(() => {
 
 <template>
     <div class="h-full flex flex-col overflow-hidden min-h-0">
-      <UniversalDataTable
-        v-if="options.endpointUrl"
-        :key="tableKey"
-        :options="options"
-        ref="tableEl"
-        @action="(key, payload) => console.log('action emitted', key, payload)"
-      />
-  </div>
+        <UniversalDataTable v-if="options.endpointUrl" :key="tableKey" :options="options" ref="tableEl"
+            @action="(key, payload) => console.log('action emitted', key, payload)" />
+    </div>
 </template>
 
 

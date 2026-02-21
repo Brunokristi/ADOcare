@@ -1,9 +1,9 @@
 import { openModal } from "@/composables/useModal"
-import PriceAlertModalBody from "@/pages/partials/PriceAlertModalBody.vue"
+import PriceAlertForm from "@/pages/partials/PriceAlertForm.vue"
 import useAuthStore from "@/stores/auth"
 import { markRaw } from "vue"
-import PatientDocumentsModalBody from "@/pages/Patients/partials/form/PatientDocumentsModalBody.vue"
-import EditPatientModalBody from "@/pages/Patients/partials/form/EditPatientModalBody.vue"
+import PatientDocumentsForm from "@/pages/Patients/partials/form/PatientDocumentsForm.vue"
+import EditPatientForm from "@/pages/Patients/partials/form/EditPatientForm.vue"
 
 export async function openPriceAlertModal() {
 
@@ -19,7 +19,7 @@ export async function openPriceAlertModal() {
     }
 
 
-    const dontShowAgain = await openModal(markRaw(PriceAlertModalBody), {}, {
+    const dontShowAgain = await openModal(markRaw(PriceAlertForm), {}, {
         header: 'Upozornenie na ceny',
         style: { width: '400px' },
     })
@@ -33,7 +33,7 @@ export async function openPatientDocumentsModal(patientId?: number) {
     if (!patientId) return
 
     // open via modal provider
-    return await openModal(markRaw(PatientDocumentsModalBody), { patientId }, { header: 'Dokumenty pacienta', class: 'w-7xl max-w-[90vw]' })
+    return await openModal(markRaw(PatientDocumentsForm), { patientId }, { header: 'Dokumenty pacienta', class: 'w-7xl max-w-[90vw]' })
 }
 
 export async function openPatientEditModal(patientId?: number) {
@@ -41,5 +41,5 @@ export async function openPatientEditModal(patientId?: number) {
 
     const isManagerView = useAuthStore().isManager;
     // open via modal provider
-    return await openModal(markRaw(EditPatientModalBody), { patientId, isManagerView }, { header: 'Upraviť pacienta', style: { width: '90%' } });
+    return await openModal(markRaw(EditPatientForm), { patientId, isManagerView }, { header: 'Upraviť pacienta', style: { width: '90%' } });
 }

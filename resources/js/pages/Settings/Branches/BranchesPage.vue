@@ -5,7 +5,7 @@ import type { Branch, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
-import BranchModalBody from './BranchModalBody.vue'
+import BranchForm from './BranchForm.vue'
 import api from '@/services/api'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 
@@ -15,7 +15,7 @@ const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 const { openModal } = useModal()
 
 async function openEditBranch(branchId: number) {
-    const result = await openModal(markRaw(BranchModalBody), { branchId }, { header: 'Upraviť pobočku', style: { width: '90%' } })
+    const result = await openModal(markRaw(BranchForm), { branchId }, { header: 'Upraviť pobočku', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Pobočka bola upravená' })
         actionRemote.value?.reload()
@@ -23,7 +23,7 @@ async function openEditBranch(branchId: number) {
 }
 
 async function openCreateBranch() {
-    const result = await openModal(markRaw(BranchModalBody), {}, { header: 'Pridať pobočku', style: { width: '90%' } })
+    const result = await openModal(markRaw(BranchForm), {}, { header: 'Pridať pobočku', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Pobočka bola vytvorená' })
         actionRemote.value?.reload()
