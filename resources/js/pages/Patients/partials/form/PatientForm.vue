@@ -243,11 +243,12 @@ watch(
                     :options="doctorOptions" optionLabel="name" optionValue="id" fluid filter
                     :invalid="submitted && !localPatient.doctor_id" :class="{ '!opacity-50': disabled }"
                     @show="onDoctorSelectShow">
-                    <template #footer> Pocet pacientov pre lekara negunguje - lekari manager
-                        <div class="p-2 border-t">
-                            <Button label="Pridať nového lekára" icon="pi pi-plus" fluid severity="secondary"
-                                variant="text" size="small" type="button"
-                                @click.prevent.stop="openDoctorsSettingsFromFooter" />
+                    <template #footer>
+                        <div class="p-2">
+                            <Button label="Pridať nového lekára" class="w-full! !bg-accent !text-white !text-normal !rounded-md hover:bg-darkgrey! !border-0!" icon="bi bi-plus" 
+                                type="button"
+                                @click.prevent.stop="openDoctorsSettingsFromFooter"
+                                 />
                         </div>
                     </template>
                 </Select>
