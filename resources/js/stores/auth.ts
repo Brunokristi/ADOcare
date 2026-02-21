@@ -4,6 +4,9 @@ import api from '@/services/api';
 import type { Branch, User } from '@/types/models';
 import { defineStore } from 'pinia';
 
+const BRANCH_STORAGE_KEY = 'current_branch_id';
+const ROLE_STORAGE_KEY = 'current_role';
+
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         storeStatus: 'ready' as 'ready' | 'initializing',
@@ -41,22 +44,12 @@ export const useAuthStore = defineStore('auth', {
                 }
 
                 this.user = await this.fetchUserProfile();
+                const { initialBranch, initialRole } = this.computeInitialState();
 
-                const savedBranchId = localStorage.getItem('current_branch_id');
-                const currectRole = localStorage.getItem('current_role');
-                if (currectRole === 'manager' && this.user?.role_names?.includes('manager')) {
-                    this.currentRole = 'manager';
+                this.currentBranch = initialBranch;
+                this.currentRole = initialRole;
 
-                } else if (savedBranchId) {
-                    const branch = this.user?.branches.find(b => b.id === parseInt(savedBranchId));
-                    if (branch) {
-                        this.currentBranch = branch;
-                        this.currentRole = this.user.branch_roles?.find(br => br.branch_id === branch.id)?.position ?? 'nurse';
-                    }
-                } else if (this.user?.branches.length) {
-                    this.currentBranch = this.user.branches[0] ?? null;
-                    this.currentRole = this.user.branch_roles?.find(br => br.branch_id === this.currentBranch?.id)?.position ?? 'nurse';
-                }
+
             } catch {
                 this.clearAuth();
                 this.user = null;
@@ -68,6 +61,43 @@ export const useAuthStore = defineStore('auth', {
                 openPriceAlertModal();
             }
         },
+
+        getSavedState() {
+            const savedBranchId = localStorage.getItem(BRANCH_STORAGE_KEY);
+            const savedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+            return { savedBranchId, savedRole };
+        },
+
+        computeInitialState() {
+            if (!this.user) throw new Error('User must be loaded to compute initial state');
+            const { savedBranchId, savedRole } = this.getSavedState();
+
+
+            let initialBranch: Branch | null = null;
+            let initialRole: string | null = null;
+
+            initialBranch = this.user.branches[0] ?? null;
+            initialRole = initialBranch ?
+                this.user.branch_roles?.find(br => br.branch_id === this.currentBranch?.id)?.position ?? 'nurse' :
+                (this.user?.role?.position ?? null)
+
+            if (savedRole === 'manager' && this.user?.role?.position === 'manager') {
+                initialRole = 'manager';
+                initialBranch = null;
+            } else if (savedBranchId) {
+                const branch = this.user?.branches.find(b => b.id === parseInt(savedBranchId));
+
+                if (branch) {
+                    initialBranch = branch;
+                    initialRole = this.user.branch_roles?.find(br => br.branch_id === branch.id)?.position ?? 'nurse';
+                }
+            }
+
+
+            return { initialBranch, initialRole };
+        },
+
+
 
         async fetchUserProfile() {
             const user = await api.fetchEntity<User>('/auth/profile');
@@ -83,14 +113,14 @@ export const useAuthStore = defineStore('auth', {
 
         setCurrentRole(role: string) {
             this.currentRole = role;
-            localStorage.setItem('current_role', role);
+            localStorage.setItem(ROLE_STORAGE_KEY, role);
         },
 
         setCurrentBranchById(branchId: number) {
             const branch = this.user?.branches.find(b => b.id === branchId);
             if (!branch) throw new Error('Branch not found');
             this.currentBranch = branch;
-            localStorage.setItem('current_branch_id', branchId.toString());
+            localStorage.setItem(BRANCH_STORAGE_KEY, branchId.toString());
 
         },
 
@@ -104,7 +134,7 @@ export const useAuthStore = defineStore('auth', {
 
         clearCurrentBranch() {
             this.currentBranch = null;
-            localStorage.removeItem('current_branch_id');
+            localStorage.removeItem(BRANCH_STORAGE_KEY);
         }
     },
 });
