@@ -19,16 +19,13 @@ class UserResource extends JsonResource
             'login' => $this->login,
             'code' => $this->code,
             'company_id' => $this->company_id,
+            'role_id' => $this->role_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
-            'roles' => $this->whenLoaded('roles', function () {
-                return RoleResource::collection($this->roles);
+            'role' => $this->whenLoaded('role', function () {
+                return new RoleResource($this->role);
             }),
-            'roles_count' => $this->whenCounted('roles'),
-            'roles_exists' => $this->when($this->relationLoaded('roles') ?: $this->roles()->exists(), true),
-
-            'role_names' => $this->role_names,
 
             'branches' => $this->whenLoaded('branches', function () {
                 return BranchResource::collection($this->branches);

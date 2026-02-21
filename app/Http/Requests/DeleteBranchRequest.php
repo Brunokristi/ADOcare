@@ -10,11 +10,11 @@ class DeleteBranchRequest extends FormRequest
     {
         $user = $this->user();
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasGlobalRole('admin')) {
             return true;
         }
 
-        if ($user->hasRole('manager')) {
+        if ($user->hasGlobalRole('manager')) {
             $branch = $this->route('branch');
             if ($branch && $branch->company_id == $user->company_id) {
                 return true;

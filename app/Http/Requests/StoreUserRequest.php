@@ -19,6 +19,7 @@ class StoreUserRequest extends FormRequest
             'email' => 'nullable|email',
             'login' => 'nullable|string',
             'pin' => 'nullable|string',
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'branches' => 'sometimes|array',
             'branches.*.branch_id' => 'required_with:branches|integer|exists:branches,id',
             'branches.*.working_time' => 'nullable|numeric|min:0|max:1',

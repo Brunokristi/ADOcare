@@ -10,11 +10,11 @@ class StoreBranchRequest extends FormRequest
     {
         $user = $this->user();
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasGlobalRole('admin')) {
             return true;
         }
 
-        if ($user->hasRole('manager')) {
+        if ($user->hasGlobalRole('manager')) {
             $companyId = $this->input('company_id');
             if ($companyId && $companyId != $user->company_id) {
                 return false;

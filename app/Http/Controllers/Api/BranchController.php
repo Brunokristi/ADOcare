@@ -57,7 +57,7 @@ class BranchController extends Controller
             ->whereHas('branches', function ($q) use ($branch) {
                 $q->where('branch_id', $branch->id);
             })
-            ->whereHas('roles', function ($q) {
+            ->whereHas('role', function ($q) {
                 $q->where('position', 'nurse');
             });
 

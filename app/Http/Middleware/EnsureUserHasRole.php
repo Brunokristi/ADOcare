@@ -29,11 +29,14 @@ class EnsureUserHasRole
             return $next($request);
         }
 
-        $exists = DB::table('user_roles')
-            ->join('roles', 'user_roles.role_id', '=', 'roles.id')
-            ->where('user_roles.user_id', $user->id)
-            ->whereIn('roles.position', $wanted)
-            ->exists();
+        // role checks operate on the user's global role column.
+        $exists = false;
+        foreach ($wanted as $roleName) {
+            if ($user->hasGlobalRole($roleName)) {
+                $exists = true;
+                break;
+            }
+        }
 
         if (!$exists) {
             return response()->json(['message' => 'Forbidden'], 403);

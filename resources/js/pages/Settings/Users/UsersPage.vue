@@ -49,7 +49,9 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
-        { field: 'system_role', header: 'Systémová rola', sortable: true, render: (v: Role) => v ? v.name : '' },
+        // previously we exposed a virtual `system_role` field coming from the
+        // old pivot; the API now returns the related `role` object directly.
+        { field: 'role', header: 'Systémová rola', sortable: true, render: (v: Role) => v ? v.name : '' },
         { field: 'phone_number', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {
@@ -81,11 +83,6 @@ const options = computed<DataTableOptions<User>>(() => ({
     ]
 }))
 
-function translateRoleName(role: string): string {
-    if (role === 'nurse') return 'sestra'
-    if (role === 'manager') return 'manažér'
-    return role
-}
 </script>
 
 <template>

@@ -379,7 +379,7 @@ class ApiQuery
 
         if (isset($scopes['company'])) {
             $companyId = (int) $scopes['company'];
-            if ($user->hasRole('admin') || $user->company_id === $companyId) {
+            if ($user->hasGlobalRole('admin') || $user->company_id === $companyId) {
                 if (method_exists($related, 'scopeForCompany')) {
                     $q->forCompany($companyId);
                 }
@@ -396,11 +396,11 @@ class ApiQuery
         }
 
         // role-based defaults
-        if ($user->hasRole('admin')) {
+        if ($user->hasGlobalRole('admin')) {
             return;
         }
 
-        if ($user->hasRole('manager')) {
+        if ($user->hasGlobalRole('manager')) {
             if (method_exists($related, 'scopeForCompany')) {
                 $q->forCompany($user->company_id);
             }

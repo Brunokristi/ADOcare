@@ -39,7 +39,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        return $this->success($user->load(['branches', 'roles', 'company']), 'User retrieved');
+        return $this->success($user->load(['branches', 'role', 'company']), 'User retrieved');
     }
 
     public function update(\App\Http\Requests\UpdateUserRequest $request, User $user)

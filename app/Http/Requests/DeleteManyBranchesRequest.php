@@ -11,11 +11,11 @@ class DeleteManyBranchesRequest extends FormRequest
     {
         $user = $this->user();
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasGlobalRole('admin')) {
             return true;
         }
 
-        if ($user->hasRole('manager')) {
+        if ($user->hasGlobalRole('manager')) {
             $ids = $this->input('ids', []);
             if (empty($ids))
                 return false;

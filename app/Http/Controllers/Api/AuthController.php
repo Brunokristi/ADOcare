@@ -51,8 +51,9 @@ class AuthController extends Controller
             return $this->error('Invalid login/code or pin.', 401);
         }
 
-        // Load relationships needed by frontend
-        $user->load(['branches', 'company', 'roles']);
+        // Load relationships needed by frontend; include `role` so the
+        // client receives the user's global role object.
+        $user->load(['branches', 'company', 'role']);
 
         $token = $this->createToken($user);
 
@@ -70,7 +71,7 @@ class AuthController extends Controller
 
         $user = User::query()
             ->where('id', $userId)
-            ->with(['branches', 'company', 'roles'])
+            ->with(['branches', 'company', 'role'])
             ->first();
 
         return $this->success(new UserResource($user), 'Profile retrieved');

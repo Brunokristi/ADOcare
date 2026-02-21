@@ -63,10 +63,6 @@ class User extends Authenticatable
      * @var array<string, array<string, mixed>>
      */
     public $interfaces = [
-        'role_names' => [
-            'type' => 'string[]',
-            'nullable' => false,
-        ],
         'branch_roles' => [
             'type' => 'Array<{ branch_id: int, role_id: ?int, position: ?string }>',
             'nullable' => false,
@@ -96,50 +92,24 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
-    }
-
-    public function hasRole($roleName): bool
-    {
-        return $this->roles()->where('position', $roleName)->exists();
-    }
-
-
-    /**
-     * Summary of roleNames
-     * @return Attribute<string, array<string>>
-     */
-    protected function roleNames(): Attribute
-    {
-        return Attribute::make(
-
-            get: fn() => $this->roleNamesArray()
-        );
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function roleNamesArray(): array
-    {
-        return $this->roles()->pluck('position')->toArray();
-    }
+    // roleNames/roleNamesArray removed; use $user->role->position directly
 
     public function reportMonths()
     {
         return $this->hasMany(ReportMonth::class);
     }
 
+    /**
+     * Assign a global role to the user by setting `role_id`.
+     *
+     * @param Role|int $role
+     * @return void
+     */
     public function assignRole($role)
     {
-        if ($role instanceof Role) {
-            $roleId = $role->id;
-        } else {
-            $roleId = (int) $role;
-        }
-        $this->roles()->syncWithoutDetaching([$roleId]);
+        $roleId = $role instanceof Role ? $role->id : (int) $role;
+        $this->role_id = $roleId;
+        $this->save();
     }
 
     public function roleInBranch(Branch|int $branch)
@@ -182,11 +152,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Alias for hasRole() — explicit naming for policies.
+     * Check the user's global/system role.  this does **not** inspect
+     * branch-scoped assignments.
      */
     public function hasGlobalRole(string $rolePosition): bool
     {
-        return $this->hasRole($rolePosition);
+        // we prefer to use the loaded relationship if available, but
+        // fall back to a simple comparison otherwise.
+        if ($this->relationLoaded('role')) {
+            return $this->role?->position === $rolePosition;
+        }
+        return $this->role_id !== null &&
+            optional(Role::find($this->role_id))->position === $rolePosition;
     }
 
     /**

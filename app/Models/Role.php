@@ -29,12 +29,13 @@ class Role extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'user_roles', 'role_id', 'user_id');
+        return $this->hasMany(User::class, 'role_id');
     }
 
     public function assignUser(User $user)
     {
-        $this->users()->syncWithoutDetaching([$user->id]);
+        $user->role_id = $this->id;
+        $user->save();
     }
 
     public function isBranch(): bool

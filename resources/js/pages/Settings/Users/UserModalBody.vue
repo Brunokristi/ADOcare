@@ -14,6 +14,7 @@ const user = ref<Partial<User>>({ first_name: '', last_name: '', title: '', code
 const branchAssignments = ref<Array<{ branch_id?: number | null; working_time?: number | null; role_id?: number | null }>>([])
 const branchOptions = ref<Branch[]>([])
 const branchRoles = ref<Role[]>([])
+const globalRoles = ref<Role[]>([])
 const showPin = ref(false)
 
 onMounted(async () => {
@@ -30,8 +31,9 @@ onMounted(async () => {
     try {
         branchOptions.value = await api.fetchEntities<Branch>('v1/my-company/branches')
         branchRoles.value = await api.fetchEntities<Role>('v1/roles/branch')
+        globalRoles.value = await api.fetchEntities<Role>('v1/roles/all')
     } catch (e) {
-        console.error('Nepodarilo sa načítať pobočky', e)
+        console.error('Nepodarilo sa načítať pobočky alebo role', e)
     }
 
     // primary/system role is stored in user.role_id (accessible as user.role when loaded);
@@ -130,6 +132,15 @@ function togglePasswordVisibility() {
                             @click="togglePasswordVisibility" />
                     </InputIcon>
                 </IconField>
+            </div>
+        </div>
+
+        <!-- system/global role selection -->
+        <div class="grid grid-cols-2 gap-4 mt-2">
+            <div>
+                <label class="block text-sm mb-1">Systémová rola</label>
+                <Select v-model="user.role_id" :options="globalRoles" optionLabel="position" optionValue="id"
+                    class="w-full" />
             </div>
         </div>
 

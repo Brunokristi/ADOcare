@@ -28,10 +28,9 @@ export default function useBranches() {
             role: branchRoleMap.get(branch.id) ?? 'nurse',
         }))
 
-        const userRoles: string[] = userInfo.role_names ?? []
-        const hasManager = userRoles.some((role) => role && role.trim().toLowerCase() === 'manager')
+        const isManager = userInfo.role?.position === 'manager'
 
-        if (hasManager) {
+        if (isManager) {
             options.push({ id: -1, label: 'Manažér', role: 'manager' })
         }
 

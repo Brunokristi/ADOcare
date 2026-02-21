@@ -17,14 +17,12 @@ export interface User {
   company_id: number | null
   role_id: number | null
   // overrides
-  role_names: string[]
   branch_roles: Array<{ branch_id: int, role_id: ?int, position: ?string }>
   // relations
   cars: Car[]
   branches: Branch[]
   role: Role
   company: Company
-  roles: Role[]
   report_months: ReportMonth[]
   patients: Patient[]
   represented_companies: Company[]
@@ -33,7 +31,6 @@ export interface User {
   // counts
   cars_count: number
   branches_count: number
-  roles_count: number
   report_months_count: number
   patients_count: number
   represented_companies_count: number
@@ -44,7 +41,6 @@ export interface User {
   branches_exists: boolean
   role_exists: boolean
   company_exists: boolean
-  roles_exists: boolean
   report_months_exists: boolean
   patients_exists: boolean
   represented_companies_exists: boolean
