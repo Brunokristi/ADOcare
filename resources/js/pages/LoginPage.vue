@@ -14,10 +14,13 @@ const authStore = useAuthStore();
 
 onBeforeMount(async () => {
 
-    if (await auth.isAuthenticated()) {
+    if (auth.isAuthenticated()) {
         const redirect = (route.query.redirect as string) || '/';
-        if (redirect == '/') { router.dashboard(); return; }
-        router.push(redirect);
+        if (route.query.redirect) {
+            router.push(redirect);
+            return;
+        }
+        router.dashboard();
     }
 });
 
@@ -47,10 +50,8 @@ async function submit() {
         const redirect = (route.query.redirect as string) || null;
         if (redirect) {
             router.push(redirect);
-        } else if (authStore.isManager) {
-            router.push('/manager');
         } else {
-            router.push('/dashboard');
+            router.dashboard();
         }
     } catch (e: any) {
         const message = e.response?.data?.message ||
