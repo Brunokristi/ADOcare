@@ -7,12 +7,6 @@ use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
-    /**
-     * Create a new user and attach branch assignments if provided.
-     *
-     * @param array $data
-     * @return User
-     */
     public function create(array $data): User
     {
         // only administrators may set the global/system role
@@ -20,13 +14,13 @@ class UserService
             unset($data['role_id']);
         }
 
-        if (isset($data['pin'])) {
+        // create uses `pin`
+        if (!empty($data['pin'])) {
             $data['pin'] = Hash::make($data['pin']);
         }
 
         $companyId = $data['company_id'] ?? null;
         if (!$companyId) {
-            // Otherwise get company_id from currently authenticated user if available
             $currentUser = auth()->user();
             $data['company_id'] = $currentUser->company_id;
         }
@@ -39,28 +33,19 @@ class UserService
         if ($branches && is_array($branches)) {
             $sync = [];
             foreach ($branches as $b) {
-                if (empty($b['branch_id']))
-                    continue;
+                if (empty($b['branch_id'])) continue;
+
                 $sync[(int) $b['branch_id']] = [
-                    // use existing pivot column 'working_time' if provided
                     'working_time' => $b['working_time'] ?? null,
                     'role_id' => $b['role_id'] ?? null,
                 ];
             }
-            if (!empty($sync))
-                $user->branches()->sync($sync);
+            if (!empty($sync)) $user->branches()->sync($sync);
         }
 
         return $user->fresh()->load(['branches', 'role']);
     }
 
-    /**
-     * Update an existing user and sync branch assignments if provided.
-     *
-     * @param User $user
-     * @param array $data
-     * @return User
-     */
     public function update(User $user, array $data): User
     {
         // remove any attempted role change if caller isn't admin
@@ -68,8 +53,12 @@ class UserService
             unset($data['role_id']);
         }
 
-        if (isset($data['password'])) {
+        // IMPORTANT: accept either `password` or `pin` for updates (frontend sends password)
+        if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
+        } elseif (!empty($data['pin'])) {
+            $data['password'] = Hash::make($data['pin']);
+            unset($data['pin']);
         }
 
         $branches = $data['branches'] ?? null;
@@ -80,8 +69,8 @@ class UserService
         if ($branches && is_array($branches)) {
             $sync = [];
             foreach ($branches as $b) {
-                if (empty($b['branch_id']))
-                    continue;
+                if (empty($b['branch_id'])) continue;
+
                 $sync[(int) $b['branch_id']] = [
                     'working_time' => $b['working_time'] ?? null,
                     'role_id' => $b['role_id'] ?? null,

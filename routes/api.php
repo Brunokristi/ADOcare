@@ -79,6 +79,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
 
     Route::apiResourceComplete('cars', CarController::class);
+    Route::delete('cars', [CarController::class, 'destroyMany']);
 
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::delete('patients', [PatientController::class, 'destroyMany']);
@@ -124,7 +125,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('diagnoses', DiagnosisController::class);
     Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class);
     Route::apiResourceComplete('macros', MacroController::class);
-    Route::get('/plans', [PlanController::class, 'index']);
+    Route::apiResourceComplete('plans', PlanController::class);
+    Route::delete('/plans', [PlanController::class, 'destroyMany']);
     Route::apiResourceComplete('procedures', ProcedureController::class);
     Route::apiResourceComplete('patient-points', PatientPointController::class);
     Route::apiResourceComplete('report-months', ReportMonthController::class);
@@ -137,6 +139,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('roles', RoleController::class);
 
     Route::apiResourceComplete('text-blocks', TextBlockController::class);
+    Route::delete('/users', [UserController::class, 'destroyMany']);
+    Route::delete('/users/{user}/branches/{branch}', [UserController::class, 'deleteBranchAssignment']);
     Route::apiResourceComplete('users', UserController::class);
     Route::apiResourceComplete('companies', CompanyController::class);
 
@@ -191,6 +195,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
+    Route::get('/documents/travel/company', [DocumentController::class, 'indexTravelDocumentsForCompany']);
     Route::get('/documents/travel', [DocumentController::class, 'indexTravelDocuments']);
 
     Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);

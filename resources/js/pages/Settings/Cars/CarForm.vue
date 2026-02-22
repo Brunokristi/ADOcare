@@ -3,17 +3,21 @@ import { ref, onMounted } from 'vue'
 import type { IModalContentProps } from '@/types/ui'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '@/stores/auth'
 import type { Car, User } from '@/types/models';
 import { formatUserFullName } from '@/utils/formatUtils';
 
 const props = defineProps<IModalContentProps & { carId?: number }>()
 
 const toast = useToast()
+const authStore = useAuthStore()
 
 const car = ref<Car>({} as Car);
 const users = ref<User[]>([])
+const submitted = ref(false)
 
 onMounted(async () => {
+    car.value.company_id = authStore.user?.company_id ?? null
     try {
         users.value = await api.fetchEntities<User>('v1/my-company/users')
     } catch (e) {
@@ -31,20 +35,26 @@ onMounted(async () => {
 })
 
 const save = async () => {
+    submitted.value = true
+    
+    // Validate required fields
+    if (!car.value.model || !car.value.evc) {
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyplňte povinné údaje', life: 5000 })
+        return
+    }
+
     try {
         if (props.carId) {
             const updated = (await api.patch(`v1/cars/${props.carId}`, car.value)).data.data
-            toast.add({ severity: 'success', summary: 'Upravené', detail: 'Auto upravené' })
             if (props.modalResolve) props.modalResolve(updated)
             return
         }
 
         const created = (await api.post('v1/cars', car.value)).data.data
-        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Auto vytvorené' })
         if (props.modalResolve) props.modalResolve(created)
     } catch (err) {
         console.error('Failed to save car', err)
-        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť auto' })
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť auto', life: 5000 })
     }
 }
 </script>
@@ -54,11 +64,13 @@ const save = async () => {
         <div>
             <label class="block text-sm mb-1">Model</label>
             <InputText v-model="car.model" class="w-full"/>
+            <small v-if="submitted && !car.model" class="text-warning">Povinné pole</small>
         </div>
 
         <div>
             <label class="block text-sm mb-1">EVČ</label>
             <InputText v-model="car.evc" class="w-full"/>
+            <small v-if="submitted && !car.evc" class="text-warning">Povinné pole</small>
         </div>
         <div>
             <label class="block text-sm mb-1">Majiteľ</label>

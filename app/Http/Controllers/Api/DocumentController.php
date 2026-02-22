@@ -35,6 +35,35 @@ class DocumentController extends Controller
         return response()->json($documents);
     }
 
+    public function indexTravelDocumentsForCompany(Request $request)
+    {
+        $perPage = (int) $request->input('per_page', 25);
+        $branchIds = $request->input('branch_ids');
+
+        // Parse comma-separated branch IDs or convert single ID to array
+        $branchIdArray = [];
+        if ($branchIds) {
+            if (is_string($branchIds)) {
+                $branchIdArray = array_map('intval', array_filter(explode(',', $branchIds)));
+            } elseif (is_array($branchIds)) {
+                $branchIdArray = array_map('intval', $branchIds);
+            }
+        }
+
+        $query = Document::query()
+            ->whereIn('type', ['cp', 'dzc']);
+
+        if (!empty($branchIdArray)) {
+            $query->whereIn('branch_id', $branchIdArray);
+        }
+
+        $documents = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+
+        return response()->json($documents);
+    }
+
     /**
      * Display a listing of documents for a patient.
      */

@@ -16,6 +16,17 @@ const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
 const { openModal } = useModal()
 
+const roleNameMap: Record<string, string> = {
+    'manager': 'Manažér',
+    'nurse': 'Sestra',
+    'branch_manager': 'Manažér pobočky'
+}
+
+const getRoleName = (role: Role | undefined): string => {
+    if (!role) return ''
+    return roleNameMap[role.position || ''] || role.position || role.name || ''
+}
+
 const tableKey = computed(() => `users-${auth.currentBranch?.id ?? 'global'}`)
 
 async function openEditUser(userId: number) {
@@ -29,7 +40,7 @@ async function openEditUser(userId: number) {
 async function openCreateUser() {
     const result = await openModal(markRaw(UserForm), {}, { header: 'Pridať používateľa', style: { width: '800px' } })
     if (result) {
-        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Používateľ bol vytvorený' })
+        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Používateľ bol vytvorený', life: 3000 })
         actionRemote.value?.reload()
     }
 }
@@ -49,9 +60,7 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
-        // previously we exposed a virtual `system_role` field coming from the
-        // old pivot; the API now returns the related `role` object directly.
-        { field: 'role', header: 'Systémová rola', sortable: true, render: (v: Role) => v ? v.name : '' },
+        { field: 'role', header: 'Rola', sortable: true, render: (v: Role) => getRoleName(v) },
         { field: 'phone_number', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {
