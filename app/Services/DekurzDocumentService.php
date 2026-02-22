@@ -8,7 +8,7 @@ use App\Models\Branch;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Http\Controllers\Api\VisitsController;
+use App\Services\VisitsService;
 
 class DekurzDocumentService
 {
@@ -32,12 +32,12 @@ class DekurzDocumentService
         $neededDates = array_keys($dailyTexts);
 
         if ($month) {
-            $this->ensureMonthTimelineExistsOrCreate($month, (int)$data['branch_id'], (int)$user->id, (int)$patient->id, $neededDates);
+            $this->ensureMonthTimelineExistsOrCreate($month, (int) $data['branch_id'], (int) $user->id, (int) $patient->id, $neededDates);
         }
 
-        $daysWithTimes = $this->attachVisitTimesForPatient($dailyTexts, (int)$patient->id, (int)$user->id, (int)$data['branch_id']);
+        $daysWithTimes = $this->attachVisitTimesForPatient($dailyTexts, (int) $patient->id, (int) $user->id, (int) $data['branch_id']);
 
-        $branch = Branch::findOrFail((int)$data['branch_id']);
+        $branch = Branch::findOrFail((int) $data['branch_id']);
         $company = $branch->company;
         $insurance = $patient->insuranceCompany;
 
@@ -74,7 +74,7 @@ class DekurzDocumentService
     {
         return collect($sections)->map(function ($s) {
             $dates = collect($s['dates'])
-                ->map(fn ($d) => date('Y-m-d', strtotime($d)))
+                ->map(fn($d) => date('Y-m-d', strtotime($d)))
                 ->unique()
                 ->sort()
                 ->values()
@@ -91,7 +91,7 @@ class DekurzDocumentService
     {
         $byDate = [];
         foreach ($sections as $s) {
-            $text = trim((string)($s['text'] ?? ''));
+            $text = trim((string) ($s['text'] ?? ''));
             $dates = $s['dates'] ?? [];
             if ($text === '' || !is_array($dates) || !count($dates)) {
                 continue;
@@ -117,7 +117,7 @@ class DekurzDocumentService
     public function attachVisitTimesForPatient(array $dailyTexts, int $patientId, int $userId, int $branchId): array
     {
         if (!$branchId) {
-            return array_map(fn ($text, $date) => [
+            return array_map(fn($text, $date) => [
                 'date' => $date,
                 'text' => $text,
                 'terrain_time' => null,
@@ -168,7 +168,7 @@ class DekurzDocumentService
             ->whereNotNull('administrative_time')
             ->distinct()
             ->pluck('date')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->map(fn($d) => Carbon::parse($d)->toDateString())
             ->all();
 
         $missingDates = array_values(array_diff($neededDates, $existingDates));
@@ -176,15 +176,14 @@ class DekurzDocumentService
             return;
         }
 
-        $req = \Illuminate\Http\Request::create('/v1/visits/timeline', 'POST', [
+        // call the VisitsService directly instead of routing through controller
+        $visitsService = app(VisitsService::class);
+        $visitsService->requestTimeline([
             'month' => $month->toDateString(),
             'branch_id' => $branchId,
             'user_id' => $userId,
             'persist' => true,
         ]);
-
-        $controller = app(VisitsController::class);
-        $controller->monthTimeline($req);
     }
 
     public function findDekurzFileForDocument(Document $document): ?array
@@ -222,9 +221,9 @@ class DekurzDocumentService
             ->distinct()
             ->pluck('date');
 
-        $isoDates = $dates->map(fn ($d) => Carbon::parse($d)->toDateString())->unique()->values();
+        $isoDates = $dates->map(fn($d) => Carbon::parse($d)->toDateString())->unique()->values();
 
-        $days = $isoDates->map(fn ($d) => (int) Carbon::parse($d)->day)->unique()->sort()->values();
+        $days = $isoDates->map(fn($d) => (int) Carbon::parse($d)->day)->unique()->sort()->values();
 
         return [
             'month_from' => $from,

@@ -88,9 +88,9 @@ class VisitsService
      */
     public function getDayTotals(string $date, int $branchId, ?int $userId = null, bool $includeOnLocation = true): array
     {
-        $userId = (int)($userId ?? Auth::id());
-        $branchId = (int)$branchId;
-        $includeOnLocation = (bool)$includeOnLocation;
+        $userId = (int) ($userId ?? Auth::id());
+        $branchId = (int) $branchId;
+        $includeOnLocation = (bool) $includeOnLocation;
 
         $agg = DB::table('visits')
             ->where('user_id', $userId)
@@ -106,18 +106,18 @@ class VisitsService
             ')
             ->first();
 
-        $totalSeconds = (int)$agg->travel_seconds + ($includeOnLocation ? (int)$agg->on_location_seconds : 0);
+        $totalSeconds = (int) $agg->travel_seconds + ($includeOnLocation ? (int) $agg->on_location_seconds : 0);
 
         return [
             'date' => $date,
             'user_id' => $userId,
             'branch_id' => $branchId,
-            'stops' => (int)$agg->stops,
-            'travel_seconds' => (int)$agg->travel_seconds,
-            'on_location_seconds' => (int)$agg->on_location_seconds,
+            'stops' => (int) $agg->stops,
+            'travel_seconds' => (int) $agg->travel_seconds,
+            'on_location_seconds' => (int) $agg->on_location_seconds,
             'total_seconds' => $totalSeconds,
-            'distance_m' => (int)$agg->distance_m,
-            'distance_km' => round(((int)$agg->distance_m) / 1000, 2),
+            'distance_m' => (int) $agg->distance_m,
+            'distance_km' => round(((int) $agg->distance_m) / 1000, 2),
             'first_arrival' => $agg->first_arrival,
             'last_arrival' => $agg->last_arrival,
         ];
@@ -135,13 +135,13 @@ class VisitsService
     public function getMonthTotals(string $monthAnyDate, int $branchId, ?int $userId = null, bool $includeOnLocation = true): array
     {
         $tz = 'Europe/Bratislava';
-        $userId = (int)($userId ?? Auth::id());
-        $branchId = (int)$branchId;
-        $includeOnLocation = (bool)$includeOnLocation;
+        $userId = (int) ($userId ?? Auth::id());
+        $branchId = (int) $branchId;
+        $includeOnLocation = (bool) $includeOnLocation;
 
         $month = Carbon::parse($monthAnyDate)->setTimezone($tz);
         $from = $month->copy()->startOfMonth()->toDateString();
-        $to   = $month->copy()->endOfMonth()->toDateString();
+        $to = $month->copy()->endOfMonth()->toDateString();
 
         $agg = DB::table('visits')
             ->where('user_id', $userId)
@@ -157,7 +157,7 @@ class VisitsService
             ')
             ->first();
 
-        $totalSeconds = (int)$agg->travel_seconds + ($includeOnLocation ? (int)$agg->on_location_seconds : 0);
+        $totalSeconds = (int) $agg->travel_seconds + ($includeOnLocation ? (int) $agg->on_location_seconds : 0);
 
         return [
             'month' => $month->format('Y-m'),
@@ -165,12 +165,12 @@ class VisitsService
             'to' => $to,
             'user_id' => $userId,
             'branch_id' => $branchId,
-            'stops' => (int)$agg->stops,
-            'travel_seconds' => (int)$agg->travel_seconds,
-            'on_location_seconds' => (int)$agg->on_location_seconds,
+            'stops' => (int) $agg->stops,
+            'travel_seconds' => (int) $agg->travel_seconds,
+            'on_location_seconds' => (int) $agg->on_location_seconds,
             'total_seconds' => $totalSeconds,
-            'distance_m' => (int)$agg->distance_m,
-            'distance_km' => round(((int)$agg->distance_m) / 1000, 2),
+            'distance_m' => (int) $agg->distance_m,
+            'distance_km' => round(((int) $agg->distance_m) / 1000, 2),
         ];
     }
 }
