@@ -33,6 +33,8 @@ const PatientProposal = defineAsyncComponent(() => import('@/pages/Patients/Prop
 
 
 const generalRoutes: Readonly<RouteRecordRaw[]> = [
+    { path: '', redirect: { name: 'dashboard' } },
+    { path: '/', redirect: { name: 'dashboard' } },
     { path: '/dashboard', name: 'dashboard', component: DashboardPage },
     {
         path: '/login',
@@ -376,6 +378,10 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
             },
         ],
     },
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: { name: 'dashboard' }
+    }
 ];
 
 
