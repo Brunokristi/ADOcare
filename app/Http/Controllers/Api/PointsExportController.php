@@ -143,7 +143,7 @@ class PointsExportController extends Controller
     {
         $data = $request->validate([
             'batchNumber' => 'required|integer',
-            'batchType.code' => 'required|string|in:N,O',
+            'batchType.code' => 'required|string|in:N,O,I',
             'insurance.id' => 'required|integer',
             'period' => 'required|array|size:2',
             'period.*' => 'required|date',
@@ -159,7 +159,7 @@ class PointsExportController extends Controller
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
         $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $type = $data['batchType']['code']; // N or O
+        $type = $data['batchType']['code'];
         $batchNumber = (int) $data['batchNumber'];
         $userId = (int) $data['user']['id'];
         $branchId = (int) $data['branch']['id'];

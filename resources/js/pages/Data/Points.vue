@@ -50,11 +50,15 @@ let calculationToastId: string | undefined;
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
   { code: 'O', name: 'Opravná dávka' },
+  { code: 'I', name: 'Dávka cudzinci mimo EU, bezdomovci' },
 ]);
 
 const insurances = ref<Insurance[]>([]);
 
-const isCorrectionBatch = computed(() => batchType.value?.code === 'O');
+const shouldShowPatients = computed(() => {
+  const code = batchType.value?.code;
+  return code === 'O' || code === 'I';
+});
 
 function mapInsuranceCompanyToOption(company: InsuranceCompany): Insurance {
   const displayName = company.name ?? '';
@@ -223,7 +227,7 @@ async function onSubmit() {
   submitted.value = true;
 
   const hasPeriod = !!dates.value;
-  const needsPatients = isCorrectionBatch.value;
+  const needsPatients = shouldShowPatients.value;
 
   if (
     !batchNumber.value ||
@@ -412,7 +416,7 @@ onMounted(() => {
 
           <!-- Pacienti pre opravnu dávku -->
           <div
-            v-if="isCorrectionBatch"
+            v-if="shouldShowPatients"
             class="col-span-12"
           >
             <label class="block text-normal mb-2">
@@ -467,10 +471,10 @@ onMounted(() => {
             </AutoComplete>
 
             <small
-              v-if="submitted && isCorrectionBatch && !selectedPatients.length"
+              v-if="submitted && shouldShowPatients && !selectedPatients.length"
               class="text-warning block mt-1"
             >
-              Pri opravnej dávke je potrebné vybrať aspoň jedného pacienta.
+              Pri tomto type pacienta je potrebné vybrať aspoň jedného pacienta.
             </small>
           </div>
         </div>

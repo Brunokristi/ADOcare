@@ -123,4 +123,55 @@ class VisitsController extends Controller
     {
         return $this->error('Endpoint not implemented', 501);
     }
+
+    /**
+     * Get visits for a patient within a date range.
+     *
+     * @group Visits
+     * @queryParam patient_id int required Patient ID. Example: 1
+     * @queryParam branch_id int|null Optional branch ID.
+     * @queryParam user_id int|null Optional user ID.
+     * @queryParam date_from date|null Optional start date (YYYY-MM-DD).
+     * @queryParam date_to date|null Optional end date (YYYY-MM-DD).
+     * @queryParam paginate bool|null Whether to paginate results. Example: true
+     * @response 200 {"message":"OK","data":{"items":[...]}}
+     */
+    public function index()
+    {
+        $patientId = request()->query('patient_id');
+        $branchId = request()->query('branch_id');
+        $userId = request()->query('user_id');
+        $dateFrom = request()->query('date_from');
+        $dateTo = request()->query('date_to');
+        $paginate = request()->query('paginate', 0);
+
+        if (!$patientId) {
+            return $this->error('patient_id is required', 422);
+        }
+
+        $query = \App\Models\Visit::query()
+            ->where('patient_id', $patientId);
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('date', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('date', '<=', $dateTo);
+        }
+
+        $query->orderBy('date', 'asc');
+
+        $result = $paginate ? $query->paginate(25) : $query->get();
+
+        return $this->success(['items' => $result]);
+    }
 }
