@@ -231,13 +231,118 @@ watch(
 
 async function printPage() {
   isPrinting.value = true
+
   await nextTick()
   await new Promise<void>(r => requestAnimationFrame(() => r()))
   await new Promise<void>(r => requestAnimationFrame(() => r()))
 
+  // persist BEFORE printing (same as now)
   await persistLastDekurzNumber()
 
-  window.print()
+  const src = document.getElementById('print-root')
+  if (!src) {
+    isPrinting.value = false
+    return
+  }
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.right = '0'
+  iframe.style.bottom = '0'
+  iframe.style.width = '0'
+  iframe.style.height = '0'
+  iframe.style.border = '0'
+  iframe.style.opacity = '0'
+  document.body.appendChild(iframe)
+
+  const doc = iframe.contentDocument || iframe.contentWindow?.document
+  const win = iframe.contentWindow
+  if (!doc || !win) {
+    document.body.removeChild(iframe)
+    isPrinting.value = false
+    return
+  }
+
+  // Clone all CSS
+  const headPieces: string[] = []
+
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+    const href = (link as HTMLLinkElement).href
+    if (href) headPieces.push(`<link rel="stylesheet" href="${href}">`)
+  })
+
+  document.querySelectorAll('style').forEach(style => {
+    headPieces.push(`<style>${style.innerHTML}</style>`)
+  })
+
+  // Print overrides for Dekurz
+  headPieces.push(`
+    <style>
+      @page { size: A4; margin: 0; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      #print-root { position: static !important; }
+
+      .agreement-sheet-wrapper {
+        display: block !important;
+        padding: 0 !important;
+      }
+
+      .dekurz-page {
+        break-after: page;
+        page-break-after: always;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
+
+      .dekurz-page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+    </style>
+  `)
+
+  doc.open()
+  doc.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        ${headPieces.join('\n')}
+      </head>
+      <body>
+        ${src.outerHTML}
+      </body>
+    </html>
+  `)
+  doc.close()
+
+  // Wait for styles to load
+  const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[]
+  await Promise.all(
+    links.map(
+      l =>
+        new Promise<void>(resolve => {
+          if ((l as any).sheet) return resolve()
+          l.addEventListener('load', () => resolve(), { once: true })
+          l.addEventListener('error', () => resolve(), { once: true })
+        })
+    )
+  )
+
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+  win.focus()
+  win.print()
+
+  setTimeout(() => {
+    try {
+      document.body.removeChild(iframe)
+    } catch {}
+    isPrinting.value = false
+  }, 500)
 }
 
 

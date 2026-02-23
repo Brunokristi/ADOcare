@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
 import LoadingOverlay from '@/components/LoadingOverlay.vue';
@@ -132,8 +132,101 @@ function formatDate(v?: string) {
   return new Date(v).toLocaleDateString('sk-SK');
 }
 
-function printPage() {
-  requestAnimationFrame(() => window.print());
+async function printPage() {
+  await nextTick()
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+  const src = document.getElementById('proposal-sheet')
+  if (!src) return
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.right = '0'
+  iframe.style.bottom = '0'
+  iframe.style.width = '0'
+  iframe.style.height = '0'
+  iframe.style.border = '0'
+  iframe.style.opacity = '0'
+  document.body.appendChild(iframe)
+
+  const doc = iframe.contentDocument || iframe.contentWindow?.document
+  const win = iframe.contentWindow
+  if (!doc || !win) {
+    document.body.removeChild(iframe)
+    return
+  }
+
+  const headPieces: string[] = []
+
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+    const href = (link as HTMLLinkElement).href
+    if (href) headPieces.push(`<link rel="stylesheet" href="${href}">`)
+  })
+
+  document.querySelectorAll('style').forEach(style => {
+    headPieces.push(`<style>${style.innerHTML}</style>`)
+  })
+
+  headPieces.push(`
+    <style>
+      @page { size: A4; margin: 0; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* make it printable normally */
+      #proposal-sheet {
+        position: static !important;
+        inset: auto !important;
+        margin: 0 auto !important;
+        box-shadow: none !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        overflow: hidden !important;
+      }
+    </style>
+  `)
+
+  doc.open()
+  doc.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        ${headPieces.join('\n')}
+      </head>
+      <body>
+        ${src.outerHTML}
+      </body>
+    </html>
+  `)
+  doc.close()
+
+  const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[]
+  await Promise.all(
+    links.map(
+      l =>
+        new Promise<void>(resolve => {
+          if ((l as any).sheet) return resolve()
+          l.addEventListener('load', () => resolve(), { once: true })
+          l.addEventListener('error', () => resolve(), { once: true })
+        })
+    )
+  )
+
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+  await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+  win.focus()
+
+  // Some Chrome builds behave better with a tiny delay
+  setTimeout(() => win.print(), 0)
+
+  setTimeout(() => {
+    try {
+      document.body.removeChild(iframe)
+    } catch {}
+  }, 500)
 }
 </script>
 

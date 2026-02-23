@@ -16,8 +16,8 @@ class RecordDocumentService
             'user_id' => $user->id,
             'type' => 'record',
             'mime_type' => 'application/json',
-            'name' => 'zaznam' . now()->format('d.m.Y'),
-            'path' => 'records/' . 'record_' . now()->timestamp . '.json',
+            'name' => 'zaznam_' . now()->format('d.m.Y'),
+            'path' => 'records/' . now()->timestamp . '.json',
         ]);
 
         $patient = Patient::findOrFail($data['patient_id']);

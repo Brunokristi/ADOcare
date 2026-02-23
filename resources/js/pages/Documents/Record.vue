@@ -541,7 +541,104 @@ async function printPage() {
   await nextTick()
   await new Promise<void>(r => requestAnimationFrame(() => r()))
   await new Promise<void>(r => requestAnimationFrame(() => r()))
-  window.print()
+
+  try {
+    const src = document.getElementById('print-root')
+    if (!src) return
+
+    // Create hidden iframe
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    iframe.style.opacity = '0'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    const win = iframe.contentWindow
+    if (!doc || !win) {
+      document.body.removeChild(iframe)
+      return
+    }
+
+    // Clone ALL styles (Tailwind/PrimeVue/app CSS) into iframe
+    const headPieces: string[] = []
+
+    // Copy <link rel="stylesheet">
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+      const href = (link as HTMLLinkElement).href
+      if (href) headPieces.push(`<link rel="stylesheet" href="${href}">`)
+    })
+
+    // Copy <style> blocks (Vite injects component CSS here)
+    document.querySelectorAll('style').forEach(style => {
+      headPieces.push(`<style>${style.innerHTML}</style>`)
+    })
+
+    // IMPORTANT: print CSS in iframe (block layout, real page breaks)
+    headPieces.push(`
+      <style>
+        @page { size: A4; margin: 0; }
+        html, body { margin: 0; padding: 0; background: #fff; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        /* critical: avoid flex pagination issues */
+        .pages { display: block !important; }
+        .page { break-after: page; page-break-after: always; }
+        .page:last-child { break-after: auto; page-break-after: auto; }
+
+        /* remove screen-only decoration */
+        .page { box-shadow: none !important; margin: 0 !important; }
+      </style>
+    `)
+
+    doc.open()
+    doc.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          ${headPieces.join('\n')}
+        </head>
+        <body>
+          ${src.outerHTML}
+        </body>
+      </html>
+    `)
+    doc.close()
+
+    // Wait for linked CSS to load, then print
+    const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[]
+    await Promise.all(
+      links.map(
+        l =>
+          new Promise<void>(resolve => {
+            // already loaded?
+            if ((l as any).sheet) return resolve()
+            l.addEventListener('load', () => resolve(), { once: true })
+            l.addEventListener('error', () => resolve(), { once: true })
+          })
+      )
+    )
+
+    await new Promise<void>(r => requestAnimationFrame(() => r()))
+    await new Promise<void>(r => requestAnimationFrame(() => r()))
+
+    win.focus()
+    win.print()
+
+    // Cleanup (after print dialog opens)
+    setTimeout(() => {
+      try {
+        document.body.removeChild(iframe)
+      } catch {}
+    }, 500)
+  } finally {
+    isPrinting.value = false
+  }
 }
 
 function handleAfterPrint() {
@@ -851,11 +948,13 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
   padding: 2rem;
 }
 
-/* Visible pages stack */
-.pages {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.page {
+  width: 210mm;
+  height: 297mm;
+  padding: 14mm;
+  box-sizing: border-box;
+  background: #fff;
+  overflow: hidden; /* ok for capture since you already paginate */
 }
 
 /* A4 page */
@@ -919,13 +1018,18 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
   position: absolute;
   left: -99999px;
   top: 0;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+  width: 210mm;
+  height: 297mm;
+  overflow: visible;
   pointer-events: none;
   opacity: 0;
 }
 .measure-page {
+  width: 210mm;
+  height: 297mm;
+  padding: 14mm;
+  box-sizing: border-box;
+  background: #fff;
   opacity: 0;
 }
 
@@ -936,46 +1040,61 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 }
 
 @media print {
-  :global(html),
-  :global(body) {
+  html,
+  body {
     margin: 0 !important;
     padding: 0 !important;
-    background: white !important;
+    background: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  :global(body) * {
+  /* hide everything */
+  body * {
     visibility: hidden !important;
   }
 
-  :global(#print-root),
-  :global(#print-root *) {
+  /* show only the printable part */
+  #print-root,
+  #print-root * {
     visibility: visible !important;
   }
 
-  :global(#print-root) {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
+  /* IMPORTANT: do NOT use absolute here */
+  #print-root {
+    position: static !important;
+    width: auto !important;
   }
 
-  :global(.page) {
+  /* IMPORTANT: flex breaks printing in many browsers -> force block */
+  .record-sheet-wrapper {
+    display: block !important;
+    padding: 0 !important;
+    justify-content: initial !important;
+  }
+
+  .pages {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  /* force page breaks */
+  .page {
     box-shadow: none !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
     break-after: page !important;
     page-break-after: always !important;
+    overflow: visible !important;
   }
 
-  :global(.page:last-child) {
+  .page:last-child {
     break-after: auto !important;
     page-break-after: auto !important;
   }
 
-  :global(.no-print),
-  :global(.p-toolbar),
-  :global(#measure-root) {
+  .no-print,
+  .p-toolbar,
+  #measure-root {
     display: none !important;
   }
 }

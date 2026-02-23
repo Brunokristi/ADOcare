@@ -79,7 +79,4 @@ class DekurzDocumentController extends Controller
         return response()->json(['success' => true, 'message' => 'Available dates retrieved', 'data' => $result]);
     }
 
-    // heavy lifting moved into `DekurzDocumentService` — controller kept thin
-
-
 }
