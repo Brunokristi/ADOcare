@@ -57,7 +57,8 @@ class PointsExportController extends Controller
             'patientIds' => $patientIds,
         ]);
 
-        $amount = DB::table('patient_points as pp')
+        // Fetch rows for amount calculation with deduplication
+        $pointsData = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('procedure_company_prices as pcp', function ($join) {
                 $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
@@ -68,8 +69,39 @@ class PointsExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->selectRaw('COALESCE(SUM(pp.quantity * pcp.price), 0) as total')
-            ->value('total');
+            ->select([
+                'pp.date',
+                'pp.procedure_code',
+                'pp.quantity',
+                'pcp.price',
+                'p.latitude',
+                'p.longitude',
+            ])
+            ->get();
+
+        // Deduplicate same-address visits for procedures 3439 and 3440
+        $seenAddresses = [];
+        $filteredPointsData = [];
+
+        foreach ($pointsData as $row) {
+            $procedureCode = $row->procedure_code ?? '';
+            
+            if (in_array($procedureCode, ['3439', '3440'])) {
+                $addressKey = $row->date . '|' . $row->latitude . '|' . $row->longitude;
+                
+                if (isset($seenAddresses[$addressKey])) {
+                    continue;
+                }
+                
+                $seenAddresses[$addressKey] = true;
+            }
+            
+            $filteredPointsData[] = $row;
+        }
+
+        // Calculate amount from filtered data
+        $amount = collect($filteredPointsData)
+            ->sum(fn($row) => $row->quantity * $row->price);
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
         $branchName = DB::table('branches')
@@ -202,9 +234,34 @@ class PointsExportController extends Controller
                 'pp.quantity',
                 'd.pzs as doctor_pzs',
                 'd.zpr as doctor_zpr',
+                'p.latitude',
+                'p.longitude',
             ])
             ->get();
 
+        // Deduplicate same-address visits for procedures 3439 and 3440
+        $seenAddresses = [];
+        $filteredRows = [];
+
+        foreach ($rows as $r) {
+            $procedureCode = $r->procedure_code ?? '';
+            
+            // If procedure is 3439 or 3440, check if we've already seen this address on this date
+            if (in_array($procedureCode, ['3439', '3440'])) {
+                $addressKey = $r->date . '|' . $r->latitude . '|' . $r->longitude;
+                
+                if (isset($seenAddresses[$addressKey])) {
+                    // Skip this record, we already have one for this address/date
+                    continue;
+                }
+                
+                $seenAddresses[$addressKey] = true;
+            }
+            
+            $filteredRows[] = $r;
+        }
+
+        $rows = collect($filteredRows);
         $rowCount = $rows->count();
 
         // Line 1 (with trailing |)
@@ -325,7 +382,8 @@ class PointsExportController extends Controller
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')->filter()->values()->all();
 
-        $amount = DB::table('patient_points as pp')
+        // Fetch rows for amount calculation with deduplication
+        $pointsData = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('procedure_company_prices as pcp', function ($join) {
                 $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
@@ -336,8 +394,39 @@ class PointsExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->selectRaw('COALESCE(SUM(pp.quantity * pcp.price), 0) as total')
-            ->value('total');
+            ->select([
+                'pp.date',
+                'pp.procedure_code',
+                'pp.quantity',
+                'pcp.price',
+                'p.latitude',
+                'p.longitude',
+            ])
+            ->get();
+
+        // Deduplicate same-address visits for procedures 3439 and 3440
+        $seenAddresses = [];
+        $filteredPointsData = [];
+
+        foreach ($pointsData as $row) {
+            $procedureCode = $row->procedure_code ?? '';
+            
+            if (in_array($procedureCode, ['3439', '3440'])) {
+                $addressKey = $row->date . '|' . $row->latitude . '|' . $row->longitude;
+                
+                if (isset($seenAddresses[$addressKey])) {
+                    continue;
+                }
+                
+                $seenAddresses[$addressKey] = true;
+            }
+            
+            $filteredPointsData[] = $row;
+        }
+
+        // Calculate amount from filtered data
+        $amount = collect($filteredPointsData)
+            ->sum(fn($row) => $row->quantity * $row->price);
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
         $branchName = DB::table('branches')
