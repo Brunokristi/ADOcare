@@ -17,7 +17,7 @@ const { openModal } = useModal()
 async function openEditBranch(branchId: number) {
     const result = await openModal(markRaw(BranchForm), { branchId }, { header: 'Upraviť pobočku', style: { width: '90%' } })
     if (result) {
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Pobočka bola upravená' })
+        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Pobočka bola upravená', life: 3000 })
         actionRemote.value?.reload()
     }
 }
@@ -25,7 +25,7 @@ async function openEditBranch(branchId: number) {
 async function openCreateBranch() {
     const result = await openModal(markRaw(BranchForm), {}, { header: 'Pridať pobočku', style: { width: '90%' } })
     if (result) {
-        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Pobočka bola vytvorená' })
+        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Pobočka bola vytvorená', life: 3000 })
         actionRemote.value?.reload()
     }
 }

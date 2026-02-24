@@ -8,7 +8,6 @@ import { mergeAddressParts } from '@/utils/formatUtils'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import { useAddressForm } from '@/composables/address'
 import MapSelector from '@/components/Address/MapSelector.vue'
-import AlertBar from '@/components/AlertBar.vue'
 
 const props = defineProps<IModalContentProps & { branchId?: number }>()
 const toast = useToast()
@@ -26,7 +25,6 @@ const form = reactive({
   administrative_start_time: null as Date | null,
 })
 
-const alert = ref<{ severity: 'error' | 'success'; message: string } | null>(null)
 
 // Address form wiring
 const { addressQuery, init, onAutocompleteSelected, onMapClick } = useAddressForm(branch)
@@ -75,7 +73,7 @@ onMounted(async () => {
       form.administrative_start_time = parseHHmmToDate(b.administrative_start_time as any)
     } catch (e) {
       console.error('Failed to load branch', e)
-      toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať pobočku' })
+      toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať pobočku', life: 3000 })
     }
   }
 
@@ -108,17 +106,14 @@ async function save() {
 
     if (props.branchId) {
       await api.patch(`v1/branches/${props.branchId}`, payload)
-      alert.value = { severity: 'success', message: 'Pobočka bola upravená' }
     } else {
       await api.post('v1/branches', payload)
-      alert.value = { severity: 'success', message: 'Pobočka bola vytvorená' }
     }
 
     if (props.modalResolve) props.modalResolve(true)
   } catch (e) {
     console.error('Save branch failed', e)
-    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pobočku' })
-    alert.value = { severity: 'error', message: 'Nepodarilo sa uložiť pobočku' }
+    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť pobočku', life: 3000 })
   }
 }
 </script>
@@ -129,14 +124,6 @@ async function save() {
     <form class="grid grid-cols-12 gap-4" @submit.prevent="save">
       <div class="col-span-12">
         <h3 class="text-accent text-normal mb-2">Všeobecné informácie</h3>
-
-        <AlertBar
-          v-if="alert?.message"
-          :message="alert?.message"
-          :severity="alert?.severity"
-          :closable="false"
-          class="mb-3"
-        />
 
         <div class="grid grid-cols-2 gap-4">
           <div>

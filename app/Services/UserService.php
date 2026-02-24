@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
@@ -14,10 +13,8 @@ class UserService
             unset($data['role_id']);
         }
 
-        // create uses `pin`
-        if (!empty($data['pin'])) {
-            $data['pin'] = Hash::make($data['pin']);
-        }
+        // Don't manually hash - let the model's hashed cast handle it
+        // The 'pin' cast in User model will automatically hash the value
 
         $companyId = $data['company_id'] ?? null;
         if (!$companyId) {
@@ -48,18 +45,12 @@ class UserService
 
     public function update(User $user, array $data): User
     {
-        // remove any attempted role change if caller isn't admin
         if (isset($data['role_id']) && !auth()->user()?->hasGlobalRole('admin')) {
             unset($data['role_id']);
         }
 
-        // IMPORTANT: accept either `password` or `pin` for updates (frontend sends password)
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        } elseif (!empty($data['pin'])) {
-            $data['password'] = Hash::make($data['pin']);
-            unset($data['pin']);
-        }
+        // Don't manually hash - let the model's hashed cast handle it
+        // The 'pin' cast in User model will automatically hash the value
 
         $branches = $data['branches'] ?? null;
         unset($data['branches']);

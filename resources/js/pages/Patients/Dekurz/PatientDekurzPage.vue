@@ -307,7 +307,7 @@ async function loadLastDekurzDraft() {
       severity: 'info',
       summary: 'Načítané',
       detail: 'Texty načítané z histórie.',
-      life: 2500,
+      life: 3000,
     })
   } catch (err) {
     console.error('Failed to load last dekurz draft', err)
