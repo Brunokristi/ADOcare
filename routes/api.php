@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\ManagerController;
 use App\Http\Controllers\Api\TotalsController;
+use App\Http\Controllers\Api\CountryController;
 
 
 
@@ -209,4 +210,6 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/cities/suggest', [CityController::class, 'suggest']);
     Route::get('/cities/by-zip', [CityController::class, 'byZip']);
+
+    Route::get('/countries', [CountryController::class, 'index']);
 });

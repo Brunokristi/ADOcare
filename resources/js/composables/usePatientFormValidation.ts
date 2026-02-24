@@ -27,6 +27,7 @@ export default function usePatientFormValidation(patient: { value: Patient | any
         if (!p.sex) e.sex = 'Pohlavie je povinné.';
         if (!p.doctor_id) e.doctor_id = 'Lekár je povinný.';
         if (!p.insurance_company_id) e.insurance_company_id = 'Poisťovňa je povinná.';
+        if (!p.country_id) e.country_id = 'Krajina je povinná.';
 
         if (!p.city?.trim()) e.city = 'Mesto je povinné.';
 

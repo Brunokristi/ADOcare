@@ -5,7 +5,7 @@ import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import { useAddressForm } from '@/composables/address'
 import useAuthStore from '@/stores/auth'
-import type { Doctor, InsuranceCompany, Patient } from '@/types/models'
+import type { Doctor, InsuranceCompany, Patient, Country } from '@/types/models'
 
 const props = defineProps<{
     patient?: Patient
@@ -36,6 +36,7 @@ const sexOptions = [
 
 const doctorOptions = ref<{ id: number; name: string }[]>([])
 const insuranceOptions = ref<{ id: number; name: string }[]>([])
+const countryOptions = ref<{ id: number; name: string; code: string }[]>([])
 
 async function loadFavouriteDoctors() {
     const branchId = authStore.currentBranch?.id
@@ -65,6 +66,25 @@ async function loadInsuranceCompanies() {
     }))
 }
 
+async function loadCountries() {
+    try {
+        const countries = await api.fetchEntities<Country>('/v1/countries', { all: true })
+        if (!countries || !Array.isArray(countries)) {
+            console.warn('Countries response invalid:', countries)
+            countryOptions.value = []
+            return
+        }
+        countryOptions.value = countries.map((c) => ({
+            id: c.id,
+            name: c.name ?? 'Neznáma krajina',
+            code: c.code ?? '',
+        }))
+    } catch (error) {
+        console.error('Failed to load countries:', error)
+        countryOptions.value = []
+    }
+}
+
 watch(
     () => authStore.currentBranch?.id,
     async () => {
@@ -76,6 +96,7 @@ watch(
 onMounted(async () => {
     await loadFavouriteDoctors()
     await loadInsuranceCompanies()
+    await loadCountries()
 })
 
 // -------------------- Personal number --------------------
@@ -209,7 +230,7 @@ watch(
                     }}</small>
             </div>
 
-            <div class="col-span-4">
+            <div class="col-span-2">
                 <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
                     Pohlavie
                 </label>
@@ -217,6 +238,16 @@ watch(
                     optionValue="value" fluid :invalid="submitted && !localPatient.sex"
                     :class="{ '!opacity-50': disabled }" />
                 <small v-if="submitted && errors.sex" class="text-warning">{{ errors.sex }}</small>
+            </div>
+
+            <div class="col-span-2">
+                <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
+                    Národnosť
+                </label>
+                <Select :disabled="disabled" v-model="localPatient.country_id" :options="countryOptions" optionLabel="name"
+                    optionValue="id" fluid filter :invalid="submitted && !localPatient.country_id"
+                    :class="{ '!opacity-50': disabled }" />
+                <small v-if="submitted && errors.country_id" class="text-warning">{{ errors.country_id }}</small>
             </div>
 
             <div class="col-span-4">

@@ -23,6 +23,7 @@ class BranchPatientUpdateRequest extends FormRequest
 
             'doctor_id' => 'nullable|integer|exists:doctors,id',
             'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
+            'country_id' => 'sometimes|required|integer|exists:countries,id',
 
             'address' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',

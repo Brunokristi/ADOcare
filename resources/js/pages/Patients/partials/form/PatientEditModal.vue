@@ -14,6 +14,6 @@ function handleSaved() {
   <Dialog :visible="true" modal header="Upraviť pacienta" :style="{ width: '90%', maxWidth: '1100px' }"
     @update:visible="emit('close')">
     <!-- We pass modalResolve so your existing body can finish + close -->
-    <EditPatientForm :visible="true" :patient-id="props.patientId" :modalResolve="handleSaved" />
+    <EditPatientForm :visible="true" :patient-id="props.patientId" :modalResolve="handleSaved" :is-manager-view="false" />
   </Dialog>
 </template>
