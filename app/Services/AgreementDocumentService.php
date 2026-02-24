@@ -31,6 +31,7 @@ class AgreementDocumentService
             'mime_type' => 'application/json',
             'name' => 'dohoda_' . now()->format('d.m.Y'),
             'path' => 'agreements/' . now()->timestamp . '.json',
+            'period' => date('Y-m', strtotime($data['date'])),
         ]);
 
         $representative = $branch->representative;

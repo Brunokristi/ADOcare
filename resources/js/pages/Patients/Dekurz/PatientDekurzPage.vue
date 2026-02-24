@@ -5,6 +5,7 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 import { useAuthStore } from '@/stores/auth'
+import DocumentAlert from '@/components/DocumentAlert.vue'
 
 type DekurzSnippet = {
   key: string
@@ -46,6 +47,11 @@ const timelineCalculated = ref(false)
 const checkingTimeline = ref(false)
 const calculationInProgress = ref(false)
 
+// Document existence check
+const documentExists = ref(false)
+const documentId = ref<number | null>(null)
+const dialogVisible = ref(false)
+
 function setMacroScrollRef(sectionId: string) {
   return (el: any) => {
     macroScrollRefs.value[sectionId] = (el as HTMLElement) ?? null
@@ -78,6 +84,34 @@ function isoDate(d: Date) {
   const mm = String(x.getMonth() + 1).padStart(2, '0')
   const dd = String(x.getDate()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd}`
+}
+
+function toLocalYMD(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+async function checkDocumentExists() {
+  if (!patientId.value || !dekurzMonth.value) return
+
+  try {
+    const monthStart = new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)
+    const res = await api.post('/v1/documents/check-exists', {
+      type: 'dekurz',
+      date: toLocalYMD(monthStart),
+      patient_id: patientId.value,
+    })
+    documentExists.value = res.data.exists ?? false
+    documentId.value = res.data.document_id ?? null
+    if (documentExists.value) {
+      dialogVisible.value = true
+    }
+  } catch (err) {
+    console.error('Failed to check document existence:', err)
+    documentExists.value = false
+  }
 }
 
 function isAllowedDate(date: Date) {
@@ -436,7 +470,6 @@ async function pollCalculationStatus(dateObj: Date) {
   }, 5000) // Check every 5 seconds
 }
 
-
 watch(
   patientDekurzNumber,
   val => {
@@ -450,6 +483,7 @@ watch(
   async () => {
     await fetchAllowedDays()
     await checkTimelineCalculated()
+    await checkDocumentExists()
   },
   { immediate: true },
 )
@@ -515,6 +549,14 @@ watch(
 </style>
 
 <template>
+  <DocumentAlert
+    :visible="dialogVisible"
+    :document-id="documentId"
+    document-url="/documents/dekurz/{id}"
+    @update:visible="dialogVisible = $event"
+    @deleted="checkDocumentExists"
+  />
+
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDekurz" class="flex flex-col gap-6">
       <section class="bg-tag3 p-6 rounded-md">

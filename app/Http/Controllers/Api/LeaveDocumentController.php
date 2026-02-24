@@ -30,6 +30,7 @@ class LeaveDocumentController extends Controller
             'mime_type' => 'application/json',
             'name' => 'prepustacia_sprava_' . now()->format('d.m.Y'),
             'path' => 'leave/' . now()->timestamp . '.json',
+            'period' => date('Y-m', strtotime($validated['date'])),
         ]);
 
         $patient = Patient::findOrFail($validated['patient_id']);

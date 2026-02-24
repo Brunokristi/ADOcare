@@ -17,6 +17,7 @@ class Document extends Model
         'name',
         'path',
         'branch_id',
+        'period',
     ];
 
     /**
@@ -33,5 +34,13 @@ class Document extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the branch associated with the document.
+     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

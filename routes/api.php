@@ -194,6 +194,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
+    Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
     Route::get('/documents/travel/company', [DocumentController::class, 'indexTravelDocumentsForCompany']);
     Route::get('/documents/travel', [DocumentController::class, 'indexTravelDocuments']);

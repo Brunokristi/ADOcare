@@ -10,6 +10,7 @@ export interface Document {
   created_at: string | null
   updated_at: string | null
   branch_id: number | null
+  period: string | null
   // relations
   patient: Patient
   user: User

@@ -25,6 +25,7 @@ class DZCDocumentService
             'name' => 'dzc_' . now()->format('d.m.Y'),
             'path' => 'dzcs/' . now()->timestamp . '.json',
             'branch_id' => $branch->id,
+            'period' => date('Y-m', strtotime($data['start'])),
         ]);
 
         $user = $actor;
