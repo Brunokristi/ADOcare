@@ -25,11 +25,11 @@ const confirmDelete = async () => {
             },
         })
         await props.remote.loadPage(props.remote.page.value)
-        toast.add({ severity: 'success', summary: 'Vymazané', detail: 'Pacienti boli vymazaní' })
+        toast.add({ severity: 'success', summary: 'Vymazané', detail: 'Pacienti boli vymazaní', life: 3000 })
         if (props.modalResolve) props.modalResolve(true)
     } catch (err) {
         console.error('Failed to delete patients', err)
-        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa vymazať pacientov' })
+        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa vymazať pacientov', life: 3000 })
     } finally {
         isLoading.value = false
     }

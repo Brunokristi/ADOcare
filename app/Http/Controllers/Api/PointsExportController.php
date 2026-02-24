@@ -44,6 +44,7 @@ class PointsExportController extends Controller
         $branchId = (int) $data['branch']['id'];
         $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
+        $batchTypeCode = $data['batchType']['code'];
 
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')
@@ -69,6 +70,8 @@ class PointsExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(in_array($batchTypeCode, ['N', 'O']), fn($q) => $q->where('p.country_id', 207))
+            ->when(in_array($batchTypeCode, ['E', 'F']), fn($q) => $q->where('p.country_id', '!=', 207))
             ->select([
                 'pp.date',
                 'pp.procedure_code',
@@ -143,7 +146,7 @@ class PointsExportController extends Controller
     {
         $data = $request->validate([
             'batchNumber' => 'required|integer',
-            'batchType.code' => 'required|string|in:N,O,I',
+            'batchType.code' => 'required|string|in:N,O,I,E,F',
             'insurance.id' => 'required|integer',
             'period' => 'required|array|size:2',
             'period.*' => 'required|date',
@@ -175,6 +178,7 @@ class PointsExportController extends Controller
         logger()->info('Download patientIds', [
             'patients_payload' => $data['patients'] ?? null,
             'patientIds' => $patientIds,
+            'batchType' => $type,
         ]);
 
         // Header data
@@ -211,6 +215,7 @@ class PointsExportController extends Controller
         $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('doctors as d', 'd.id', '=', 'p.doctor_id')
+            ->join('countries as c', 'c.id', '=', 'p.country_id')
             // replaced pivot join with direct patient fields (nurse_id, branch_id)
             ->whereColumn('p.nurse_id', 'pp.user_id')
             ->whereColumn('p.branch_id', 'pp.branch_id')
@@ -223,6 +228,8 @@ class PointsExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(in_array($type, ['N', 'O']), fn($q) => $q->where('p.country_id', 207))
+            ->when(in_array($type, ['E', 'F']), fn($q) => $q->where('p.country_id', '!=', 207))
             ->orderBy('pp.date')
             ->select([
                 'pp.date',
@@ -236,6 +243,8 @@ class PointsExportController extends Controller
                 'd.zpr as doctor_zpr',
                 'p.latitude',
                 'p.longitude',
+                'c.code as country_code',
+                'p.sex',
             ])
             ->get();
 
@@ -304,7 +313,7 @@ class PointsExportController extends Controller
             $fields = [
                 $i,
                 $dayDD,
-                $r->personal_number ?? '',
+                in_array($type, ['E', 'F']) ? '' : ($r->personal_number ?? ''),
                 $patientName,
                 $r->diagnosis_code ?? '',
                 $r->procedure_code ?? '',
@@ -321,9 +330,9 @@ class PointsExportController extends Controller
                 'O',
                 $r->doctor_pzs ?? '',
                 $r->doctor_zpr ?? '',
-                '',
-                '',
-                '',
+                in_array($type, ['E', 'F']) ? ($r->country_code ?? '') : '',
+                in_array($type, ['E', 'F']) ? ($r->personal_number ?? '') : '',
+                in_array($type, ['E', 'F']) ? ($r->sex ?? '') : '',
                 $dateYmd,
                 '',
                 '',
@@ -360,7 +369,7 @@ class PointsExportController extends Controller
     {
         $data = $request->validate([
             'batchNumber' => 'required|integer',
-            'batchType.code' => 'required|string|in:N,O',
+            'batchType.code' => 'required|string|in:N,O,I,E,F',
             'insurance.id' => 'required|integer',
             'period' => 'required|array|size:2',
             'period.*' => 'required|date',
@@ -378,6 +387,7 @@ class PointsExportController extends Controller
         $branchId = (int) $data['branch']['id'];
         $companyId = (int) $data['company']['id'];
         $insuranceId = (int) $data['insurance']['id'];
+        $pdfBatchType = $data['batchType']['code'];
 
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')->filter()->values()->all();
@@ -394,6 +404,8 @@ class PointsExportController extends Controller
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(in_array($pdfBatchType, ['N', 'O']), fn($q) => $q->where('p.country_id', 207))
+            ->when(in_array($pdfBatchType, ['E', 'F']), fn($q) => $q->where('p.country_id', '!=', 207))
             ->select([
                 'pp.date',
                 'pp.procedure_code',

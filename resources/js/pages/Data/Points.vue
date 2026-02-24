@@ -49,7 +49,9 @@ let calculationToastId: string | undefined;
 
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
+  { code: 'E', name: 'Nová dávka občania EU' },
   { code: 'O', name: 'Opravná dávka' },
+  { code: 'F', name: 'Opravná dávka občania EU' },
   { code: 'I', name: 'Dávka cudzinci mimo EU, bezdomovci' },
 ]);
 
@@ -57,7 +59,7 @@ const insurances = ref<Insurance[]>([]);
 
 const shouldShowPatients = computed(() => {
   const code = batchType.value?.code;
-  return code === 'O' || code === 'I';
+  return code === 'O' || code === 'I' || code === 'F';
 });
 
 function mapInsuranceCompanyToOption(company: InsuranceCompany): Insurance {
