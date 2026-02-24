@@ -4,6 +4,7 @@ import DatePicker from 'primevue/datepicker'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import api from '@/services/api'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
 type InsuranceCompany = { id: number; name: string }
 
@@ -51,17 +52,18 @@ const previousBranchTotalsData = ref<any[]>([])
 const userTotalsAggregatedData = ref<any[]>([])
 const previousUserTotalsAggregatedData = ref<any[]>([])
 const userTotalsData = ref<UserTotalsRow[]>([])
+const initialLoading = ref(true)
 const loading = ref(false)
 const doctorLoading = ref(false)
 const branchLoading = ref(false)
 const branchTotalsLoading = ref(false)
+const userTotalsLoading = ref(false)
 const userTotalsAggregatedLoading = ref(false)
 
 // 3-month trend data
 const threeMonthTrendData = ref<any[]>([])
 const threeMonthPatientsData = ref<any[]>([])
 const threeMonthBranchTotalsData = ref<any[]>([])
-const userTotalsLoading = ref(false)
 
 // Sort table data by patients_total descending
 const sortedTableData = computed(() => {
@@ -185,10 +187,22 @@ const toMonthParam = (d: Date) => {
   return `${y}-${m}`
 }
 
-// Check if any loading is in progress
-const isAnythingLoading = computed(() => {
-  return loading.value || doctorLoading.value || branchLoading.value || branchTotalsLoading.value || userTotalsAggregatedLoading.value || userTotalsLoading.value
-})
+async function loadAllStatistics() {
+  initialLoading.value = true
+  try {
+    await Promise.all([
+      loadStatistics(),
+      loadDoctorStatistics(),
+      loadUserTotals(),
+      loadBranchStatistics(),
+      loadBranchTotals(),
+      loadUserTotalsAggregated(),
+      load3MonthTrends(),
+    ])
+  } finally {
+    initialLoading.value = false
+  }
+}
 
 async function loadStatistics() {
   if (!dates.value) return
@@ -431,30 +445,18 @@ async function load3MonthTrends() {
 watch(
   () => dates.value,
   async () => {
-    await loadStatistics()
-    await loadDoctorStatistics()
-    await loadUserTotals()
-    await loadBranchStatistics()
-    await loadBranchTotals()
-    await loadUserTotalsAggregated()
-    await load3MonthTrends()
+    await loadAllStatistics()
   },
   { deep: true }
 )
 
 onMounted(async () => {
-  await loadStatistics()
-  await loadDoctorStatistics()
-  await loadUserTotals()
-  await loadBranchStatistics()
-  await loadBranchTotals()
-  await loadUserTotalsAggregated()
-  await load3MonthTrends()
+  await loadAllStatistics()
 })
 </script>
 
 <template>
-    <LoadingOverlay :show="isAnythingLoading" text="" />
+    <LoadingOverlay :show="initialLoading" text="" />
 
     <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
       <div class="grid grid-cols-12 gap-4">

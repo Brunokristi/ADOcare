@@ -340,16 +340,16 @@ onMounted(async () => {
     <template #start><span class="text-heading">Výkonnosť v počte pacientov</span></template>
   </Toolbar>
 
-  <div class="flex gap-4 overflow-x-auto bg-tag3 p-6 rounded-md">
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-lg">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 bg-tag3 p-6 rounded-md">
+    <div class="bg-white p-6 rounded-lg">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Celkový počet pacientov</h3>
       <Chart type="bar" :data="chartPatientsTotal4M" :options="chartOptions" />
     </div>
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-lg">
+    <div class="bg-white p-6 rounded-lg">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Počet pacientov podľa pobočky</h3>
       <Chart type="bar" :data="chartPatientsByBranch4M" :options="chartOptions" />
     </div>
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-lg">
+    <div class="bg-white p-6 rounded-lg">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Počet pacientov podľa používateľa</h3>
       <Chart type="bar" :data="chartPatientsByUser4M" :options="chartOptions" />
     </div>
@@ -360,27 +360,27 @@ onMounted(async () => {
     <template #start><span class="text-heading">Finančná výkonnosť</span></template>
   </Toolbar>
 
-  <div class="flex gap-4 overflow-x-auto bg-tag3 p-6 rounded-md">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 bg-tag3 p-6 rounded-md">
     <!-- Money general -->
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-md">
+    <div class="bg-white p-6 rounded-md">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Celkové tržby (€)</h3>
       <Chart type="bar" :data="chartMoneyTotal4M" :options="chartOptions" />
     </div>
 
     <!-- Money ratios -->
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-md">
+    <div class="bg-white p-6 rounded-md">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Tržby podľa typu</h3>
       <Chart type="bar" :data="chartMoneyRatios4M" :options="chartOptions" />
     </div>
 
     <!-- Money split by branch -->
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-md">
+    <div class="bg-white p-6 rounded-md">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Tržby podľa pobočky (€)</h3>
       <Chart type="bar" :data="chartMoneyByBranch4M" :options="chartOptions" />
     </div>
 
     <!-- Money split by user -->
-    <div class="flex-shrink-0 w-96 bg-white p-6 rounded-md">
+    <div class="bg-white p-6 rounded-md">
       <h3 class="text-heading mb-3 text-darkgrey text-center">Tržby podľa používateľa (€)</h3>
       <Chart type="bar" :data="chartMoneyByUser4M" :options="chartOptions" />
     </div>

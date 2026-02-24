@@ -319,6 +319,7 @@ watch(
 
             <div class="col-span-12">
                 <MapSelector :latitude="localPatient.latitude" :longitude="localPatient.longitude"
+                    :disabled="authStore.currentRole === 'manager'"
                     @update="addressOnMapClick" />
             </div>
         </div>
