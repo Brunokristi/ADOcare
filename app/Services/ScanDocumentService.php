@@ -1,0 +1,143 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Document;
+use App\Models\ScanSession;
+use App\Models\Patient;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+/**
+ * Service responsible for creating scan documents, managing scan sessions,
+ * and handling scanned image uploads.
+ */
+class ScanDocumentService
+{
+    /**
+     * Create a new scan session for a patient.
+     * The session is used to link mobile uploads to a specific patient/branch context.
+     *
+     * @param int $patientId
+     * @param int $branchId
+     * @param int $userId
+     * @return ScanSession
+     */
+    public function createScanSession(int $patientId, int $branchId, int $userId): ScanSession
+    {
+        $sessionToken = Str::random(32);
+        
+        return ScanSession::create([
+            'patient_id' => $patientId,
+            'branch_id' => $branchId,
+            'user_id' => $userId,
+            'session_token' => $sessionToken,
+            'expires_at' => now()->addMinutes(5),
+            'status' => 'pending',
+        ]);
+    }
+
+    /**
+     * Get a session by token.
+     *
+     * @param string $token
+     * @return ScanSession|null
+     */
+    public function getSessionByToken(string $token): ?ScanSession
+    {
+        return ScanSession::where('session_token', $token)
+            ->where('expires_at', '>', now())
+            ->first();
+    }
+
+    /**
+     * Store a scanned image for a session.
+     *
+     * @param ScanSession $session
+     * @param $file The uploaded image file
+     * @return string The path where the file was stored
+     */
+    public function storeScannedImage(ScanSession $session, $file): string
+    {
+        $filename = 'nalez_' . $session->id . '_' . now()->timestamp . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+        $path = 'scans/' . $session->id . '/' . $filename;
+        
+        Storage::disk('local')->putFileAs('scans/' . $session->id, $file, $filename);
+        
+        return $path;
+    }
+
+    /**
+     * Create a document record from scanned images.
+     * This is called after uploads are complete.
+     *
+     * @param ScanSession $session
+     * @param array $imagePaths Array of storage paths to images
+     * @return Document
+     */
+    public function createDocumentFromScans(ScanSession $session, array $imagePaths): Document
+    {
+        $patient = Patient::findOrFail($session->patient_id);
+        
+        $document = Document::create([
+            'patient_id' => $session->patient_id,
+            'user_id' => $session->user_id,
+            'type' => 'scan',
+            'mime_type' => 'application/json',
+            'name' => 'nalez_' . now()->format('d.m.Y'),
+            'path' => 'scans/documents/' . $session->id . '_' . now()->timestamp . '.json',
+            'branch_id' => $session->branch_id,
+            'period' => date('Y-m'),
+        ]);
+
+        // Store metadata about the scan document
+        $scanData = [
+            'document_id' => $document->id,
+            'scan_session_id' => $session->id,
+            'image_paths' => $imagePaths,
+            'image_count' => count($imagePaths),
+            'scanned_at' => now(),
+            'uploaded_by' => $session->user_id,
+            'patient_name' => trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')),
+            'patient_birth_number' => $patient->personal_number ?? '',
+        ];
+
+        Storage::disk('local')->put($document->path, json_encode($scanData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        // Update session status
+        $session->update([
+            'status' => 'completed',
+            'document_id' => $document->id,
+        ]);
+
+        return $document;
+    }
+
+    /**
+     * Get scan document payload (metadata).
+     *
+     * @param Document $document
+     * @return array|null
+     */
+    public function getScanPayload(Document $document): ?array
+    {
+        if (!$document->path || !Storage::disk('local')->exists($document->path)) {
+            return null;
+        }
+
+        $content = Storage::disk('local')->get($document->path);
+        return json_decode($content, true);
+    }
+
+    /**
+     * Get image paths for a scan document.
+     *
+     * @param Document $document
+     * @return array
+     */
+    public function getScanImages(Document $document): array
+    {
+        $payload = $this->getScanPayload($document);
+        return $payload['image_paths'] ?? [];
+    }
+}

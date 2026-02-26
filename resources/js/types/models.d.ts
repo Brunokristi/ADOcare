@@ -206,6 +206,31 @@ export interface Role {
   users_exists: boolean
 }
 
+export interface ScanSession {
+  // columns
+  id: number
+  patient_id: number
+  branch_id: number
+  user_id: number
+  session_token: string
+  expires_at: string
+  status: string
+  document_id: number | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patient: Patient
+  branch: Branch
+  user: User
+  document: Document
+  // counts
+  // exists
+  patient_exists: boolean
+  branch_exists: boolean
+  user_exists: boolean
+  document_exists: boolean
+}
+
 export interface Company {
   // columns
   id: number

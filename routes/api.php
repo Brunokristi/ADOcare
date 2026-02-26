@@ -39,6 +39,8 @@ use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\ManagerController;
 use App\Http\Controllers\Api\TotalsController;
 use App\Http\Controllers\Api\CountryController;
+use App\Http\Controllers\Api\ScanSessionController;
+use App\Http\Controllers\Api\ScanUploadController;
 
 
 
@@ -212,4 +214,13 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/cities/by-zip', [CityController::class, 'byZip']);
 
     Route::get('/countries', [CountryController::class, 'index']);
+
+    // Scan document routes
+    Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
+    Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
 });
+
+// Public scan upload routes (no auth required - guest access with token)
+Route::post('/scan/upload', [ScanUploadController::class, 'uploadImage']);
+Route::post('/scan/finalize', [ScanUploadController::class, 'finalize']);
+Route::post('/scan/info', [ScanUploadController::class, 'getSessionInfo']);
