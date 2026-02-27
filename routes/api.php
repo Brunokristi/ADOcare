@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BranchPatientController;
 use App\Http\Controllers\Api\CarController;
 use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\PatientDeathCheckController;
 use App\Http\Controllers\Api\InsuranceCompanyController;
 use App\Http\Controllers\Api\DiagnosisController;
 use App\Http\Controllers\Api\ProcedureController;
@@ -86,6 +87,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::delete('patients', [PatientController::class, 'destroyMany']);
+
+    Route::get('patients/{patientId}/death-check', [PatientDeathCheckController::class, 'show']);
 
     Route::group(['prefix' => 'patients/{patient}'], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);

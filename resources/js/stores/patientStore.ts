@@ -157,6 +157,23 @@ export const usePatientStore = defineStore('patient', {
             }
         },
 
+        async checkPatientDeath(patientId: number) {
+            console.debug('[UDZS] Store: checkPatientDeath called', { patientId });
+            try {
+                const response = await api.get(`/v1/patients/${patientId}/death-check`);
+                console.debug('[UDZS] Store: API response', { data: response.data });
+                return response.data.data as {
+                    status: 'alive' | 'dead' | 'unknown';
+                    data: any;
+                    reason?: string;
+                    http_status?: number;
+                };
+            } catch (error) {
+                console.error('[UDZS] Store: API error', error);
+                throw new Error('Failed to check patient death status: ' + error);
+            }
+        },
+
 
         clear() {
             this.current = null;

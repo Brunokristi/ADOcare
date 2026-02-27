@@ -52,12 +52,15 @@ class ScanUploadController extends Controller
      *
      * @group Documents
      * @bodyParam session_token string required Session token. Example: "abc..."
+     * @bodyParam images array optional Array of base64 encoded images. Example: ["data:image/jpeg;base64,..."]
      * @response 200 {"document_id": 123, "message": "Document created"}
      */
     public function finalize(Request $request)
     {
         $validated = $request->validate([
             'session_token' => 'required|string',
+            'images' => 'nullable|array',
+            'images.*' => 'string',
         ]);
 
         // Get session
@@ -70,17 +73,32 @@ class ScanUploadController extends Controller
             return $this->error('Session already finalized', 400);
         }
 
-        // Get all uploaded images
         $scanDir = 'scans/' . $session->id;
-        $files = \Illuminate\Support\Facades\Storage::disk('local')->files($scanDir);
-        
-        if (empty($files)) {
-            return $this->error('No images uploaded', 400);
+        $filePaths = [];
+
+        // If base64 images are provided in the request, store them
+        if (!empty($validated['images'])) {
+            foreach ($validated['images'] as $base64Image) {
+                try {
+                    $filePath = $this->service->storeBase64Image($session, $base64Image);
+                    $filePaths[] = $filePath;
+                } catch (\Exception $e) {
+                    return $this->error('Failed to process image: ' . $e->getMessage(), 400);
+                }
+            }
+        } else {
+            // Otherwise, check for previously uploaded files
+            $files = \Illuminate\Support\Facades\Storage::disk('local')->files($scanDir);
+            
+            if (empty($files)) {
+                return $this->error('No images uploaded', 400);
+            }
+
+            $filePaths = array_map(fn($file) => $scanDir . '/' . basename($file), $files);
         }
 
         // Create document from scans
-        $imagePaths = array_map(fn($file) => $scanDir . '/' . basename($file), $files);
-        $document = $this->service->createDocumentFromScans($session, $imagePaths);
+        $document = $this->service->createDocumentFromScans($session, $filePaths);
 
         return $this->success([
             'document_id' => $document->id,

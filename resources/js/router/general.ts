@@ -380,14 +380,27 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         ],
     },
     {
-        path: '/scan/:token',
-        name: 'scan-capture',
-        component: ScanCapturePage,
+        path: '/scan',
+        name: 'scan',
+        component: Settings,
         meta: {
-            requiresAuth: false,
-            title: 'Skenovať dokument',
-            shownavbar: false,
-        }
+            title: 'Skenovanie',
+            sectionRoot: 'scan',
+            sidebar: true
+
+        },
+        children: [
+            {
+                path: '/scan/:token',
+                name: 'scan-capture',
+                component: ScanCapturePage,
+                meta: {
+                    requiresAuth: false,
+                    title: 'Lekársky nález',
+                    shownavbar: false,
+                }
+            },
+        ],
     },
     {
         path: '/:pathMatch(.*)*',
