@@ -25,9 +25,10 @@ class ScanUploadController extends Controller
      */
     public function uploadImage(Request $request)
     {
-        $validated = $request->validate([
-            'session_token' => 'required|string',
-            'image' => 'required|file|image|max:10240', // 10MB max
+        $request->validate([
+            'session_token' => ['required', 'string'],
+            'images' => ['required', 'array', 'min:1'],
+            'images.*' => ['required','file','mimes:jpg,jpeg,png,heic,webp','max:10240']        
         ]);
 
         // Get and validate session
@@ -58,9 +59,9 @@ class ScanUploadController extends Controller
     public function finalize(Request $request)
     {
         $validated = $request->validate([
-            'session_token' => 'required|string',
-            'images' => 'nullable|array',
-            'images.*' => 'string',
+            'session_token' => ['required', 'string'],
+            'images' => ['required', 'array', 'min:1'],
+            'images.*' => ['required','file','mimes:jpg,jpeg,png,heic,webp','max:10240']        
         ]);
 
         // Get session
