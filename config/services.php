@@ -50,5 +50,13 @@ return [
         'timeout' => env('ROUTE_SERVICE_TIMEOUT', 200),
     ],
 
+    'udzs' => [
+        'base_url' => env('UDZS_BASE_URL', 'https://api.udzs-sk.sk/api'),
+        'email' => env('UDZS_EMAIL'),
+        'password' => env('UDZS_PASSWORD'),
+        'token_ttl' => env('UDZS_TOKEN_TTL', 3300),
+        'timeout' => env('UDZS_TIMEOUT', 10),
+    ],
+
 
 ];

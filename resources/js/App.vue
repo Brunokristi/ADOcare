@@ -1,7 +1,9 @@
 <!-- src/App.vue -->
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useToast } from 'primevue/usetoast'
 
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
@@ -9,11 +11,16 @@ import Sidebar from '@/components/Sidebar.vue'
 import TercialNavbar from './components/TercialNavbar.vue'
 
 import { useAuthStore } from '@/stores/auth'
+import { usePatientStore } from '@/stores/patientStore'
 import ModalProvider from './components/ModalProvider.vue'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const toast = useToast()
+const patientStore = usePatientStore()
+const { current: currentPatient } = storeToRefs(patientStore)
+const deathCheckRequestId = ref(0)
 
 
 onMounted(() => {
@@ -21,6 +28,52 @@ onMounted(() => {
         router.push({ name: 'login' })
     })
 })
+
+watch(
+    currentPatient,
+    async (patient) => {
+        if (!auth.isAuthenticated || !patient) {
+            console.debug('[UDZS] Watcher: Not authenticated or no patient', { isAuthenticated: auth.isAuthenticated, patient });
+            return;
+        }
+
+        const requestId = ++deathCheckRequestId.value;
+        console.debug('[UDZS] Watcher: Checking patient death', { patientId: patient.id, requestId });
+
+        try {
+            const result = await patientStore.checkPatientDeath(patient.id);
+            console.debug('[UDZS] Watcher: Death check result', { result, requestId, currentRequestId: deathCheckRequestId.value });
+
+            if (requestId !== deathCheckRequestId.value || result.status !== 'dead') {
+                console.debug('[UDZS] Watcher: Skipping toast', { requestId, currentRequestId: deathCheckRequestId.value, status: result.status });
+                return;
+            }
+
+            const details = result.data ?? {};
+            const fullName = [details.meno, details.priezvisko].filter(Boolean).join(' ').trim();
+            const rawDate = details.datumUmrtia ? new Date(details.datumUmrtia) : null;
+            const dateLabel = rawDate && !Number.isNaN(rawDate.getTime())
+                ? rawDate.toLocaleDateString('sk-SK')
+                : '';
+
+            const detailParts = [
+                fullName ? `Pacient: ${fullName}` : null,
+                dateLabel ? `Dátum úmrtia: ${dateLabel}` : null,
+                details.rodCis ? `Rodné číslo: ${String(details.rodCis).trim()}` : null,
+            ].filter(Boolean);
+
+            console.debug('[UDZS] Watcher: Showing toast', { detailParts });
+            toast.add({
+                severity: 'warn',
+                summary: 'Pacient je zosnulý',
+                detail: detailParts.join(' \n ') || 'Pacient je evidovaný ako zosnulý.',
+            });
+        } catch (error) {
+            console.error('[UDZS] Watcher: Failed to check patient death status', error);
+        }
+    },
+    { immediate: true }
+)
 
 const isLoggedIn = computed(() => auth.isAuthenticated)
 const showNavbar = computed(() => route.meta.shownavbar !== false)

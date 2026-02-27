@@ -68,6 +68,38 @@ class ScanDocumentService
     }
 
     /**
+     * Store a base64 encoded image for a session.
+     *
+     * @param ScanSession $session
+     * @param string $base64Image Base64 encoded image data (data:image/jpeg;base64,...)
+     * @return string The path where the file was stored
+     */
+    public function storeBase64Image(ScanSession $session, string $base64Image): string
+    {
+        // Extract the base64 data and mime type
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
+            $extension = $matches[1];
+            $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $base64Image);
+        } else {
+            // If no mime type is specified, default to jpg
+            $extension = 'jpg';
+            $base64Data = $base64Image;
+        }
+
+        $binaryData = base64_decode($base64Data, true);
+        if ($binaryData === false) {
+            throw new \Exception('Invalid base64 image data');
+        }
+
+        $filename = 'nalez_' . $session->id . '_' . now()->timestamp . '_' . Str::random(8) . '.' . $extension;
+        $path = 'scans/' . $session->id . '/' . $filename;
+        
+        Storage::disk('local')->put($path, $binaryData);
+        
+        return $path;
+    }
+
+    /**
      * Create a document record from scanned images.
      * This is called after uploads are complete.
      *
