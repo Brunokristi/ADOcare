@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
+import DocumentAlert from '@/components/DocumentAlert.vue'
 
 interface Diagnosis {
   id: number
@@ -53,6 +54,8 @@ const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 const errors = ref<Record<string, string>>({})
 const submitted = ref(false)
 const loadingPrefill = ref(false)
+const documentId = ref<number | null>(null)
+const dialogVisible = ref(false)
 
 const date = ref<Date>(new Date())
 const epicrisisDescription = ref('')
@@ -254,6 +257,10 @@ watch(
   { immediate: true }
 )
 
+watch([() => date.value, () => patientId.value], () => {
+  checkDocumentExists()
+})
+
 onMounted(() => {
   loadPlans()
 })
@@ -328,6 +335,27 @@ const toLocalYMD = (d: Date) => {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+async function checkDocumentExists() {
+  if (!patientId.value || !date.value) return
+  try {
+    const res = await api.post('/v1/documents/check-exists', {
+      type: 'proposal',
+      date: toLocalYMD(date.value),
+      patient_id: patientId.value
+    })
+    if (res.data.exists) {
+      documentId.value = res.data.document_id ?? null
+      dialogVisible.value = true
+    }
+  } catch (err) {
+    console.error('Failed to check document existence:', err)
+  }
+}
+
+function closeDialog() {
+  dialogVisible.value = false
 }
 
 async function generateDocument() {
@@ -630,6 +658,15 @@ async function generateDocument() {
           <small v-if="submitted && errors.procedures" class="text-warning">{{ errors.procedures }}</small>
         </div>
       </section>
+
+      <DocumentAlert
+        :visible="dialogVisible"
+        :documentId="documentId"
+        document-url="/documents/proposal/{id}"
+        @update:visible="dialogVisible = $event"
+        @close="closeDialog"
+        @deleted="checkDocumentExists"
+      />
 
       <div class="flex justify-end">
         <Button

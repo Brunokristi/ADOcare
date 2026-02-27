@@ -38,6 +38,9 @@ use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\ManagerController;
 use App\Http\Controllers\Api\TotalsController;
+use App\Http\Controllers\Api\CountryController;
+use App\Http\Controllers\Api\ScanSessionController;
+use App\Http\Controllers\Api\ScanUploadController;
 
 
 
@@ -194,16 +197,30 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
+    Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
     Route::get('/documents/travel/company', [DocumentController::class, 'indexTravelDocumentsForCompany']);
     Route::get('/documents/travel', [DocumentController::class, 'indexTravelDocuments']);
 
     Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);
     Route::get('/visits/timeline/status', [VisitsController::class, 'checkCalculationStatus']);
+    Route::get('/visits', [VisitsController::class, 'index']);
     Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay']);
     Route::get('visits/day-totals', [VisitsController::class, 'dayTotals']);
     Route::get('visits/month-totals', [VisitsController::class, 'monthTotals']);
 
     Route::get('/cities/suggest', [CityController::class, 'suggest']);
     Route::get('/cities/by-zip', [CityController::class, 'byZip']);
+
+    Route::get('/countries', [CountryController::class, 'index']);
+
+    // Scan document routes
+    Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
+    Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
 });
+
+// Public scan upload routes (no auth required - guest access with token)
+Route::post('/scan/upload', [ScanUploadController::class, 'uploadImage']);
+Route::post('/scan/finalize', [ScanUploadController::class, 'finalize']);
+Route::post('/scan/info', [ScanUploadController::class, 'getSessionInfo']);

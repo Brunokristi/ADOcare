@@ -40,7 +40,6 @@ const options = ref<DataTableOptions<Macro>>({
         actionRemote.value = remote;
     },
     columns: [
-        { field: 'id', header: 'ID' },
         { field: 'name', header: 'Názov', sortable: true },
         { field: 'abbreviation', header: 'Skratka' },
         { field: 'text', width: '50%', header: 'Text' },

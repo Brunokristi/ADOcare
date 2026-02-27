@@ -60,7 +60,6 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
-        { field: 'role', header: 'Rola', sortable: true, render: (v: Role) => getRoleName(v) },
         { field: 'phone_number', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {

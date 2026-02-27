@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
+import Button from 'primevue/button';
 import api from '@/services/api';
+import DocumentAlert from '@/components/DocumentAlert.vue';
 import { usePatientStore } from '@/stores/patientStore';
 import { useAuthStore } from '@/stores/auth'
 
@@ -20,12 +22,43 @@ const { current: currentPatient } = storeToRefs(patientStore);
 
 const patientId = computed(() => currentPatient.value?.id ?? null);
 
-// Form fields
+// Document existence check
+const documentExists = ref(false);
+const documentId = ref<number | null>(null);
+const dialogVisible = ref(false);
 const date = ref<Date>(new Date());
 const submitted = ref(false);
 
 // Validation
 const isDateValid = computed(() => !!date.value);
+
+async function checkDocumentExists() {
+  if (!patientId.value || !date.value) return;
+
+  try {
+    const res = await api.post('/v1/documents/check-exists', {
+      type: 'agreement',
+      date: toLocalYMD(date.value),
+      patient_id: patientId.value,
+    });
+    documentExists.value = res.data.exists ?? false;
+    documentId.value = res.data.document_id ?? null;
+    if (documentExists.value) {
+      dialogVisible.value = true;
+    }
+  } catch (err) {
+    console.error('Failed to check document existence:', err);
+    documentExists.value = false;
+  }
+}
+
+watch([() => date.value, () => patientId.value], () => {
+  checkDocumentExists();
+});
+
+function closeDialog() {
+  dialogVisible.value = false;
+}
 
 function validateForm(): boolean {
   return isDateValid.value && !!patientId.value;
@@ -113,6 +146,15 @@ onMounted(() => {
 </script>
 
 <template>
+  <DocumentAlert
+    :visible="dialogVisible"
+    :document-id="documentId"
+    document-url="/documents/agreement/{id}"
+    @update:visible="dialogVisible = $event"
+    @close="closeDialog"
+    @deleted="checkDocumentExists"
+  />
+
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">

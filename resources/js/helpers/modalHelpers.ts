@@ -4,6 +4,7 @@ import useAuthStore from "@/stores/auth"
 import { markRaw } from "vue"
 import PatientDocumentsForm from "@/pages/Patients/partials/form/PatientDocumentsForm.vue"
 import EditPatientForm from "@/pages/Patients/partials/form/EditPatientForm.vue"
+import ScanNewDocumentModal from "@/pages/Patients/Scan/ScanNewDocumentModal.vue"
 
 export async function openPriceAlertModal() {
 
@@ -42,4 +43,13 @@ export async function openPatientEditModal(patientId?: number) {
     const isManagerView = useAuthStore().isManager;
     // open via modal provider
     return await openModal(markRaw(EditPatientForm), { patientId, isManagerView }, { header: 'Upraviť pacienta', style: { width: '90%' } });
+}
+
+export async function openScanDocumentModal(patientId: number, branchId: number) {
+    if (!patientId || !branchId) return
+
+    return await openModal(markRaw(ScanNewDocumentModal), { patientId, branchId }, {
+        header: 'Naskenujte lekársky nález',
+        style: { width: '500px', maxWidth: '95vw' }
+    })
 }

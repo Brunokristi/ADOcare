@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import DocumentAlert from '@/components/DocumentAlert.vue'
 import type { DataTableOptions } from '@/types/datatable'
 import router from '@/router'
 
@@ -32,6 +33,10 @@ const dates = ref<Date | null>(null)
 const submitted = ref(false)
 const loading = ref(false)
 const tableRef = ref<any>(null)
+const documentIdCp = ref<number | null>(null)
+const dialogVisibleCp = ref(false)
+const documentIdDzc = ref<number | null>(null)
+const dialogVisibleDzc = ref(false)
 
 const batchTypes = ref<BatchType[]>([
   { code: 'CP', name: 'Cestovný príkaz' },
@@ -78,6 +83,58 @@ const formatDateWithTime = (dateStr?: string) => {
     second: '2-digit',
   })
   return `${datePart} ${timePart}`
+}
+
+const formatLocalDate = (date: Date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+async function checkDocumentExists() {
+  if (!batchType.value || !dates.value) return
+  
+  const monthDate = dates.value as Date
+  const year = monthDate.getFullYear()
+  const month = monthDate.getMonth()
+  const startDate = new Date(year, month, 1)
+  
+  const startStr = formatLocalDate(startDate)
+  
+  try {
+    if (batchType.value.code === 'CP') {
+      const res = await api.post('/v1/documents/check-exists', {
+        type: 'cp',
+        date: startStr,
+        branch_id: branchId.value
+      })
+      if (res.data.exists) {
+        documentIdCp.value = res.data.document_id ?? null
+        dialogVisibleCp.value = true
+      }
+    } else if (batchType.value.code === 'DZC') {
+      const res = await api.post('/v1/documents/check-exists', {
+        type: 'dzc',
+        date: startStr,
+        branch_id: branchId.value
+      })
+      if (res.data.exists) {
+        documentIdDzc.value = res.data.document_id ?? null
+        dialogVisibleDzc.value = true
+      }
+    }
+  } catch (err) {
+    console.error('Failed to check document existence:', err)
+  }
+}
+
+function closeDialogCp() {
+  dialogVisibleCp.value = false
+}
+
+function closeDialogDzc() {
+  dialogVisibleDzc.value = false
 }
 
 const options = computed<DataTableOptions<Document>>(() => ({
@@ -164,13 +221,6 @@ async function onSubmit() {
 
   loading.value = true
 
-  const formatLocalDate = (date: Date) => {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    const d = String(date.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  }
-
   if (batchType.value.code === 'CP') {
     try {
       const res = await api.post('/v1/cps', {
@@ -243,6 +293,10 @@ async function onSubmit() {
     }
   }
 }
+
+watch([() => batchType.value, () => dates.value], () => {
+  checkDocumentExists()
+})
 </script>
 
 <template>
@@ -280,6 +334,26 @@ async function onSubmit() {
           </div>
         </div>
       </section>
+
+      <DocumentAlert
+        v-if="batchType?.code === 'CP'"
+        :visible="dialogVisibleCp"
+        :documentId="documentIdCp"
+        document-url="/documents/cp/{id}"
+        @update:visible="dialogVisibleCp = $event"
+        @close="closeDialogCp"
+        @deleted="checkDocumentExists"
+      />
+
+      <DocumentAlert
+        v-if="batchType?.code === 'DZC'"
+        :visible="dialogVisibleDzc"
+        :documentId="documentIdDzc"
+        document-url="/documents/dzc/{id}"
+        @update:visible="dialogVisibleDzc = $event"
+        @close="closeDialogDzc"
+        @deleted="checkDocumentExists"
+      />
 
       <div class="flex justify-end">
         <Button

@@ -292,14 +292,8 @@ function printPage() {
 }
 
 @media print {
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
+  body { margin: 0; padding: 0; }
+  body * { visibility: hidden !important; }
 
   #cover-sheet,
   #cover-sheet * {
@@ -307,12 +301,16 @@ function printPage() {
   }
 
   #cover-sheet {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    margin: 0 auto;
-    box-shadow: none;
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 auto!important;
+    box-shadow: none !important;
+  }
+
+  .no-print,
+  .p-toolbar {
+    display: none !important;
   }
 }
+
 </style>

@@ -27,7 +27,7 @@ class UpdateBranchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id' => 'sometimes|exists:companies,id',
+            'company_id' => 'sometimes|exists:company,id',
             'representative_id' => 'nullable|exists:users,id',
             'code' => 'sometimes|required|string|max:255',
             'identificator' => 'sometimes|required|string|max:255',

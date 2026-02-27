@@ -233,4 +233,64 @@ class DocumentController extends Controller
 
         return response()->json($documents);
     }
+
+    /**
+     * Check if a document for a given period already exists.
+     * Supports two scenarios:
+     * 1. Patient document: checks patient_id, user_id, type, and period
+     * 2. User document: checks user_id, type, branch_id, and period
+     */
+    public function checkExists(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'type' => 'required|string',
+                'date' => 'required|date',
+                'patient_id' => 'nullable|numeric',
+                'branch_id' => 'nullable|numeric',
+            ]);
+
+            // Extract period (Y-m format) from provided date
+            $date = new \DateTime($validated['date']);
+            $period = $date->format('Y-m');
+
+            $type = $validated['type'];
+            $userId = Auth::id();
+
+            $document = null;
+            $patientId = $validated['patient_id'] ?? null;
+            $branchId = $validated['branch_id'] ?? null;
+
+            if ($patientId) {
+                // Patient document: check patient_id, user_id, type, and period
+                $document = Document::where('patient_id', $patientId)
+                    ->where('user_id', $userId)
+                    ->where('type', $type)
+                    ->where('period', $period)
+                    ->first();
+            } else {
+                // User document: check user_id, type, branch_id, and period
+                $query = Document::where('user_id', $userId)
+                    ->where('type', $type)
+                    ->where('period', $period);
+
+                if ($branchId) {
+                    $query->where('branch_id', $branchId);
+                }
+
+                $document = $query->first();
+            }
+
+            return response()->json([
+                'exists' => $document !== null,
+                'document_id' => $document?->id,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Document checkExists error: ' . $e->getMessage(), [
+                'request' => $request->all(),
+                'exception' => $e,
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

@@ -47,19 +47,56 @@ export const usePatientStore = defineStore('patient', {
                 const isNew = !patient.id
 
                 if (isNew) {
-                    // create
-                    const response = await api.post('/v1/patients', {
-                        ...patient,
-                    })
+                    // create - send only valid fields
+                    const payload = {
+                        first_name: patient.first_name,
+                        last_name: patient.last_name,
+                        title: patient.title,
+                        personal_number: patient.personal_number,
+                        sex: patient.sex,
+                        contact: patient.contact,
+                        doctor_id: patient.doctor_id,
+                        insurance_company_id: patient.insurance_company_id,
+                        country_id: patient.country_id,
+                        address: patient.address,
+                        city: patient.city,
+                        zip: patient.zip,
+                        latitude: patient.latitude,
+                        longitude: patient.longitude,
+                        reference_date: patient.reference_date,
+                        dekurz_number: patient.dekurz_number,
+                        branch_id: patient.branch_id,
+                        nurse_id: patient.nurse_id,
+                    }
+                    const response = await api.post('/v1/patients', payload)
 
                     const created = response.data.data as Patient
                     return created
                 }
 
                 // update
-                let payload: Partial<Patient> = { ...patient }
+                let payload: Partial<Patient>
                 if (useAuthStore().isManager) {
                     payload = { branch_id: patient.branch_id, nurse_id: patient.nurse_id }
+                } else {
+                    payload = {
+                        first_name: patient.first_name,
+                        last_name: patient.last_name,
+                        title: patient.title,
+                        personal_number: patient.personal_number,
+                        sex: patient.sex,
+                        contact: patient.contact,
+                        doctor_id: patient.doctor_id,
+                        insurance_company_id: patient.insurance_company_id,
+                        country_id: patient.country_id,
+                        address: patient.address,
+                        city: patient.city,
+                        zip: patient.zip,
+                        latitude: patient.latitude,
+                        longitude: patient.longitude,
+                        reference_date: patient.reference_date,
+                        dekurz_number: patient.dekurz_number,
+                    }
                 }
 
                 await api.put(`/v1/patients/${patient.id}`, payload)
@@ -75,10 +112,25 @@ export const usePatientStore = defineStore('patient', {
 
         async createPatient(patient: Patient, branchId: number) {
             try {
-                const response = await api.post(`/v1/branches/${branchId}/patients`, {
-                    ...patient,
-                    dekurz_number: patient.dekurz_number || 1
-                });
+                const payload = {
+                    first_name: patient.first_name,
+                    last_name: patient.last_name,
+                    title: patient.title,
+                    personal_number: patient.personal_number,
+                    sex: patient.sex,
+                    contact: patient.contact,
+                    doctor_id: patient.doctor_id,
+                    insurance_company_id: patient.insurance_company_id,
+                    country_id: patient.country_id,
+                    address: patient.address,
+                    city: patient.city,
+                    zip: patient.zip,
+                    latitude: patient.latitude,
+                    longitude: patient.longitude,
+                    reference_date: patient.reference_date,
+                    dekurz_number: patient.dekurz_number || 1,
+                }
+                const response = await api.post(`/v1/branches/${branchId}/patients`, payload);
                 const created = response.data.data as Patient;
                 return created;
             } catch (error) {

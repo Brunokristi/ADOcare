@@ -23,6 +23,7 @@ class DekurzDocumentService
             'mime_type' => 'application/json',
             'name' => 'dekurz_' . now()->format('d.m.Y'),
             'path' => 'dekurz/' . now()->timestamp . '.json',
+            'period' => date('Y-m', strtotime($data['month'] ?? now()->format('Y-m-d'))),
         ]);
 
         $sections = $this->normalizeSections($data['sections']);

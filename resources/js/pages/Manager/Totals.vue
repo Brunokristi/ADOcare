@@ -33,7 +33,7 @@ async function openEditTotal(totalId: number) {
         { header: 'Upraviť hodnotu', style: { width: '600px' } }
     )
     if (result) {
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Hodnota uložená' })
+        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Hodnota uložená', life: 3000 })
         actionRemote.value?.reload()
     }
 }
@@ -45,7 +45,7 @@ async function openCreateTotal() {
         { header: 'Pridať hodnotu', style: { width: '600px' } }
     )
     if (result) {
-        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Hodnota vytvorená' })
+        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Hodnota vytvorená', life: 3000 })
         actionRemote.value?.reload()
     }
 }

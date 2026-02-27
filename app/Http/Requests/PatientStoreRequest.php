@@ -25,6 +25,7 @@ class PatientStoreRequest extends FormRequest
 
             'doctor_id' => 'nullable|integer|exists:doctors,id',
             'insurance_company_id' => 'nullable|integer|exists:insurance_companies,id',
+            'country_id' => 'required|integer|exists:countries,id',
             'nurse_id' => 'nullable|integer|exists:users,id',
 
             'address' => 'nullable|string|max:255',

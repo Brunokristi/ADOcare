@@ -24,7 +24,8 @@ class ProposalDocumentService
             'type' => 'proposal',
             'mime_type' => 'application/json',
             'name' => 'navrh_' . now()->format('d.m.Y'),
-            'path' => 'proposals/' . now()->timestamp . '.json',        
+            'path' => 'proposals/' . now()->timestamp . '.json', 
+            'period' => date('Y-m', strtotime($data['date'])),
             ]);
 
         $company = $actor->company;

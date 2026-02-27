@@ -10,13 +10,16 @@ export interface Document {
   created_at: string | null
   updated_at: string | null
   branch_id: number | null
+  period: string | null
   // relations
   patient: Patient
   user: User
+  branch: Branch
   // counts
   // exists
   patient_exists: boolean
   user_exists: boolean
+  branch_exists: boolean
 }
 
 export interface VisitText {
@@ -46,6 +49,15 @@ export interface Diagnosis {
   id: number
   code: string | null
   description: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface Country {
+  // columns
+  id: number
+  name: string
+  code: string
   created_at: string | null
   updated_at: string | null
 }
@@ -192,6 +204,31 @@ export interface Role {
   users_count: number
   // exists
   users_exists: boolean
+}
+
+export interface ScanSession {
+  // columns
+  id: number
+  patient_id: number
+  branch_id: number
+  user_id: number
+  session_token: string
+  expires_at: string
+  status: string
+  document_id: number | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  patient: Patient
+  branch: Branch
+  user: User
+  document: Document
+  // counts
+  // exists
+  patient_exists: boolean
+  branch_exists: boolean
+  user_exists: boolean
+  document_exists: boolean
 }
 
 export interface Company {
@@ -431,12 +468,14 @@ export interface Patient {
   dekurz_number: string | null
   branch_id: number | null
   nurse_id: number | null
+  country_id: number | null
   // relations
   nurse: User
   branch: Branch
   doctor: Doctor
   visits: Visit[]
   insurance_company: InsuranceCompany
+  country: Country
   // counts
   visits_count: number
   // exists
@@ -445,6 +484,7 @@ export interface Patient {
   doctor_exists: boolean
   visits_exists: boolean
   insurance_company_exists: boolean
+  country_exists: boolean
 }
 
 export interface Plan {

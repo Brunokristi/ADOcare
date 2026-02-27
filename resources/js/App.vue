@@ -1,7 +1,7 @@
 <!-- src/App.vue -->
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import ModalProvider from './components/ModalProvider.vue'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 
@@ -22,6 +23,7 @@ onMounted(() => {
 })
 
 const isLoggedIn = computed(() => auth.isAuthenticated)
+const showNavbar = computed(() => route.meta.shownavbar !== false)
 
 const isSidebarOpen = ref(false)
 function handleToggleSidebar() {
@@ -33,9 +35,9 @@ function handleToggleSidebar() {
 
 <template>
     <div class="h-screen flex flex-col bg-darkgrey">
-        <Navbar class="flex-none" :isSidebarOpen="isSidebarOpen" @toggle-sidebar="handleToggleSidebar" />
+        <Navbar v-if="showNavbar" class="flex-none" :isSidebarOpen="isSidebarOpen" @toggle-sidebar="handleToggleSidebar" />
 
-        <TercialNavbar v-if="isLoggedIn" class="flex-none" />
+        <TercialNavbar v-if="isLoggedIn && showNavbar" class="flex-none" />
 
         <div class="flex flex-1 overflow-hidden">
             <div class="flex-1 overflow-auto bg-white p-8 relative">

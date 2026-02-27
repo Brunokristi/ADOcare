@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch, useAttrs } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { openPatientDocumentsModal, openPatientEditModal} from '@/helpers/modalHelpers'
+import { openPatientDocumentsModal, openPatientEditModal, openScanDocumentModal } from '@/helpers/modalHelpers'
 import { usePatientStore } from '@/stores/patientStore'
+import { useAuthStore } from '@/stores/auth'
 import type { Patient } from '@/types/models'
 
 defineOptions({ inheritAttrs: false })
@@ -10,7 +11,9 @@ const attrs = useAttrs()
 
 const router = useRouter()
 const patientStore = usePatientStore()
+const authStore = useAuthStore()
 const patient = computed<Patient | null>(() => patientStore.current)
+const currentBranchId = computed(() => authStore.currentBranch?.id ?? null)
 
 const patientName = computed(() =>
     patient.value ? `${patient.value.first_name ?? ''} ${patient.value.last_name ?? ''}`.trim() : ''
@@ -39,6 +42,12 @@ function openPatientDocuments(patientId: number) {
 
 function openEditPatient(patientId: number) {
     void openPatientEditModal(patientId)
+}
+
+function openScanDocument(patientId: number | undefined, branchId: number | null) {
+    if (patientId && branchId) {
+        void openScanDocumentModal(patientId, branchId)
+    }
 }
 
 function patientIsComplete(p: Patient | null) {
@@ -110,6 +119,11 @@ watch(
                     bodovanie
                 </RouterLink>
 
+                <button type="button" @click="openScanDocument(patient?.id, currentBranchId)"
+                    class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">
+                    nález
+                </button>
+
                 <RouterLink :to="{ path: '/patient/agreement' }"
                     class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent!">
                     dohoda
@@ -134,6 +148,7 @@ watch(
                     class="text-mini! underline px-2! pr-4! transition-colors text-almostwhite! hover:text-accent! border-r border-almostwhite!">
                     prepúšťacia správa
                 </RouterLink>
+
 
                 <button type="button" @click="openEditPatient(patient?.id)"
                     class="text-mini! underline px-2! transition-colors text-almostwhite! hover:text-accent! cursor-pointer">

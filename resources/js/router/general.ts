@@ -27,12 +27,15 @@ import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
 import PatientLeave from '@/pages/Patients/Leave/PatientLeavePage.vue'
 import type { RouteRecordRaw } from 'vue-router'
 import DashboardPage from '@/pages/DashboardPage.vue'
+import ScanCapturePage from '@/pages/Patients/Scan/ScanCapturePage.vue'
 import { defineAsyncComponent } from 'vue'
 
 const PatientProposal = defineAsyncComponent(() => import('@/pages/Patients/Proposal/PatientProposalPage.vue'))
 
 
 const generalRoutes: Readonly<RouteRecordRaw[]> = [
+    { path: '', redirect: { name: 'dashboard' } },
+    { path: '/', redirect: { name: 'dashboard' } },
     { path: '/dashboard', name: 'dashboard', component: DashboardPage },
     {
         path: '/login',
@@ -298,11 +301,11 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         path: '/settings',
         name: 'settings',
         redirect: { name: 'doctors' },
+        component: Settings,
         meta: {
             title: 'Nastavenia',
             sectionRoot: 'settings',
             sidebar: true
-
         },
         children: [
             {
@@ -376,6 +379,20 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
             },
         ],
     },
+    {
+        path: '/scan/:token',
+        name: 'scan-capture',
+        component: ScanCapturePage,
+        meta: {
+            requiresAuth: false,
+            title: 'Skenovať dokument',
+            shownavbar: false,
+        }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: { name: 'dashboard' }
+    }
 ];
 
 

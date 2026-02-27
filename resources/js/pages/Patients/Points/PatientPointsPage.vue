@@ -268,6 +268,26 @@ function buildWeekendsForCurrentView(): Date[] {
   return selected
 }
 
+function buildWorkingDaysExcludingHolidaysForCurrentView(): Date[] {
+  const y = viewDate.value.getFullYear()
+  const m = viewDate.value.getMonth()
+  const last = new Date(y, m + 1, 0).getDate()
+
+  const holidayDates = getSlovakHolidaysForMonth(y, m)
+  const holidaySet = new Set(holidayDates.map((d) => toApiDate(d)))
+
+  const selected: Date[] = []
+  for (let day = 1; day <= last; day++) {
+    const d = new Date(y, m, day)
+    const dow = d.getDay()
+    // Monday to Friday (1-5) and not a holiday
+    if (dow >= 1 && dow <= 5 && !holidaySet.has(toApiDate(d))) {
+      selected.push(d)
+    }
+  }
+  return selected
+}
+
 async function selectHolidays() {
   syncViewDateFromPicker()
   await setDatesAndKeepView(buildHolidaysForCurrentView())
@@ -509,6 +529,11 @@ async function selectMondayWednesdayFriday() {
 async function selectWeekends() {
   syncViewDateFromPicker()
   await setDatesAndKeepView(buildWeekendsForCurrentView())
+}
+
+async function selectWorkingDaysExcludingHolidays() {
+  syncViewDateFromPicker()
+  await setDatesAndKeepView(buildWorkingDaysExcludingHolidaysForCurrentView())
 }
 
 /* -------------------------------------------------------------------------- */
@@ -937,6 +962,18 @@ onMounted(() => {
               <template #buttonbar="{ clearCallback }">
                 <div class="flex flex-wrap justify-start w-full gap-2">
                   <Button
+                    label="Pracovné dni"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectWorkingDaysExcludingHolidays"
+                  />
+                  <Button
+                    label="So, Ne, Sviatky"
+                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
+                    @mousedown.prevent
+                    @click.prevent="selectWeekends"
+                  />
+                  <Button
                     label="Po-Ne"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
                     @mousedown.prevent
@@ -953,12 +990,6 @@ onMounted(() => {
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
                     @mousedown.prevent
                     @click.prevent="selectMondayWednesdayFriday"
-                  />
-                  <Button
-                    label="So, Ne, Sviatky"
-                    class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectWeekends"
                   />
                   <Button
                     label="Sviatky"

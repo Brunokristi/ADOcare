@@ -14,7 +14,7 @@ class Patient extends Model
 
     protected $table = 'patients';
 
-    protected $fillable = ['first_name', 'last_name', 'title', 'personal_number', 'sex', 'contact', 'doctor_id', 'insurance_company_id', 'address', 'city', 'zip', 'latitude', 'longitude', 'reference_date', 'dekurz_number', 'branch_id', 'nurse_id'];
+    protected $fillable = ['first_name', 'last_name', 'title', 'personal_number', 'sex', 'contact', 'doctor_id', 'insurance_company_id', 'address', 'city', 'zip', 'latitude', 'longitude', 'reference_date', 'dekurz_number', 'branch_id', 'nurse_id', 'country_id'];
 
     public function nurse()
     {
@@ -39,6 +39,11 @@ class Patient extends Model
     public function insuranceCompany()
     {
         return $this->belongsTo(InsuranceCompany::class, 'insurance_company_id');
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
     }
 
 }

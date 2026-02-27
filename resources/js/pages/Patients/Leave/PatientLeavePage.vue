@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
+import DocumentAlert from '@/components/DocumentAlert.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -15,6 +16,11 @@ const patientId = computed(() => patientStore.current?.id ?? 0)
 
 const errors = ref<Record<string, string>>({})
 const submitted = ref(false)
+
+// Document existence check
+const documentExists = ref(false)
+const documentId = ref<number | null>(null)
+const dialogVisible = ref(false)
 
 const date = ref<Date>(new Date())
 const selectedProblems = ref<string[]>([])
@@ -48,6 +54,33 @@ function formatDateForText(d: Date) {
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = d.getFullYear()
   return `${dd}.${mm}.${yyyy}`
+}
+
+const toLocalYMD = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+async function checkDocumentExists() {
+  if (!patientId.value || !date.value) return
+
+  try {
+    const res = await api.post('/v1/documents/check-exists', {
+      type: 'leave',
+      date: toLocalYMD(date.value),
+      patient_id: patientId.value,
+    })
+    documentExists.value = res.data.exists ?? false
+    documentId.value = res.data.document_id ?? null
+    if (documentExists.value) {
+      dialogVisible.value = true
+    }
+  } catch (err) {
+    console.error('Failed to check document existence:', err)
+    documentExists.value = false
+  }
 }
 
 async function loadLastPatientPointDate() {
@@ -96,6 +129,10 @@ watch(
   },
   { immediate: true }
 )
+
+watch([() => date.value, () => patientId.value], () => {
+  checkDocumentExists()
+})
 
 function validateForm() {
   const e: Record<string, string> = {}
@@ -158,6 +195,14 @@ async function generateDocument() {
 </script>
 
 <template>
+  <DocumentAlert
+    :visible="dialogVisible"
+    :document-id="documentId"
+    document-url="/documents/leave/{id}"
+    @update:visible="dialogVisible = $event"
+    @deleted="checkDocumentExists"
+  />
+
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">

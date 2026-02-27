@@ -25,6 +25,7 @@ class DZCDocumentService
             'name' => 'dzc_' . now()->format('d.m.Y'),
             'path' => 'dzcs/' . now()->timestamp . '.json',
             'branch_id' => $branch->id,
+            'period' => date('Y-m', strtotime($data['start'])),
         ]);
 
         $user = $actor;
@@ -178,15 +179,98 @@ class DZCDocumentService
             'created_at' => now()->toISOString(),
         ];
 
-        Storage::disk('local')->put($document->path, json_encode($dzcData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        try {
+            $disk = Storage::disk('local');
+            $directory = dirname($document->path);
+            
+            // Ensure directory exists
+            if (!$disk->exists($directory)) {
+                $disk->makeDirectory($directory, 0755, true);
+                \Log::info('Created DZC directory', ['directory' => $directory]);
+            }
+            
+            $disk->put($document->path, json_encode($dzcData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            
+            // Verify file was actually saved
+            if (!$disk->exists($document->path)) {
+                throw new \Exception('File was not saved to disk');
+            }
+            
+            \Log::info('DZC file created successfully', [
+                'document_id' => $document->id,
+                'path' => $document->path,
+                'full_path' => $disk->path($document->path),
+                'file_size' => $disk->size($document->path)
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to save DZC file', [
+                'document_id' => $document->id,
+                'path' => $document->path,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
 
         return [$document, $dzcData];
     }
 
     public function getDzcPayload(Document $document): ?array
     {
-        if (! $document->path || ! Storage::disk('local')->exists($document->path)) return null;
-        $content = Storage::disk('local')->get($document->path);
-        return json_decode($content, true);
+        if (!$document->path) {
+            \Log::error('DZC document has no path', ['document_id' => $document->id]);
+            return null;
+        }
+
+        $disk = Storage::disk('local');
+        $fullPath = $disk->path($document->path);
+        
+        if (!$disk->exists($document->path)) {
+            \Log::error('DZC file not found', [
+                'document_id' => $document->id,
+                'stored_path' => $document->path,
+                'full_path' => $fullPath,
+                'disk_root' => $disk->path(''),
+                'directory_exists' => is_dir(dirname($fullPath)),
+                'files_in_dir' => is_dir(dirname($fullPath)) ? scandir(dirname($fullPath)) : 'N/A'
+            ]);
+            return null;
+        }
+
+        try {
+            $content = $disk->get($document->path);
+            
+            if (empty($content)) {
+                \Log::error('DZC file is empty', ['document_id' => $document->id, 'path' => $document->path]);
+                return null;
+            }
+            
+            $payload = json_decode($content, true);
+            
+            if (!$payload) {
+                \Log::error('DZC file contains invalid JSON', [
+                    'document_id' => $document->id,
+                    'path' => $document->path,
+                    'json_error' => json_last_error_msg()
+                ]);
+                return null;
+            }
+            
+            \Log::info('DZC file retrieved successfully', [
+                'document_id' => $document->id,
+                'path' => $document->path,
+                'payload_keys' => array_keys($payload)
+            ]);
+            
+            return $payload;
+        } catch (\Exception $e) {
+            \Log::error('Error reading DZC file', [
+                'document_id' => $document->id,
+                'path' => $document->path,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
     }
 }

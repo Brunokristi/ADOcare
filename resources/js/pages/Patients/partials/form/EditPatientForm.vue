@@ -84,9 +84,6 @@ if (props.isManagerView) {
         :errors="errors" @clear-error="clearError" />
     <div v-if="isManagerView">
         <div class="grid grid-cols-12 gap-4">
-            <div class="col-span-12">
-                <label class="block text-normal text-accent">Zdravotné detaily</label>
-            </div>
 
             <div class="col-span-6">
                 <label class="block text-normal mb-1">Prevádzka</label>

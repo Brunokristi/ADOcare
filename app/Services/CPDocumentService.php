@@ -24,6 +24,7 @@ class CPDocumentService
             'name' => 'cp_' . now()->format('d.m.Y'),
             'path' => 'cps/' . now()->timestamp . '.json',
             'branch_id' => $branch->id,
+            'period' => date('Y-m', strtotime($data['start'])),
         ]);
 
         $company = $branch->company;
