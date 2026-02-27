@@ -160,6 +160,13 @@ This guide is meant for both humans and automated agents that modify the codebas
 
 ---
 
+## Frontend / Vue guidelines
+
+ - **Keep `App.vue` thin.** The main application component should only contain the absolute minimum (router outlet, global providers, layout scaffolding). Any real logic, data fetching, or UI elements should be moved into child components or composables.  If you find yourself adding watchers, stores, or service calls directly in `App.vue`, the code should be abstracted into a dedicated component or utility instead. This prevents the root component from becoming a catch‑all and keeps the global structure easy to reason about.
+
+
+---
+
 ## Practical Examples
 
 - Good: `UserController::index()` calls `UserService::listForCompany($companyId, $filters)` and returns `$this->success(new UserCollection($results))`.
