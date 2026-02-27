@@ -102,12 +102,25 @@ class User extends Authenticatable
     /**
      * Assign a global role to the user by setting `role_id`.
      *
-     * @param Role|int $role
+     * @param Role|string|int $role
      * @return void
      */
     public function assignRole($role)
     {
-        $roleId = $role instanceof Role ? $role->id : (int) $role;
+        $roleId = null;
+        if ($role instanceof Role) {
+            $roleId = $role->id;
+        } elseif (is_string($role)) {
+            $roleId = Role::where('position', $role)->value('id');
+            if (!$roleId) {
+                throw new \InvalidArgumentException("Role with position '{$role}' not found.");
+            }
+        } elseif (is_int($role)) {
+            $roleId = $role;
+        } else {
+            throw new \InvalidArgumentException("Invalid role type. Expected Role instance, string, or integer.");
+        }
+
         $this->role_id = $roleId;
         $this->save();
     }

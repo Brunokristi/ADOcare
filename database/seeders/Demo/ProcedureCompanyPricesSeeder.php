@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +9,11 @@ class ProcedureCompanyPricesSeeder extends Seeder
 {
     public function run()
     {
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            // skip entirely in non-demo mode
+            return;
+        }
+
         $data = [];
 
         $procedures = DB::table('procedures')->pluck('id');

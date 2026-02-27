@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, type RouteRecordRaw } from 'vue-router';
 import appRouter from '@/router';
 import { capitalize } from '@/utils/formatUtils';
 import useAuthStore from '@/stores/auth';
 
 const auth = useAuthStore();
-
-interface RawRoute {
-    path: string;
-    name?: string;
-    meta?: Record<string, any>;
-    children?: RawRoute[];
-}
 
 interface SidebarChild {
     key: string;
@@ -27,32 +20,30 @@ interface SidebarItem {
     children?: SidebarChild[];
 }
 
-function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
+function buildSidebarItems(routes: readonly RouteRecordRaw[]): SidebarItem[] {
     const items: SidebarItem[] = [];
 
-    const isManager = auth.currentRole === 'manager';
 
     for (const r of routes) {
         const meta = r.meta ?? {};
-
-
-        if (isManager ? !meta?.managerSidebar : !meta.sidebar) continue;
-
-
+        if (typeof meta?.sidebar === 'function' && !meta.sidebar())
+            continue;
+        else if (!meta.sidebar) continue;
 
         const children: SidebarChild[] = (r.children ?? [])
             .filter((c) => {
-                if (isManager) {
-                    return c.meta?.managerSidebar === true;
-                }
+                // If is a function, call it
+                if (typeof c.meta?.sidebar === 'function')
+                    return c.meta.sidebar();
+
                 return c.meta?.sidebar
             })
             .map((c) => {
                 const childMeta = c.meta ?? {};
 
-                const rawLabel =
-                    childMeta.link ??
-                    childMeta.title ??
+                const rawLabel: string =
+                    childMeta.link as string ??
+                    childMeta.title as string ??
                     String(c.name ?? c.path);
 
                 const label = capitalize(rawLabel);
@@ -69,8 +60,8 @@ function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
             });
 
         const rawLabel =
-            meta.title ??
-            meta.link ??
+            meta.title as string ??
+            meta.link as string ??
             String(r.name ?? r.path);
 
         const label = capitalize(rawLabel);
@@ -90,7 +81,7 @@ function buildSidebarItems(routes: RawRoute[]): SidebarItem[] {
 
 
 // use the same hierarchy you defined in router/index.ts
-const rawRoutes = appRouter.options.routes as RawRoute[];
+const rawRoutes = appRouter.options.routes;
 // const sidebarItems = ref<SidebarItem[]>(buildSidebarItems(rawRoutes));
 const sidebarItems = computed(() => buildSidebarItems(rawRoutes));
 
@@ -144,8 +135,7 @@ watch(
 
                 <ul v-show="isOpen(item.key)" class="mt-1 space-y-1 text-mini">
                     <li v-for="child in item.children" :key="child.key">
-                        <RouterLink :to="child.path"
-                            class="block px-3 py-1 rounded-md text-white hover:bg-tag2">
+                        <RouterLink :to="child.path" class="block px-3 py-1 rounded-md text-white hover:bg-tag2">
                             {{ child.label }}
                         </RouterLink>
                     </li>

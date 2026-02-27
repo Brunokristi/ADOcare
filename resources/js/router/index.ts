@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import generalRoutes from './general';
+import nures from './nurse';
 import managerRoutes from './manager';
+import superadminRoutes from './superadmin';
 
-const routes = [...generalRoutes, ...managerRoutes];
+const routes = [...nures, ...managerRoutes, ...superadminRoutes];
 
 const router = createRouter({
     history: createWebHistory(),
@@ -13,7 +14,15 @@ const router = createRouter({
 // Small navigation helpers placed on the router instance so callers can use
 // `router.dashboard()` and `router.manager()` instead of remembering paths.
 router.dashboard = async () => {
-    await router.push({ name: useAuthStore().isManager ? 'manager-dashboard' : 'dashboard' });
+    let dashboardRouteName = 'dashboard';
+    const userAuth = useAuthStore();
+    if (userAuth.isManager) {
+        dashboardRouteName = 'manager-dashboard';
+    } else if (userAuth.isSuperadmin) {
+        dashboardRouteName = 'superadmin-dashboard';
+    }
+
+    await router.push({ name: dashboardRouteName });
 };
 
 router.beforeEach(async (to, _from, next) => {
@@ -30,6 +39,16 @@ router.beforeEach(async (to, _from, next) => {
 
     if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
         return next({ name: 'login', query: { redirect: to.fullPath } });
+    }
+
+    // If going to dashbaord that is not accessible by the current role, redirect to the appropriate dashboard
+    if (to.name === 'dashboard') {
+        if (auth.isManager) {
+            return next({ name: 'manager-dashboard' });
+        }
+        if (auth.isSuperadmin) {
+            return next({ name: 'superadmin-dashboard' });
+        }
     }
 
     return next();

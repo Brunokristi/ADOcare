@@ -125,6 +125,11 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('/user-totals-aggregated', [ManagerController::class, 'userTotalsAggregated']);
     });
 
+    // superadmin-specific endpoints
+    Route::group(['prefix' => 'superadmin', 'middleware' => 'role:superadmin'], function () {
+        Route::get('/statistics', [\App\Http\Controllers\Api\SuperadminController::class, 'statistics']);
+    });
+
     Route::apiResourceComplete('totals', TotalsController::class);
 
     Route::apiResourceComplete('doctors', DoctorController::class);

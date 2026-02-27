@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\Visit;
 use App\Models\VisitText;
@@ -15,6 +15,10 @@ class VisitSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            return;
+        }
+
         $patients = Patient::all();
         if ($patients->isEmpty()) {
             return;
