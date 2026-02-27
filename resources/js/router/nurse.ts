@@ -29,9 +29,14 @@ import type { RouteRecordRaw } from 'vue-router'
 import DashboardPage from '@/pages/DashboardPage.vue'
 import ScanCapturePage from '@/pages/Patients/Scan/ScanCapturePage.vue'
 import { defineAsyncComponent } from 'vue'
+import useAuthStore from '@/stores/auth'
 
 const PatientProposal = defineAsyncComponent(() => import('@/pages/Patients/Proposal/PatientProposalPage.vue'))
 
+
+function showOnSidebar() {
+    return useAuthStore().currentRole === 'nurse';
+}
 
 const generalRoutes: Readonly<RouteRecordRaw[]> = [
     { path: '', redirect: { name: 'dashboard' } },
@@ -52,7 +57,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Dávka',
             sectionRoot: 'data',
-            sidebar: true
+            sidebar: showOnSidebar
         },
         children: [
             {
@@ -62,7 +67,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Výkonová',
                     link: 'výkonová',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -74,7 +79,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Dopravná',
                     link: 'dopravná',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -281,7 +286,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Účtovníctvo',
             sectionRoot: 'accounting',
-            sidebar: true,
+            sidebar: showOnSidebar,
         },
         children: [
             {
@@ -291,7 +296,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Cestovné',
                     link: 'cestovné',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: false,
                 },
             },
@@ -305,7 +310,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Nastavenia',
             sectionRoot: 'settings',
-            sidebar: true
+            sidebar: showOnSidebar
         },
         children: [
             {
@@ -315,7 +320,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Spolupracujúci lekári',
                     link: 'spolupracujúci lekári',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -326,7 +331,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Makrá',
                     link: 'makrá',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -340,7 +345,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Prehľady',
             sectionRoot: 'overview',
-            sidebar: true
+            sidebar: showOnSidebar
 
         },
         children: [
@@ -351,7 +356,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Pacienti',
                     link: 'pacienti',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -362,7 +367,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Výkony',
                     link: 'výkony',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -373,7 +378,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Diagnózy',
                     link: 'diagnózy',
-                    sidebar: true,
+                    sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
@@ -394,6 +399,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         redirect: { name: 'dashboard' }
     }
 ];
+
 
 
 export default generalRoutes;
