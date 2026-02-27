@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\Company;
 use App\Models\Doctor;
@@ -10,6 +10,10 @@ class DoctorSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            return;
+        }
+
         Doctor::factory(20)->create();
 
         $companies = Company::all();

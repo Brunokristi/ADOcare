@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\Car;
 use App\Models\Company;
@@ -11,6 +11,10 @@ class CarSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            return;
+        }
+
         $companies = Company::all();
 
         // create some cars, associating to a random company and picking a user from the same company when possible

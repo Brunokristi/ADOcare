@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\Branch;
 use App\Models\Patient;
@@ -11,7 +11,12 @@ class PatientSeeder extends Seeder
     public function run(): void
     {
 
-        // For each branch generate multiple patients
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            // no patients by default
+            return;
+        }
+
+        // demo path: generate random patients per branch
         $branches = Branch::all();
 
         $branches->each(function (Branch $branch) {

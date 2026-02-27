@@ -15,9 +15,15 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        // Run static seeders
         $this->call([
-            CountrySeeder::class,
+            Static\RoleSeeder::class,
+            Static\CountrySeeder::class,
+            Static\InsuranceCompanySeeder::class,
+            Static\UserSeeder::class,
         ]);
+
+
     }
 
 }

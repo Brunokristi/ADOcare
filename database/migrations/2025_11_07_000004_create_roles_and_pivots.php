@@ -10,7 +10,9 @@ class CreateRolesAndPivots extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->increments('id');
-            $table->enum('position', ['manager', 'nurse'])->nullable();
+            // note: superadmin is managed by a later migration so existing installs
+            // that have already run this file don't need to (and shouldn't) edit it.
+            $table->enum('position', ['manager', 'nurse', 'superadmin'])->nullable();
             $table->timestamps();
         });
 

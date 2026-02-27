@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\Plan;
 use Illuminate\Database\Seeder;
@@ -12,6 +12,13 @@ class PlansSeeder extends Seeder
      */
     public function run(): void
     {
+
+
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            // skip entirely in non-demo mode
+            return;
+        }
+
         $plans = [
             [
                 'company_id' => 1,

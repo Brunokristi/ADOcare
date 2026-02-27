@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\ReportMonth;
 use App\Models\User;
@@ -11,6 +11,10 @@ class ReportMonthSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            return;
+        }
+
         $months = ReportMonth::factory(12)->create()->each(function ($m) {
             $branchId = Branch::inRandomOrder()->value('id') ?? null;
             $userId = null;

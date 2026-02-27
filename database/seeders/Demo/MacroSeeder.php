@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Demo;
 
 use App\Models\Macro;
 use App\Models\Company;
@@ -11,6 +11,10 @@ class MacroSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!env('SEED_SAMPLE_DATA', false)) {
+            return;
+        }
+
         $users = User::all();
 
         foreach ($users as $user) {
