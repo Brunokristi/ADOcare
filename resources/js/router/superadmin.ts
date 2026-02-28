@@ -10,7 +10,6 @@
 // Reporty
 
 import Cars from "@/pages/Settings/Cars/Cars.vue";
-import CompanySettings from "@/pages/Settings/Company/CompanySettingsPage.vue";
 import Companies from "@/pages/Settings/Companies/CompaniesPage.vue";
 import Patients from "@/pages/Patients/PatientListPage.vue";
 import Branches from "@/pages/Settings/Branches/BranchesPage.vue";
@@ -43,31 +42,48 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
         },
     },
     {
-        path: '/superadmin/overview',
-        name: 'superadmin-overview',
-        component: Settings,
-        meta: {
-            title: 'Prehľady',
-            sidebar: showOnSidebar,
-        },
+        // company overview (accessed by clicking company name)
+        path: '/companies/:companyId',
+        name: 'superadmin-company-overview',
+        component: () => import('@/pages/Settings/Companies/CompanyOverview.vue'),
+        meta: { title: 'Prehľad spoločnosti', sidebar: showOnSidebar, navbar: false },
         children: [
+
             {
-                path: 'patients',
-                name: 'superadmin-overview-patients',
+                path: '/patients',
+                name: 'superadmin-company-patients',
                 component: Patients,
                 meta: { title: 'Pacienti', sidebar: showOnSidebar, navbar: true, link: 'pacienti' },
             },
             {
-                path: 'doctors',
-                name: 'superadmin-overview-doctors',
-                component: Doctors,
-                meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
-            },
-            {
-                path: 'documents',
-                name: 'superadmin-overview-documents',
+                path: '/documents',
+                name: 'superadmin-company-documents',
                 component: Documents,
                 meta: { title: 'Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'dokumenty' },
+            },
+            {
+                path: 'branches',
+                name: 'superadmin-company-branches',
+                component: Branches,
+                meta: { title: 'Pobočky', link: 'pobočky', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'users',
+                name: 'superadmin-company-users',
+                component: Users,
+                meta: { title: 'Používatelia', link: 'používatelia', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'cars',
+                name: 'superadmin-company-cars',
+                component: Cars,
+                meta: { title: 'Autá', link: 'autá', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'plans',
+                name: 'superadmin-company-plans',
+                component: PlansPage,
+                meta: { title: 'Plány', link: 'plány', sidebar: showOnSidebar, navbar: true, },
             },
         ],
     },
@@ -83,40 +99,16 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
         },
         children: [
             {
-                path: 'company',
-                name: 'superadmin-settings-company',
-                component: CompanySettings,
-                meta: { title: 'Spoločnosť', link: 'spoločnosť', overflow: true },
-            },
-            {
-                path: 'companies',
-                name: 'superadmin-settings-companies',
+                path: '/companies',
+                name: 'superadmin-company-companies',
                 component: Companies,
                 meta: { title: 'Spoločnosti', link: 'spoločnosti', sidebar: showOnSidebar, navbar: true, overflow: true },
             },
             {
-                path: 'branches',
-                name: 'superadmin-settings-branches',
-                component: Branches,
-                meta: { title: 'Pobočky', link: 'pobočky', sidebar: showOnSidebar, navbar: true, },
-            },
-            {
-                path: 'users',
-                name: 'superadmin-settings-users',
-                component: Users,
-                meta: { title: 'Používatelia', link: 'používatelia', sidebar: showOnSidebar, navbar: true, },
-            },
-            {
-                path: 'cars',
-                name: 'superadmin-settings-cars',
-                component: Cars,
-                meta: { title: 'Autá', link: 'autá', sidebar: showOnSidebar, navbar: true, },
-            },
-            {
-                path: 'plans',
-                name: 'superadmin-settings-plans',
-                component: PlansPage,
-                meta: { title: 'Plány', link: 'plány', sidebar: showOnSidebar, navbar: true, },
+                path: '/doctors',
+                name: 'superadmin-overview-doctors',
+                component: Doctors,
+                meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
             },
             {
                 path: 'procedures',

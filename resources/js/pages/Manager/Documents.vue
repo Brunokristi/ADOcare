@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
+import router from '@/router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
@@ -27,7 +29,11 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     loading.value = true
-    const res = await api.get('/v1/my-company/branches', {
+    const auth = useAuthStore()
+    const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+      ? `/v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
+      : '/v1/my-company/branches'
+    const res = await api.get(url, {
       params: { paginate: 0 },
     })
     const payload = res.data?.data

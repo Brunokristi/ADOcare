@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import api from '@/services/api'
+import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
 import type { IModalContentProps } from '@/types/ui'
 import type { Branch, User } from '@/types/models'
@@ -9,7 +11,7 @@ import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import { useAddressForm } from '@/composables/address'
 import MapSelector from '@/components/Address/MapSelector.vue'
 
-const props = defineProps<IModalContentProps & { branchId?: number }>()
+const props = defineProps<IModalContentProps & { branchId?: number; companyId?: number }>()
 const toast = useToast()
 
 const branch = ref<Partial<Branch>>({
@@ -55,7 +57,11 @@ function formatTime(date: Date | null): string | null {
 onMounted(async () => {
   loading.value = true
   try {
-    representativeOptions.value = await api.fetchEntities<User>('v1/my-company/users')
+      const auth = useAuthStore()
+      const url = auth.isSuperadmin
+        ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/users`
+        : 'v1/my-company/users'
+      representativeOptions.value = await api.fetchEntities<User>(url)
   } catch (e) {
     console.error('Failed to load representatives', e)
   }
@@ -75,6 +81,11 @@ onMounted(async () => {
       console.error('Failed to load branch', e)
       toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať pobočku', life: 3000 })
     }
+  }
+
+  // when creating under a specific company, prefill company_id
+    if (!props.branchId && props.companyId) {
+      branch.value.company_id = props.companyId
   }
 
   loading.value = false

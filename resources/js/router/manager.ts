@@ -29,7 +29,7 @@ import useAuthStore from "@/stores/auth";
 
 
 function showOnSidebar() {
-    return useAuthStore().currentRole === 'manager';
+    return useAuthStore().isManager;
 }
 
 

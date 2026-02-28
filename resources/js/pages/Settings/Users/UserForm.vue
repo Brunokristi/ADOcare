@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, markRaw } from 'vue'
+import router from '@/router'
 import type { IModalContentProps } from '@/types/ui'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
@@ -9,7 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 import useModal from '@/composables/useModal'
 import ChangePasswordModal from './ChangePasswordModal.vue'
 
-const props = defineProps<IModalContentProps & { userId?: number; baseUrl?: string }>()
+const props = defineProps<IModalContentProps & { userId?: number; baseUrl?: string; companyId?: number }>()
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -101,7 +102,10 @@ function normalizeUserFromApi(data: any) {
 onMounted(async () => {
   // Load lookup data first (so selects have options)
   try {
-    branchOptions.value = await api.fetchEntities<Branch>('v1/my-company/branches')
+    const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+      ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
+      : 'v1/my-company/branches'
+    branchOptions.value = await api.fetchEntities<Branch>(url)
     branchRoles.value = await api.fetchEntities<Role>('v1/roles/branch')
     globalRoles.value = await api.fetchEntities<Role>('v1/roles/all')
   } catch (e) {
@@ -119,6 +123,10 @@ onMounted(async () => {
   } else {
     // create mode: start with one empty assignment row optionally
     // branchAssignments.value = [{ branch_id: null, working_time: null, role_id: null }]
+    // if companyId provided, make sure new user has it
+    if (props.companyId) {
+      user.value.company_id = props.companyId
+    }
   }
 })
 
@@ -151,6 +159,8 @@ const save = async () => {
 
     // On create: send pin, on update: password changes handled in separate modal
     if (creating) {
+      // ensure company is set when creating from overview page
+      if (props.companyId) payload.company_id = props.companyId
       if (!payload.pin) delete payload.pin
     } else {
       // On update: remove both pin and login (not editable)

@@ -57,6 +57,26 @@ class CompanyController extends Controller
     }
 
     /**
+     * Return overview statistics for a single company.
+     *
+     * @group Companies
+     * @urlParam company int required Company ID. Example: 1
+     * @response 200 {
+     *   "data": {"branches":1,"users":5,"patients":23}
+     * }
+     */
+    public function stats(Company $company)
+    {
+        $branches = $company->branches()->count();
+        $users = \App\Models\User::where('company_id', $company->id)->count();
+        $patients = \App\Models\Patient::whereHas('branch', function ($q) use ($company) {
+            $q->where('company_id', $company->id);
+        })->count();
+
+        return $this->success(compact('branches', 'users', 'patients'), 'Company statistics');
+    }
+
+    /**
      * Update a company
      *
      * @group Companies

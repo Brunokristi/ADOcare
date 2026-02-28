@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import router from '@/router'
 import DatePicker from 'primevue/datepicker'
 import type { IModalContentProps } from '@/types/ui'
 import api from '@/services/api'
@@ -76,7 +78,11 @@ const currentIcTotals = computed(() =>
 
 onMounted(async () => {
   try {
-    branches.value = await api.fetchEntities<Branch>('v1/my-company/branches')
+    const auth = useAuthStore()
+    const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+      ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
+      : 'v1/my-company/branches'
+    branches.value = await api.fetchEntities<Branch>(url)
     console.log('Loaded branches:', branches.value)
     
     insuranceCompanies.value = await api.fetchEntities<InsuranceCompany>('v1/insurance-companies')

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import router from '@/router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
@@ -21,15 +23,22 @@ init()
 
 onMounted(async () => {
     loading.value = true
+    const auth = useAuthStore()
     try {
-        const data = await api.fetchEntity<Company>('v1/my-company')
+        const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+            ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}`
+            : 'v1/my-company'
+        const data = await api.fetchEntity<Company>(url)
         if (data) {
             company.value = data
             addressQuery.value = mergeAddressParts(company.value.address, company.value.city, company.value.psc) || company.value.address
         }
         // fetch company users for representative selection
         try {
-            representativeOptions.value = await api.fetchEntities<User>('v1/my-company/users')
+            const repUrl = auth.isSuperadmin && router.currentRoute.value.params.companyId
+                ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/users`
+                : 'v1/my-company/users'
+            representativeOptions.value = await api.fetchEntities<User>(repUrl)
         } catch (e) {
             console.error('Failed to fetch representative users', e)
         }

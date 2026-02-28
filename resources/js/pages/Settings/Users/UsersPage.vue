@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, markRaw, ref } from 'vue'
+import router from '@/router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Role, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
@@ -47,7 +48,9 @@ async function openCreateUser() {
 
 const options = computed<DataTableOptions<User>>(() => ({
     rowKey: 'id',
-    endpointUrl: 'v1/my-company/users',
+    endpointUrl: auth.isSuperadmin
+        ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/users`
+        : 'v1/my-company/users',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     extraParams: { with: 'role' },
