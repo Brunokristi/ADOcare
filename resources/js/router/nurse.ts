@@ -387,7 +387,6 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/scan',
         name: 'scan',
-        component: Settings,
         meta: {
             title: 'Skenovanie',
             sectionRoot: 'scan',
