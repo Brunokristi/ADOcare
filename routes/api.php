@@ -42,14 +42,13 @@ use App\Http\Controllers\Api\TotalsController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\ScanUploadController;
-
-
-
-use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\BugReportController;
+use App\Http\Controllers\Api\ScanFileController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/v1/scans/{sessionId}/{filename}', [\App\Http\Controllers\Api\ScanFileController::class, 'image'])
+->where('filename', '.*');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -58,9 +57,6 @@ Route::get('/user', function (Request $request) {
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
-
-Route::post('/subscribe', [SubscriptionController::class, 'subscribe']);
-Route::post('/bug-report', [BugReportController::class, 'store']);
 
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -223,9 +219,11 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::get('/countries', [CountryController::class, 'index']);
 
-    // Scan document routes
     Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
     Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
+    Route::get('/scan/{document}', [ScanFileController::class, 'show']);
+
+
 });
 
 // Public scan upload routes (no auth required - guest access with token)

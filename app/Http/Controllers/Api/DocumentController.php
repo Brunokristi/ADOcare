@@ -156,6 +156,8 @@ class DocumentController extends Controller
     public function destroy(Document $document)
     {
         $this->authorize('delete', $document);
+        
+        $this->deleteScanAssetsIfAny($document);
 
         if (Storage::disk('local')->exists($document->path)) {
             $deleted = Storage::disk('local')->delete($document->path);
@@ -196,6 +198,8 @@ class DocumentController extends Controller
         
         foreach ($documents as $document) {
 
+            $this->deleteScanAssetsIfAny($document);
+
             if (Storage::disk('local')->exists($document->path)) {
                 $deleted = Storage::disk('local')->delete($document->path);
                 if (!$deleted) {
@@ -212,10 +216,40 @@ class DocumentController extends Controller
             }
         }
         
-        // Delete documents from database
         Document::whereIn('id', $ids)->delete();
         
         return response()->json(['message' => 'Documents deleted successfully']);
+    }
+
+    private function deleteScanAssetsIfAny(Document $document): void
+    {
+        if ($document->type !== 'scan') {
+            return;
+        }
+
+        $sessionId = null;
+
+        if (!$sessionId && Storage::disk('local')->exists($document->path)) {
+            try {
+                $raw = Storage::disk('local')->get($document->path);
+                $json = json_decode($raw, true);
+                $sessionId = (int) ($json['scan_session_id'] ?? 0);
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to parse scan document JSON for cleanup', [
+                    'document_id' => $document->id,
+                    'path' => $document->path,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (!$sessionId) return;
+
+        $scanDir = "scans/{$sessionId}";
+
+        if (Storage::disk('local')->exists($scanDir)) {
+            Storage::disk('local')->deleteDirectory($scanDir);
+        }
     }
 
     /**

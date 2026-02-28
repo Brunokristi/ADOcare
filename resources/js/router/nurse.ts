@@ -21,6 +21,7 @@ import DocumentDZC from '@/pages/Documents/DZC.vue'
 import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
 import DocumentLeave from '@/pages/Documents/Leave.vue'
 import DocumentRecord from '@/pages/Documents/Record.vue'
+import DocumentNalez from '@/pages/Documents/Nalez.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
@@ -191,6 +192,17 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Vstupný záznam sesterského posúdenia',
                     link: 'sesterské posúdenie',
+                    sidebar: false,
+                    navbar: false,
+                },
+            },
+            {
+                path: 'scan/:documentId',
+                name: 'documents-scan',
+                component: DocumentNalez,
+                meta: {
+                    title: 'Lekársky nález',
+                    link: 'lekársky nález',
                     sidebar: false,
                     navbar: false,
                 },
@@ -390,7 +402,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Skenovanie',
             sectionRoot: 'scan',
-            sidebar: true
+            sidebar: false
 
         },
         children: [

@@ -25,26 +25,28 @@ class ScanUploadController extends Controller
      */
     public function uploadImage(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'session_token' => ['required', 'string'],
             'images' => ['required', 'array', 'min:1'],
-            'images.*' => ['required','file','mimes:jpg,jpeg,png,heic,webp','max:10240']        
+            'images.*' => ['required', 'file', 'mimes:jpg,jpeg,png,heic,webp', 'max:10240'],
         ]);
 
-        // Get and validate session
         $session = $this->service->getSessionByToken($validated['session_token']);
         if (!$session) {
             return $this->error('Invalid or expired session', 401);
         }
 
-        // Store the image
-        $imagePath = $this->service->storeScannedImage($session, $request->file('image'));
+        $stored = [];
+        foreach ($validated['images'] as $uploadedFile) {
+            // IMPORTANT: this is an UploadedFile object
+            $stored[] = $this->service->storeScannedImage($session, $uploadedFile);
+        }
 
         return $this->success([
             'success' => true,
-            'image_path' => $imagePath,
-            'image_count' => count(\Illuminate\Support\Facades\Storage::disk('local')->files('scans/' . $session->id)),
-        ], 'Image uploaded successfully', 200);
+            'image_paths' => $stored,
+            'image_count' => count(\Storage::disk('local')->files("scans/{$session->id}")),
+        ], 'Images uploaded successfully', 200);
     }
 
     /**
@@ -61,44 +63,18 @@ class ScanUploadController extends Controller
         $validated = $request->validate([
             'session_token' => ['required', 'string'],
             'images' => ['required', 'array', 'min:1'],
-            'images.*' => ['required','file','mimes:jpg,jpeg,png,heic,webp','max:10240']        
+            'images.*' => ['required', 'file', 'mimes:jpg,jpeg,png,heic,webp', 'max:10240'],
         ]);
 
-        // Get session
         $session = $this->service->getSessionByToken($validated['session_token']);
-        if (!$session) {
-            return $this->error('Invalid or expired session', 401);
-        }
+        if (!$session) return $this->error('Invalid or expired session', 401);
+        if ($session->status === 'completed') return $this->error('Session already finalized', 400);
 
-        if ($session->status === 'completed') {
-            return $this->error('Session already finalized', 400);
-        }
-
-        $scanDir = 'scans/' . $session->id;
         $filePaths = [];
-
-        // If base64 images are provided in the request, store them
-        if (!empty($validated['images'])) {
-            foreach ($validated['images'] as $base64Image) {
-                try {
-                    $filePath = $this->service->storeBase64Image($session, $base64Image);
-                    $filePaths[] = $filePath;
-                } catch (\Exception $e) {
-                    return $this->error('Failed to process image: ' . $e->getMessage(), 400);
-                }
-            }
-        } else {
-            // Otherwise, check for previously uploaded files
-            $files = \Illuminate\Support\Facades\Storage::disk('local')->files($scanDir);
-            
-            if (empty($files)) {
-                return $this->error('No images uploaded', 400);
-            }
-
-            $filePaths = array_map(fn($file) => $scanDir . '/' . basename($file), $files);
+        foreach ($validated['images'] as $uploadedFile) {
+            $filePaths[] = $this->service->storeScannedImage($session, $uploadedFile);
         }
 
-        // Create document from scans
         $document = $this->service->createDocumentFromScans($session, $filePaths);
 
         return $this->success([
