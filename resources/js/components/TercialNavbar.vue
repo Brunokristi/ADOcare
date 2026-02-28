@@ -65,10 +65,9 @@ function patientIsComplete(p: Patient | null) {
   const lat = (p as any).latitude
   const lng = (p as any).longitude
 
-  // Check if all required fields are filled (not empty)
-  if (!first || !last || !pn || !sex || !doctorId || !insuranceId) return false
-  if (!street || !city || !zip) return false
-  if (lat == null || lng == null) return false
+    if (!first || !last || !pn || !sex || !doctorId || !insuranceId) return false
+    if (!street && !city && !zip) return false
+    if (lat == null || lng == null) return false
 
     return true
 }

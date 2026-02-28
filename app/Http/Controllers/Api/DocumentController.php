@@ -40,7 +40,6 @@ class DocumentController extends Controller
         $perPage = (int) $request->input('per_page', 25);
         $branchIds = $request->input('branch_ids');
 
-        // Parse comma-separated branch IDs or convert single ID to array
         $branchIdArray = [];
         if ($branchIds) {
             if (is_string($branchIds)) {
@@ -51,6 +50,10 @@ class DocumentController extends Controller
         }
 
         $query = Document::query()
+            ->with([
+                'user:id,title,first_name,last_name',
+                'branch:id,address',
+            ])
             ->whereIn('type', ['cp', 'dzc']);
 
         if (!empty($branchIdArray)) {
@@ -60,6 +63,32 @@ class DocumentController extends Controller
         $documents = $query
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+
+        $documents->getCollection()->transform(function ($doc) {
+            $representative = $doc->user;
+            $branch = $doc->branch;
+
+            $userName = trim(implode(' ', array_filter([
+                $representative?->title,
+                $representative?->first_name,
+                $representative?->last_name,
+            ])));
+
+            $branchAddress = $branch?->address; // or format it further if it's an object/array
+
+            return [
+                'id' => $doc->id,
+                'name' => $doc->name,
+                'type' => $doc->type,
+                'mime_type' => $doc->mime_type,
+                'path' => $doc->path,
+                'created_at' => $doc->created_at,
+
+                // what your frontend expects:
+                'created_by_user' => $userName ?: null,
+                'created_by_branch' => $branchAddress ?: null,
+            ];
+        });
 
         return response()->json($documents);
     }

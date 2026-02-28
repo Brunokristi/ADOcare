@@ -13,6 +13,8 @@ type Document = {
   mime_type?: string
   path?: string
   created_at?: string
+  created_by_user?: string
+  created_by_branch?: string
 }
 
 type Branch = {
@@ -110,6 +112,19 @@ const options = computed<DataTableOptions<Document>>(() => ({
       sortable: true,
       render: (v: string | undefined) => formatDateWithTime(v),
     },
+    {
+      field: 'created_by_user',
+      header: 'Používateľ',
+      sortable: true,
+      render: (v: string | undefined) => v || 'Neznámy',
+    },
+    {
+      field: 'created_by_branch',
+      header: 'Pobočka',
+      sortable: true,
+      render: (v: string | undefined) => v || 'Neznáma',
+    },
+
     {
       field: 'preview',
       header: '',

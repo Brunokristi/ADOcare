@@ -67,6 +67,7 @@ const formatDocumentType = (type?: string) => {
         'dekurz': 'Dekurz',
         'leave': 'Prepúšťacia správa',
         'record': 'Ošetrovateľský záznam',
+        'scan': 'Lekársky nález',
         'other': 'Iné'
     };
     return typeMap[type || ''] || type || '';
