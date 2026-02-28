@@ -52,6 +52,8 @@ const openDocument = (doc: PatientDocument) => {
         window.open(`/documents/leave/${doc.id}`, '_blank');
     } else if (doc.type === 'record') {
         window.open(`/documents/record/${doc.id}`, '_blank');
+    } else if (doc.type === 'scan') {
+        window.open(`/documents/scan/${doc.id}`, '_blank');
     } else {
         const target = doc.url || doc.path;
         if (target) window.open(target, '_blank');
@@ -65,6 +67,7 @@ const formatDocumentType = (type?: string) => {
         'dekurz': 'Dekurz',
         'leave': 'Prepúšťacia správa',
         'record': 'Ošetrovateľský záznam',
+        'scan': 'Lekársky nález',
         'other': 'Iné'
     };
     return typeMap[type || ''] || type || '';

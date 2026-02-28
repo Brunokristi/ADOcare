@@ -1,14 +1,3 @@
-// Manger routes:
-// Prehlady
-//  \---- Pacienty
-//  \---- Spolupracujuci lekari
-// Nastavenia
-// \---- Spolocnost
-// \---- Pobocky
-// \---- Pouzivatelia
-// \---- Auta
-// Reporty
-
 import Cars from "@/pages/Settings/Cars/Cars.vue";
 import CompanySettings from "@/pages/Settings/Company/CompanySettingsPage.vue";
 import Patients from "@/pages/Patients/PatientListPage.vue";
@@ -145,7 +134,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'plans',
                 name: 'manager-settings-plans',
                 component: PlansPage,
-                meta: { title: 'Plány', link: 'plány', sidebar: showOnSidebar, navbar: true, },
+                meta: { title: 'Plány starostlivosti', link: 'plány starostlivosti', sidebar: showOnSidebar, navbar: true, },
             },
             {
                 path: 'procedures',

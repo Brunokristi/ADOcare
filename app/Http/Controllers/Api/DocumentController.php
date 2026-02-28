@@ -40,7 +40,6 @@ class DocumentController extends Controller
         $perPage = (int) $request->input('per_page', 25);
         $branchIds = $request->input('branch_ids');
 
-        // Parse comma-separated branch IDs or convert single ID to array
         $branchIdArray = [];
         if ($branchIds) {
             if (is_string($branchIds)) {
@@ -51,6 +50,10 @@ class DocumentController extends Controller
         }
 
         $query = Document::query()
+            ->with([
+                'user:id,title,first_name,last_name',
+                'branch:id,address',
+            ])
             ->whereIn('type', ['cp', 'dzc']);
 
         if (!empty($branchIdArray)) {
@@ -60,6 +63,32 @@ class DocumentController extends Controller
         $documents = $query
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+
+        $documents->getCollection()->transform(function ($doc) {
+            $representative = $doc->user;
+            $branch = $doc->branch;
+
+            $userName = trim(implode(' ', array_filter([
+                $representative?->title,
+                $representative?->first_name,
+                $representative?->last_name,
+            ])));
+
+            $branchAddress = $branch?->address; // or format it further if it's an object/array
+
+            return [
+                'id' => $doc->id,
+                'name' => $doc->name,
+                'type' => $doc->type,
+                'mime_type' => $doc->mime_type,
+                'path' => $doc->path,
+                'created_at' => $doc->created_at,
+
+                // what your frontend expects:
+                'created_by_user' => $userName ?: null,
+                'created_by_branch' => $branchAddress ?: null,
+            ];
+        });
 
         return response()->json($documents);
     }
@@ -156,6 +185,8 @@ class DocumentController extends Controller
     public function destroy(Document $document)
     {
         $this->authorize('delete', $document);
+        
+        $this->deleteScanAssetsIfAny($document);
 
         if (Storage::disk('local')->exists($document->path)) {
             $deleted = Storage::disk('local')->delete($document->path);
@@ -196,6 +227,8 @@ class DocumentController extends Controller
         
         foreach ($documents as $document) {
 
+            $this->deleteScanAssetsIfAny($document);
+
             if (Storage::disk('local')->exists($document->path)) {
                 $deleted = Storage::disk('local')->delete($document->path);
                 if (!$deleted) {
@@ -212,10 +245,40 @@ class DocumentController extends Controller
             }
         }
         
-        // Delete documents from database
         Document::whereIn('id', $ids)->delete();
         
         return response()->json(['message' => 'Documents deleted successfully']);
+    }
+
+    private function deleteScanAssetsIfAny(Document $document): void
+    {
+        if ($document->type !== 'scan') {
+            return;
+        }
+
+        $sessionId = null;
+
+        if (!$sessionId && Storage::disk('local')->exists($document->path)) {
+            try {
+                $raw = Storage::disk('local')->get($document->path);
+                $json = json_decode($raw, true);
+                $sessionId = (int) ($json['scan_session_id'] ?? 0);
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to parse scan document JSON for cleanup', [
+                    'document_id' => $document->id,
+                    'path' => $document->path,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (!$sessionId) return;
+
+        $scanDir = "scans/{$sessionId}";
+
+        if (Storage::disk('local')->exists($scanDir)) {
+            Storage::disk('local')->deleteDirectory($scanDir);
+        }
     }
 
     /**

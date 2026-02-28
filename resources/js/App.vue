@@ -59,7 +59,6 @@ watch(
             const detailParts = [
                 fullName ? `Pacient: ${fullName}` : null,
                 dateLabel ? `Dátum úmrtia: ${dateLabel}` : null,
-                details.rodCis ? `Rodné číslo: ${String(details.rodCis).trim()}` : null,
             ].filter(Boolean);
 
             console.debug('[UDZS] Watcher: Showing toast', { detailParts });
