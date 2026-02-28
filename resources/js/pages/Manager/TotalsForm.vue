@@ -84,7 +84,7 @@ onMounted(async () => {
       : 'v1/my-company/branches'
     branches.value = await api.fetchEntities<Branch>(url)
     console.log('Loaded branches:', branches.value)
-    
+
     insuranceCompanies.value = await api.fetchEntities<InsuranceCompany>('v1/insurance-companies')
     console.log('Loaded insurance companies:', insuranceCompanies.value)
 
@@ -92,12 +92,12 @@ onMounted(async () => {
       isEdit.value = true
       const response = await api.get(`v1/totals/${props.totalId}`)
       const data = response.data.data
-      
+
       // Load users for this branch FIRST
       if (data.branch_id) {
         await updateUserOptions(data.branch_id)
       }
-      
+
       // Then set the total data including user_id
       total.value = {
         id: Number(data.id),
@@ -144,10 +144,10 @@ const updateUserOptions = async (branchId: number) => {
   try {
     const usersResponse = await api.get(`v1/branches/${branchId}/nurses`)
     console.log('Nurses data structure:', usersResponse.data.data)
-    
+
     // API returns {items: [...], count: N, sql: '...', meta: {...}}
     const usersData = usersResponse.data.data?.items || []
-    
+
     users.value = usersData
     console.log('Loaded users for branch:', users.value)
   } catch (e) {
@@ -267,115 +267,81 @@ const save = async () => {
 </script>
 
 <template>
-    <div class="flex flex-col gap-4">
-        <div>
-            <label class="block text-sm mb-1">Mesiac</label>
-            <DatePicker 
-              v-model="selectedMonth" 
-              view="month" 
-              dateFormat="MM yy"
-              :disabled="isEdit"
-              @update:modelValue="onMonthSelect"
-              fluid
-              :class="{ 'opacity-50!': isEdit }"
-
-            />
-        </div>
-
-        <div>
-            <label class="block text-sm mb-1">Pobočka</label>
-            <Select 
-              v-model="total.branch_id" 
-              :options="branches"
-              optionLabel="address"
-              optionValue="id"
-              :disabled="isEdit"
-              placeholder="Vybrať pobočku"
-            >
-                <template #value="slotProps">
-                    <span v-if="slotProps.value">
-                        {{ branches.find(b => b.id === slotProps.value)?.address }}</span>
-                    <span v-else>Vybrať pobočku</span>
-                </template>
-            </Select>
-        </div>
-
-        <div>
-            <label class="block text-sm mb-1">Používateľ</label>
-            <Select 
-              v-model="total.user_id" 
-              :options="users"
-              optionLabel="first_name"
-              optionValue="id"
-              :disabled="isEdit || users.length === 0"
-              placeholder="Vybrať používateľa"
-            >
-                <template #value="slotProps">
-                    <span v-if="slotProps.value">
-                        {{ userDisplayName(slotProps.value) }}
-                    </span>
-                    <span v-else>Vybrať používateľa</span>
-                </template>
-                <template #option="slotProps">
-                    <span v-if="slotProps.option">
-                        {{ formatUserFullName(slotProps.option) }}
-                    </span>
-                </template>
-            </Select>
-        </div>
-
-        <div>
-            <div class="overflow-auto rounded">
-                <table class="w-full table-auto">
-                    <thead>
-                        <tr class="">
-                            <th class="p-2 pl-3 text-left text-normal">Poisťovňa</th>
-                            <th class="p-2 text-left text-normal">Body</th>
-                            <th class="p-2 pr-3 text-left text-normal">Kilometre</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(ict, idx) in insuranceCompanyTotals" :key="ict.insurance_company_id" class="border-t border-lightgrey">
-                            <td class="p-2 pl-3 text-sm">
-                                {{ insuranceCompanies.find(ic => ic.id === ict.insurance_company_id)?.name.split(' ')[0] || 'ID ' + ict.insurance_company_id }}
-                            </td>
-                            <td class="p-2">
-                                <InputNumber 
-                                  v-model="(insuranceCompanyTotals[idx] as InsuranceCompanyTotal).points_total"
-                                  :min="0" 
-                                  :step="0.01"
-                                  mode="decimal"
-                                  :useGrouping="false"
-                                  :minFractionDigits="0"
-                                  :maxFractionDigits="2"
-                                  class="w-full"
-                                  :disabled="!isCurrentIcRow(ict)"
-                                  :class="{ 'opacity-50!': !isCurrentIcRow(ict) }"
-                                />
-                            </td>
-                            <td class="p-2 pr-3 flex justify-end">
-                                <InputNumber 
-                                  v-model="(insuranceCompanyTotals[idx] as InsuranceCompanyTotal).kilometers_total" 
-                                  :min="0" 
-                                  :step="0.01" 
-                                  mode="decimal"
-                                  :useGrouping="false"
-                                  :minFractionDigits="0"
-                                  :maxFractionDigits="2"
-                                  class="w-full"
-                                  :disabled="!isCurrentIcRow(ict)"
-                                  :class="{ 'opacity-50!': !isCurrentIcRow(ict) }"
-                                />
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="flex justify-end gap-2 mt-4">
-            <Button label="Zrušiť" text @click="() => { if (props.modalResolve) props.modalResolve(null) }" class="text-accent! px-2!" />
-            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" />
-        </div>
+  <div class="flex flex-col gap-4">
+    <div>
+      <label class="block text-sm mb-1">Mesiac</label>
+      <DatePicker v-model="selectedMonth" view="month" dateFormat="MM yy" :disabled="isEdit"
+        @update:modelValue="onMonthSelect" fluid :class="{ 'opacity-50!': isEdit }" />
     </div>
+
+    <div>
+      <label class="block text-sm mb-1">Pobočka</label>
+      <Select v-model="total.branch_id" :options="branches" optionLabel="address" optionValue="id" :disabled="isEdit"
+        placeholder="Vybrať pobočku">
+        <template #value="slotProps">
+          <span v-if="slotProps.value">
+            {{branches.find(b => b.id === slotProps.value)?.address}}</span>
+          <span v-else>Vybrať pobočku</span>
+        </template>
+      </Select>
+    </div>
+
+    <div>
+      <label class="block text-sm mb-1">Používateľ</label>
+      <Select v-model="total.user_id" :options="users" optionLabel="first_name" optionValue="id"
+        :disabled="isEdit || users.length === 0" placeholder="Vybrať používateľa">
+        <template #value="slotProps">
+          <span v-if="slotProps.value">
+            {{ userDisplayName(slotProps.value) }}
+          </span>
+          <span v-else>Vybrať používateľa</span>
+        </template>
+        <template #option="slotProps">
+          <span v-if="slotProps.option">
+            {{ formatUserFullName(slotProps.option) }}
+          </span>
+        </template>
+      </Select>
+    </div>
+
+    <div>
+      <div class="overflow-auto rounded">
+        <table class="w-full table-auto">
+          <thead>
+            <tr class="">
+              <th class="p-2 pl-3 text-left text-normal">Poisťovňa</th>
+              <th class="p-2 text-left text-normal">Body</th>
+              <th class="p-2 pr-3 text-left text-normal">Kilometre</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(ict, idx) in insuranceCompanyTotals" :key="ict.insurance_company_id"
+              class="border-t border-lightgrey">
+              <td class="p-2 pl-3 text-sm">
+                {{insuranceCompanies.find(ic => ic.id === ict.insurance_company_id)?.name.split(' ')[0] || 'ID ' +
+                  ict.insurance_company_id }}
+              </td>
+              <td class="p-2">
+                <InputNumber v-model="(insuranceCompanyTotals[idx] as InsuranceCompanyTotal).points_total" :min="0"
+                  :step="0.01" mode="decimal" :useGrouping="false" :minFractionDigits="0" :maxFractionDigits="2"
+                  class="w-full" :disabled="!isCurrentIcRow(ict)" :class="{ 'opacity-50!': !isCurrentIcRow(ict) }" />
+              </td>
+              <td class="p-2 pr-3 flex justify-end">
+                <InputNumber v-model="(insuranceCompanyTotals[idx] as InsuranceCompanyTotal).kilometers_total" :min="0"
+                  :step="0.01" mode="decimal" :useGrouping="false" :minFractionDigits="0" :maxFractionDigits="2"
+                  class="w-full" :disabled="!isCurrentIcRow(ict)" :class="{ 'opacity-50!': !isCurrentIcRow(ict) }" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <Button label="Zrušiť" text @click="() => { if (props.modalResolve) props.modalResolve(null) }"
+        class="text-accent! px-2!" />
+      <Button label="Uložiť"
+        class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" />
+    </div>
+  </div>
 </template>

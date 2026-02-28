@@ -38,7 +38,7 @@ const options = computed<DataTableOptions<Company>>(() => ({
     afterInit: ({ remote }) => {
         actionRemote.value = remote
     },
-        columns: [
+    columns: [
         {
             field: 'name', header: 'Názov', sortable: true,
             slot: 'col-name',
@@ -79,7 +79,8 @@ const options = computed<DataTableOptions<Company>>(() => ({
     <div class="h-full flex flex-col overflow-hidden min-h-0">
         <UniversalDataTable :options="options">
             <template #col-name="{ row }">
-                <RouterLink :to="{ name: 'superadmin-company-overview', params: { companyId: row.id } }" class="text-accent underline">
+                <RouterLink :to="{ name: 'superadmin-company-overview', params: { companyId: row.id } }"
+                    class="text-accent underline">
                     {{ row.name }}
                 </RouterLink>
             </template>

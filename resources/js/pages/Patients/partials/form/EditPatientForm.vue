@@ -65,11 +65,11 @@ async function updateNurseOptions() {
 if (props.isManagerView) {
     onMounted(async () => {
         try {
-                const auth = useAuthStore()
-                const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
-                    ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
-                    : 'v1/my-company/branches';
-                const branches = await api.fetchEntities<Branch>(url);
+            const auth = useAuthStore()
+            const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+                ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
+                : 'v1/my-company/branches';
+            const branches = await api.fetchEntities<Branch>(url);
             branchOptions.value = branches;
 
             await updateNurseOptions();

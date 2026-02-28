@@ -18,11 +18,11 @@ const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 const { openModal } = useModal()
 
 async function openEditBranch(branchId: number) {
-        const payload: any = { branchId }
-        if (auth.isSuperadmin) {
-            payload.companyId = Number(router.currentRoute.value.params.companyId)
-        }
-        const result = await openModal(markRaw(BranchForm), payload, { header: 'Upraviť pobočku', style: { width: '90%' } })
+    const payload: any = { branchId }
+    if (auth.isSuperadmin) {
+        payload.companyId = Number(router.currentRoute.value.params.companyId)
+    }
+    const result = await openModal(markRaw(BranchForm), payload, { header: 'Upraviť pobočku', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Pobočka bola upravená', life: 3000 })
         actionRemote.value?.reload()
@@ -30,11 +30,11 @@ async function openEditBranch(branchId: number) {
 }
 
 async function openCreateBranch() {
-        const payload: any = {}
-        if (auth.isSuperadmin) {
-            payload.companyId = Number(router.currentRoute.value.params.companyId)
-        }
-        const result = await openModal(markRaw(BranchForm), payload, { header: 'Pridať pobočku', style: { width: '90%' } })
+    const payload: any = {}
+    if (auth.isSuperadmin) {
+        payload.companyId = Number(router.currentRoute.value.params.companyId)
+    }
+    const result = await openModal(markRaw(BranchForm), payload, { header: 'Pridať pobočku', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Pobočka bola vytvorená', life: 3000 })
         actionRemote.value?.reload()

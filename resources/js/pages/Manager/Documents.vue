@@ -175,11 +175,7 @@ const options = computed<DataTableOptions<Document>>(() => ({
     <section>
       <UniversalDataTable v-if="!loading" ref="tableRef" :options="options">
         <template #actions="{ row }">
-          <button
-            @click.stop="openDocumentInNewTab(row)"
-            class="btn btn-sm btn-link p-0"
-            title="Otvoriť dokument"
-          >
+          <button @click.stop="openDocumentInNewTab(row)" class="btn btn-sm btn-link p-0" title="Otvoriť dokument">
             <i class="bi bi-eye"></i>
           </button>
         </template>
