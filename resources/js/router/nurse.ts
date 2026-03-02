@@ -22,6 +22,8 @@ import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
 import DocumentLeave from '@/pages/Documents/Leave.vue'
 import DocumentRecord from '@/pages/Documents/Record.vue'
 import DocumentNalez from '@/pages/Documents/Nalez.vue'
+import DocumentKilometersShow from '@/pages/Documents/KilometersShow.vue'
+import DocumentPointsShow from '@/pages/Documents/PointsShow.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
@@ -205,6 +207,26 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     link: 'lekársky nález',
                     sidebar: false,
                     navbar: false,
+                },
+            },
+            {
+                path: 'kilometers/:documentId',
+                name: 'documents-kilometers-show',
+                component: DocumentKilometersShow,
+                meta: {
+                    title: 'Kilometre',
+                    sidebar: false,
+                    navbar: false
+                },
+            },
+            {
+                path: 'points/:documentId',
+                name: 'documents-points-show',
+                component: DocumentPointsShow,
+                meta: {
+                    title: 'Body',
+                    sidebar: false,
+                    navbar: false
                 },
             },
         ]

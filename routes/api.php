@@ -35,6 +35,8 @@ use App\Http\Controllers\Api\LeaveDocumentController;
 use App\Http\Controllers\Api\RecordDocumentController;
 use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
+use App\Http\Controllers\Api\KilometersBatchDocumentController;
+use App\Http\Controllers\Api\PointsBatchDocumentController;
 use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\ManagerController;
@@ -43,6 +45,7 @@ use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\ScanUploadController;
 use App\Http\Controllers\Api\ScanFileController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -199,6 +202,15 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/records', [RecordDocumentController::class, 'store']);
     Route::get('/records/{document}', [RecordDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
+
+    Route::post('/kilometers-batches', [KilometersBatchDocumentController::class, 'store']);
+    Route::get('/kilometers-batches', [KilometersBatchDocumentController::class, 'index']);
+    Route::get('/kilometers-batches/{document}', [KilometersBatchDocumentController::class, 'show']);
+    Route::get('/patients/{patientId}/kilometers-batches/latest', [KilometersBatchDocumentController::class, 'latestByPatient']);
+
+    Route::post('/points-batches', [PointsBatchDocumentController::class, 'store']);
+    Route::get('/points-batches', [PointsBatchDocumentController::class, 'index']);
+    Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
