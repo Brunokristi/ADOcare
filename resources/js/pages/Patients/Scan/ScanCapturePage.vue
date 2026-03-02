@@ -19,8 +19,6 @@ let expiryInterval: number | null = null
 // Selected files + previews
 const selectedFiles = ref<File[]>([])
 const previewUrls = ref<string[]>([])
-
-const cameraInputRef = ref<HTMLInputElement | null>(null)
 const galleryInputRef = ref<HTMLInputElement | null>(null)
 
 // Final message state
@@ -110,14 +108,17 @@ onBeforeUnmount(() => {
   previewUrls.value.forEach((u) => URL.revokeObjectURL(u))
 })
 
-function openCamera() {
-  if (!sessionValid.value || isUploading.value) return
-  cameraInputRef.value?.click()
-}
-
 function openGallery() {
   if (!sessionValid.value || isUploading.value) return
   galleryInputRef.value?.click()
+}
+
+// Tune these to match your backend limits
+const MAX_FILE_BYTES = 25 * 1024 * 1024 // 25MB each
+const MAX_TOTAL_BYTES = 100 * 1024 * 1024 // 100MB total
+
+function totalSelectedBytes() {
+  return selectedFiles.value.reduce((sum, f) => sum + (f?.size ?? 0), 0)
 }
 
 function handleFileSelected(event: Event) {
@@ -127,12 +128,16 @@ function handleFileSelected(event: Event) {
   const files = Array.from(input.files ?? [])
   if (!files.length) return
 
-  const maxBytes = 10 * 1024 * 1024
-
   for (const file of files) {
     if (!file) continue
     if (!file.type.startsWith('image/')) continue
-    if (file.size > maxBytes) continue
+
+    // per-file cap (prevents huge gallery originals)
+    if (file.size > MAX_FILE_BYTES) continue
+
+    // total cap (prevents multi-select from exceeding server limits)
+    const nextTotal = totalSelectedBytes() + file.size
+    if (nextTotal > MAX_TOTAL_BYTES) continue
 
     selectedFiles.value.push(file)
     previewUrls.value.push(URL.createObjectURL(file))
@@ -245,16 +250,6 @@ async function finalizeScan() {
           <p class="text-heading-accent text-darkgrey text-center">{{ patientName }}</p>
         </div>
 
-        <!-- Camera input -->
-        <input
-          ref="cameraInputRef"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          class="hidden"
-          @change="handleFileSelected"
-        />
-
         <!-- Gallery input (multiple allowed) -->
         <input
           ref="galleryInputRef"
@@ -285,16 +280,7 @@ async function finalizeScan() {
         <div class="flex justify-center items-center gap-2 w-full">
           <Button
             type="button"
-            icon="bi bi-camera"
-            class="!h-7 !bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey md:w-auto text-normal"
-            :loading="isUploading"
-            :disabled="isUploading || !sessionValid"
-            @click="openCamera"
-          />
-
-          <Button
-            type="button"
-            icon="bi bi-image"
+            icon="bi bi-plus-lg"
             class="!h-7 !bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey md:w-auto text-normal"
             :loading="isUploading"
             :disabled="isUploading || !sessionValid"
@@ -329,7 +315,6 @@ async function finalizeScan() {
 <style scoped>
 .spinner {
   width: 50px;
-  height: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
   border-top: 4px solid #3498db;

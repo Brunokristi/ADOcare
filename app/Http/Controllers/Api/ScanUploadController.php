@@ -24,7 +24,7 @@ class ScanUploadController extends Controller
             'session_token' => ['required', 'string'],
             // validate presence/shape; actual files are read via $request->file()
             'images' => ['required', 'array', 'min:1'],
-            'images.*' => ['required', 'file', 'max:10240'], // 10MB each, in KB
+            'images.*' => ['required', 'file', 'max:51200'],
         ]);
 
         $session = $this->service->getSessionByToken($validated['session_token']);
