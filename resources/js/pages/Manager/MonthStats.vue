@@ -15,6 +15,7 @@ type UserStatisticsRow = {
   user_id: number
   user_name: string
   patients_total?: number
+  chronic_patients_count?: number
   points_total?: number
   [key: string]: any
 }
@@ -551,6 +552,12 @@ onMounted(async () => {
         <Column field="patients_total" header="Spolu" align="center">
           <template #body="{ data }">
             {{ data.patients_total ?? 0 }}
+          </template>
+        </Column>
+
+        <Column field="chronic_patients_count" header="Chronickí pacienti" align="center">
+          <template #body="{ data }">
+            {{ data.chronic_patients_count ?? 0 }}
           </template>
         </Column>
 

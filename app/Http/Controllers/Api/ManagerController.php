@@ -30,6 +30,8 @@ class ManagerController extends Controller
             $to = date('Y-m-d', strtotime($from . ' +1 month'));
         }
 
+        $twoMonthsBack = date('Y-m-d', strtotime($from . ' -1 month'));
+
         $user = $request->user();
         $company = $user->company;
 
@@ -85,7 +87,18 @@ class ManagerController extends Controller
               ic.name AS insurance_company_name,
 
               COUNT(DISTINCT pp.patient_id) AS patients_count,
-              SUM(pp.quantity) AS total_points
+              SUM(pp.quantity) AS total_points,
+              COUNT(DISTINCT CASE 
+                WHEN (
+                  SELECT COUNT(*) FROM patient_points pp2 
+                  WHERE pp2.patient_id = pp.patient_id 
+                  AND pp2.user_id = pp.user_id
+                  AND pp2.branch_id = pp.branch_id
+                  AND pp2.date >= ?
+                  AND pp2.date < ?
+                ) > 14 
+                THEN pp.patient_id ELSE NULL 
+              END) AS chronic_patients_count
 
             FROM patient_points pp
             JOIN patients p
@@ -113,7 +126,7 @@ class ManagerController extends Controller
               b.address NULLS LAST,
               u.first_name, u.last_name
             ",
-            array_merge($branchIds, [$from, $to])
+            array_merge([$twoMonthsBack, $to], $branchIds, [$from, $to])
         );
 
         $wide = [];
@@ -128,6 +141,7 @@ class ManagerController extends Controller
                     'user_id' => $r->user_id,
                     'user_name' => trim(($r->user_first_name ?? '') . ' ' . ($r->user_last_name ?? '')),
                     'patients_total' => 0,
+                    'chronic_patients_count' => 0,
                     'points_total' => 0,
                 ];
 
@@ -141,6 +155,7 @@ class ManagerController extends Controller
             $wide[$key][$col] = (int)$r->patients_count;
 
             $wide[$key]['patients_total'] += (int)$r->patients_count;
+            $wide[$key]['chronic_patients_count'] += (int)$r->chronic_patients_count;
             $wide[$key]['points_total'] += (int)$r->total_points;
         }
 
@@ -158,6 +173,7 @@ class ManagerController extends Controller
             'month' => $month,
             'from' => $from,
             'to' => $to,
+            'two_months_back' => $twoMonthsBack,
             'user_id' => $user->id,
             'company_id' => $company->id,
             'branch_ids' => $branchIds,
