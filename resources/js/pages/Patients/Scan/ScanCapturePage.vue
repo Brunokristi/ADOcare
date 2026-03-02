@@ -19,7 +19,9 @@ let expiryInterval: number | null = null
 // Selected files + previews
 const selectedFiles = ref<File[]>([])
 const previewUrls = ref<string[]>([])
-const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const cameraInputRef = ref<HTMLInputElement | null>(null)
+const galleryInputRef = ref<HTMLInputElement | null>(null)
 
 // Final message state
 type FinalSeverity = 'success' | 'error'
@@ -29,7 +31,6 @@ const finalMessage = ref('')
 const finalSeverity = ref<FinalSeverity>('success')
 
 function showFinalScreen(severity: FinalSeverity, title: string, message: string) {
-  // Stop timer, stop interactions, hide everything else
   stopExpiryTimer()
   isLoading.value = false
   isUploading.value = false
@@ -48,6 +49,19 @@ function stopExpiryTimer() {
   }
 }
 
+function startExpiryTimer() {
+  stopExpiryTimer()
+
+  expiryInterval = window.setInterval(() => {
+    expiresIn.value--
+
+    if (expiresIn.value <= 0) {
+      stopExpiryTimer()
+      showFinalScreen('error', 'Chyba', 'Čas na nahratie vypršal.')
+    }
+  }, 1000)
+}
+
 onMounted(async () => {
   try {
     const response = await fetch('/api/scan/info', {
@@ -58,7 +72,9 @@ onMounted(async () => {
 
     const text = await response.text()
     let data: any = null
-    try { data = JSON.parse(text) } catch {}
+    try {
+      data = JSON.parse(text)
+    } catch {}
 
     if (!response.ok) {
       console.error('scan/info failed:', response.status, text)
@@ -94,33 +110,34 @@ onBeforeUnmount(() => {
   previewUrls.value.forEach((u) => URL.revokeObjectURL(u))
 })
 
-function openFilePicker() {
+function openCamera() {
   if (!sessionValid.value || isUploading.value) return
-  fileInputRef.value?.click()
+  cameraInputRef.value?.click()
+}
+
+function openGallery() {
+  if (!sessionValid.value || isUploading.value) return
+  galleryInputRef.value?.click()
 }
 
 function handleFileSelected(event: Event) {
   if (!sessionValid.value) return
 
   const input = event.target as HTMLInputElement
-  if (!input.files?.length) return
-
-  const file = input.files[0]
-  if (!file) return
-
-  if (!file.type.startsWith('image/')) {
-    input.value = ''
-    return
-  }
+  const files = Array.from(input.files ?? [])
+  if (!files.length) return
 
   const maxBytes = 10 * 1024 * 1024
-  if (file.size > maxBytes) {
-    input.value = ''
-    return
+
+  for (const file of files) {
+    if (!file) continue
+    if (!file.type.startsWith('image/')) continue
+    if (file.size > maxBytes) continue
+
+    selectedFiles.value.push(file)
+    previewUrls.value.push(URL.createObjectURL(file))
   }
 
-  selectedFiles.value.push(file)
-  previewUrls.value.push(URL.createObjectURL(file))
   input.value = ''
 }
 
@@ -144,7 +161,11 @@ async function finalizeScan() {
   try {
     const form = new FormData()
     form.append('session_token', sessionToken.value)
-    selectedFiles.value.forEach((file) => form.append('images[]', file))
+
+    // append with filename (helps on some mobile flows)
+    selectedFiles.value.forEach((file, i) => {
+      form.append('images[]', file, file.name || `image_${i}.jpg`)
+    })
 
     const res = await fetch('/api/scan/finalize', {
       method: 'POST',
@@ -153,9 +174,10 @@ async function finalizeScan() {
 
     const raw = await res.text()
     let data: any = null
-    try { data = JSON.parse(raw) } catch {}
+    try {
+      data = JSON.parse(raw)
+    } catch {}
 
-    // If HTTP is not OK => error
     if (!res.ok) {
       console.error('finalize failed:', res.status, raw)
       const msg =
@@ -166,7 +188,6 @@ async function finalizeScan() {
       return
     }
 
-    // HTTP OK (2xx): treat as success UNLESS server explicitly says it failed
     const explicitlyFailed =
       data?.success === false ||
       data?.error === true ||
@@ -189,39 +210,23 @@ async function finalizeScan() {
     isUploading.value = false
   }
 }
-
-function startExpiryTimer() {
-  stopExpiryTimer()
-
-  expiryInterval = window.setInterval(() => {
-    expiresIn.value--
-
-    if (expiresIn.value <= 0) {
-      stopExpiryTimer()
-      showFinalScreen('error', 'Chyba', 'Čas na nahratie vypršal.')
-    }
-  }, 1000)
-}
 </script>
 
 <template>
   <!-- Final message screen -->
   <div v-if="isFinalScreen" class="flex flex-col items-center justify-center">
-    <div class="text-center w-full p-6 rounded-md"
-        :class="{
-          'bg-success': finalSeverity === 'success',
-          'bg-warning': finalSeverity === 'error'
-        }">
-
-      <h1
-        class="text-heading-accent text-white mb-2"
-      >
+    <div
+      class="text-center w-full p-6 rounded-md"
+      :class="{
+        'bg-success': finalSeverity === 'success',
+        'bg-warning': finalSeverity === 'error'
+      }"
+    >
+      <h1 class="text-heading-accent text-white mb-2">
         {{ finalTitle }}
       </h1>
 
-      <p
-        class="mb-6 text-normal text-white"
-      >
+      <p class="mb-6 text-normal text-white">
         {{ finalMessage }}
       </p>
 
@@ -233,18 +238,29 @@ function startExpiryTimer() {
 
   <!-- Main interface -->
   <div v-else class="flex flex-col gap-6 justify-center items-center p-4">
-    <form @submit.prevent="finalizeScan" class="flex flex-col gap-6 w-full ">
+    <form @submit.prevent="finalizeScan" class="flex flex-col gap-6 w-full">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
         <div>
           <p class="text-normal text-center">Lekársky nález</p>
           <p class="text-heading-accent text-darkgrey text-center">{{ patientName }}</p>
         </div>
 
+        <!-- Camera input -->
         <input
-          ref="fileInputRef"
+          ref="cameraInputRef"
           type="file"
           accept="image/*"
           capture="environment"
+          class="hidden"
+          @change="handleFileSelected"
+        />
+
+        <!-- Gallery input (multiple allowed) -->
+        <input
+          ref="galleryInputRef"
+          type="file"
+          accept="image/*"
+          multiple
           class="hidden"
           @change="handleFileSelected"
         />
@@ -269,11 +285,20 @@ function startExpiryTimer() {
         <div class="flex justify-center items-center gap-2 w-full">
           <Button
             type="button"
-            icon="bi bi-plus-lg"
+            icon="bi bi-camera"
             class="!h-7 !bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey md:w-auto text-normal"
             :loading="isUploading"
             :disabled="isUploading || !sessionValid"
-            @click="openFilePicker"
+            @click="openCamera"
+          />
+
+          <Button
+            type="button"
+            icon="bi bi-image"
+            class="!h-7 !bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey md:w-auto text-normal"
+            :loading="isUploading"
+            :disabled="isUploading || !sessionValid"
+            @click="openGallery"
           />
         </div>
 
@@ -304,6 +329,7 @@ function startExpiryTimer() {
 <style scoped>
 .spinner {
   width: 50px;
+  height: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
   border-top: 4px solid #3498db;
