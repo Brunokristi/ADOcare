@@ -13,6 +13,7 @@ import Totals from "@/pages/Manager/Totals.vue";
 import QuarterStats from "@/pages/Manager/QuarterStats.vue";
 import Manager from "@/pages/Manager.vue";
 import Documents from "@/pages/Manager/Documents.vue";
+import DataDocuments from "@/pages/Manager/DataDocuments.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import useAuthStore from "@/stores/auth";
 
@@ -91,7 +92,13 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'documents',
                 name: 'manager-overview-documents',
                 component: Documents,
-                meta: { title: 'Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'dokumenty' },
+                meta: { title: 'Cestovné Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'cestovné dokumenty' },
+            },
+            {
+                path: 'data',
+                name: 'manager-overview-data',
+                component: DataDocuments,
+                meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
             },
         ],
     },

@@ -61,6 +61,11 @@ class KilometersBatchDocumentController extends Controller
 
         $items = $page->getCollection()->map(function ($doc) {
             $doc->insurance_company_name = $doc->insuranceCompany?->name;
+            
+            // Load amount from payload meta
+            $payload = $this->service->getKilometersBatchPayload($doc);
+            $doc->amount = data_get($payload, 'meta.amount', 0);
+            
             return $doc;
         })->values();
 

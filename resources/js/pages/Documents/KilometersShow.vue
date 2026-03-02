@@ -114,39 +114,47 @@ function printPage() {
   window.print()
 }
 
-// optional: allow download using stored payload (no authStore needed)
-// function buildDownloadPayloadFromStored(p: KilometersBatchPayload) {
-//   return {
-//     batchNumber: p.batchNumber,
-//     batchType: { code: p.batchType?.code ?? 'N' },
-//     insurance: { id: p.insurance?.id ?? 0 },
-//     period: p.period ?? [],
-//     user: { id: p.user?.id },
-//     branch: { id: p.branch?.id },
-//     company: { id: p.company?.id ?? null },
-//     patients: (p.patients ?? []).map(x => ({ id: x.id })),
-//   }
-// }
+function buildDownloadPayloadFromStored(p: KilometersBatchPayload) {
+  return {
+    batchNumber: p.batchNumber,
+    batchType: { code: p.batchType?.code ?? 'N' },
+    insurance: { id: p.insurance?.id ?? 0 },
+    period: p.period ?? [],
+    user: { id: p.user?.id },
+    branch: { id: p.branch?.id },
+    company: { id: p.company?.id ?? null },
+    patients: (p.patients ?? []).map(x => ({ id: x.id })),
+  }
+}
 
-// async function downloadTxt() {
-//   if (!payload.value) return
-//   const reqPayload = buildDownloadPayloadFromStored(payload.value)
+async function downloadTxt() {
+  if (!payload.value) return
+  const reqPayload = buildDownloadPayloadFromStored(payload.value)
 
-//   const res = await api.post('/v1/batches/kilometers/download', reqPayload, {
-//     responseType: 'blob',
-//     headers: { Accept: 'text/plain' },
-//   })
+  const res = await api.post('/v1/batches/kilometers/download', reqPayload, {
+    responseType: 'blob',
+    headers: { Accept: 'text/plain' },
+  })
 
-//   const blob = new Blob([res.data], { type: 'text/plain;charset=utf-8' })
-//   triggerDownload(blob, sheet.value.fileName)
-// }
+  const blob = new Blob([res.data], { type: 'text/plain;charset=utf-8' })
+  triggerDownload(blob, sheet.value.fileName)
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 onMounted(loadDocument)
 </script>
 
 <template>
-  <!-- <div class="flex flex-col gap-4 cover-sheet-page"> -->
-    <!-- <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
+  <div class="flex flex-col gap-4 cover-sheet-page">
+    <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
       <div class="flex items-center gap-2">
         <i class="bi bi-file-earmark" />
         {{ sheet.fileName }}
@@ -159,15 +167,8 @@ onMounted(loadDocument)
           :disabled="loading || !payload"
           @click="downloadTxt"
         />
-
-        <Button
-          icon="bi bi-printer"
-          class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-          :disabled="loading"
-          @click="printPage"
-        />
       </div>
-    </div> -->
+    </div>
 
 
     <LoadingOverlay :show="loading" text="" />
@@ -272,6 +273,7 @@ onMounted(loadDocument)
             </div>
         </div>
         </div>
+    </div>
     </div>
 </template>
 

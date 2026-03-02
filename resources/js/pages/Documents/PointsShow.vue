@@ -26,8 +26,8 @@ type PointsBatchPayload = {
   batchType: { code: string }
   insurance: { id: number }
   period: string[] // [from,to]
-  user?: { id: number }
-  branch?: { id: number }
+  user?: { id: number | undefined }
+  branch?: { id: number | undefined }
   company?: { id: number | null }
   patients?: { id: number }[]
   meta?: {
@@ -40,6 +40,9 @@ type PointsBatchPayload = {
     insuranceName?: string
   }
 }
+
+
+
 
 const route = useRoute()
 const documentId = computed(() => Number(route.params.documentId))
@@ -97,10 +100,72 @@ function printPage() {
 }
 
 onMounted(loadDocument)
+
+async function downloadTxt() {
+  try {
+    if (!payload.value) {
+      console.error('No payload loaded');
+      return;
+    }
+
+    const payloadToSend: PointsBatchPayload = {
+      document_id: payload.value.document_id,
+      batchNumber: payload.value.batchNumber,
+      batchType: payload.value.batchType,
+      insurance: payload.value.insurance,
+      period: payload.value.period,
+      user: payload.value.user,
+      branch: payload.value.branch,
+      company: payload.value.company,
+      patients: payload.value.patients,
+    };
+
+    const res = await api.post('/v1/batches/points/download', payloadToSend, {
+      responseType: 'blob',
+      headers: { Accept: 'text/plain' },
+    });
+
+    const blob = new Blob([res.data], { type: 'text/plain;charset=utf-8' });
+    triggerDownload(blob, sheet.value.fileName);
+  } catch (err: any) {
+    // show JSON validation errors if backend returns 422 as Blob
+    const blob = err?.response?.data;
+    if (blob instanceof Blob) {
+      console.error('TXT download error:', await blob.text());
+    } else {
+      console.error('TXT download failed', err);
+    }
+  }
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 </script>
+
 
 <template>
   <LoadingOverlay :show="loading" text="" />
+
+    <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
+
+        <div class="flex items-center gap-2">
+            <i class="bi bi-file-earmark" />
+            {{ sheet.fileName }}
+        </div>
+
+        <Button
+            icon="bi bi-download"
+            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+            @click="downloadTxt"
+        />
+    </div>
 
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->

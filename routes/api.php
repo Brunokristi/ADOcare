@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAli
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
 use App\Http\Controllers\Api\KilometersBatchDocumentController;
 use App\Http\Controllers\Api\PointsBatchDocumentController;
+use App\Http\Controllers\Api\BatchDocumentController;
 use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\ManagerController;
@@ -212,6 +213,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/points-batches', [PointsBatchDocumentController::class, 'store']);
     Route::get('/points-batches', [PointsBatchDocumentController::class, 'index']);
     Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show']);
+
+    Route::get('/batch-documents/company', [BatchDocumentController::class, 'indexByCompany']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);

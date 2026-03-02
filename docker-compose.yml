@@ -31,7 +31,7 @@ services:
     volumes:
       - ./data-ors:/home/ors
     environment:
-      REBUILD_GRAPHS: "false"
+      REBUILD_GRAPHS: "true"
       XMS: 1g
       XMX: 2g
       "ors.engine.source_file": /home/ors/files/slovakia-260111.osm.pbf
