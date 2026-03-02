@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchDoctorController;
 use App\Http\Controllers\Api\BranchPatientController;
 use App\Http\Controllers\Api\CarController;
+use App\Http\Controllers\Api\CarDocumentController;
+use App\Http\Controllers\Api\CarServiceController;
 use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PatientDeathCheckController;
@@ -84,6 +86,20 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('cars', CarController::class);
     Route::delete('cars', [CarController::class, 'destroyMany']);
+
+    // Car documents (scans, photos)
+    Route::get('cars/{car}/documents', [CarDocumentController::class, 'index']);
+    Route::post('cars/{car}/documents', [CarDocumentController::class, 'store']);
+    Route::delete('cars/{car}/documents/{document}', [CarDocumentController::class, 'destroy']);
+    Route::get('cars/{car}/documents/{document}/download', [CarDocumentController::class, 'download']);
+
+    // Car services (maintenance tracking)
+    Route::get('cars/{car}/services', [CarServiceController::class, 'index']);
+    Route::post('cars/{car}/services', [CarServiceController::class, 'store']);
+    Route::patch('cars/{car}/services/{service}', [CarServiceController::class, 'update']);
+    Route::delete('cars/{car}/services/{service}', [CarServiceController::class, 'destroy']);
+    Route::get('cars/services/due-this-month', [CarServiceController::class, 'dueThisMonth']);
+    Route::get('my-cars/services/due-this-month', [CarServiceController::class, 'dueThisMonthForUser']);
 
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::delete('patients', [PatientController::class, 'destroyMany']);

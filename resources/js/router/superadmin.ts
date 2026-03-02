@@ -50,13 +50,13 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
         children: [
 
             {
-                path: '/patients',
+                path: 'patients',
                 name: 'superadmin-company-patients',
                 component: Patients,
                 meta: { title: 'Pacienti', sidebar: showOnSidebar, navbar: true, link: 'pacienti' },
             },
             {
-                path: '/documents',
+                path: 'documents',
                 name: 'superadmin-company-documents',
                 component: Documents,
                 meta: { title: 'Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'dokumenty' },

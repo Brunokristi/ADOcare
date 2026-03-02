@@ -17,11 +17,13 @@ export interface Document {
   patient: Patient
   user: User
   branch: Branch
+  insurance_company: InsuranceCompany
   // counts
   // exists
   patient_exists: boolean
   user_exists: boolean
   branch_exists: boolean
+  insurance_company_exists: boolean
 }
 
 export interface VisitText {
@@ -35,6 +37,22 @@ export interface VisitText {
   // exists
   visit_exists: boolean
   text_exists: boolean
+}
+
+export interface CarDocument {
+  // columns
+  id: number
+  car_id: number
+  mime_type: string | null
+  path: string
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  car: Car
+  // counts
+  // exists
+  car_exists: boolean
 }
 
 export interface NurseDiagnosis {
@@ -233,6 +251,23 @@ export interface ScanSession {
   document_exists: boolean
 }
 
+export interface CarService {
+  // columns
+  id: number
+  car_id: number
+  name: string
+  date: string | null
+  interval_days: number
+  active: boolean
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  car: Car
+  // counts
+  // exists
+  car_exists: boolean
+}
+
 export interface Company {
   // columns
   id: number
@@ -389,10 +424,16 @@ export interface Car {
   // relations
   company: Company
   user: User
+  documents: CarDocument[]
+  services: CarService[]
   // counts
+  documents_count: number
+  services_count: number
   // exists
   company_exists: boolean
   user_exists: boolean
+  documents_exists: boolean
+  services_exists: boolean
 }
 
 export interface Visit {

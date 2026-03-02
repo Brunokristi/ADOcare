@@ -24,4 +24,14 @@ class Car extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function documents()
+    {
+        return $this->hasMany(CarDocument::class);
+    }
+
+    public function services()
+    {
+        return $this->hasMany(CarService::class);
+    }
 }
