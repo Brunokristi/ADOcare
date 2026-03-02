@@ -2,8 +2,9 @@
 import { ref, onMounted } from 'vue'
 import type { IModalContentProps } from '@/types/ui'
 import api from '@/services/api'
-import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
+import router from '@/router'
+import { useToast } from 'primevue/usetoast'
 import type { Car, User } from '@/types/models';
 import { formatUserFullName } from '@/utils/formatUtils';
 
@@ -19,7 +20,11 @@ const submitted = ref(false)
 onMounted(async () => {
     car.value.company_id = authStore.user?.company_id ?? null
     try {
-        users.value = await api.fetchEntities<User>('v1/my-company/users')
+        const auth = useAuthStore()
+        const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+            ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/users`
+            : 'v1/my-company/users'
+        users.value = await api.fetchEntities<User>(url)
     } catch (e) {
         console.error('Failed to fetch users', e)
     }
@@ -36,7 +41,7 @@ onMounted(async () => {
 
 const save = async () => {
     submitted.value = true
-    
+
     // Validate required fields
     if (!car.value.model || !car.value.evc) {
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyplňte povinné údaje', life: 5000 })
@@ -63,13 +68,13 @@ const save = async () => {
     <div class="flex flex-col gap-4">
         <div>
             <label class="block text-sm mb-1">Model</label>
-            <InputText v-model="car.model" class="w-full"/>
+            <InputText v-model="car.model" class="w-full" />
             <small v-if="submitted && !car.model" class="text-warning">Povinné pole</small>
         </div>
 
         <div>
             <label class="block text-sm mb-1">EVČ</label>
-            <InputText v-model="car.evc" class="w-full"/>
+            <InputText v-model="car.evc" class="w-full" />
             <small v-if="submitted && !car.evc" class="text-warning">Povinné pole</small>
         </div>
         <div>
@@ -88,8 +93,11 @@ const save = async () => {
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
-            <Button label="Zrušiť" text @click="() => { if (props.modalResolve) props.modalResolve(null) }" class="text-accent! px-2!" />
-            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" />
+            <Button label="Zrušiť" text @click="() => { if (props.modalResolve) props.modalResolve(null) }"
+                class="text-accent! px-2!" />
+            <Button label="Uložiť"
+                class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
+                @click="save" />
         </div>
     </div>
 </template>

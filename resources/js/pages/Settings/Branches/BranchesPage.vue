@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, markRaw, ref } from 'vue'
+import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Branch, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
@@ -10,12 +12,17 @@ import api from '@/services/api'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 
 const toast = useToast()
+const auth = useAuthStore()
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
 const { openModal } = useModal()
 
 async function openEditBranch(branchId: number) {
-    const result = await openModal(markRaw(BranchForm), { branchId }, { header: 'Upraviť pobočku', style: { width: '90%' } })
+    const payload: any = { branchId }
+    if (auth.isSuperadmin) {
+        payload.companyId = Number(router.currentRoute.value.params.companyId)
+    }
+    const result = await openModal(markRaw(BranchForm), payload, { header: 'Upraviť pobočku', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Pobočka bola upravená', life: 3000 })
         actionRemote.value?.reload()
@@ -23,7 +30,11 @@ async function openEditBranch(branchId: number) {
 }
 
 async function openCreateBranch() {
-    const result = await openModal(markRaw(BranchForm), {}, { header: 'Pridať pobočku', style: { width: '90%' } })
+    const payload: any = {}
+    if (auth.isSuperadmin) {
+        payload.companyId = Number(router.currentRoute.value.params.companyId)
+    }
+    const result = await openModal(markRaw(BranchForm), payload, { header: 'Pridať pobočku', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Pobočka bola vytvorená', life: 3000 })
         actionRemote.value?.reload()
@@ -32,7 +43,9 @@ async function openCreateBranch() {
 
 const options = computed<DataTableOptions<Branch>>(() => ({
     rowKey: 'id',
-    endpointUrl: 'v1/my-company/branches',
+    endpointUrl: auth.isSuperadmin
+        ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
+        : 'v1/my-company/branches',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,

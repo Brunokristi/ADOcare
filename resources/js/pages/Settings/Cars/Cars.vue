@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, markRaw, ref } from 'vue'
+import router from '@/router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Car, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
@@ -37,7 +38,9 @@ async function openCreateCar() {
 
 const options = computed<DataTableOptions<Car>>(() => ({
     rowKey: 'id',
-    endpointUrl: 'v1/my-company/cars',
+    endpointUrl: auth.isSuperadmin && router.currentRoute.value.params.companyId
+        ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/cars`
+        : 'v1/my-company/cars',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,

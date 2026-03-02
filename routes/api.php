@@ -153,6 +153,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::delete('/users/{user}/branches/{branch}', [UserController::class, 'deleteBranchAssignment']);
     Route::apiResourceComplete('users', UserController::class);
     Route::apiResourceComplete('companies', CompanyController::class);
+    Route::get('companies/{company}/stats', [CompanyController::class, 'stats']);
 
 
 

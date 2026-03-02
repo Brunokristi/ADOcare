@@ -2,6 +2,8 @@
 import { onMounted, ref, watch } from 'vue';
 import { usePatientStore } from '@/stores/patientStore';
 import api from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
+import router from '@/router';
 import { useToast } from 'primevue/usetoast';
 import PatientForm from './PatientForm.vue';
 import type { IModalContentProps } from '@/types/ui';
@@ -63,7 +65,11 @@ async function updateNurseOptions() {
 if (props.isManagerView) {
     onMounted(async () => {
         try {
-            const branches = await api.fetchEntities<Branch>('v1/my-company/branches');
+            const auth = useAuthStore()
+            const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+                ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/branches`
+                : 'v1/my-company/branches';
+            const branches = await api.fetchEntities<Branch>(url);
             branchOptions.value = branches;
 
             await updateNurseOptions();

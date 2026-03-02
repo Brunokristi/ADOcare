@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { markRaw, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Doctor } from '@/types/models'
 import api from '@/services/api'
@@ -10,10 +11,14 @@ import { formatBranchFullName } from '@/utils/formatUtils'
 
 const showFavouritesOnly = ref(false);
 
-const branchId = useAuthStore().currentBranch?.id
+// shortcut references we need repeatedly below
+const auth = useAuthStore()
+const route = useRoute()
+const branchId = auth.currentBranch?.id
 
 const options = ref<DataTableOptions<Doctor>>({
     rowKey: 'id',
+    // default to the global doctors list; managers/superadmins override below
     endpointUrl: `v1/doctors`,
     extraParams: {
         ...(branchId ? { mark_favourites_for_branch_id: branchId } : {}),
@@ -113,9 +118,18 @@ const options = ref<DataTableOptions<Doctor>>({
     ],
 })
 
-// remove zpr, pzs, is_favourite and all actions if user is manager
-if (useAuthStore().isManager) {
-    options.value.endpointUrl = 'v1/my-company/doctors' // managers should only see doctors that are assigned to a branch, so we switch to the endpoint that applies company-level filtering by assigned branches
+// adjust for role-specific scoping
+if (auth.isSuperadmin) {
+    // when a superadmin is viewing a particular company we need to
+    // scope to that company's doctors rather than the generic list.
+    // the route is guaranteed to have companyId when on a superadmin page.
+    const cid = Number(route.params.companyId)
+    options.value.endpointUrl = `v1/companies/${cid}/doctors`
+} else if (auth.isManager) {
+    // managers should only see doctors that are assigned to a branch, so
+    // we switch to the endpoint that applies company-level filtering by
+    // assigned branches (the old "my-company" shortcut).
+    options.value.endpointUrl = 'v1/my-company/doctors'
     options.value.columns = options.value.columns?.filter(c => !['is_favourite'].includes(c.field ?? ''));
     options.value.actions = options.value.actions?.filter(a => a.key !== 'show_favourites_only');
     options.value.extraParams = { count: 'assigned_patients', with: 'assigned_branches', };

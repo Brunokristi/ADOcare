@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import router from '@/router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
@@ -21,15 +23,22 @@ init()
 
 onMounted(async () => {
     loading.value = true
+    const auth = useAuthStore()
     try {
-        const data = await api.fetchEntity<Company>('v1/my-company')
+        const url = auth.isSuperadmin && router.currentRoute.value.params.companyId
+            ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}`
+            : 'v1/my-company'
+        const data = await api.fetchEntity<Company>(url)
         if (data) {
             company.value = data
             addressQuery.value = mergeAddressParts(company.value.address, company.value.city, company.value.psc) || company.value.address
         }
         // fetch company users for representative selection
         try {
-            representativeOptions.value = await api.fetchEntities<User>('v1/my-company/users')
+            const repUrl = auth.isSuperadmin && router.currentRoute.value.params.companyId
+                ? `v1/companies/${Number(router.currentRoute.value.params.companyId)}/users`
+                : 'v1/my-company/users'
+            representativeOptions.value = await api.fetchEntities<User>(repUrl)
         } catch (e) {
             console.error('Failed to fetch representative users', e)
         }
@@ -92,28 +101,28 @@ async function save() {
                             <label class="block text-sm mb-1">Názov</label>
                             <InputText v-model="company.name" class="w-full" />
                             <small v-if="submitted && !company.name" class="text-warning">
-                              Názov je povinný.
+                                Názov je povinný.
                             </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">Zapísaná v registri</label>
                             <InputText v-model="company.register" class="w-full" />
                             <small v-if="submitted && !company.register" class="text-warning">
-                              Zapísaná v registri je povinná.
+                                Zapísaná v registri je povinná.
                             </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">IČO</label>
                             <InputText v-model="company.ico" class="w-full" />
                             <small v-if="submitted && !company.ico" class="text-warning">
-                              IČO je povinné.
+                                IČO je povinné.
                             </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">DIČ</label>
                             <InputText v-model="company.dic" class="w-full" />
                             <small v-if="submitted && !company.dic" class="text-warning">
-                              DIČ je povinné.
+                                DIČ je povinné.
                             </small>
                         </div>
                         <div>
@@ -139,7 +148,7 @@ async function save() {
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
                             <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
                             <small v-if="submitted && !addressQuery" class="text-warning">
-                              Adresa je povinná.
+                                Adresa je povinná.
                             </small>
                         </div>
                     </div>
@@ -178,14 +187,16 @@ async function save() {
                                 </template>
                             </Select>
                             <small v-if="submitted && !company.representative_id" class="text-warning">
-                              Zodpovedná osoba je povinná.
+                                Zodpovedná osoba je povinná.
                             </small>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-end">
-                    <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" :disabled="saving || loading" />
+                    <Button label="Uložiť"
+                        class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
+                        @click="save" :disabled="saving || loading" />
                 </div>
             </div>
         </div>
