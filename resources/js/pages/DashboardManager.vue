@@ -79,7 +79,7 @@ onMounted(async () => {
              
               <div class="flex flex-col items-end justify-end ml-auto">
                     <p class="text-sm text-darkgrey text-right mb-2">Dokončené? Nezabudnite upraviť termín údržby.</p>
-                    <Button class="bg-warning! border-0! text-white rounded-md flex justify-between! items-center px-4! hover:bg-darkgrey!" @click="() => router.push('/manager/settings/cars')">
+                    <Button class="bg-warning! border-0! text-white rounded-md flex justify-between! items-center px-4! hover:bg-darkgrey! text-normal" @click="() => router.push('/manager/settings/cars')">
                         <span>Prejsť do správy áut</span>
                         <i class="bi bi-arrow-right text-lg"></i>
                     </Button>

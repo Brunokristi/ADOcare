@@ -254,7 +254,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
     Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
     Route::get('/scan/{document}', [ScanFileController::class, 'show']);
-
+    Route::patch('/scan/{document}/text', [ScanFileController::class, 'updateText']);
 
 });
 

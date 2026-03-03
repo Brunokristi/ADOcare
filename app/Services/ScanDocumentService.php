@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\ProcessScanOcr;
 use App\Models\Document;
 use App\Models\ScanSession;
 use App\Models\Patient;
@@ -141,6 +142,9 @@ class ScanDocumentService
             'status' => 'completed',
             'document_id' => $document->id,
         ]);
+
+        // Dispatch OCR job (async processing)
+        ProcessScanOcr::dispatch($document)->delay(now()->addSeconds(2));
 
         return $document;
     }

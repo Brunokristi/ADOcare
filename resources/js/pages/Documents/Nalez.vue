@@ -2,19 +2,21 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import api from '@/services/api'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import { useToast } from 'primevue/usetoast';
 const toast = useToast();
 
-
-
-
 type ScanImage = { url: string; name?: string }
+type DialogState = { visible: boolean; imageIndex: number | null }
 
 const route = useRoute()
 const loading = ref(false)
 const isPrinting = ref(false)
+const dialogState = ref<DialogState>({ visible: false, imageIndex: null })
+const editedText = ref('')
+const isSaving = ref(false)
 
 const title = ref('Lekársky nález')
 
@@ -26,6 +28,11 @@ const patientBirthNumber = ref('')
 const scannedAt = ref<string>('')
 const scanSessionId = ref<number | null>(null)
 const documentId = ref<number | null>(null)
+
+// OCR data
+const extractedText = ref('')
+const extractedPages = ref<Array<{ page: number; file: string; text: string }>>([])  
+const ocrAt = ref<string>('')
 
 // Track blob URLs so we can revoke them
 const blobUrls = new Set<string>()
@@ -107,6 +114,51 @@ async function fetchImageAsBlobUrl(pathOrUrl: string): Promise<string> {
   return blobUrl
 }
 
+function openTextDialog(idx: number) {
+  dialogState.value.visible = true
+  dialogState.value.imageIndex = idx
+  editedText.value = extractedPages.value[idx]?.text || extractedText.value
+}
+
+async function saveExtractedText() {
+  if (dialogState.value.imageIndex === null || !documentId.value) return
+  
+  isSaving.value = true
+  try {
+    await api.patch(`/v1/scan/${documentId.value}/text`, {
+      page_index: dialogState.value.imageIndex,
+      text: editedText.value
+    })
+    
+    // Update local state
+    const pageIndex = dialogState.value.imageIndex
+    if (extractedPages.value[pageIndex]) {
+      extractedPages.value[pageIndex].text = editedText.value
+    } else {
+      extractedText.value = editedText.value
+    }
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Úspech',
+      detail: 'Text bol úspešne uložený.',
+      life: 3000,
+    })
+    
+    dialogState.value.visible = false
+  } catch (e: any) {
+    console.error('Failed to save text:', e)
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: 'Nepodarilo sa uložiť text.',
+      life: 3000,
+    })
+  } finally {
+    isSaving.value = false
+  }
+}
+
 async function loadScanDocument(id: string) {
   loading.value = true
   images.value = []
@@ -125,6 +177,11 @@ async function loadScanDocument(id: string) {
     patientName.value = data.patient_name ?? ''
     patientBirthNumber.value = data.patient_birth_number ?? ''
     scannedAt.value = data.scanned_at ?? ''
+    
+    // OCR data
+    extractedText.value = data.extracted_text ?? ''
+    extractedPages.value = Array.isArray(data.extracted_pages) ? data.extracted_pages : []
+    ocrAt.value = data.ocr_at ?? ''
 
     const list = Array.isArray(data.images) ? data.images : []
     if (!list.length) {
@@ -343,6 +400,15 @@ async function printPage() {
               </tr>
               <tr>
                 <td colspan="2" class="border border-black p-2">
+                  <div v-if="extractedText" class="text-end mb-2">
+                    <Button
+                      label="Extrahovať text"
+                      icon="bi bi-magic"
+                      @click="openTextDialog(idx)"
+                      class="text-normal! text-white bg-accent! border-0! hover:bg-darkgrey! px-4! h-7!"
+                    />
+                  </div>
+
                   <div class="scan-image-cell">
                     <img :src="img.url" class="scan-image" alt="Sken" />
                   </div>
@@ -354,6 +420,43 @@ async function printPage() {
       </div>
       <!-- /print-root -->
     </div>
+
+    <!-- Dialog for editing extracted text -->
+    <Dialog 
+      v-model:visible="dialogState.visible" 
+      header="Extrahovaný text" 
+      :modal="true" 
+      class="w-full max-w-3xl"
+      @hide="dialogState.imageIndex = null"
+    >
+      <div v-if="dialogState.imageIndex !== null && extractedText" class="space-y-4">
+        <div>
+          <textarea 
+            v-model="editedText"
+            class="w-full h-96 p-3 border border-darkgrey rounded text-normal text-darkgrey resize-none focus:outline-none"
+            placeholder="Text z OCR..."
+          />
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button
+            label="Zrušiť"
+            @click="dialogState.visible = false"
+            :disabled="isSaving"
+            class="text-accent! px-2! bg-transparent! border-0!"
+          />
+          <Button
+            label="Uložiť zmeny"
+            @click="saveExtractedText"
+            :loading="isSaving"
+            :disabled="isSaving"
+            class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! "
+          />
+        </div>
+      </div>
+      <div v-else class="text-center text-sm text-darkgrey">
+        Žiadny extrahovaný text nie je dostupný.
+      </div>
+    </Dialog>
   </div>
 </template>
 
