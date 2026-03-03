@@ -9,7 +9,6 @@ import type { RouteRecordRaw } from "vue-router";
 import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 import MonthStats from "@/pages/Manager/MonthStats.vue";
-import Totals from "@/pages/Manager/Totals.vue";
 import QuarterStats from "@/pages/Manager/QuarterStats.vue";
 import Manager from "@/pages/Manager.vue";
 import Documents from "@/pages/Manager/Documents.vue";
@@ -155,15 +154,6 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 },
             },
         ],
-    },
-    {
-        path: '/manager/financial',
-        name: 'manager-financial-stats',
-        component: Totals,
-        meta: {
-            title: 'Zaznamenať aktivitu',
-            sidebar: false,
-        },
     },
 ];
 

@@ -19,7 +19,6 @@ import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import DiagnosesPage from "@/pages/Settings/Diagnoses/DiagnosesPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
-import Totals from "@/pages/Manager/Totals.vue";
 import Documents from "@/pages/Manager/Documents.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import DashboardSuperadmin from "@/pages/DashboardSuperadmin.vue";
@@ -133,15 +132,6 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
                 },
             },
         ],
-    },
-    {
-        path: '/superadmin/financial',
-        name: 'superadmin-financial-stats',
-        component: Totals,
-        meta: {
-            title: 'Zaznamenať aktivitu',
-            sidebar: false,
-        },
     },
 ];
 

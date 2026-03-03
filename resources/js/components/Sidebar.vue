@@ -118,12 +118,6 @@ watch(
             <i class="bi bi-chevron-right"></i>
         </RouterLink>
 
-        <RouterLink v-if="auth.currentRole === 'manager'" to="/manager/financial"
-            class="w-full flex items-center justify-between px-3 py-1 rounded-md bg-white text-tag2! hover:bg-tag2 hover:!text-white text-normal">
-            Zaznamenať aktivitu
-            <i class="bi bi-chevron-right"></i>
-        </RouterLink>
-
         <template v-for="item in sidebarItems" :key="item.key">
             <div>
                 <button

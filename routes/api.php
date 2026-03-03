@@ -231,6 +231,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show']);
 
     Route::get('/batch-documents/company', [BatchDocumentController::class, 'indexByCompany']);
+    Route::get('/batch-documents/company/aggregated-branch', [BatchDocumentController::class, 'aggregatedByBranch']);
+    Route::get('/batch-documents/company/aggregated-user', [BatchDocumentController::class, 'aggregatedByUser']);
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);

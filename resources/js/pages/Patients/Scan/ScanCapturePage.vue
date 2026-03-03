@@ -242,7 +242,7 @@ async function finalizeScan() {
   </div>
 
   <!-- Main interface -->
-  <div v-else class="flex flex-col gap-6 justify-center items-center p-4">
+  <div v-else class="flex flex-col gap-6 justify-center items-center">
     <form @submit.prevent="finalizeScan" class="flex flex-col gap-6 w-full">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
         <div>
