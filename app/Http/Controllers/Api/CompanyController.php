@@ -7,6 +7,7 @@ use App\Http\Requests\DestroyManyRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\UserCollection;
 use App\Http\Responses\ApiResponse;
+use App\Models\Branch;
 use App\Models\Company;
 use App\Models\Patient;
 use App\Models\User;
@@ -134,6 +135,26 @@ class CompanyController extends Controller
         $results = ApiQuery::apply($request, $query);
         return $this->success(new UserCollection($results), 'Users retrieved');
     }
+    /**
+     * List branches for a company
+     * @group Companies
+     * @urlParam company int required Company ID. Example: 1
+     * @queryParam per_page int The number of items per page. Example: 15
+     * @response 200 {"data": [{"id":1, "name":"Main Branch
+     *"}], "meta": {"total":1}}
+     */
+    public function branches(Request $request, Company $company)
+    {
+        $companyId = $company->id ?? null;
+        if (!$companyId) {
+            return $this->success(new BaseCollection(collect([])), 'Company branches retrieved');
+        }
+
+        $query = Branch::query()->where('company_id', $companyId);
+        $results = ApiQuery::apply($request, $query);
+        return $this->success(new BaseCollection($results), 'Company branches retrieved');
+    }
+
 
     /**
      * Delete a company

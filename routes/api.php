@@ -172,6 +172,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('companies', CompanyController::class);
     Route::get('companies/{company}/stats', [CompanyController::class, 'stats']);
     Route::get('companies/{company}/users', [CompanyController::class, 'users']);
+    Route::get('companies/{company}/branches', [CompanyController::class, 'branches']);
 
 
 
