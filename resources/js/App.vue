@@ -34,6 +34,7 @@ onMounted(() => {
 watch(
     currentPatient,
     async (patient) => {
+        await auth.waitUntilInitialized()
         if (!auth.isAuthenticated || !patient) {
             console.debug('[UDZS] Watcher: Not authenticated or no patient', { isAuthenticated: auth.isAuthenticated, patient });
             return;
@@ -89,7 +90,8 @@ function handleToggleSidebar() {
 
 <template>
     <div class="h-screen flex flex-col bg-darkgrey">
-        <Navbar v-if="showNavbar" class="flex-none" :isSidebarOpen="isSidebarOpen" @toggle-sidebar="handleToggleSidebar" />
+        <Navbar v-if="showNavbar" class="flex-none" :isSidebarOpen="isSidebarOpen"
+            @toggle-sidebar="handleToggleSidebar" />
 
         <TercialNavbar v-if="isLoggedIn && showNavbar" class="flex-none" />
 

@@ -59,14 +59,16 @@ router.beforeEach(async (to, _from, next) => {
         return next({ name: 'login', query: { redirect: to.fullPath } });
     }
 
+    if (to.name === 'dashboard' && dashbordRouteName.value !== 'dashboard') {
+        return next({ name: dashbordRouteName.value });
+    }
+
     if (to.meta.roles && (!auth.currentRole || !(to.meta.roles as string[]).includes(auth.currentRole))) {
         navigationAccessError.value = true
         return next(false)
     }
 
-    if (to.name === 'dashboard' && dashbordRouteName.value !== 'dashboard') {
-        return next({ name: dashbordRouteName.value });
-    }
+
 
     return next();
 });
