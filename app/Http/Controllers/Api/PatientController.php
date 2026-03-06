@@ -151,6 +151,24 @@ class PatientController extends Controller
     }
 
     /**
+     * Restore one or more soft-deleted patients
+     *
+     * @group Patients
+     * @bodyParam ids array required Array of patient IDs to restore. Example: [1,2,3]
+     * @response 200 {"success":true}
+     */
+    public function restoreMany(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (!is_array($ids)) {
+            return $this->error('Invalid payload', 422);
+        }
+
+        Patient::withTrashed()->whereIn('id', $ids)->restore();
+        return $this->success(null, 'Restored');
+    }
+
+    /**
      * Get patient's insurance company
      *
      * @group Patients

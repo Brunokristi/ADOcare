@@ -56,6 +56,19 @@ class ApiQuery
         ]);
 
 
+        // handle trashed/deleted filtering globally
+        if ($request->boolean('only_deleted')) {
+            // only soft-deleted records
+            if (method_exists($query, 'onlyTrashed')) {
+                $query->onlyTrashed();
+            }
+        } elseif ($request->boolean('with_deleted')) {
+            // include trashed records alongside active ones
+            if (method_exists($query, 'withTrashed')) {
+                $query->withTrashed();
+            }
+        }
+
         // Apply modular parts
         static::applyWith($request, $query, $defaults);
         static::applyCount($request, $query, $defaults);

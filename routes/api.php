@@ -103,6 +103,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::delete('patients', [PatientController::class, 'destroyMany']);
+    Route::post('patients/restore', [PatientController::class, 'restoreMany']);
 
     Route::get('patients/{patientId}/death-check', [PatientDeathCheckController::class, 'show']);
 
