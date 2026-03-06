@@ -136,9 +136,7 @@ watch(
 
 <template>
   <div class="h-full flex flex-col min-h-0 max-h-full overflow-auto">
-    <Toolbar
-      class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between"
-    >
+    <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
       <template #end>
         <div class="flex items-center gap-2">
           <IconField>
@@ -149,106 +147,64 @@ watch(
           </IconField>
 
           <template v-if="opt.actions?.length">
-            <Button
-              v-for="a in opt.actions"
-              :key="a.key ?? a.icon ?? a.label"
-              :icon="
-                typeof a.icon === 'function'
-                  ? a.icon({
-                      rows: remote.items.value,
-                      selectedRows: selectedRows,
-                      remote,
-                    })
-                  : a.icon
-              "
-              :label="a.label"
-              :title="a.tooltip"
-              :disabled="
-                a.disabled &&
+            <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function'
+                ? a.icon({
+                  rows: remote.items.value,
+                  selectedRows: selectedRows,
+                  remote,
+                })
+                : a.icon
+              " :label="a.label" :title="typeof a.tooltip === 'function'
+                  ? a.tooltip({ rows: remote.items.value, selectedRows: selectedRows, remote })
+                  : a.tooltip
+                " :disabled="a.disabled &&
                 (typeof a.disabled === 'boolean'
                   ? a.disabled
                   : a.disabled({
-                      rows: remote.items.value,
-                      selectedRows: selectedRows,
-                      remote,
-                    }))
-              "
-              class="border-none! hover:bg-darkgrey! h-7!"
-              @click="onAction(a)"
-              :class="a.class ?? ''"
-            />
+                    rows: remote.items.value,
+                    selectedRows: selectedRows,
+                    remote,
+                  }))
+                " class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)" :class="a.class ?? ''" />
           </template>
         </div>
       </template>
     </Toolbar>
 
     <!-- Confirm dialog (used whenever action.confirm is set) -->
-    <Dialog
-      v-model:visible="confirmVisible"
-      :style="{ width: '600px' }"
-      :modal="true"
-      :closable="false"
-      header="Upozornenie"
-    >
+    <Dialog v-model:visible="confirmVisible" :style="{ width: '600px' }" :modal="true" :closable="false"
+      header="Upozornenie">
       <div class="flex items-center justify-between w-full">
         <span class="text-heading">
           {{ pendingAction ? getConfirmText(pendingAction) : '' }}
         </span>
 
         <div class="flex items-center gap-2">
-          <Button
-            label="Nie"
-            text
-            @click="confirmNo"
-            class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0"
-          />
-          <Button
-            label="Áno"
-            text
-            @click="confirmYes"
-            class="!bg-warning !px-4 !text-white"
-          />
+          <Button label="Nie" text @click="confirmNo"
+            class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0" />
+          <Button label="Áno" text @click="confirmYes" class="!bg-warning !px-4 !text-white" />
         </div>
       </div>
     </Dialog>
 
-    <DataTable
-      ref="dt"
-      :value="remote.items.value"
-      :paginator="true"
-      :rows="remote.per_page.value"
-      :totalRecords="remote.total.value"
-      :lazy="true"
-      :loading="remote.loading.value"
-      :dataKey="rowKey"
-      v-on:page="(e) => remote.loadPage(e.page + 1)"
-      v-on:sort="(e) => onSort(e)"
-      v-model:selection="selectedRows"
-      :selectionMode="opt.selectable ? 'multiple' : undefined"
-      class="h-full min-h-0 max-h-full overflow-auto"
-      scrollable
-      scrollHeight="flex"
-      :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]"
-    >
+    <DataTable ref="dt" :value="remote.items.value" :paginator="true" :rows="remote.per_page.value"
+      :totalRecords="remote.total.value" :lazy="true" :loading="remote.loading.value" :dataKey="rowKey"
+      v-on:page="(e) => remote.loadPage(e.page + 1)" v-on:sort="(e) => onSort(e)" v-model:selection="selectedRows"
+      :selectionMode="opt.selectable ? 'multiple' : undefined" class="h-full min-h-0 max-h-full overflow-auto"
+      scrollable scrollHeight="flex" :rowsPerPageOptions="opt.pageSizeOptions ?? [10, 25, 50]">
       <template #paginatorcontainer="state">
         <div class="flex items-center justify-between w-full px-2">
           <div class="flex items-center gap-2 flex-1 text-xs text-white">
             <span>Zobraziť</span>
-            <Select
-              class="text-xs! p-0 h-auto!"
-              labelClass="text-xs!"
-              v-model="remote.per_page.value"
-              :options="opt.pageSizeOptions ?? [10, 25, 50]"
-            />
+            <Select class="text-xs! p-0 h-auto!" labelClass="text-xs!" v-model="remote.per_page.value"
+              :options="opt.pageSizeOptions ?? [10, 25, 50]" />
             <span>záznamov na stranu</span>
           </div>
 
           <div class="flex-1">
-            <Paginator
-              v-bind="state"
+            <Paginator v-bind="state"
               paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-              v-on:page="(e) => remote.loadPage(e.page + 1)"
-            />
+              v-on:page="(e) => remote.loadPage(e.page + 1)" />
           </div>
 
           <div class="flex-1 text-right text-xs text-white">
@@ -258,33 +214,14 @@ watch(
         </div>
       </template>
 
-      <Column
-        v-if="opt.selectable"
-        :selectionMode="opt.selectable ? 'multiple' : undefined"
-        style="width: 3rem"
-      />
+      <Column v-if="opt.selectable" :selectionMode="opt.selectable ? 'multiple' : undefined" style="width: 3rem" />
 
-      <Column
-        v-for="col in columns"
-        :key="col.field ?? col.header"
-        :field="col.field ? String(col.field) : undefined"
-        :header="col.header"
-        :sortable="col.sortable"
-        :style="col.style + '; width: ' + (col.width ?? 'auto')"
-      >
+      <Column v-for="col in columns" :key="col.field ?? col.header" :field="col.field ? String(col.field) : undefined"
+        :header="col.header" :sortable="col.sortable" :style="col.style + '; width: ' + (col.width ?? 'auto')">
         <template #body="{ data }">
-          <slot
-            :name="col.slot ?? 'col-' + String(col.field)"
-            :row="data"
-            :value="col.field ? data[col.field] : '-'"
-          >
-            <component
-              v-if="col.component"
-              :is="col.component"
-              :value="col.field ? data[col.field] : null"
-              :row="data"
-              :customOptions="col?.componentOptions ?? {}"
-            />
+          <slot :name="col.slot ?? 'col-' + String(col.field)" :row="data" :value="col.field ? data[col.field] : '-'">
+            <component v-if="col.component" :is="col.component" :value="col.field ? data[col.field] : null" :row="data"
+              :customOptions="col?.componentOptions ?? {}" />
             <span v-else>
               {{
                 col.render
