@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Filters\ApiQuery;
 use App\Http\Requests\DestroyManyRequest;
 use App\Http\Resources\BaseCollection;
+use App\Http\Resources\UserCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Company;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Http\Request;
 use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -111,6 +113,26 @@ class CompanyController extends Controller
             defaults: ['sort' => 'last_name']
         );
         return $this->success(new BaseCollection(resource: $results), 'Patients retrieved');
+    }
+
+    /**
+     * List users for a company
+     * @group Companies
+     * @urlParam company int required Company ID. Example: 1
+     * @queryParam per_page int The number of items per page. Example: 15
+     * @response 200 {"data": [{"id":1, "first_name":"John", "last_name":"Doe"}], "meta": {"total":1}}
+     */
+    public function users(Request $request, Company $company)
+    {
+        if (!$company) {
+            return $this->success(new UserCollection(collect([])), 'Users retrieved');
+        }
+
+        $query = User::query()->whereHas('company', function ($q) use ($company) {
+            $q->where('company.id', $company->id);
+        });
+        $results = ApiQuery::apply($request, $query);
+        return $this->success(new UserCollection($results), 'Users retrieved');
     }
 
     /**

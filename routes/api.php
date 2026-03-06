@@ -54,7 +54,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/scans/{sessionId}/{filename}', [\App\Http\Controllers\Api\ScanFileController::class, 'image'])
-->where('filename', '.*');
+    ->where('filename', '.*');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -171,6 +171,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('users', UserController::class);
     Route::apiResourceComplete('companies', CompanyController::class);
     Route::get('companies/{company}/stats', [CompanyController::class, 'stats']);
+    Route::get('companies/{company}/users', [CompanyController::class, 'users']);
 
 
 
