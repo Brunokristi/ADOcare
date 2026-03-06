@@ -9,10 +9,10 @@ import type { RouteRecordRaw } from "vue-router";
 import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 import MonthStats from "@/pages/Manager/MonthStats.vue";
-import Totals from "@/pages/Manager/Totals.vue";
 import QuarterStats from "@/pages/Manager/QuarterStats.vue";
 import Manager from "@/pages/Manager.vue";
 import Documents from "@/pages/Manager/Documents.vue";
+import DataDocuments from "@/pages/Manager/DataDocuments.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import useAuthStore from "@/stores/auth";
 
@@ -91,7 +91,13 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'documents',
                 name: 'manager-overview-documents',
                 component: Documents,
-                meta: { title: 'Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'dokumenty' },
+                meta: { title: 'Cestovné Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'cestovné dokumenty' },
+            },
+            {
+                path: 'data',
+                name: 'manager-overview-data',
+                component: DataDocuments,
+                meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
             },
         ],
     },
@@ -148,15 +154,6 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 },
             },
         ],
-    },
-    {
-        path: '/manager/financial',
-        name: 'manager-financial-stats',
-        component: Totals,
-        meta: {
-            title: 'Zaznamenať aktivitu',
-            sidebar: false,
-        },
     },
 ];
 

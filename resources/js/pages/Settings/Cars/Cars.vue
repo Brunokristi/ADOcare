@@ -21,7 +21,7 @@ const tableKey = computed(() => `cars-${auth.currentBranch?.id ?? 'global'}`)
 const { openModal } = useModal()
 
 async function openEditCar(carId: number) {
-    const result = await openModal(markRaw(CarForm), { carId }, { header: 'Upraviť auto', style: { width: '600px' } })
+    const result = await openModal(markRaw(CarForm), { carId }, { header: 'Upraviť auto', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Auto uložené', life: 5000 })
         actionRemote.value?.reload()
@@ -29,7 +29,7 @@ async function openEditCar(carId: number) {
 }
 
 async function openCreateCar() {
-    const result = await openModal(CarForm, {}, { header: 'Pridať auto', style: { width: '600px' } })
+    const result = await openModal(CarForm, {}, { header: 'Pridať auto', style: { width: '90%' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Auto vytvorené', life: 5000 })
         actionRemote.value?.reload()

@@ -13,11 +13,13 @@ class Total extends Model
         'insurance_company_id',
         'points_total',
         'kilometers_total',
+        'price_paid',
     ];
 
     protected $casts = [
         'points_total' => 'decimal:2',
         'kilometers_total' => 'decimal:2',
+        'price_paid' => 'decimal:2',
     ];
 
     public function user()

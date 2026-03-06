@@ -31,7 +31,7 @@ services:
     volumes:
       - ./data-ors:/home/ors
     environment:
-      REBUILD_GRAPHS: "false"
+      REBUILD_GRAPHS: "true"
       XMS: 1g
       XMX: 2g
       "ors.engine.source_file": /home/ors/files/slovakia-260111.osm.pbf
@@ -54,6 +54,20 @@ services:
 
     depends_on:
       - ors
+
+  ocr:
+    build: ../AI
+    container_name: ocr
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8000"
+    volumes:
+      - ./storage/app/private:/data:rw
+      - ../AI/velvety-rarity-456212-b0-ce115e0647b9.json:/secrets/gcp.json:ro
+    environment:
+      OCR_ROOT: /data
+      PORT: 8000
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/gcp.json
 
 volumes:
   data-db:

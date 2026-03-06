@@ -26,7 +26,7 @@ const isHovered = ref(false)
 const closePatient = () => {
     isHovered.value = false
     patientStore.clear()
-    router.push('/patients')
+    router.push('/overview/patients')
 }
 
 /* -------------------------------------------------------------------------- */

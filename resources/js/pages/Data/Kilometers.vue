@@ -5,6 +5,9 @@ import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
 import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import type { DataTableOptions } from '@/types/datatable'
 
 const authStore = useAuthStore();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
@@ -226,6 +229,108 @@ onMounted(() => {
   loadInsurances();
 });
 
+type DocRow = {
+  id: number
+  name: string
+  type: string
+  subtype?: 'N' | 'O' | string
+  period?: string
+  created_at?: string
+  insurance_company_name?: string 
+}
+
+const formatSubtype = (code?: string) => {
+  if (code === 'N') return 'Nová dávka'
+  if (code === 'O') return 'Opravná dávka'
+  return code ?? ''
+}
+
+const formatDateWithTime = (dateStr?: string) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const datePart = date.toLocaleDateString('sk-SK')
+  const timePart = date.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+  return `${datePart} ${timePart}`
+}
+
+const openKilometersDoc = (doc: DocRow) => {
+  const url = router.resolve(`/documents/kilometers/${doc.id}`).href
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+const periodKey = computed(() => {
+  if (!dates.value) return null
+  const y = dates.value.getFullYear()
+  const m = String(dates.value.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+})
+
+const options = computed<DataTableOptions<DocRow>>(() => ({
+  rowKey: 'id',
+  endpointUrl: 'v1/kilometers-batches',
+  extraParams: {
+    ...(branchId.value ? { branch_id: branchId.value } : {}),
+    ...(periodKey.value ? { period: periodKey.value } : {}),
+  },
+  defaultPageSize: 25,
+  pageSizeOptions: [10, 25, 50],
+  selectable: true,
+
+  columns: [
+    { field: 'name', header: 'Názov', sortable: true },
+    {
+      field: 'insurance_company_name',
+      header: 'Poisťovňa',
+      sortable: true,
+      render: (v?: string) => {
+        if (!v) return ''
+        return v.trim().split(/\s+/)[0] ?? ''
+      }    
+    },
+    {
+      field: 'subtype',
+      header: 'Druh dávky',
+      sortable: true,
+      render: (v?: string) => formatSubtype(v),
+    },
+    { field: 'period', header: 'Obdobie', sortable: true },
+    {
+      field: 'created_at',
+      header: 'Dátum a čas vytvorenia',
+      sortable: true,
+      render: (v?: string) => formatDateWithTime(v),
+    },
+    {
+      field: 'preview',
+      header: '',
+      width: '3rem',
+      component: ActionButtons,
+      componentOptions: [
+        {
+          icon: 'bi bi-eye',
+          color: 'info',
+          tooltip: 'Zobraziť',
+          action: (row: DocRow) => openKilometersDoc(row),
+        },
+      ],
+    },
+  ],
+
+  actions: [
+    {
+      key: 'delete',
+      disabled: ({ selectedRows }: { selectedRows: DocRow[] }) => selectedRows.length === 0,
+      icon: 'bi bi-eraser',
+      class: 'bg-warning!',
+      confirm: 'Naozaj chcete zmazať vybrané dokumenty?',
+      handler: async ({ selectedRows, remote }: { selectedRows: DocRow[]; remote: any }) => {
+        await api.delete('/v1/documents', { data: { ids: selectedRows.map(r => r.id) } })
+        await remote.loadPage(remote.page)
+      },
+    },
+  ],
+}))
+
 </script>
 
 
@@ -381,5 +486,9 @@ onMounted(() => {
         </Button>
       </div>
     </form>
+
+    <section>
+      <UniversalDataTable ref="tableRef" :options="options" />
+    </section>
   </div>
 </template>

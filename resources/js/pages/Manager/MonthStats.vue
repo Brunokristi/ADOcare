@@ -3,6 +3,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Toolbar from 'primevue/toolbar'
 import api from '@/services/api'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
@@ -15,6 +16,7 @@ type UserStatisticsRow = {
   user_id: number
   user_name: string
   patients_total?: number
+  chronic_patients_count?: number
   points_total?: number
   [key: string]: any
 }
@@ -52,6 +54,7 @@ const previousBranchTotalsData = ref<any[]>([])
 const userTotalsAggregatedData = ref<any[]>([])
 const previousUserTotalsAggregatedData = ref<any[]>([])
 const userTotalsData = ref<UserTotalsRow[]>([])
+const insuranceCompanyTotalsData = ref<any[]>([])
 const initialLoading = ref(true)
 const loading = ref(false)
 const doctorLoading = ref(false)
@@ -59,6 +62,7 @@ const branchLoading = ref(false)
 const branchTotalsLoading = ref(false)
 const userTotalsLoading = ref(false)
 const userTotalsAggregatedLoading = ref(false)
+const insuranceCompanyTotalsLoading = ref(false)
 
 // 3-month trend data
 const threeMonthTrendData = ref<any[]>([])
@@ -197,6 +201,7 @@ async function loadAllStatistics() {
       loadBranchStatistics(),
       loadBranchTotals(),
       loadUserTotalsAggregated(),
+      loadInsuranceCompanyTotals(),
       load3MonthTrends(),
     ])
   } finally {
@@ -339,17 +344,17 @@ async function loadBranchTotals() {
     prevDate.setMonth(prevDate.getMonth() - 1)
     const previousMonth = toMonthParam(prevDate)
 
-    const res = await api.get('/v1/manager/branch-totals', {
-      params: { month },
-    })
+    const [res, prevRes] = await Promise.all([
+      api.get('/v1/batch-documents/company/aggregated-branch', {
+        params: { month },
+      }),
+      api.get('/v1/batch-documents/company/aggregated-branch', {
+        params: { month: previousMonth },
+      }),
+    ])
 
-    const prevRes = await api.get('/v1/manager/branch-totals', {
-      params: { month: previousMonth },
-    })
-
-    const data = res.data?.data ?? []
-    branchTotalsData.value = data
-    previousBranchTotalsData.value = prevRes.data?.data ?? []
+    branchTotalsData.value = res.data?.data?.items ?? []
+    previousBranchTotalsData.value = prevRes.data?.data?.items ?? []
 
   } catch (e) {
     console.error('Failed to load branch totals', e)
@@ -366,23 +371,23 @@ async function loadUserTotalsAggregated() {
   userTotalsAggregatedLoading.value = true
   try {
     const month = toMonthParam(dates.value)
-    
+
     // Get previous month
     const prevDate = new Date(dates.value)
     prevDate.setMonth(prevDate.getMonth() - 1)
     const previousMonth = toMonthParam(prevDate)
 
-    const res = await api.get('/v1/manager/user-totals-aggregated', {
-      params: { month },
-    })
+    const [res, prevRes] = await Promise.all([
+      api.get('/v1/batch-documents/company/aggregated-user', {
+        params: { month },
+      }),
+      api.get('/v1/batch-documents/company/aggregated-user', {
+        params: { month: previousMonth },
+      }),
+    ])
 
-    const prevRes = await api.get('/v1/manager/user-totals-aggregated', {
-      params: { month: previousMonth },
-    })
-
-    const data = res.data?.data ?? []
-    userTotalsAggregatedData.value = data
-    previousUserTotalsAggregatedData.value = prevRes.data?.data ?? []
+    userTotalsAggregatedData.value = res.data?.data?.items ?? []
+    previousUserTotalsAggregatedData.value = prevRes.data?.data?.items ?? []
 
   } catch (e) {
     console.error('Failed to load user totals aggregated', e)
@@ -390,6 +395,57 @@ async function loadUserTotalsAggregated() {
     previousUserTotalsAggregatedData.value = []
   } finally {
     userTotalsAggregatedLoading.value = false
+  }
+}
+
+async function loadInsuranceCompanyTotals() {
+  if (!dates.value) return
+
+  insuranceCompanyTotalsLoading.value = true
+  try {
+    const month = toMonthParam(dates.value)
+
+    const res = await api.get('/v1/totals', {
+      params: { 
+        per_page: 100,
+        with: 'user,branch,insurance_company'
+      },
+    })
+
+    const data = res.data?.data?.data ?? []
+    
+    // Filter by selected month and group by insurance company
+    const filteredData = data.filter((row: any) => row.month === month)
+    
+    // Group by insurance company
+    const groupedData = filteredData.reduce((acc: any, row: any) => {
+      const icId = row.insurance_company_id
+      const icName = row.insurance_company?.name || 'Neznáma'
+      
+      if (!acc[icId]) {
+        acc[icId] = {
+          insurance_company_id: icId,
+          insurance_company_name: icName,
+          points_generated: 0,
+          kilometers_generated: 0,
+          price_paid: 0,
+        }
+      }
+      
+      acc[icId].points_generated += parseFloat(row.points_generated || 0)
+      acc[icId].kilometers_generated += parseFloat(row.kilometers_generated || 0)
+      acc[icId].price_paid += parseFloat(row.price_paid || 0)
+      
+      return acc
+    }, {})
+    
+    insuranceCompanyTotalsData.value = Object.values(groupedData)
+
+  } catch (e) {
+    console.error('Failed to load insurance company totals', e)
+    insuranceCompanyTotalsData.value = []
+  } finally {
+    insuranceCompanyTotalsLoading.value = false
   }
 }
 
@@ -551,6 +607,12 @@ onMounted(async () => {
         <Column field="patients_total" header="Spolu" align="center">
           <template #body="{ data }">
             {{ data.patients_total ?? 0 }}
+          </template>
+        </Column>
+
+        <Column field="chronic_patients_count" header="Chronickí pacienti" align="center">
+          <template #body="{ data }">
+            {{ data.chronic_patients_count ?? 0 }}
           </template>
         </Column>
 

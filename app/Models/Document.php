@@ -18,6 +18,8 @@ class Document extends Model
         'path',
         'branch_id',
         'period',
+        'subtype',
+        'insurance_company_id',
     ];
 
     /**
@@ -42,5 +44,10 @@ class Document extends Model
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function insuranceCompany()
+    {
+        return $this->belongsTo(\App\Models\InsuranceCompany::class, 'insurance_company_id');
     }
 }

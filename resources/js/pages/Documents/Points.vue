@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
@@ -73,7 +73,27 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function buildPayload() {
+type PointsBatchPayload = {
+  batchNumber: number;
+  batchType: { code: string };
+  insurance: { id: number };
+  period: string[];
+  user: { id: number | undefined };
+  branch: { id: number | undefined };
+  company: { id: number | null | undefined };
+  patients: { id: number }[];
+  meta?: {
+    fileName: string;
+    amount: number;
+    performedBy: string;
+    performedDate: string;
+    companyName: string;
+    branchName: string;
+    insuranceName?: string;
+  };
+};
+
+function buildPayload(): PointsBatchPayload {
   const period0 = String(route.query.period0 ?? sheet.value.periodFrom ?? '');
   const period1 = String(route.query.period1 ?? sheet.value.periodTo ?? '');
 
@@ -111,32 +131,42 @@ async function downloadTxt() {
   }
 }
 
-// ✅ Toolbar button: PDF statement
-async function downloadStatementPdf() {
-  try {
-    const payload = buildPayload();
-
-    const res = await api.post('/v1/batches/points/statement-pdf', payload, {
-      responseType: 'blob',
-      headers: { Accept: 'application/pdf' },
-    });
-
-    const blob = new Blob([res.data], { type: 'application/pdf' });
-    const pdfName = `sprievodny_list_${sheet.value.batchNumber}.pdf`;
-    triggerDownload(blob, pdfName);
-  } catch (err: any) {
-    const blob = err?.response?.data;
-    if (blob instanceof Blob) {
-      console.error('PDF download error:', await blob.text());
-    } else {
-      console.error('PDF download failed', err);
-    }
-  }
-}
-
 function printPage() {
   window.print();
 }
+
+async function storePointsBatch() {
+  console.log('storePointsBatch called');
+
+  const payload: PointsBatchPayload = {
+    ...buildPayload(),
+    meta: {
+      fileName: sheet.value.fileName,
+      amount: sheet.value.amount,
+      performedBy: sheet.value.performedBy,
+      performedDate: sheet.value.performedDate,
+      companyName: sheet.value.companyName,
+      branchName: sheet.value.branchName,
+      insuranceName: sheet.value.insuranceName,
+    },
+  };
+
+  console.log('payload to save:', JSON.stringify(payload, null, 2));
+
+  try {
+    const res = await api.post('/v1/points-batches', payload);
+    console.log('SAVE OK:', res.status, res.data);
+  } catch (err: any) {
+    console.error('SAVE FAIL status:', err?.response?.status);
+    console.error('SAVE FAIL data:', err?.response?.data);
+    console.error('SAVE FAIL full:', err);
+  }
+}
+
+onMounted(() => {
+  storePointsBatch().catch(console.error);
+});
+
 </script>
 
 
@@ -168,12 +198,6 @@ function printPage() {
 
       <template #end>
         <div class="flex items-center gap-2">
-          <Button
-            icon="bi bi-download"
-            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-            @click="downloadStatementPdf"
-          />
-
           <Button
             icon="bi bi-printer"
             class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"

@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchDoctorController;
 use App\Http\Controllers\Api\BranchPatientController;
 use App\Http\Controllers\Api\CarController;
+use App\Http\Controllers\Api\CarDocumentController;
+use App\Http\Controllers\Api\CarServiceController;
 use App\Http\Controllers\Api\KilometersExportController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PatientDeathCheckController;
@@ -35,6 +37,9 @@ use App\Http\Controllers\Api\LeaveDocumentController;
 use App\Http\Controllers\Api\RecordDocumentController;
 use App\Http\Controllers\Api\PointsExportController as PointsExportControllerAlias;
 use App\Http\Controllers\Api\KilometersExportController as KilometersExportControllerAlias;
+use App\Http\Controllers\Api\KilometersBatchDocumentController;
+use App\Http\Controllers\Api\PointsBatchDocumentController;
+use App\Http\Controllers\Api\BatchDocumentController;
 use App\Http\Controllers\Api\VisitsController;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\ManagerController;
@@ -43,6 +48,7 @@ use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\ScanUploadController;
 use App\Http\Controllers\Api\ScanFileController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +86,20 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('cars', CarController::class);
     Route::delete('cars', [CarController::class, 'destroyMany']);
+
+    // Car documents (scans, photos)
+    Route::get('cars/{car}/documents', [CarDocumentController::class, 'index']);
+    Route::post('cars/{car}/documents', [CarDocumentController::class, 'store']);
+    Route::delete('cars/{car}/documents/{document}', [CarDocumentController::class, 'destroy']);
+    Route::get('cars/{car}/documents/{document}/download', [CarDocumentController::class, 'download']);
+
+    // Car services (maintenance tracking)
+    Route::get('cars/{car}/services', [CarServiceController::class, 'index']);
+    Route::post('cars/{car}/services', [CarServiceController::class, 'store']);
+    Route::patch('cars/{car}/services/{service}', [CarServiceController::class, 'update']);
+    Route::delete('cars/{car}/services/{service}', [CarServiceController::class, 'destroy']);
+    Route::get('cars/services/due-this-month', [CarServiceController::class, 'dueThisMonth']);
+    Route::get('my-cars/services/due-this-month', [CarServiceController::class, 'dueThisMonthForUser']);
 
     Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
     Route::delete('patients', [PatientController::class, 'destroyMany']);
@@ -201,6 +221,19 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/records/{document}', [RecordDocumentController::class, 'show']);
     Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
 
+    Route::post('/kilometers-batches', [KilometersBatchDocumentController::class, 'store']);
+    Route::get('/kilometers-batches', [KilometersBatchDocumentController::class, 'index']);
+    Route::get('/kilometers-batches/{document}', [KilometersBatchDocumentController::class, 'show']);
+    Route::get('/patients/{patientId}/kilometers-batches/latest', [KilometersBatchDocumentController::class, 'latestByPatient']);
+
+    Route::post('/points-batches', [PointsBatchDocumentController::class, 'store']);
+    Route::get('/points-batches', [PointsBatchDocumentController::class, 'index']);
+    Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show']);
+
+    Route::get('/batch-documents/company', [BatchDocumentController::class, 'indexByCompany']);
+    Route::get('/batch-documents/company/aggregated-branch', [BatchDocumentController::class, 'aggregatedByBranch']);
+    Route::get('/batch-documents/company/aggregated-user', [BatchDocumentController::class, 'aggregatedByUser']);
+
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
@@ -223,7 +256,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
     Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
     Route::get('/scan/{document}', [ScanFileController::class, 'show']);
-
+    Route::patch('/scan/{document}/text', [ScanFileController::class, 'updateText']);
 
 });
 

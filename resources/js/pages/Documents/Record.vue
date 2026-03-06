@@ -675,7 +675,6 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
     </Toolbar>
 
     <div v-if="!loading" class="record-sheet-wrapper">
-      <!-- PRINTED CONTENT (only this will be visible in print) -->
       <div id="print-root">
         <div class="pages">
           <div v-for="(page, pageIndex) in pages" :key="pageIndex" class="page">
@@ -785,6 +784,10 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 
                 <div v-if="pageIndex === pages.length - 1" class="footer">
                   <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
+                    <div class="text-center">
+                      <div class="border-t-1 border-black mb-2"></div>
+                      podpis pacienta
+                    </div>
                     <div class="text-center">
                       <div class="border-t-1 border-black mb-2"></div>
                       podpis sestry/zdravotného pracovníka a pečiatka
@@ -936,7 +939,6 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
           <!-- /page-inner -->
         </div>
       </div>
-      <!-- /measurer -->
     </div>
   </div>
 </template>
