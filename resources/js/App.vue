@@ -9,6 +9,8 @@ import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import TercialNavbar from './components/TercialNavbar.vue'
+import AccessError from '@/pages/AccessError.vue'
+import { navigationAccessError } from '@/router'
 
 import { useAuthStore } from '@/stores/auth'
 import { usePatientStore } from '@/stores/patientStore'
@@ -93,7 +95,9 @@ function handleToggleSidebar() {
 
         <div class="flex flex-1 overflow-hidden">
             <div class="flex-1 overflow-auto bg-white p-8 relative">
-                <router-view />
+                <!-- show access error component inline when the guard has flagged it -->
+                <AccessError v-if="navigationAccessError" />
+                <router-view v-else />
             </div>
 
             <Sidebar v-if="isSidebarOpen && isLoggedIn"
