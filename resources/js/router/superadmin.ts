@@ -23,6 +23,8 @@ import Documents from "@/pages/Manager/Documents.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import DashboardSuperadmin from "@/pages/DashboardSuperadmin.vue";
 import useAuthStore from "@/stores/auth";
+import CompanySettingsPage from "@/pages/Settings/Companies/CompanySettingsPage.vue";
+import CompanyOverview from "@/pages/Settings/Companies/CompanyOverview.vue";
 
 function showOnSidebar() {
     return useAuthStore().currentRole === 'superadmin';
@@ -43,10 +45,21 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
     {
         // company overview (accessed by clicking company name)
         path: '/companies/:companyId',
-        name: 'superadmin-company-overview',
-        component: () => import('@/pages/Settings/Companies/CompanyOverview.vue'),
-        meta: { title: 'Prehľad spoločnosti', sidebar: showOnSidebar, navbar: false },
+        name: 'superadmin-company-root',
         children: [
+            {
+                path: '',
+                name: 'superadmin-company-overview',
+                component: () => CompanyOverview,
+                meta: { title: 'Prehľad spoločnosti', sidebar: showOnSidebar, navbar: false },
+            },
+
+            {
+                path: 'edit',
+                name: 'superadmin-company-edit',
+                component: CompanySettingsPage,
+                meta: { title: 'Nastavenia spoločnosti', sidebar: false, navbar: true, link: 'nastavenia spoločnosti' },
+            },
 
             {
                 path: 'patients',

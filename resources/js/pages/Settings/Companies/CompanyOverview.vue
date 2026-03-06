@@ -1,20 +1,37 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import TabView from 'primevue/tabview'
+import { ref, computed, onMounted, markRaw } from 'vue'
+// PrimeVue 4 renamed/deprecated the old TabView component in favour of a
+// simpler "Tabs" container.  The old TabView import is now marked
+// deprecated and will eventually be removed; switch to the new implementation
+// here.  We still use the TabPanel component for individual panels.
+// PrimeVue 4 renamed/deprecated the old TabView component in favour of a
+// simpler "Tabs" container.  The old TabView import is now marked
+// deprecated and will eventually be removed; switch to the new implementation
+// here.  We still use the TabPanel component for individual panels, and the
+// new API requires a few more pieces (TabList/Tab/TabPanels) to build the
+// structure.
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import Menu from 'primevue/menu'
 import type { Company, Branch, User } from '@/types/models'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
+import Button from 'primevue/button'
 import useModal from '@/composables/useModal'
+import CompanyForm from './CompanyForm.vue'
 import BranchForm from '../Branches/BranchForm.vue'
 import UserForm from '../Users/UserForm.vue'
 import api from '@/services/api'
 
 const route = useRoute()
 const companyId = Number(route.params.companyId)
+const router = useRouter()
 
 const company = ref<Company | null>(null)
 const stats = ref<any>(null)
@@ -79,6 +96,50 @@ async function openCreateUser() {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Používateľ bol vytvorený', life: 3000 })
         userRemote.value?.reload()
     }
+}
+
+// company editing is exposed on the manager/companies page; reuse the same
+// modal here so that admins can quickly adjust the current company without
+// leaving the overview.  identical logic to CompaniesPage.
+async function openEditCompany(companyId: number) {
+    const result = await openModal(markRaw(CompanyForm), { companyId }, { header: 'Upraviť spoločnosť', style: { width: '90%' } })
+    if (result) {
+        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená', life: 3000 })
+        // reload company data to pick up any name/code changes
+        await loadCompany()
+    }
+}
+
+// dropdown menu for actions next to company name
+const menu = ref<any>(null)
+const menuItems = [
+    {
+        label: 'Upraviť',
+        icon: 'pi pi-pencil',
+        command: () => {
+            // navigate to settings page, passing same companyId param
+            router.push({ name: 'superadmin-company-edit', params: { companyId } })
+        }
+    },
+    {
+        label: 'Zmazať',
+        icon: 'pi pi-trash',
+        command: async () => {
+            if (!confirm('Naozaj zmazať túto spoločnosť?')) return
+            try {
+                await api.delete(`v1/companies/${companyId}`)
+                toast.add({ severity: 'success', summary: 'Zmazané', detail: 'Spoločnosť bola odstránená', life: 3000 })
+                router.go(-1)
+            } catch (e) {
+                console.error('Failed to delete company', e)
+                toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa zmazať spoločnosť', life: 5000 })
+            }
+        }
+    }
+]
+
+function openMenu(event: Event) {
+    menu.value?.toggle(event)
 }
 
 const branchOptions = computed<DataTableOptions<Branch>>(() => ({
@@ -163,41 +224,58 @@ const userOptions = computed<DataTableOptions<User>>(() => ({
         }
     ]
 }))
+
+// track the currently active tab (string values make the template easier to
+// read, but numeric indexes would work as well).  Default to the first one.
+const activeTab = ref<string>('info')
 </script>
 
 <template>
     <div class="p-4">
-        <div v-if="company" class="text-heading-accent text-xl mb-4">{{ company.name }}</div>
-        <TabView>
-            <TabPanel header="Informácie">
-                <div v-if="company">
-                    <div>IČO: {{ company.ico }} | Kód: {{ company.code }}</div>
-                </div>
+        <div v-if="company" class="text-heading-accent text-xl mb-4 flex items-center">
+            <span>{{ company.name }}</span>
+            <Button icon="bi bi-three-dots-vertical" class="ml-2 p-0 text-accent bg-transparent border-none"
+                @click="openMenu" />
+            <Menu :model="menuItems" popup ref="menu" />
+        </div>
+        <!-- new PrimeVue 4 Tabs API: Tabs + TabList/Tab/TabPanels/TabPanel -->
+        <Tabs v-model:value="activeTab">
+            <TabList>
+                <Tab value="info">Informácie</Tab>
+                <Tab value="branches">Pobočky</Tab>
+                <Tab value="users">Používatelia</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel value="info">
+                    <div v-if="company">
+                        <div>IČO: {{ company.ico }} | Kód: {{ company.bic }}</div>
+                    </div>
 
-                <div class="mt-4">
-                    <div v-if="loadingStats">Načítavam štatistiky...</div>
-                    <div v-else-if="stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="bg-white shadow rounded p-4 text-center">
-                            <div class="text-2xl font-bold">{{ stats.branches }}</div>
-                            <div>pobočiek</div>
-                        </div>
-                        <div class="bg-white shadow rounded p-4 text-center">
-                            <div class="text-2xl font-bold">{{ stats.users }}</div>
-                            <div>užívateľov</div>
-                        </div>
-                        <div class="bg-white shadow rounded p-4 text-center">
-                            <div class="text-2xl font-bold">{{ stats.patients }}</div>
-                            <div>pacientov</div>
+                    <div class="mt-4">
+                        <div v-if="loadingStats">Načítavam štatistiky...</div>
+                        <div v-else-if="stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="bg-white shadow rounded p-4 text-center">
+                                <div class="text-2xl font-bold">{{ stats.branches }}</div>
+                                <div>pobočiek</div>
+                            </div>
+                            <div class="bg-white shadow rounded p-4 text-center">
+                                <div class="text-2xl font-bold">{{ stats.users }}</div>
+                                <div>užívateľov</div>
+                            </div>
+                            <div class="bg-white shadow rounded p-4 text-center">
+                                <div class="text-2xl font-bold">{{ stats.patients }}</div>
+                                <div>pacientov</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </TabPanel>
-            <TabPanel header="Pobočky">
-                <UniversalDataTable :options="branchOptions" />
-            </TabPanel>
-            <TabPanel header="Používatelia">
-                <UniversalDataTable :options="userOptions" />
-            </TabPanel>
-        </TabView>
+                </TabPanel>
+                <TabPanel value="branches">
+                    <UniversalDataTable :options="branchOptions" />
+                </TabPanel>
+                <TabPanel value="users">
+                    <UniversalDataTable :options="userOptions" />
+                </TabPanel>
+            </TabPanels>
+        </Tabs>
     </div>
 </template>
