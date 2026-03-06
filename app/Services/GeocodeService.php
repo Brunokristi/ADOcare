@@ -52,7 +52,15 @@ class GeocodeService
         $json = $r->json();
         $results = $json['results'] ?? [];
         if (empty($results)) {
-            return ['body' => ['address' => '', 'city' => '', 'postcode' => ''], 'status' => $r->status()];
+            return [
+                'body' => [
+                    'address' => '',
+                    'city' => '',
+                    'postcode' => '',
+                    'raw' => $json,
+                ],
+                'status' => $r->status()
+            ];
         }
 
         $first = $results[0];
