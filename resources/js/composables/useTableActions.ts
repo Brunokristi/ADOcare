@@ -61,8 +61,8 @@ export function useTableActions(
 
     const toggleAction: ActionDef = {
         key: 'toggleDeleted',
-        icon: computed(() => (showDeleted.value ? 'bi bi-eye' : 'bi bi-trash')),
-        class: computed(() => (showDeleted.value ? 'bg-alert!' : 'bg-danger!')),
+        icon: computed(() => (showDeleted.value ? 'bi bi-eye' : 'bi bi-eye-slash')),
+        class: computed(() => (showDeleted.value ? 'bg-alert!' : 'bg-warning!')),
         tooltip: computed(() => (showDeleted.value ? 'Zobraziť aktívnych' : 'Zobraziť zmazaných')),
         handler: async ({ remote }) => {
             if (remote) {

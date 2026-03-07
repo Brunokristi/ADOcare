@@ -113,7 +113,7 @@ onMounted(async () => {
     }
 
     // Then load user data
-    if (props.userId) {
+    if (props.userId != null) {
         try {
             const data = await api.fetchEntity<User>(`v1/users/${props.userId}`)
             normalizeUserFromApi(data)

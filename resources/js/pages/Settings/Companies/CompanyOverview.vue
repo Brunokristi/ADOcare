@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, markRaw } from 'vue'
 // PrimeVue 4 renamed/deprecated the old TabView component in favour of a
 // simpler "Tabs" container.  The old TabView import is now marked
 // deprecated and will eventually be removed; switch to the new implementation
@@ -83,7 +83,7 @@ async function openCreateBranch() {
 }
 
 async function openEditUser(userId: number) {
-    const result = await openModal(UserForm, { userId, companyId }, { header: 'Upraviť používateľa', style: { width: '800px' } })
+    const result = await openModal(markRaw(UserForm), { userId, companyId }, { header: 'Upraviť používateľa', style: { width: '800px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Používateľ bol uložený', life: 3000 })
         userRemote.value?.reload()
@@ -91,7 +91,7 @@ async function openEditUser(userId: number) {
 }
 
 async function openCreateUser() {
-    const result = await openModal(UserForm, { companyId }, { header: 'Pridať používateľa', style: { width: '800px' } })
+    const result = await openModal(markRaw(UserForm), { companyId }, { header: 'Pridať používateľa', style: { width: '800px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Používateľ bol vytvorený', life: 3000 })
         userRemote.value?.reload()
