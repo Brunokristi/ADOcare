@@ -158,7 +158,7 @@ function onBatchNumberInput(event: Event) {
 async function pollCalculationStatus(periodFrom: Date) {
   const maxAttempts = 120; // 10 minutes with 5 second interval
   let attempts = 0;
-  
+
   const monthStr = toApiDate(periodFrom);
   const branchId = authStore.currentBranch?.id;
   const userId = authStore.user?.id;
@@ -264,8 +264,8 @@ async function onSubmit() {
       insurance: { id: insurance.value.id },
       period: [periodFrom.toISOString(), periodTo.toISOString()],
       user: { id: authStore.user?.id },
-      branch: { id: authStore.currentBranch?.id},
-      company: { id: authStore.currentBranch?.company_id},
+      branch: { id: authStore.currentBranch?.id },
+      company: { id: authStore.currentBranch?.company_id },
       patients: selectedPatients.value.map(p => ({ id: p.id })),
     });
 
@@ -349,7 +349,7 @@ type DocRow = {
   subtype?: 'N' | 'O' | string
   period?: string
   created_at?: string
-  insurance_company_name?: string 
+  insurance_company_name?: string
 }
 
 const batchTypeLabelByCode = computed<Record<string, string>>(() => {
@@ -403,7 +403,7 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
       render: (v?: string) => {
         if (!v) return ''
         return v.trim().split(/\s+/)[0] ?? ''
-      }    
+      }
     },
     {
       field: 'subtype',
@@ -439,7 +439,7 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
       key: 'delete',
       disabled: ({ selectedRows }: { selectedRows: DocRow[] }) => selectedRows.length === 0,
       icon: 'bi bi-eraser',
-      class: 'bg-warning!',
+      class: 'bg-danger!',
       confirm: 'Naozaj chcete zmazať vybrané dokumenty?',
       handler: async ({ selectedRows, remote }: { selectedRows: DocRow[]; remote: any }) => {
         await api.delete('/v1/documents', { data: { ids: selectedRows.map(r => r.id) } })
@@ -462,17 +462,10 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Číslo dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Číslo dávky</label>
-            <InputText
-              v-model="batchNumber"
-              @input="onBatchNumberInput"
+            <InputText v-model="batchNumber" @input="onBatchNumberInput"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-              class="border-none!"
-              fluid
-            />
-            <small
-              v-if="submitted && !batchNumber"
-              class="text-warning"
-            >
+              class="border-none!" fluid />
+            <small v-if="submitted && !batchNumber" class="text-danger">
               Číslo dávky je povinné.
             </small>
           </div>
@@ -480,14 +473,9 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Typ dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Typ dávky</label>
-            <Select
-              v-model="batchType"
-              :options="batchTypes"
-              optionLabel="name"
-              fluid
-              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            />
-            <small v-if="submitted && !batchType" class="text-warning">
+            <Select v-model="batchType" :options="batchTypes" optionLabel="name" fluid
+              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" />
+            <small v-if="submitted && !batchType" class="text-danger">
               Typ dávky je povinný.
             </small>
           </div>
@@ -495,14 +483,9 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Poisťovňa -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Poisťovňa</label>
-            <Select
-              v-model="insurance"
-              :options="insurances"
-              optionLabel="name"
-              fluid
-              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            />
-            <small v-if="submitted && !insurance" class="text-warning">
+            <Select v-model="insurance" :options="insurances" optionLabel="name" fluid
+              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" />
+            <small v-if="submitted && !insurance" class="text-danger">
               Poisťovňa je povinná.
             </small>
           </div>
@@ -510,43 +493,22 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Obdobie (month) -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Obdobie</label>
-            <DatePicker
-              v-model="dates"
-              view="month"
-              dateFormat="MM yy"
-              :manualInput="false"
-              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-              fluid
-            />
+            <DatePicker v-model="dates" view="month" dateFormat="MM yy" :manualInput="false"
+              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" fluid />
 
-            <small
-              v-if="submitted && !dates"
-              class="text-warning"
-            >
+            <small v-if="submitted && !dates" class="text-danger">
               Obdobie je povinné.
             </small>
           </div>
 
           <!-- Pacienti pre opravnu dávku -->
-          <div
-            v-if="shouldShowPatients"
-            class="col-span-12"
-          >
+          <div v-if="shouldShowPatients" class="col-span-12">
             <label class="block text-normal mb-2">
               Vyhľadajte pacienta
             </label>
 
-            <AutoComplete
-              v-model="selectedPatients"
-              :suggestions="filteredPatients"
-              multiple
-              optionLabel="name"
-              :minLength="1"
-              @complete="searchPatients"
-              :loading="patientsLoading"
-              fluid
-              class="w-full"
-            >
+            <AutoComplete v-model="selectedPatients" :suggestions="filteredPatients" multiple optionLabel="name"
+              :minLength="1" @complete="searchPatients" :loading="patientsLoading" fluid class="w-full">
               <!-- suggestion option -->
               <template #option="slotProps">
                 <div class="flex flex-wrap items-center gap-2">
@@ -561,32 +523,25 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
               <!-- chip template -->
               <template #chip="slotProps">
-                <div
-                  class="
+                <div class="
                     inline-flex items-center gap-2
                     bg-darkgrey text-lightgrey
                     px-3 py-1 rounded-md
                     text-xs sm:text-sm
-                  "
-                >
+                  ">
                   <span class="pr-2 border-r border-lightgrey truncate max-w-[8rem] sm:max-w-[10rem]">
                     {{ slotProps.value.name }}
                   </span>
                   <span class="px-1 sm:px-2 whitespace-nowrap">
                     {{ slotProps.value.personalNumber }}
                   </span>
-                  <i
-                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
-                    @click.stop="removePatient(slotProps.value)"
-                  ></i>
+                  <i class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                    @click.stop="removePatient(slotProps.value)"></i>
                 </div>
               </template>
             </AutoComplete>
 
-            <small
-              v-if="submitted && shouldShowPatients && !selectedPatients.length"
-              class="text-warning block mt-1"
-            >
+            <small v-if="submitted && shouldShowPatients && !selectedPatients.length" class="text-danger block mt-1">
               Pri tomto type pacienta je potrebné vybrať aspoň jedného pacienta.
             </small>
           </div>
@@ -594,14 +549,10 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
       </section>
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
-        >
+        <Button type="submit"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
           Vygenerovať
-          <i
-            class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent"
-          />
+          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>
       </div>
     </form>

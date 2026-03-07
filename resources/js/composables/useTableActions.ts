@@ -62,7 +62,7 @@ export function useTableActions(
     const toggleAction: ActionDef = {
         key: 'toggleDeleted',
         icon: computed(() => (showDeleted.value ? 'bi bi-eye' : 'bi bi-trash')),
-        class: computed(() => (showDeleted.value ? 'bg-alert!' : 'bg-warning!')),
+        class: computed(() => (showDeleted.value ? 'bg-alert!' : 'bg-danger!')),
         tooltip: computed(() => (showDeleted.value ? 'Zobraziť aktívnych' : 'Zobraziť zmazaných')),
         handler: async ({ remote }) => {
             if (remote) {
@@ -77,7 +77,7 @@ export function useTableActions(
         key: 'delete',
         disabled: ({ selectedRows }) => selectedRows.length === 0,
         icon: computed(() => (showDeleted.value ? 'bi bi-arrow-counterclockwise' : 'bi bi-eraser')),
-        class: computed(() => (showDeleted.value ? 'bg-success!' : 'bg-warning!')),
+        class: computed(() => (showDeleted.value ? 'bg-success!' : 'bg-danger!')),
         tooltip: computed(() => (showDeleted.value ? 'Obnoviť' : 'Vymazať')),
         handler: async ({ selectedRows, remote }) => {
             if (showDeleted.value) {

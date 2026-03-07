@@ -72,7 +72,7 @@ onMounted(async () => {
     let data: any = null
     try {
       data = JSON.parse(text)
-    } catch {}
+    } catch { }
 
     if (!response.ok) {
       console.error('scan/info failed:', response.status, text)
@@ -181,7 +181,7 @@ async function finalizeScan() {
     let data: any = null
     try {
       data = JSON.parse(raw)
-    } catch {}
+    } catch { }
 
     if (!res.ok) {
       console.error('finalize failed:', res.status, raw)
@@ -220,13 +220,10 @@ async function finalizeScan() {
 <template>
   <!-- Final message screen -->
   <div v-if="isFinalScreen" class="flex flex-col items-center justify-center">
-    <div
-      class="text-center w-full p-6 rounded-md"
-      :class="{
-        'bg-success': finalSeverity === 'success',
-        'bg-warning': finalSeverity === 'error'
-      }"
-    >
+    <div class="text-center w-full p-6 rounded-md" :class="{
+      'bg-success': finalSeverity === 'success',
+      'bg-danger': finalSeverity === 'error'
+    }">
       <h1 class="text-heading-accent text-white mb-2">
         {{ finalTitle }}
       </h1>
@@ -251,24 +248,15 @@ async function finalizeScan() {
         </div>
 
         <!-- Gallery input (multiple allowed) -->
-        <input
-          ref="galleryInputRef"
-          type="file"
-          accept="image/*"
-          multiple
-          class="hidden"
-          @change="handleFileSelected"
-        />
+        <input ref="galleryInputRef" type="file" accept="image/*" multiple class="hidden"
+          @change="handleFileSelected" />
 
         <div v-if="previewUrls.length > 0" class="grid grid-cols-2 gap-3 bg-white p-3 rounded-md">
           <div v-for="(url, index) in previewUrls" :key="url" class="relative">
             <img :src="url" class="w-full h-40 object-cover rounded-md border border-gray-200" />
-            <button
-              type="button"
-              @click="removeImage(index)"
+            <button type="button" @click="removeImage(index)"
               class="absolute top-2 right-2 bg-white/50 rounded px-2 py-1 text-darkgrey text-mini"
-              aria-label="Odstrániť obrázok"
-            >
+              aria-label="Odstrániť obrázok">
               <i class="bi bi-x-lg"></i>
             </button>
             <div class="absolute bottom-2 left-2 bg-white/50 rounded px-2 py-1 text-mini text-darkgrey">
@@ -278,33 +266,23 @@ async function finalizeScan() {
         </div>
 
         <div class="flex justify-center items-center gap-2 w-full">
-          <Button
-            type="button"
-            icon="bi bi-plus-lg"
+          <Button type="button" icon="bi bi-plus-lg"
             class="!h-7 !bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey md:w-auto text-normal"
-            :loading="isUploading"
-            :disabled="isUploading || !sessionValid"
-            @click="openGallery"
-          />
+            :loading="isUploading" :disabled="isUploading || !sessionValid" @click="openGallery" />
         </div>
 
         <div>
           <div class="relative w-full h-1 bg-white rounded overflow-hidden">
-            <div
-              class="absolute top-0 left-0 h-full bg-darkgrey transition-all duration-500"
-              :style="{ width: (expiresIn > 0 ? (expiresIn / maxTime) * 100 : 0) + '%' }"
-            />
+            <div class="absolute top-0 left-0 h-full bg-darkgrey transition-all duration-500"
+              :style="{ width: (expiresIn > 0 ? (expiresIn / maxTime) * 100 : 0) + '%' }" />
           </div>
         </div>
       </section>
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
+        <Button type="submit"
           class="!bg-accent !border-0 !px-md !text-white hover:!bg-darkgrey w-full md:w-auto text-normal"
-          :loading="isUploading"
-          :disabled="isUploading || !sessionValid"
-        >
+          :loading="isUploading" :disabled="isUploading || !sessionValid">
           Nahrať nález
         </Button>
       </div>
@@ -321,8 +299,14 @@ async function finalizeScan() {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

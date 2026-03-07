@@ -105,7 +105,7 @@ if (props.isManagerView) {
                             {{ formatBranchFullName(slotProps.option) }}</span>
                     </template>
                 </Select>
-                <small v-if="submitted && errors.doctor_id" class="text-warning">{{ errors.doctor_id }}</small>
+                <small v-if="submitted && errors.doctor_id" class="text-danger">{{ errors.doctor_id }}</small>
             </div>
 
             <div class="col-span-6">
@@ -122,7 +122,7 @@ if (props.isManagerView) {
                             {{ formatUserFullName(slotProps.option) }}</span>
                     </template>
                 </Select>
-                <small v-if="submitted && errors.nurse_id" class="text-warning">
+                <small v-if="submitted && errors.nurse_id" class="text-danger">
                     {{ errors.insurance_company_id }}
                 </small>
             </div>

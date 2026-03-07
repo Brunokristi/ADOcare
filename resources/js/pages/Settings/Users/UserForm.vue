@@ -258,12 +258,12 @@ async function openChangePasswordModal() {
             <div>
                 <label class="block text-sm mb-1">Meno</label>
                 <InputText v-model="user.first_name" class="w-full" />
-                <small v-if="submitted && !user.first_name" class="text-warning">Meno je povinné.</small>
+                <small v-if="submitted && !user.first_name" class="text-danger">Meno je povinné.</small>
             </div>
             <div>
                 <label class="block text-sm mb-1">Priezvisko</label>
                 <InputText v-model="user.last_name" class="w-full" />
-                <small v-if="submitted && !user.last_name" class="text-warning">Priezvisko je povinné.</small>
+                <small v-if="submitted && !user.last_name" class="text-danger">Priezvisko je povinné.</small>
             </div>
         </div>
 
@@ -275,7 +275,7 @@ async function openChangePasswordModal() {
             <div>
                 <label class="block text-sm mb-1">Kód</label>
                 <InputText v-model="user.code" class="w-full" />
-                <small v-if="submitted && !user.code" class="text-warning">Kód je povinný.</small>
+                <small v-if="submitted && !user.code" class="text-danger">Kód je povinný.</small>
             </div>
         </div>
 
@@ -287,8 +287,8 @@ async function openChangePasswordModal() {
             <div>
                 <label class="block text-sm mb-1">Email</label>
                 <InputText v-model="user.email" @input="emailError = null" class="w-full" />
-                <small v-if="emailError" class="text-warning">{{ emailError }}</small>
-                <small v-else-if="submitted && !user.email" class="text-warning">Email je povinný.</small>
+                <small v-if="emailError" class="text-danger">{{ emailError }}</small>
+                <small v-else-if="submitted && !user.email" class="text-danger">Email je povinný.</small>
             </div>
         </div>
 
@@ -298,7 +298,7 @@ async function openChangePasswordModal() {
             <div v-if="!props.userId">
                 <label class="block text-sm mb-1">Prihlasovacie meno</label>
                 <InputText v-model="user.login" class="w-full" />
-                <small v-if="submitted && !user.login" class="text-warning">Prihlasovacie meno je povinné.</small>
+                <small v-if="submitted && !user.login" class="text-danger">Prihlasovacie meno je povinné.</small>
             </div>
 
             <!-- Password field - only show on create -->
@@ -311,7 +311,7 @@ async function openChangePasswordModal() {
                             @click="togglePasswordVisibility" />
                     </InputIcon>
                 </IconField>
-                <small v-if="submitted && !user.pin" class="text-warning">Heslo je povinné.</small>
+                <small v-if="submitted && !user.pin" class="text-danger">Heslo je povinné.</small>
             </div>
 
             <!-- Change password button - show on edit -->
@@ -353,7 +353,7 @@ async function openChangePasswordModal() {
                 </div>
 
                 <div class="col-span-1">
-                    <Button icon="bi bi-eraser" class="h-7! bg-warning!" severity="danger"
+                    <Button icon="bi bi-eraser" class="h-7! bg-danger!" severity="danger"
                         @click="confirmDeleteAssignment(idx)" />
                 </div>
             </div>
@@ -384,7 +384,7 @@ async function openChangePasswordModal() {
                 <div class="flex items-center gap-2">
                     <Button label="Nie" text @click="cancelDelete"
                         class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0" />
-                    <Button label="Áno" text @click="confirmDelete" class="!bg-warning !px-4 !text-white" />
+                    <Button label="Áno" text @click="confirmDelete" class="!bg-danger !px-4 !text-white" />
                 </div>
             </div>
         </Dialog>

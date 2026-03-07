@@ -182,7 +182,7 @@ function getEasterDate(year: number): Date {
 
 function getSlovakHolidaysForMonth(year: number, month: number): Date[] {
   const holidays: Date[] = []
-  
+
   // Fixed holidays
   const fixedHolidays = [
     [0, 1],   // January 1 - New Year's Day
@@ -246,7 +246,7 @@ function buildWeekendsForCurrentView(): Date[] {
   const last = new Date(y, m + 1, 0).getDate()
 
   const selected: Date[] = []
-  
+
   // Add weekends
   for (let day = 1; day <= last; day++) {
     const d = new Date(y, m, day)
@@ -257,7 +257,7 @@ function buildWeekendsForCurrentView(): Date[] {
   // Add holidays
   const holidayDates = getSlovakHolidaysForMonth(y, m)
   const holidaySet = new Set(holidayDates.map((d) => toApiDate(d)))
-  
+
   for (let day = 1; day <= last; day++) {
     const d = new Date(y, m, day)
     if (holidaySet.has(toApiDate(d)) && !selected.find(sel => toApiDate(sel) === toApiDate(d))) {
@@ -874,7 +874,7 @@ const pointTableOptions = computed<DataTableOptions<PatientPointApi>>(() => {
       {
         key: 'delete',
         icon: 'bi bi-eraser',
-        class: '!h-7 !bg-warning !border-warning !text-white',
+        class: '!h-7 !bg-danger !border-danger !text-white',
         disabled: ({ selectedRows }) => selectedRows.length === 0,
         confirm: 'Naozaj si prajete vymazať vybrané záznamy?',
         handler: async ({ selectedRows, remote }) => {
@@ -947,85 +947,45 @@ onMounted(() => {
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum</label>
 
-            <DatePicker
-              ref="multiDatePickerRef"
-              v-model="dates"
-              selectionMode="multiple"
-              dateFormat="dd.mm.yy"
-              :showIcon="false"
-              showButtonBar
-              class="w-full"
-              :manualInput="false"
-              :viewDate="viewDate"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            >
+            <DatePicker ref="multiDatePickerRef" v-model="dates" selectionMode="multiple" dateFormat="dd.mm.yy"
+              :showIcon="false" showButtonBar class="w-full" :manualInput="false" :viewDate="viewDate"
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
               <template #buttonbar="{ clearCallback }">
                 <div class="flex flex-wrap justify-start w-full gap-2">
-                  <Button
-                    label="Pracovné dni"
+                  <Button label="Pracovné dni"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectWorkingDaysExcludingHolidays"
-                  />
-                  <Button
-                    label="So, Ne, Sviatky"
+                    @mousedown.prevent @click.prevent="selectWorkingDaysExcludingHolidays" />
+                  <Button label="So, Ne, Sviatky"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectWeekends"
-                  />
-                  <Button
-                    label="Po-Ne"
+                    @mousedown.prevent @click.prevent="selectWeekends" />
+                  <Button label="Po-Ne"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectAllDays"
-                  />
-                  <Button
-                    label="Po-Pia"
+                    @mousedown.prevent @click.prevent="selectAllDays" />
+                  <Button label="Po-Pia"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectWorkingDays"
-                  />
-                  <Button
-                    label="Po, St, Pia"
+                    @mousedown.prevent @click.prevent="selectWorkingDays" />
+                  <Button label="Po, St, Pia"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectMondayWednesdayFriday"
-                  />
-                  <Button
-                    label="Sviatky"
+                    @mousedown.prevent @click.prevent="selectMondayWednesdayFriday" />
+                  <Button label="Sviatky"
                     class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                    @mousedown.prevent
-                    @click.prevent="selectHolidays"
-                  />
-                  <Button
-                    label="zrušiť výber"
-                    class="bg-warning! border-transparent! text-white! text-normal! px-2!"
-                    @mousedown.prevent
-                    @click.prevent="clearCallback"
-                  />
+                    @mousedown.prevent @click.prevent="selectHolidays" />
+                  <Button label="zrušiť výber" class="bg-danger! border-transparent! text-white! text-normal! px-2!"
+                    @mousedown.prevent @click.prevent="clearCallback" />
                 </div>
               </template>
             </DatePicker>
 
-            <small v-if="submitted && (!dates || !dates.length)" class="text-warning">Dátum je povinný.</small>
+            <small v-if="submitted && (!dates || !dates.length)" class="text-danger">Dátum je povinný.</small>
           </div>
 
           <!-- Diagnóza -->
           <div class="col-span-12 md:col-span-4">
             <label class="block text-normal mb-1">Diagnóza</label>
-            <AutoComplete
-              v-model="diagnosis"
-              :suggestions="filteredDiagnoses"
-              @complete="searchDiagnoses"
-              :virtualScrollerOptions="{ itemSize: 38 }"
-              optionLabel="code"
-              dropdown
-              dropdownMode="blank"
-              :minLength="0"
-              completeOnFocus
-              class="w-full"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            >
+            <AutoComplete v-model="diagnosis" :suggestions="filteredDiagnoses" @complete="searchDiagnoses"
+              :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown dropdownMode="blank" :minLength="0"
+              completeOnFocus class="w-full"
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
               <template #option="slotProps">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
@@ -1033,25 +993,16 @@ onMounted(() => {
                 </div>
               </template>
             </AutoComplete>
-            <small v-if="submitted && !diagnosis" class="text-warning">Diagnóza je povinná.</small>
+            <small v-if="submitted && !diagnosis" class="text-danger">Diagnóza je povinná.</small>
           </div>
 
           <!-- Výkon -->
           <div class="col-span-12 md:col-span-4">
             <label class="block text-normal mb-1">Výkon</label>
-            <AutoComplete
-              v-model="procedure"
-              :suggestions="filteredProcedures"
-              @complete="searchProcedures"
-              :virtualScrollerOptions="{ itemSize: 38 }"
-              optionLabel="code"
-              dropdown
-              dropdownMode="blank"
-              :minLength="0"
-              completeOnFocus
-              class="w-full"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            >
+            <AutoComplete v-model="procedure" :suggestions="filteredProcedures" @complete="searchProcedures"
+              :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown dropdownMode="blank" :minLength="0"
+              completeOnFocus class="w-full"
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
               <template #option="slotProps">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ slotProps.option.code }}</span>
@@ -1059,43 +1010,31 @@ onMounted(() => {
                 </div>
               </template>
             </AutoComplete>
-            <small v-if="submitted && !procedure" class="text-warning">Výkon je povinný.</small>
+            <small v-if="submitted && !procedure" class="text-danger">Výkon je povinný.</small>
           </div>
 
           <!-- Počet -->
           <div class="col-span-12 md:col-span-1">
             <label class="block text-normal mb-1">Počet</label>
-            <InputNumber
-              v-model.number="quantity"
-              class="w-full"
-              :min="0"
-              :max="100"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            />
-            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-warning">Počet je povinný.</small>
+            <InputNumber v-model.number="quantity" class="w-full" :min="0" :max="100"
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
+            <small v-if="submitted && (!quantity || quantity <= 0)" class="text-danger">Počet je povinný.</small>
           </div>
 
           <!-- Dátum odporučenia -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum odporučenia</label>
-            <DatePicker
-              v-model="referralDate"
-              dateFormat="dd.mm.yy"
-              :showIcon="false"
-              class="w-full"
+            <DatePicker v-model="referralDate" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
               :manualInput="false"
-              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-            />
-            <small v-if="submitted && !referralDate" class="text-warning">Dátum je povinný.</small>
+              inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
+            <small v-if="submitted && !referralDate" class="text-danger">Dátum je povinný.</small>
           </div>
         </div>
       </section>
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
-          class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100"
-        >
+        <Button type="submit"
+          class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100">
           Pridať
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>
@@ -1112,83 +1051,51 @@ onMounted(() => {
       <div v-if="editPoint" class="flex flex-col gap-6">
         <div>
           <label class="block text-normal mb-1">Dátum</label>
-          <DatePicker
-            v-model="editPoint.date"
-            dateFormat="dd.mm.yy"
-            :showIcon="false"
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-          />
-          <small v-if="editSubmitted && !editPoint.date" class="text-warning">Dátum je povinný.</small>
+          <DatePicker v-model="editPoint.date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
+          <small v-if="editSubmitted && !editPoint.date" class="text-danger">Dátum je povinný.</small>
         </div>
 
         <div>
           <label class="block text-normal mb-1">Diagnóza</label>
-          <AutoComplete
-            v-model="editPoint.diagnosis"
-            :suggestions="filteredDiagnoses"
-            @complete="searchDiagnoses"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            optionLabel="code"
-            dropdown
-            dropdownMode="blank"
-            :minLength="0"
-            completeOnFocus
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-          >
+          <AutoComplete v-model="editPoint.diagnosis" :suggestions="filteredDiagnoses" @complete="searchDiagnoses"
+            :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown dropdownMode="blank" :minLength="0"
+            completeOnFocus class="w-full" inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
             <template #option="slotProps">
               <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
             </template>
           </AutoComplete>
-          <small v-if="editSubmitted && !editPoint.diagnosis" class="text-warning">Diagnóza je povinná.</small>
+          <small v-if="editSubmitted && !editPoint.diagnosis" class="text-danger">Diagnóza je povinná.</small>
         </div>
 
         <div>
           <label class="block text-normal mb-1">Výkon</label>
-          <AutoComplete
-            v-model="editPoint.procedure"
-            :suggestions="filteredProcedures"
-            @complete="searchProcedures"
-            :virtualScrollerOptions="{ itemSize: 38 }"
-            optionLabel="code"
-            dropdown
-            dropdownMode="blank"
-            :minLength="0"
-            completeOnFocus
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-          >
+          <AutoComplete v-model="editPoint.procedure" :suggestions="filteredProcedures" @complete="searchProcedures"
+            :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown dropdownMode="blank" :minLength="0"
+            completeOnFocus class="w-full" inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
             <template #option="slotProps">
               <span>{{ slotProps.option.code }} – {{ slotProps.option.description }}</span>
             </template>
           </AutoComplete>
-          <small v-if="editSubmitted && !editPoint.procedure" class="text-warning">Výkon je povinný.</small>
+          <small v-if="editSubmitted && !editPoint.procedure" class="text-danger">Výkon je povinný.</small>
         </div>
 
         <div>
           <label class="block text-normal mb-1">Počet</label>
-          <InputNumber
-            :modelValue="editPoint.quantity"
-            @update:modelValue="editPoint.quantity = $event ? Number($event) : null"
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-          />
-          <small v-if="editSubmitted && (!editPoint.quantity || editPoint.quantity <= 0)" class="text-warning">
+          <InputNumber :modelValue="editPoint.quantity"
+            @update:modelValue="editPoint.quantity = $event ? Number($event) : null" class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
+          <small v-if="editSubmitted && (!editPoint.quantity || editPoint.quantity <= 0)" class="text-danger">
             Počet je povinný.
           </small>
         </div>
 
         <div>
           <label class="block text-normal mb-1">Dátum odporučenia</label>
-          <DatePicker
-            v-model="editPoint.referralDate"
-            dateFormat="dd.mm.yy"
-            :showIcon="false"
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none"
-          />
-          <small v-if="editSubmitted && !editPoint.referralDate" class="text-warning">Dátum odporučenia je povinný.</small>
+          <DatePicker v-model="editPoint.referralDate" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
+          <small v-if="editSubmitted && !editPoint.referralDate" class="text-danger">Dátum odporučenia je
+            povinný.</small>
         </div>
       </div>
 

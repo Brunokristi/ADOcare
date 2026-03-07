@@ -94,14 +94,14 @@ const formatLocalDate = (date: Date) => {
 
 async function checkDocumentExists() {
   if (!batchType.value || !dates.value) return
-  
+
   const monthDate = dates.value as Date
   const year = monthDate.getFullYear()
   const month = monthDate.getMonth()
   const startDate = new Date(year, month, 1)
-  
+
   const startStr = formatLocalDate(startDate)
-  
+
   try {
     if (batchType.value.code === 'CP') {
       const res = await api.post('/v1/documents/check-exists', {
@@ -188,7 +188,7 @@ const options = computed<DataTableOptions<Document>>(() => ({
       key: 'delete',
       disabled: ({ selectedRows }: { selectedRows: Document[] }) => selectedRows.length === 0,
       icon: 'bi bi-eraser',
-      class: 'bg-warning!',
+      class: 'bg-danger!',
       confirm: 'Naozaj chcete zmazať vybrané dokumenty?',
       handler: async ({ selectedRows, remote }: { selectedRows: Document[]; remote: any }) => {
         try {
@@ -307,14 +307,9 @@ watch([() => batchType.value, () => dates.value], () => {
           <!-- Typ -->
           <div class="col-span-12 md:col-span-6">
             <label class="block text-normal mb-1">Typ dokumentu</label>
-            <Select
-              v-model="batchType"
-              :options="batchTypes"
-              optionLabel="name"
-              fluid
-              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            />
-            <small v-if="submitted && !batchType" class="text-warning">
+            <Select v-model="batchType" :options="batchTypes" optionLabel="name" fluid
+              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" />
+            <small v-if="submitted && !batchType" class="text-danger">
               Typ cestovného je povinný.
             </small>
           </div>
@@ -322,45 +317,24 @@ watch([() => batchType.value, () => dates.value], () => {
           <!-- Obdobie -->
           <div class="col-span-12 md:col-span-6">
             <label class="block text-normal mb-1">Obdobie</label>
-            <DatePicker
-              v-model="dates"
-              view="month"
-              dateFormat="MM yy"
-              :manualInput="false"
-              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-              fluid
-            />
-            <small v-if="submitted && !dates" class="text-warning"> Obdobie je povinné. </small>
+            <DatePicker v-model="dates" view="month" dateFormat="MM yy" :manualInput="false"
+              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" fluid />
+            <small v-if="submitted && !dates" class="text-danger"> Obdobie je povinné. </small>
           </div>
         </div>
       </section>
 
-      <DocumentAlert
-        v-if="batchType?.code === 'CP'"
-        :visible="dialogVisibleCp"
-        :documentId="documentIdCp"
-        document-url="/documents/cp/{id}"
-        @update:visible="dialogVisibleCp = $event"
-        @close="closeDialogCp"
-        @deleted="checkDocumentExists"
-      />
+      <DocumentAlert v-if="batchType?.code === 'CP'" :visible="dialogVisibleCp" :documentId="documentIdCp"
+        document-url="/documents/cp/{id}" @update:visible="dialogVisibleCp = $event" @close="closeDialogCp"
+        @deleted="checkDocumentExists" />
 
-      <DocumentAlert
-        v-if="batchType?.code === 'DZC'"
-        :visible="dialogVisibleDzc"
-        :documentId="documentIdDzc"
-        document-url="/documents/dzc/{id}"
-        @update:visible="dialogVisibleDzc = $event"
-        @close="closeDialogDzc"
-        @deleted="checkDocumentExists"
-      />
+      <DocumentAlert v-if="batchType?.code === 'DZC'" :visible="dialogVisibleDzc" :documentId="documentIdDzc"
+        document-url="/documents/dzc/{id}" @update:visible="dialogVisibleDzc = $event" @close="closeDialogDzc"
+        @deleted="checkDocumentExists" />
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
-          :disabled="loading"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
-        >
+        <Button type="submit" :disabled="loading"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
           Vygenerovať
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>
@@ -370,11 +344,7 @@ watch([() => batchType.value, () => dates.value], () => {
     <section>
       <UniversalDataTable ref="tableRef" :options="options">
         <template #actions="{ row }">
-          <button
-            @click.stop="openDocumentInNewTab(row)"
-            class="btn btn-sm btn-link p-0"
-            title="Otvoriť dokument"
-          >
+          <button @click.stop="openDocumentInNewTab(row)" class="btn btn-sm btn-link p-0" title="Otvoriť dokument">
             <i class="bi bi-eye"></i>
           </button>
         </template>

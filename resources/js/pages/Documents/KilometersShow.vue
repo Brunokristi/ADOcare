@@ -161,12 +161,8 @@ onMounted(loadDocument)
       </div>
 
       <div class="flex items-center gap-2">
-        <Button
-          icon="bi bi-download"
-          class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-          :disabled="loading || !payload"
-          @click="downloadTxt"
-        />
+        <Button icon="bi bi-download" class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+          :disabled="loading || !payload" @click="downloadTxt" />
       </div>
     </div>
 
@@ -174,107 +170,102 @@ onMounted(loadDocument)
     <LoadingOverlay :show="loading" text="" />
 
     <div class="flex flex-col gap-4">
-        <!-- Toolbar -->
-        <Toolbar
-        class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print"
-        >
+      <!-- Toolbar -->
+      <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
         <template #start>
-            <span class="text-heading-accent">
+          <span class="text-heading-accent">
             Sprievodný list
-            </span>
+          </span>
         </template>
 
         <template #end>
-            <Button
-            icon="bi bi-printer"
-            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-            @click="printPage"
-            />
+          <Button icon="bi bi-printer" class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+            @click="printPage" />
         </template>
-        </Toolbar>
+      </Toolbar>
 
-        <div class="cover-sheet-wrapper">
+      <div class="cover-sheet-wrapper">
         <div id="cover-sheet">
-            <div class="text-center font-bold text-lg mb-4">
+          <div class="text-center font-bold text-lg mb-4">
             SPRIEVODNÝ LIST | vykázané kilometre
-            </div>
+          </div>
 
-            <table class="w-full border-collapse border-b-0 text-sm">
+          <table class="w-full border-collapse border-b-0 text-sm">
             <tbody>
-                <tr>
+              <tr>
                 <td class="border border-black p-2 align-top text-right">
-                    Sprievodný list k:
-                    <strong>{{ sheet.fileName }}</strong>
+                  Sprievodný list k:
+                  <strong>{{ sheet.fileName }}</strong>
                 </td>
-                </tr>
+              </tr>
 
-                <tr>
+              <tr>
                 <td class="border border-black p-2 align-top w-full">
-                    <strong>Vykázaná suma:</strong><br />
-                    {{ formattedAmount }}
+                  <strong>Vykázaná suma:</strong><br />
+                  {{ formattedAmount }}
                 </td>
-                </tr>
+              </tr>
 
-                <tr>
+              <tr>
                 <td class="border border-black p-2 align-top w-full">
-                    <strong>Počet kilometrov:</strong><br />
-                    {{ formattedKilometers }}
+                  <strong>Počet kilometrov:</strong><br />
+                  {{ formattedKilometers }}
                 </td>
-                </tr>
+              </tr>
 
-                <tr>
+              <tr>
                 <td class="border border-black border-b-0 p-2 align-top w-full">
-                    <strong>Obdobie:</strong><br />
-                    {{ formatDate(sheet.periodFrom) }} - {{ formatDate(sheet.periodTo) }}
+                  <strong>Obdobie:</strong><br />
+                  {{ formatDate(sheet.periodFrom) }} - {{ formatDate(sheet.periodTo) }}
                 </td>
-                </tr>
+              </tr>
 
-                <tr>
+              <tr>
                 <td class="border border-black border-b-0 p-2 align-top w-full">
-                    <strong>Poisťovňa:</strong><br />
-                    {{ sheet.insuranceName }}
+                  <strong>Poisťovňa:</strong><br />
+                  {{ sheet.insuranceName }}
                 </td>
-                </tr>
+              </tr>
             </tbody>
-            </table>
+          </table>
 
-            <table class="w-full border-collapse text-sm">
+          <table class="w-full border-collapse text-sm">
             <tbody>
-                <tr>
+              <tr>
                 <td class="border border-black p-2 align-top">
-                    <strong>Vykázal:</strong><br />
-                    {{ sheet.performedBy }}
+                  <strong>Vykázal:</strong><br />
+                  {{ sheet.performedBy }}
                 </td>
                 <td class="border border-black p-2 align-top">
-                    <strong>Vykázané dňa:</strong><br />
-                    {{ formatDate(sheet.performedDate) }}
+                  <strong>Vykázané dňa:</strong><br />
+                  {{ formatDate(sheet.performedDate) }}
                 </td>
-                </tr>
+              </tr>
 
-                <tr>
+              <tr>
                 <td class="border border-black p-2 align-top">
-                    <strong>Spoločnosť:</strong><br />
-                    {{ sheet.companyName }}
+                  <strong>Spoločnosť:</strong><br />
+                  {{ sheet.companyName }}
                 </td>
                 <td class="border border-black p-2 align-top">
-                    <strong>Prevádzka:</strong><br />
-                    {{ sheet.branchName }}
+                  <strong>Prevádzka:</strong><br />
+                  {{ sheet.branchName }}
                 </td>
-                </tr>
+              </tr>
             </tbody>
-            </table>
+          </table>
 
-            <div v-if="loading" class="mt-4 text-center text-sm text-gray-500">
+          <div v-if="loading" class="mt-4 text-center text-sm text-gray-500">
             Načítavam...
-            </div>
+          </div>
 
-            <div v-else-if="!payload" class="mt-4 text-center text-sm text-warning">
+          <div v-else-if="!payload" class="mt-4 text-center text-sm text-danger">
             Dokument sa nepodarilo načítať.
-            </div>
+          </div>
         </div>
-        </div>
+      </div>
     </div>
-    </div>
+  </div>
 </template>
 
 <style>
@@ -297,13 +288,36 @@ onMounted(loadDocument)
   background: transparent;
 }
 
-@page { size: A4; margin: 0; }
+@page {
+  size: A4;
+  margin: 0;
+}
 
 @media print {
-  body { margin: 0; padding: 0; }
-  body * { visibility: hidden !important; }
-  #cover-sheet, #cover-sheet * { visibility: visible !important; }
-  #cover-sheet { position: fixed !important; inset: 0 !important; margin: 0 auto!important; box-shadow: none !important; }
-  .no-print, .p-toolbar { display: none !important; }
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #cover-sheet,
+  #cover-sheet * {
+    visibility: visible !important;
+  }
+
+  #cover-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+  }
+
+  .no-print,
+  .p-toolbar {
+    display: none !important;
+  }
 }
 </style>

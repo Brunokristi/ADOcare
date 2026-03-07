@@ -74,13 +74,13 @@ async function save() {
         <div class="col-span-12">
             <label class="block text-normal mb-1">Názov</label>
             <InputText v-model.trim="local.name" fluid />
-            <small v-if="submitted && !local.name" class="text-warning">Povinné pole</small>
+            <small v-if="submitted && !local.name" class="text-danger">Povinné pole</small>
         </div>
 
         <div class="col-span-12">
             <label class="block text-normal mb-1">Text</label>
             <Textarea v-model.trim="local.text" :rows="6" autoResize fluid />
-            <small v-if="submitted && !local.text" class="text-warning">Povinné pole</small>
+            <small v-if="submitted && !local.text" class="text-danger">Povinné pole</small>
         </div>
 
         <div class="col-span-12 mt-4 flex items-center justify-end gap-2">

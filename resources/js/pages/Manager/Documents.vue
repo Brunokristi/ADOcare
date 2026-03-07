@@ -154,7 +154,7 @@ const options = computed<DataTableOptions<Document>>(() => ({
       key: 'delete',
       disabled: ({ selectedRows }: { selectedRows: Document[] }) => selectedRows.length === 0,
       icon: 'bi bi-eraser',
-      class: 'bg-warning!',
+      class: 'bg-danger!',
       confirm: 'Naozaj chcete zmazať vybrané dokumenty?',
       handler: async ({ selectedRows, remote }: { selectedRows: Document[]; remote: any }) => {
         try {

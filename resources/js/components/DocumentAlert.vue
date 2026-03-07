@@ -65,38 +65,23 @@ async function deleteDocument() {
 </script>
 
 <template>
-  <Dialog
-    :visible="visible"
-    @update:visible="emit('update:visible', $event)"
-    :style="{ width: '600px' }"
-    :modal="true"
-    :closable="true"
-    :header="'Upozornenie'"
-  >
+  <Dialog :visible="visible" @update:visible="emit('update:visible', $event)" :style="{ width: '600px' }" :modal="true"
+    :closable="true" :header="'Upozornenie'">
 
     <div class="flex items-center justify-between w-full">
-        <span class="text-heading">
-          Dokument pre dané obdobie už existuje.
-        </span>
+      <span class="text-heading">
+        Dokument pre dané obdobie už existuje.
+      </span>
 
-        <div class="flex items-center gap-2">
-          <Button
-            label="Zobrazit"
-            text
-            @click="viewDocument"
-            class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0"
-          />
-          <Button
-            label="Vymazať"
-            text
-            @click="deleteDocument"
-            class="!bg-warning !px-4 !text-white"
-          />
-        </div>
+      <div class="flex items-center gap-2">
+        <Button label="Zobrazit" text @click="viewDocument"
+          class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0" />
+        <Button label="Vymazať" text @click="deleteDocument" class="!bg-danger !px-4 !text-white" />
+      </div>
     </div>
 
     <div class="w-full flex justify-end mt-4">
-        <Button label="Pokračovať v tvorení dokumentu" text @click="closeDialog" class="text-accent! px-2!" />
+      <Button label="Pokračovať v tvorení dokumentu" text @click="closeDialog" class="text-accent! px-2!" />
     </div>
   </Dialog>
 </template>

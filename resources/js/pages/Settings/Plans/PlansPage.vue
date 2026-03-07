@@ -58,7 +58,7 @@ const options = ref<DataTableOptions<Plan>>({
             key: 'delete',
             label: '',
             icon: 'bi bi-eraser',
-            class: 'bg-warning!',
+            class: 'bg-danger!',
             tooltip: 'Vymazať vybrané plány',
             disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
             confirm: 'Naozaj vymazať vybrané plány?',

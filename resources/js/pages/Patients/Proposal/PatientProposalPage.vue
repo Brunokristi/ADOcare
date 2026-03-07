@@ -410,18 +410,9 @@ async function generateDocument() {
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
 
-            <AutoComplete
-              v-model="medicalDiagnoses"
-              :suggestions="filteredDiagnoses"
-              multiple
-              :minLength="1"
-              dropdown
-              completeOnFocus
-              optionLabel="code"
-              @complete="searchDiagnoses"
-              class="w-full"
-              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
-            >
+            <AutoComplete v-model="medicalDiagnoses" :suggestions="filteredDiagnoses" multiple :minLength="1" dropdown
+              completeOnFocus optionLabel="code" @complete="searchDiagnoses" class="w-full"
+              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!">
               <template #option="{ option }">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ option.code }}</span>
@@ -432,15 +423,13 @@ async function generateDocument() {
               <template #chip="{ value }">
                 <div class="inline-flex items-center gap-2 bg-darkgrey text-lightgrey px-3 py-1 rounded-md text-normal">
                   <span class="whitespace-nowrap text-normal">{{ value.code }}</span>
-                  <i
-                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
-                    @click.stop="removeMedicalDiagnosis(value)"
-                  ></i>
+                  <i class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                    @click.stop="removeMedicalDiagnosis(value)"></i>
                 </div>
               </template>
             </AutoComplete>
 
-            <small v-if="submitted && errors.medicalDiagnosis" class="text-warning">{{ errors.medicalDiagnosis }}</small>
+            <small v-if="submitted && errors.medicalDiagnosis" class="text-danger">{{ errors.medicalDiagnosis }}</small>
           </div>
         </div>
 
@@ -448,18 +437,9 @@ async function generateDocument() {
           <div>
             <label class="block text-normal mb-2">Sesterská diagnóza</label>
 
-            <AutoComplete
-              v-model="nurseDiagnoses"
-              :suggestions="filteredNurseDiagnoses"
-              multiple
-              :minLength="1"
-              dropdown
-              completeOnFocus
-              optionLabel="code"
-              @complete="searchNurseDiagnoses"
-              class="w-full"
-              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
-            >
+            <AutoComplete v-model="nurseDiagnoses" :suggestions="filteredNurseDiagnoses" multiple :minLength="1"
+              dropdown completeOnFocus optionLabel="code" @complete="searchNurseDiagnoses" class="w-full"
+              inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!">
               <template #option="{ option }">
                 <div class="flex flex-col">
                   <span class="shrink-0 font-medium">{{ option.code }}</span>
@@ -470,55 +450,42 @@ async function generateDocument() {
               <template #chip="{ value }">
                 <div class="inline-flex items-center gap-2 bg-darkgrey text-lightgrey px-3 py-1 rounded-md text-normal">
                   <span class="whitespace-nowrap text-normal">{{ value.code }}</span>
-                  <i
-                    class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
-                    @click.stop="nurseDiagnoses = nurseDiagnoses.filter(d => d.id !== value.id)"
-                  ></i>
+                  <i class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                    @click.stop="nurseDiagnoses = nurseDiagnoses.filter(d => d.id !== value.id)"></i>
                 </div>
               </template>
             </AutoComplete>
 
-            <small v-if="submitted && errors.nurseDiagnosis" class="text-warning">{{ errors.nurseDiagnosis }}</small>
+            <small v-if="submitted && errors.nurseDiagnosis" class="text-danger">{{ errors.nurseDiagnosis }}</small>
           </div>
         </div>
 
         <div>
           <div>
             <label class="block text-normal mb-2">Dátum</label>
-            <DatePicker
-              v-model="date"
-              dateFormat="dd.mm.yy"
-              :showIcon="false"
-              class="w-full"
+            <DatePicker v-model="date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
-              :invalid="submitted && !!errors.date"
-            />
-            <small v-if="submitted && errors.date" class="text-warning">{{ errors.date }}</small>
+              :invalid="submitted && !!errors.date" />
+            <small v-if="submitted && errors.date" class="text-danger">{{ errors.date }}</small>
           </div>
         </div>
 
         <div>
-          <label class="block text-normal mb-2">Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej starostlivosti</label>
-          <Textarea
-            v-model="epicrisisDescription"
-            class="w-full border-none!"
-            rows="4"
+          <label class="block text-normal mb-2">Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej
+            starostlivosti</label>
+          <Textarea v-model="epicrisisDescription" class="w-full border-none!" rows="4"
             inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            :invalid="submitted && !!errors.epicrisisDescription"
-          />
-          <small v-if="submitted && errors.epicrisisDescription" class="text-warning">{{ errors.epicrisisDescription }}</small>
+            :invalid="submitted && !!errors.epicrisisDescription" />
+          <small v-if="submitted && errors.epicrisisDescription" class="text-danger">{{ errors.epicrisisDescription
+            }}</small>
         </div>
 
         <div>
           <label class="block text-normal mb-2">Plán ošetrovateľskej starostlivosti</label>
-          <Textarea
-            v-model="carePlan"
-            class="w-full border-none!"
-            rows="4"
+          <Textarea v-model="carePlan" class="w-full border-none!" rows="4"
             inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            :invalid="submitted && !!errors.carePlan"
-          />
-          <small v-if="submitted && errors.carePlan" class="text-warning">{{ errors.carePlan }}</small>
+            :invalid="submitted && !!errors.carePlan" />
+          <small v-if="submitted && errors.carePlan" class="text-danger">{{ errors.carePlan }}</small>
         </div>
 
         <div class="w-full">
@@ -529,46 +496,27 @@ async function generateDocument() {
           </div>
 
           <div v-else class="relative">
-            <button
-              type="button"
-              class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+            <button type="button" class="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
                      flex items-center justify-center cursor-pointer hover:bg-grey"
-              @click.prevent="scrollMacros('care-plan', -1)"
-              title="Doľava"
-            >
+              @click.prevent="scrollMacros('care-plan', -1)" title="Doľava">
               <i class="bi bi-chevron-left text-darkgrey" />
             </button>
 
-            <button
-              type="button"
-              class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
+            <button type="button" class="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-md
                      flex items-center justify-center cursor-pointer hover:bg-grey"
-              @click.prevent="scrollMacros('care-plan', 1)"
-              title="Doprava"
-            >
+              @click.prevent="scrollMacros('care-plan', 1)" title="Doprava">
               <i class="bi bi-chevron-right text-darkgrey" />
             </button>
 
             <!-- chips row -->
-            <div
-              :ref="setMacroScrollRef('care-plan')"
+            <div :ref="setMacroScrollRef('care-plan')"
               class="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth py-3 px-10 mb-2"
-              style="scrollbar-width: thin;"
-            >
-              <button
-                v-for="plan in plans"
-                :key="plan.id"
-                type="button"
-                class="shrink-0 px-3 py-1 rounded-md bg-accent
+              style="scrollbar-width: thin;">
+              <button v-for="plan in plans" :key="plan.id" type="button" class="shrink-0 px-3 py-1 rounded-md bg-accent
                        text-white text-normal border border-transparent
                        hover:cursor-pointer hover:bg-darkgrey
-                       "
-                @pointerdown.stop
-                @mousedown.stop
-                @touchstart.stop
-                @click.prevent.stop="appendToSectionText(plan.text)"
-                :title="plan.text"
-              >
+                       " @pointerdown.stop @mousedown.stop @touchstart.stop
+                @click.prevent.stop="appendToSectionText(plan.text)" :title="plan.text">
                 {{ plan.name }}
               </button>
             </div>
@@ -593,7 +541,7 @@ async function generateDocument() {
               <label :for="`duration-${idx}`" class="text-normal cursor-pointer">{{ option.label }}</label>
             </div>
           </div>
-          <small v-if="submitted && errors.expectedDuration" class="text-warning">{{ errors.expectedDuration }}</small>
+          <small v-if="submitted && errors.expectedDuration" class="text-danger">{{ errors.expectedDuration }}</small>
         </div>
 
         <div>
@@ -602,20 +550,10 @@ async function generateDocument() {
           <div v-for="(row, idx) in procedures" :key="idx" class="flex gap-4 items-end mb-2">
             <div class="flex-1">
               <label :for="`procedure-${idx}`" class="block text-normal mb-1">Výkon</label>
-              <AutoComplete
-                :id="`procedure-${idx}`"
-                v-model="row.procedure"
-                :suggestions="filteredProcedures"
-                @complete="searchProcedures"
-                :virtualScrollerOptions="{ itemSize: 38 }"
-                optionLabel="code"
-                dropdown
-                dropdownMode="blank"
-                :minLength="0"
-                completeOnFocus
-                class="w-full"
-                inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!"
-              >
+              <AutoComplete :id="`procedure-${idx}`" v-model="row.procedure" :suggestions="filteredProcedures"
+                @complete="searchProcedures" :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown
+                dropdownMode="blank" :minLength="0" completeOnFocus class="w-full"
+                inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!">
                 <template #option="{ option }">
                   <div class="flex flex-col">
                     <span class="shrink-0 font-medium">{{ option.code }}</span>
@@ -627,52 +565,29 @@ async function generateDocument() {
 
             <div class="flex-1">
               <label :for="`frequency-${idx}`" class="block mb-1 text-normal">Frekvencia realizácie</label>
-              <Select
-                :id="`frequency-${idx}`"
-                v-model="row.frequency"
-                :options="frequencyOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Vyberte frekvenciu"
-                class="w-full border-none!"
-                inputClass="w-full! shadow-none! focus:ring-0! focus:shadow-none!"
-              />
+              <Select :id="`frequency-${idx}`" v-model="row.frequency" :options="frequencyOptions" optionLabel="label"
+                optionValue="value" placeholder="Vyberte frekvenciu" class="w-full border-none!"
+                inputClass="w-full! shadow-none! focus:ring-0! focus:shadow-none!" />
             </div>
 
-            <Button
-              v-if="idx === procedures.length - 1"
-              icon="bi bi-plus"
-              text
+            <Button v-if="idx === procedures.length - 1" icon="bi bi-plus" text
               class="bg-accent! text-white! h-7! w-7! p-0! rounded-md flex items-center justify-center"
-              @click.prevent="addProcedure"
-            />
-            <Button
-              v-else
-              icon="bi bi-eraser"
-              text
-              class="bg-warning! text-white! h-7! w-7! p-0! rounded-md flex items-center justify-center"
-              @click.prevent="removeProcedure(idx)"
-            />
+              @click.prevent="addProcedure" />
+            <Button v-else icon="bi bi-eraser" text
+              class="bg-danger! text-white! h-7! w-7! p-0! rounded-md flex items-center justify-center"
+              @click.prevent="removeProcedure(idx)" />
           </div>
 
-          <small v-if="submitted && errors.procedures" class="text-warning">{{ errors.procedures }}</small>
+          <small v-if="submitted && errors.procedures" class="text-danger">{{ errors.procedures }}</small>
         </div>
       </section>
 
-      <DocumentAlert
-        :visible="dialogVisible"
-        :documentId="documentId"
-        document-url="/documents/proposal/{id}"
-        @update:visible="dialogVisible = $event"
-        @close="closeDialog"
-        @deleted="checkDocumentExists"
-      />
+      <DocumentAlert :visible="dialogVisible" :documentId="documentId" document-url="/documents/proposal/{id}"
+        @update:visible="dialogVisible = $event" @close="closeDialog" @deleted="checkDocumentExists" />
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
-        >
+        <Button type="submit"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
           Generovať dokument
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>

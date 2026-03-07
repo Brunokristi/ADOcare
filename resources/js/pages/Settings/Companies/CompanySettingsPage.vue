@@ -100,28 +100,28 @@ async function save() {
                         <div>
                             <label class="block text-sm mb-1">Názov</label>
                             <InputText v-model="company.name" class="w-full" />
-                            <small v-if="submitted && !company.name" class="text-warning">
+                            <small v-if="submitted && !company.name" class="text-danger">
                                 Názov je povinný.
                             </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">Zapísaná v registri</label>
                             <InputText v-model="company.register" class="w-full" />
-                            <small v-if="submitted && !company.register" class="text-warning">
+                            <small v-if="submitted && !company.register" class="text-danger">
                                 Zapísaná v registri je povinná.
                             </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">IČO</label>
                             <InputText v-model="company.ico" class="w-full" />
-                            <small v-if="submitted && !company.ico" class="text-warning">
+                            <small v-if="submitted && !company.ico" class="text-danger">
                                 IČO je povinné.
                             </small>
                         </div>
                         <div>
                             <label class="block text-sm mb-1">DIČ</label>
                             <InputText v-model="company.dic" class="w-full" />
-                            <small v-if="submitted && !company.dic" class="text-warning">
+                            <small v-if="submitted && !company.dic" class="text-danger">
                                 DIČ je povinné.
                             </small>
                         </div>
@@ -147,7 +147,7 @@ async function save() {
                         <div class="col-span-2">
                             <label class="block text-sm mb-1">Adresa (ulica, mesto, PSČ)</label>
                             <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
-                            <small v-if="submitted && !addressQuery" class="text-warning">
+                            <small v-if="submitted && !addressQuery" class="text-danger">
                                 Adresa je povinná.
                             </small>
                         </div>
@@ -186,7 +186,7 @@ async function save() {
                                     </span>
                                 </template>
                             </Select>
-                            <small v-if="submitted && !company.representative_id" class="text-warning">
+                            <small v-if="submitted && !company.representative_id" class="text-danger">
                                 Zodpovedná osoba je povinná.
                             </small>
                         </div>

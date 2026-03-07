@@ -140,7 +140,7 @@ async function save() {
                     <div>
                         <label class="block text-normal mb-1">Identifikátor</label>
                         <InputText v-model="branch.identificator" class="w-full" />
-                        <small v-if="submitted && !branch.identificator" class="text-warning">
+                        <small v-if="submitted && !branch.identificator" class="text-danger">
                             Identifikátor je povinný.
                         </small>
                     </div>
@@ -148,7 +148,7 @@ async function save() {
                     <div>
                         <label class="block text-normal mb-1">Kód</label>
                         <InputText v-model="branch.code" class="w-full" />
-                        <small v-if="submitted && !branch.code" class="text-warning">
+                        <small v-if="submitted && !branch.code" class="text-danger">
                             Kód je povinný.
                         </small>
                     </div>
@@ -167,7 +167,7 @@ async function save() {
                                 </span>
                             </template>
                         </Select>
-                        <small v-if="submitted && !branch.representative_id" class="text-warning">
+                        <small v-if="submitted && !branch.representative_id" class="text-danger">
                             Odborný zástupca je povinný.
                         </small>
                     </div>
@@ -179,7 +179,7 @@ async function save() {
                 <div>
                     <label class="block text-normal mb-1">Adresa</label>
                     <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
-                    <small v-if="submitted && !addressQuery" class="text-warning">
+                    <small v-if="submitted && !addressQuery" class="text-danger">
                         Adresa je povinná.
                     </small>
                 </div>
@@ -212,7 +212,7 @@ async function save() {
                         <label class="block text-normal mb-1">Začiatok ošetrovania</label>
                         <DatePicker v-model="form.terrain_start_time" timeOnly hourFormat="24" class="w-full"
                             inputClass="w-full" />
-                        <small v-if="submitted && !form.terrain_start_time" class="text-warning">
+                        <small v-if="submitted && !form.terrain_start_time" class="text-danger">
                             Začiatok ošetrovania je povinný.
                         </small>
                     </div>
@@ -221,7 +221,7 @@ async function save() {
                         <label class="block text-normal mb-1">Začiatok administratívy</label>
                         <DatePicker v-model="form.administrative_start_time" timeOnly hourFormat="24" class="w-full"
                             inputClass="w-full" />
-                        <small v-if="submitted && !form.administrative_start_time" class="text-warning">
+                        <small v-if="submitted && !form.administrative_start_time" class="text-danger">
                             Začiatok administratívy je povinný.
                         </small>
                     </div>
@@ -231,7 +231,7 @@ async function save() {
                         <InputNumber v-model="branch.per_location_time" :min="0" class="w-full" />
                         <small
                             v-if="submitted && (branch.per_location_time === null || branch.per_location_time === undefined)"
-                            class="text-warning">
+                            class="text-danger">
                             Čas na pacienta je povinný.
                         </small>
                     </div>

@@ -81,7 +81,7 @@ async function submit() {
                 <div>
                     <label for="login" class="block text-normal mb-1">Prihlasovací kód</label>
                     <InputText id="login" class="w-full" v-model="login" />
-                    <small v-if="submitted && !login" class="text-warning">
+                    <small v-if="submitted && !login" class="text-danger">
                         Prihlasovací kód je povinný.
                     </small>
                 </div>
@@ -98,7 +98,7 @@ async function submit() {
                         </InputIcon>
                     </IconField>
 
-                    <small v-if="submitted && !pin" class="text-warning">
+                    <small v-if="submitted && !pin" class="text-danger">
                         PIN je povinný.
                     </small>
                 </div>

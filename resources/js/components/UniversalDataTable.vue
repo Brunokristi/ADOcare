@@ -150,15 +150,15 @@ watch(
                         <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function'
                             ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote })
                             : unref(a.icon)" :label="a.label" :title="typeof a.tooltip === 'function'
-                                    ? a.tooltip({ rows: remote.items.value, selectedRows: selectedRows, remote })
-                                    : unref(a.tooltip)" :disabled="a.disabled &&
-                                    (typeof a.disabled === 'boolean'
-                                        ? a.disabled
-                                        : a.disabled({
-                                            rows: remote.items.value,
-                                            selectedRows: selectedRows,
-                                            remote,
-                                        }))" class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)"
+                                ? a.tooltip({ rows: remote.items.value, selectedRows: selectedRows, remote })
+                                : unref(a.tooltip)" :disabled="a.disabled &&
+                                        (typeof a.disabled === 'boolean'
+                                            ? a.disabled
+                                            : a.disabled({
+                                                rows: remote.items.value,
+                                                selectedRows: selectedRows,
+                                                remote,
+                                            }))" class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)"
                             :class="unref(a.class) ?? ''" />
                     </template>
                 </div>
@@ -176,7 +176,7 @@ watch(
                 <div class="flex items-center gap-2">
                     <Button label="Nie" text @click="confirmNo"
                         class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0" />
-                    <Button label="Áno" text @click="confirmYes" class="!bg-warning !px-4 !text-white" />
+                    <Button label="Áno" text @click="confirmYes" class="!bg-danger !px-4 !text-white" />
                 </div>
             </div>
         </Dialog>

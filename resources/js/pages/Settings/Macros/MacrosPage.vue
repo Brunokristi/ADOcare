@@ -59,7 +59,7 @@ const options = ref<DataTableOptions<Macro>>({
             key: 'delete',
             label: '',
             icon: 'bi bi-eraser',
-            class: 'bg-warning!',
+            class: 'bg-danger!',
             tooltip: 'Vymazať vybrané makrá',
             disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
             confirm: 'Naozaj vymazať vybrané makrá?',

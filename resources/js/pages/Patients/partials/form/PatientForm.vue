@@ -198,7 +198,7 @@ watch(
                 <InputText :disabled="disabled" v-model.trim="localPatient.first_name" fluid
                     :invalid="submitted && !localPatient.first_name"
                     :class="{ '!bg-transparent': disabled, '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.first_name" class="text-warning">{{ errors.first_name }}</small>
+                <small v-if="submitted && errors.first_name" class="text-danger">{{ errors.first_name }}</small>
             </div>
 
             <div class="col-span-4">
@@ -208,7 +208,7 @@ watch(
                 <InputText :disabled="disabled" v-model.trim="localPatient.last_name" fluid
                     :invalid="submitted && !localPatient.last_name"
                     :class="{ '!bg-transparent': disabled, '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.last_name" class="text-warning">{{ errors.last_name }}</small>
+                <small v-if="submitted && errors.last_name" class="text-danger">{{ errors.last_name }}</small>
             </div>
 
             <div class="col-span-4">
@@ -226,8 +226,8 @@ watch(
                 <InputText :disabled="disabled" v-model="localPatient.personal_number" maxlength="11"
                     inputmode="numeric" pattern="[0-9]*" fluid :invalid="submitted && !localPatient.personal_number"
                     :class="{ '!opacity-50': disabled }" @input="onPersonalNumberInput" />
-                <small v-if="submitted && errors.personal_number" class="text-warning">{{ errors.personal_number
-                    }}</small>
+                <small v-if="submitted && errors.personal_number" class="text-danger">{{ errors.personal_number
+                }}</small>
             </div>
 
             <div class="col-span-2">
@@ -237,17 +237,17 @@ watch(
                 <Select :disabled="disabled" v-model="localPatient.sex" :options="sexOptions" optionLabel="label"
                     optionValue="value" fluid :invalid="submitted && !localPatient.sex"
                     :class="{ '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.sex" class="text-warning">{{ errors.sex }}</small>
+                <small v-if="submitted && errors.sex" class="text-danger">{{ errors.sex }}</small>
             </div>
 
             <div class="col-span-2">
                 <label :class="['block text-normal mb-1', disabled && '!opacity-50']">
                     Národnosť
                 </label>
-                <Select :disabled="disabled" v-model="localPatient.country_id" :options="countryOptions" optionLabel="name"
-                    optionValue="id" fluid filter :invalid="submitted && !localPatient.country_id"
+                <Select :disabled="disabled" v-model="localPatient.country_id" :options="countryOptions"
+                    optionLabel="name" optionValue="id" fluid filter :invalid="submitted && !localPatient.country_id"
                     :class="{ '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.country_id" class="text-warning">{{ errors.country_id }}</small>
+                <small v-if="submitted && errors.country_id" class="text-danger">{{ errors.country_id }}</small>
             </div>
 
             <div class="col-span-4">
@@ -256,7 +256,7 @@ watch(
                 </label>
                 <InputText :disabled="disabled" v-model.trim="localPatient.contact" fluid
                     :class="{ '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.contact" class="text-warning">{{ errors.contact }}</small>
+                <small v-if="submitted && errors.contact" class="text-danger">{{ errors.contact }}</small>
             </div>
         </div>
 
@@ -276,15 +276,14 @@ watch(
                     @show="onDoctorSelectShow">
                     <template #footer>
                         <div class="p-2">
-                            <Button label="Pridať nového lekára" class="w-full! !bg-accent !text-white !text-normal !rounded-md hover:bg-darkgrey! !border-0!" icon="bi bi-plus" 
-                                type="button"
-                                @click.prevent.stop="openDoctorsSettingsFromFooter"
-                                 />
+                            <Button label="Pridať nového lekára"
+                                class="w-full! !bg-accent !text-white !text-normal !rounded-md hover:bg-darkgrey! !border-0!"
+                                icon="bi bi-plus" type="button" @click.prevent.stop="openDoctorsSettingsFromFooter" />
                         </div>
                     </template>
                 </Select>
 
-                <small v-if="submitted && errors.doctor_id" class="text-warning">
+                <small v-if="submitted && errors.doctor_id" class="text-danger">
                     {{ errors.doctor_id }}
                 </small>
             </div>
@@ -296,7 +295,7 @@ watch(
                 <Select :disabled="disabled" v-model="localPatient.insurance_company_id" :options="insuranceOptions"
                     optionLabel="name" optionValue="id" fluid :invalid="submitted && !localPatient.insurance_company_id"
                     :class="{ '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.insurance_company_id" class="text-warning">
+                <small v-if="submitted && errors.insurance_company_id" class="text-danger">
                     {{ errors.insurance_company_id }}
                 </small>
             </div>
@@ -314,13 +313,12 @@ watch(
                 <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" class="w-full"
                     :disabled="disabled" :invalid="submitted && !!errors.address"
                     :class="{ '!opacity-50': disabled }" />
-                <small v-if="submitted && errors.address" class="text-warning">{{ errors.address }}</small>
+                <small v-if="submitted && errors.address" class="text-danger">{{ errors.address }}</small>
             </div>
 
             <div class="col-span-12">
                 <MapSelector :latitude="localPatient.latitude" :longitude="localPatient.longitude"
-                    :disabled="authStore.currentRole === 'manager'"
-                    @update="addressOnMapClick" />
+                    :disabled="authStore.currentRole === 'manager'" @update="addressOnMapClick" />
             </div>
         </div>
     </div>

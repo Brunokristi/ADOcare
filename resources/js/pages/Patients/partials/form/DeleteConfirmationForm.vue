@@ -6,7 +6,7 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import type { RemoteTableReturn } from '@/types/datatable'
 
-const props = defineProps<IModalContentProps & { 
+const props = defineProps<IModalContentProps & {
     selectedRows: Patient[]
     remote: RemoteTableReturn
 }>()
@@ -43,14 +43,15 @@ const cancel = () => {
 <template>
     <div class="flex flex-col gap-6">
         <div>
-            <p class="text-warning">
+            <p class="text-danger">
                 Naozaj vymazať vybraných pacientov?
             </p>
         </div>
 
         <div class="flex items-center gap-2">
-            <Checkbox inputId="deletePatientPoints" v-model="deletePatientPointsData" :binary="true"/>
-            <label for="deletePatientPoints" class="text-normal cursor-pointer">Odstrániť týmto pacientom všetky body</label>
+            <Checkbox inputId="deletePatientPoints" v-model="deletePatientPointsData" :binary="true" />
+            <label for="deletePatientPoints" class="text-normal cursor-pointer">Odstrániť týmto pacientom všetky
+                body</label>
         </div>
 
         <div class="col-span-12 mt-4 flex items-center justify-end gap-2">

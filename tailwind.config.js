@@ -10,6 +10,7 @@ export default {
                 lightgrey: "var(--c-light-grey)",
                 accent: "var(--c-accent)",
                 warning: "var(--c-warning)",
+                danger: "var(--c-danger)",
                 success: "var(--c-success)",
                 tag1: "var(--c-tag-1)",
                 tag2: "var(--c-tag-2)",

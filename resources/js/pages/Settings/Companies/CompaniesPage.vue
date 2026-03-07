@@ -56,7 +56,7 @@ const options = computed<DataTableOptions<Company>>(() => ({
             key: 'delete',
             disabled: ({ selectedRows }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
-            class: 'bg-warning!',
+            class: 'bg-danger!',
             confirm: 'Zmazať vybrané spoločnosti?',
             handler: async ({ selectedRows, remote }) => {
                 await api.delete('v1/companies', { data: { ids: selectedRows.map((r) => r.id) } })

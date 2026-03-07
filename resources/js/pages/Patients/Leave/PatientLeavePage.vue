@@ -84,7 +84,7 @@ async function checkDocumentExists() {
 }
 
 async function loadLastPatientPointDate() {
-  
+
   if (!patientId.value) {
     return
   }
@@ -107,7 +107,7 @@ async function loadLastPatientPointDate() {
 
     if (records.length > 0) {
       const firstRecord = records[0]
-      
+
       if (firstRecord.date) {
         const lastDate = new Date(firstRecord.date)
 
@@ -195,30 +195,18 @@ async function generateDocument() {
 </script>
 
 <template>
-  <DocumentAlert
-    :visible="dialogVisible"
-    :document-id="documentId"
-    document-url="/documents/leave/{id}"
-    @update:visible="dialogVisible = $event"
-    @deleted="checkDocumentExists"
-  />
+  <DocumentAlert :visible="dialogVisible" :document-id="documentId" document-url="/documents/leave/{id}"
+    @update:visible="dialogVisible = $event" @deleted="checkDocumentExists" />
 
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
         <div>
           <label class="block text-normal mb-2">Dátum</label>
-          <DatePicker
-            v-model="date"
-            dateFormat="dd.mm.yy"
-            timeFormat="HH:mm"
-            :showTime="true"
-            :showIcon="false"
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
-            :invalid="submitted && !!errors.date"
-          />
-          <small v-if="submitted && errors.date" class="text-warning">{{ errors.date }}</small>
+          <DatePicker v-model="date" dateFormat="dd.mm.yy" timeFormat="HH:mm" :showTime="true" :showIcon="false"
+            class="w-full" inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+            :invalid="submitted && !!errors.date" />
+          <small v-if="submitted && errors.date" class="text-danger">{{ errors.date }}</small>
         </div>
 
         <div>
@@ -229,59 +217,41 @@ async function generateDocument() {
               <label :for="`opt-${idx}`" class="text-normal cursor-pointer">{{ option.label }}</label>
             </div>
           </div>
-          <small v-if="submitted && errors.patientProblem" class="text-warning">{{ errors.patientProblem }}</small>
+          <small v-if="submitted && errors.patientProblem" class="text-danger">{{ errors.patientProblem }}</small>
         </div>
 
         <div v-if="selectedProblems.includes('other_findings')">
           <label class="block text-normal mb-2">Iné zistenia</label>
-          <Textarea
-            v-model="other_findings"
-            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
-            rows="3"
-            :invalid="submitted && !!errors.other_findings"
-          />
-          <small v-if="submitted && errors.other_findings" class="text-warning">{{ errors.other_findings }}</small>
+          <Textarea v-model="other_findings" class="w-full !border-0 !shadow-none !bg-white focus:!ring-0" rows="3"
+            :invalid="submitted && !!errors.other_findings" />
+          <small v-if="submitted && errors.other_findings" class="text-danger">{{ errors.other_findings }}</small>
         </div>
 
         <div>
           <label class="block text-normal mb-2">Vyhodnotenie výsledkov ošetrovateľskej starostlivosti</label>
-          <Textarea
-            v-model="results"
-            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
-            rows="3"
-            :invalid="submitted && !!errors.results"
-          />
-          <small v-if="submitted && errors.results" class="text-warning">{{ errors.results }}</small>
+          <Textarea v-model="results" class="w-full !border-0 !shadow-none !bg-white focus:!ring-0" rows="3"
+            :invalid="submitted && !!errors.results" />
+          <small v-if="submitted && errors.results" class="text-danger">{{ errors.results }}</small>
         </div>
 
         <div>
           <label class="block text-normal mb-2">Realizovaná edukácia o</label>
-          <Textarea
-            v-model="education"
-            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
-            rows="2"
-            :invalid="submitted && !!errors.education"
-          />
-          <small v-if="submitted && errors.education" class="text-warning">{{ errors.education }}</small>
+          <Textarea v-model="education" class="w-full !border-0 !shadow-none !bg-white focus:!ring-0" rows="2"
+            :invalid="submitted && !!errors.education" />
+          <small v-if="submitted && errors.education" class="text-danger">{{ errors.education }}</small>
         </div>
 
         <div>
           <label class="block text-normal mb-2">Pacient pri ukončení hospitalizácie prevzal</label>
-          <Textarea
-            v-model="received"
-            class="w-full !border-0 !shadow-none !bg-white focus:!ring-0"
-            rows="2"
-            :invalid="submitted && !!errors.received"
-          />
-          <small v-if="submitted && errors.received" class="text-warning">{{ errors.received }}</small>
+          <Textarea v-model="received" class="w-full !border-0 !shadow-none !bg-white focus:!ring-0" rows="2"
+            :invalid="submitted && !!errors.received" />
+          <small v-if="submitted && errors.received" class="text-danger">{{ errors.received }}</small>
         </div>
       </section>
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
-        >
+        <Button type="submit"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
           Generovať dokument
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>

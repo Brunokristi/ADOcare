@@ -105,8 +105,8 @@ export default {
                     'rounded-md!',
                     'border-l-4',
                     props?.message?.severity === 'success' && 'bg-success!',
-                    props?.message?.severity === 'error' && 'bg-warning!',
-                    props?.message?.severity === 'warn' && 'bg-warning!',
+                    props?.message?.severity === 'error' && 'bg-danger!',
+                    props?.message?.severity === 'warn' && 'bg-danger!',
                     props?.message?.severity === 'info' && 'bg-darkgrey!',
                 ],
             }),
@@ -122,7 +122,7 @@ export default {
         select: {
             root: ({ props }) => ({
                 class: `
-            ${baseField} 
+            ${baseField}
             flex! items-center! gap-1!
             ${props.disabled ? 'bg-transparent! opacity-50!' : ''}
         `

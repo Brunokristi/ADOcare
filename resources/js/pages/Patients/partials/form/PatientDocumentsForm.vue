@@ -135,7 +135,7 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
             key: 'delete',
             disabled: ({ selectedRows }: { selectedRows: PatientDocument[] }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
-            class: 'bg-warning!',
+            class: 'bg-danger!',
             confirm: 'Vymazať vybrané dokumenty?',
             handler: async ({ selectedRows, remote }: { selectedRows: PatientDocument[]; remote: any }) => {
                 try {
@@ -160,11 +160,7 @@ onMounted(loadDocuments);
     <div class="p-3">
         <UniversalDataTable :options="options">
             <template #actions="{ row }">
-                <button
-                    @click.stop="openDocument(row)"
-                    class="btn btn-sm btn-link p-0"
-                    title="View document"
-                >
+                <button @click.stop="openDocument(row)" class="btn btn-sm btn-link p-0" title="View document">
                     <i class="bi bi-eye"></i>
                 </button>
             </template>

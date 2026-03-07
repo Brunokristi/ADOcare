@@ -215,7 +215,7 @@ async function loadStatistics() {
   loading.value = true
   try {
     const month = toMonthParam(dates.value)
-    
+
     // Get previous month
     const prevDate = new Date(dates.value)
     prevDate.setMonth(prevDate.getMonth() - 1)
@@ -250,7 +250,7 @@ async function loadDoctorStatistics() {
   doctorLoading.value = true
   try {
     const month = toMonthParam(dates.value)
-    
+
     // Get previous month
     const prevDate = new Date(dates.value)
     prevDate.setMonth(prevDate.getMonth() - 1)
@@ -305,7 +305,7 @@ async function loadBranchStatistics() {
   branchLoading.value = true
   try {
     const month = toMonthParam(dates.value)
-    
+
     // Get previous month
     const prevDate = new Date(dates.value)
     prevDate.setMonth(prevDate.getMonth() - 1)
@@ -338,7 +338,7 @@ async function loadBranchTotals() {
   branchTotalsLoading.value = true
   try {
     const month = toMonthParam(dates.value)
-    
+
     // Get previous month
     const prevDate = new Date(dates.value)
     prevDate.setMonth(prevDate.getMonth() - 1)
@@ -406,22 +406,22 @@ async function loadInsuranceCompanyTotals() {
     const month = toMonthParam(dates.value)
 
     const res = await api.get('/v1/totals', {
-      params: { 
+      params: {
         per_page: 100,
         with: 'user,branch,insurance_company'
       },
     })
 
     const data = res.data?.data?.data ?? []
-    
+
     // Filter by selected month and group by insurance company
     const filteredData = data.filter((row: any) => row.month === month)
-    
+
     // Group by insurance company
     const groupedData = filteredData.reduce((acc: any, row: any) => {
       const icId = row.insurance_company_id
       const icName = row.insurance_company?.name || 'Neznáma'
-      
+
       if (!acc[icId]) {
         acc[icId] = {
           insurance_company_id: icId,
@@ -431,14 +431,14 @@ async function loadInsuranceCompanyTotals() {
           price_paid: 0,
         }
       }
-      
+
       acc[icId].points_generated += parseFloat(row.points_generated || 0)
       acc[icId].kilometers_generated += parseFloat(row.kilometers_generated || 0)
       acc[icId].price_paid += parseFloat(row.price_paid || 0)
-      
+
       return acc
     }, {})
-    
+
     insuranceCompanyTotalsData.value = Object.values(groupedData)
 
   } catch (e) {
@@ -463,7 +463,7 @@ async function load3MonthTrends() {
     }
 
     // Load user totals for last 3 months
-    const userTotalsPromises = months.map(m => 
+    const userTotalsPromises = months.map(m =>
       api.get('/v1/manager/user-totals-aggregated', { params: { month: m } })
     )
     const userTotalsResults = await Promise.all(userTotalsPromises)
@@ -474,7 +474,7 @@ async function load3MonthTrends() {
     }))
 
     // Load user statistics for last 3 months
-    const patientsPromises = months.map(m => 
+    const patientsPromises = months.map(m =>
       api.get('/v1/manager/user-statistics', { params: { month: m } })
     )
     const patientsResults = await Promise.all(patientsPromises)
@@ -484,7 +484,7 @@ async function load3MonthTrends() {
     }))
 
     // Load branch totals for last 3 months
-    const branchTotalsPromises = months.map(m => 
+    const branchTotalsPromises = months.map(m =>
       api.get('/v1/manager/branch-totals', { params: { month: m } })
     )
     const branchTotalsResults = await Promise.all(branchTotalsPromises)
@@ -512,268 +512,262 @@ onMounted(async () => {
 </script>
 
 <template>
-    <LoadingOverlay :show="initialLoading" text="" />
+  <LoadingOverlay :show="initialLoading" text="" />
 
-    <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-      <div class="grid grid-cols-12 gap-4">
-        <div class="col-span-12">
-          <label class="block text-normal mb-1">Obdobie</label>
-          <DatePicker
-            v-model="dates"
-            view="month"
-            dateFormat="MM yy"
-            :manualInput="false"
-            inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-            fluid
-          />
+  <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-12">
+        <label class="block text-normal mb-1">Obdobie</label>
+        <DatePicker v-model="dates" view="month" dateFormat="MM yy" :manualInput="false"
+          inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" fluid />
 
-          <small v-if="submitted && !dates" class="text-warning">
-            Obdobie je povinné.
-          </small>
-        </div>
+        <small v-if="submitted && !dates" class="text-danger">
+          Obdobie je povinné.
+        </small>
       </div>
-    </section>
-
-
-    <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
-        <template #start>
-            <span class="text-heading">
-                Najvýkonnejšie pobočky podľa počtu pacientov
-            </span>
-        </template>
-    </Toolbar>
-
-    <div class="overflow-x-auto">
-      <DataTable :value="branchTableDataWithTrend" striped-rows class="text-sm">
-        <Column header="" style="width: 3rem">
-          <template #body="{ index }">
-            {{ index + 1 }}.
-          </template>
-        </Column>
-        <Column field="branch_name" header="Pobočka" />
-        <Column field="patients_count" header="Počet pacientov" align="center">
-          <template #body="{ data }">
-            {{ data.patients_count ?? 0 }}
-          </template>
-        </Column>
-        <Column header="Trend" align="center" style="width: 150px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2" style="min-height: 24px">
-              <div style="width: 24px; display: flex; justify-content: center">
-                <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
-                <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-warning"></i>
-                <span v-else class="text-lightgrey">—</span>
-              </div>
-              <div style="width: 50px; text-align: center">
-                <span :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-warning' : 'text-lightgrey'">
-                  {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference }}
-                </span>
-              </div>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
     </div>
+  </section>
 
-    <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
-        <template #start>
-            <span class="text-heading">
-                Najvýkonnejší užívatelia podľa počtu pacientov
-            </span>
+
+  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
+    <template #start>
+      <span class="text-heading">
+        Najvýkonnejšie pobočky podľa počtu pacientov
+      </span>
+    </template>
+  </Toolbar>
+
+  <div class="overflow-x-auto">
+    <DataTable :value="branchTableDataWithTrend" striped-rows class="text-sm">
+      <Column header="" style="width: 3rem">
+        <template #body="{ index }">
+          {{ index + 1 }}.
         </template>
-    </Toolbar>
-
-    <div class="overflow-x-auto">
-      <DataTable :value="tableDataWithTrend" striped-rows class="text-sm">
-        <Column header="" style="width: 3rem">
-          <template #body="{ index }">
-            {{ index + 1 }}.
-          </template>
-        </Column>
-        <Column field="user_name" header="Užívateľ" />
-        <Column field="branch_name" header="Pobočka" />
-        
-        <Column 
-          v-for="company in companies.sort((a, b) => a.name.localeCompare(b.name))" 
-          :key="company.id"
-          :header="company.name.split(' ')[0]"
-          align="center"
-        >
-          <template #body="{ data }">
-            {{ data[`insurance_${company.id}`] ?? 0 }}
-          </template>
-        </Column>
-
-        <Column field="patients_total" header="Spolu" align="center">
-          <template #body="{ data }">
-            {{ data.patients_total ?? 0 }}
-          </template>
-        </Column>
-
-        <Column field="chronic_patients_count" header="Chronickí pacienti" align="center">
-          <template #body="{ data }">
-            {{ data.chronic_patients_count ?? 0 }}
-          </template>
-        </Column>
-
-        <Column header="Trend" align="center" style="width: 150px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2" style="min-height: 24px">
-              <div style="width: 24px; display: flex; justify-content: center">
-                <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
-                <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-warning"></i>
-                <span v-else class="text-lightgrey">—</span>
-              </div>
-              <div style="width: 50px; text-align: center">
-                <span :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-warning' : 'text-lightgrey'">
-                  {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference }}
-                </span>
-              </div>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
-
-    <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
-        <template #start>
-            <span class="text-heading">
-                Najvýkonnejšie pobočky podľa tržieb
-            </span>
+      </Column>
+      <Column field="branch_name" header="Pobočka" />
+      <Column field="patients_count" header="Počet pacientov" align="center">
+        <template #body="{ data }">
+          {{ data.patients_count ?? 0 }}
         </template>
-    </Toolbar>
-
-    <div class="overflow-x-auto">
-      <DataTable :value="branchTotalsDataWithTrend" striped-rows class="text-sm">
-        <Column header="" style="width: 3rem">
-          <template #body="{ index }">
-            {{ index + 1 }}.
-          </template>
-        </Column>
-        <Column field="branch_name" header="Pobočka" />
-        <Column field="total_points" header="Body" align="center">
-          <template #body="{ data }">
-            {{ data.total_points?.toFixed(2) ?? '0.00' }}
-          </template>
-        </Column>
-        <Column field="total_kilometers" header="Kilometre" align="center">
-          <template #body="{ data }">
-            {{ data.total_kilometers?.toFixed(2) ?? '0.00' }}
-          </template>
-        </Column>
-        <Column field="total_amount" header="Spolu" align="center">
-          <template #body="{ data }">
-            {{ data.total_amount?.toFixed(2) ?? '0.00' }}
-          </template>
-        </Column>
-        <Column header="Trend" align="center" style="width: 150px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2" style="min-height: 24px">
-              <div style="width: 24px; display: flex; justify-content: center">
-                <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
-                <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-warning"></i>
-                <span v-else class="text-lightgrey">—</span>
-              </div>
-              <div style="width: 50px; text-align: center">
-                <span :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-warning' : 'text-lightgrey'">
-                  {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference.toFixed(2) }}
-                </span>
-              </div>
+      </Column>
+      <Column header="Trend" align="center" style="width: 150px">
+        <template #body="{ data }">
+          <div class="flex items-center justify-center gap-2" style="min-height: 24px">
+            <div style="width: 24px; display: flex; justify-content: center">
+              <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
+              <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-danger"></i>
+              <span v-else class="text-lightgrey">—</span>
             </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
-
-
-    <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
-        <template #start>
-            <span class="text-heading">
-                Najvýkonnejší užívatelia podľa tržieb
-            </span>
+            <div style="width: 50px; text-align: center">
+              <span
+                :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-danger' : 'text-lightgrey'">
+                {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference }}
+              </span>
+            </div>
+          </div>
         </template>
-    </Toolbar>
+      </Column>
+    </DataTable>
+  </div>
 
-    <div class="overflow-x-auto">
-      <DataTable :value="userTotalsAggregatedDataWithTrend" striped-rows class="text-sm">
-        <Column header="" style="width: 3rem">
-          <template #body="{ index }">
-            {{ index + 1 }}.
-          </template>
-        </Column>
-        <Column field="user_name" header="Užívateľ" />
-        <Column field="total_points" header="Body" align="center">
-          <template #body="{ data }">
-            {{ data.total_points?.toFixed(2) ?? '0.00' }}
-          </template>
-        </Column>
-        <Column field="total_kilometers" header="Kilometre" align="center">
-          <template #body="{ data }">
-            {{ data.total_kilometers?.toFixed(2) ?? '0.00' }}
-          </template>
-        </Column>
-        <Column field="total_amount" header="Spolu" align="center">
-          <template #body="{ data }">
-            {{ data.total_amount?.toFixed(2) ?? '0.00' }}
-          </template>
-        </Column>
-        <Column header="Trend" align="center" style="width: 150px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2" style="min-height: 24px">
-              <div style="width: 24px; display: flex; justify-content: center">
-                <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
-                <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-warning"></i>
-                <span v-else class="text-lightgrey">—</span>
-              </div>
-              <div style="width: 50px; text-align: center">
-                <span :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-warning' : 'text-lightgrey'">
-                  {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference.toFixed(2) }}
-                </span>
-              </div>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
+    <template #start>
+      <span class="text-heading">
+        Najvýkonnejší užívatelia podľa počtu pacientov
+      </span>
+    </template>
+  </Toolbar>
 
-    <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
-        <template #start>
-            <span class="text-heading">
-                Najvýkonnejší lekári podľa počtu pacientov
-            </span>
+  <div class="overflow-x-auto">
+    <DataTable :value="tableDataWithTrend" striped-rows class="text-sm">
+      <Column header="" style="width: 3rem">
+        <template #body="{ index }">
+          {{ index + 1 }}.
         </template>
-    </Toolbar>
+      </Column>
+      <Column field="user_name" header="Užívateľ" />
+      <Column field="branch_name" header="Pobočka" />
 
-    <div class="overflow-x-auto">
-      <DataTable :value="doctorTableDataWithTrend" striped-rows class="text-sm">
-        <Column header="" style="width: 3rem">
-          <template #body="{ index }">
-            {{ index + 1 }}.
-          </template>
-        </Column>
-        <Column field="doctor_name" header="Lekár" />
-        <Column field="patients_count" header="Počet pacientov" align="center">
-          <template #body="{ data }">
-            {{ data.patients_count ?? 0 }}
-          </template>
-        </Column>
-        <Column header="Trend" align="center" style="width: 150px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2" style="min-height: 24px">
-              <div style="width: 24px; display: flex; justify-content: center">
-                <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
-                <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-warning"></i>
-                <span v-else class="text-lightgrey">—</span>
-              </div>
-              <div style="width: 50px; text-align: center">
-                <span :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-warning' : 'text-lightgrey'">
-                  {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference }}
-                </span>
-              </div>
+      <Column v-for="company in companies.sort((a, b) => a.name.localeCompare(b.name))" :key="company.id"
+        :header="company.name.split(' ')[0]" align="center">
+        <template #body="{ data }">
+          {{ data[`insurance_${company.id}`] ?? 0 }}
+        </template>
+      </Column>
+
+      <Column field="patients_total" header="Spolu" align="center">
+        <template #body="{ data }">
+          {{ data.patients_total ?? 0 }}
+        </template>
+      </Column>
+
+      <Column field="chronic_patients_count" header="Chronickí pacienti" align="center">
+        <template #body="{ data }">
+          {{ data.chronic_patients_count ?? 0 }}
+        </template>
+      </Column>
+
+      <Column header="Trend" align="center" style="width: 150px">
+        <template #body="{ data }">
+          <div class="flex items-center justify-center gap-2" style="min-height: 24px">
+            <div style="width: 24px; display: flex; justify-content: center">
+              <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
+              <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-danger"></i>
+              <span v-else class="text-lightgrey">—</span>
             </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+            <div style="width: 50px; text-align: center">
+              <span
+                :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-danger' : 'text-lightgrey'">
+                {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference }}
+              </span>
+            </div>
+          </div>
+        </template>
+      </Column>
+    </DataTable>
+  </div>
+
+  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
+    <template #start>
+      <span class="text-heading">
+        Najvýkonnejšie pobočky podľa tržieb
+      </span>
+    </template>
+  </Toolbar>
+
+  <div class="overflow-x-auto">
+    <DataTable :value="branchTotalsDataWithTrend" striped-rows class="text-sm">
+      <Column header="" style="width: 3rem">
+        <template #body="{ index }">
+          {{ index + 1 }}.
+        </template>
+      </Column>
+      <Column field="branch_name" header="Pobočka" />
+      <Column field="total_points" header="Body" align="center">
+        <template #body="{ data }">
+          {{ data.total_points?.toFixed(2) ?? '0.00' }}
+        </template>
+      </Column>
+      <Column field="total_kilometers" header="Kilometre" align="center">
+        <template #body="{ data }">
+          {{ data.total_kilometers?.toFixed(2) ?? '0.00' }}
+        </template>
+      </Column>
+      <Column field="total_amount" header="Spolu" align="center">
+        <template #body="{ data }">
+          {{ data.total_amount?.toFixed(2) ?? '0.00' }}
+        </template>
+      </Column>
+      <Column header="Trend" align="center" style="width: 150px">
+        <template #body="{ data }">
+          <div class="flex items-center justify-center gap-2" style="min-height: 24px">
+            <div style="width: 24px; display: flex; justify-content: center">
+              <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
+              <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-danger"></i>
+              <span v-else class="text-lightgrey">—</span>
+            </div>
+            <div style="width: 50px; text-align: center">
+              <span
+                :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-danger' : 'text-lightgrey'">
+                {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </template>
+      </Column>
+    </DataTable>
+  </div>
+
+
+  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
+    <template #start>
+      <span class="text-heading">
+        Najvýkonnejší užívatelia podľa tržieb
+      </span>
+    </template>
+  </Toolbar>
+
+  <div class="overflow-x-auto">
+    <DataTable :value="userTotalsAggregatedDataWithTrend" striped-rows class="text-sm">
+      <Column header="" style="width: 3rem">
+        <template #body="{ index }">
+          {{ index + 1 }}.
+        </template>
+      </Column>
+      <Column field="user_name" header="Užívateľ" />
+      <Column field="total_points" header="Body" align="center">
+        <template #body="{ data }">
+          {{ data.total_points?.toFixed(2) ?? '0.00' }}
+        </template>
+      </Column>
+      <Column field="total_kilometers" header="Kilometre" align="center">
+        <template #body="{ data }">
+          {{ data.total_kilometers?.toFixed(2) ?? '0.00' }}
+        </template>
+      </Column>
+      <Column field="total_amount" header="Spolu" align="center">
+        <template #body="{ data }">
+          {{ data.total_amount?.toFixed(2) ?? '0.00' }}
+        </template>
+      </Column>
+      <Column header="Trend" align="center" style="width: 150px">
+        <template #body="{ data }">
+          <div class="flex items-center justify-center gap-2" style="min-height: 24px">
+            <div style="width: 24px; display: flex; justify-content: center">
+              <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
+              <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-danger"></i>
+              <span v-else class="text-lightgrey">—</span>
+            </div>
+            <div style="width: 50px; text-align: center">
+              <span
+                :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-danger' : 'text-lightgrey'">
+                {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </template>
+      </Column>
+    </DataTable>
+  </div>
+
+  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
+    <template #start>
+      <span class="text-heading">
+        Najvýkonnejší lekári podľa počtu pacientov
+      </span>
+    </template>
+  </Toolbar>
+
+  <div class="overflow-x-auto">
+    <DataTable :value="doctorTableDataWithTrend" striped-rows class="text-sm">
+      <Column header="" style="width: 3rem">
+        <template #body="{ index }">
+          {{ index + 1 }}.
+        </template>
+      </Column>
+      <Column field="doctor_name" header="Lekár" />
+      <Column field="patients_count" header="Počet pacientov" align="center">
+        <template #body="{ data }">
+          {{ data.patients_count ?? 0 }}
+        </template>
+      </Column>
+      <Column header="Trend" align="center" style="width: 150px">
+        <template #body="{ data }">
+          <div class="flex items-center justify-center gap-2" style="min-height: 24px">
+            <div style="width: 24px; display: flex; justify-content: center">
+              <i v-if="data.trendDifference > 0" class="bi bi-arrow-up text-success"></i>
+              <i v-else-if="data.trendDifference < 0" class="bi bi-arrow-down text-danger"></i>
+              <span v-else class="text-lightgrey">—</span>
+            </div>
+            <div style="width: 50px; text-align: center">
+              <span
+                :class="data.trendDifference > 0 ? 'text-success' : data.trendDifference < 0 ? 'text-danger' : 'text-lightgrey'">
+                {{ data.trendDifference > 0 ? '+' : '' }}{{ data.trendDifference }}
+              </span>
+            </div>
+          </div>
+        </template>
+      </Column>
+    </DataTable>
+  </div>
 </template>
-

@@ -156,7 +156,7 @@ const branchOptions = computed<DataTableOptions<Branch>>(() => ({
             key: 'delete',
             disabled: ({ selectedRows }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
-            class: 'bg-warning!',
+            class: 'bg-danger!',
             confirm: 'Zmazať vybrané pobočky?',
             handler: async ({ selectedRows, remote }) => {
                 await api.delete('v1/branches', { data: { ids: selectedRows.map((r) => r.id) } })
@@ -198,7 +198,7 @@ const userOptions = computed<DataTableOptions<User>>(() => ({
             key: 'delete',
             disabled: ({ selectedRows }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
-            class: 'bg-warning!',
+            class: 'bg-danger!',
             confirm: 'Naozaj vymazať vybraných používateľov?',
             handler: async ({ selectedRows, remote }) => {
                 await api.delete('v1/users', { data: { ids: selectedRows.map((r) => r.id) } })

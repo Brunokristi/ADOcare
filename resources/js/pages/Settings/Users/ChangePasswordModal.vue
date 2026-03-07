@@ -38,7 +38,7 @@ const save = async () => {
   } catch (err: unknown) {
     console.error('Nepodarilo sa zmeniť heslo', err)
     let detail = 'Nepodarilo sa zmeniť PIN'
-    
+
     // Check for validation errors from API
     const error = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
     if (error?.response?.data?.errors) {
@@ -47,7 +47,7 @@ const save = async () => {
     } else if (error?.response?.data?.message) {
       detail = error.response.data.message
     }
-    
+
     toast.add({ severity: 'error', summary: 'Chyba', detail, life: 5000 })
   } finally {
     saving.value = false
@@ -66,14 +66,11 @@ const close = () => {
       <IconField class="flex items-center w-full">
         <InputText v-model="password" :type="showPassword ? 'text' : 'password'" class="w-full" />
         <InputIcon>
-          <i
-            :class="showPassword ? 'bi bi-eye' : 'bi bi-eye-slash'"
-            class="cursor-pointer"
-            @click="showPassword = !showPassword"
-          />
+          <i :class="showPassword ? 'bi bi-eye' : 'bi bi-eye-slash'" class="cursor-pointer"
+            @click="showPassword = !showPassword" />
         </InputIcon>
       </IconField>
-      <small v-if="submitted && !password" class="text-warning">PIN je povinný.</small>
+      <small v-if="submitted && !password" class="text-danger">PIN je povinný.</small>
     </div>
 
     <div>
@@ -81,27 +78,20 @@ const close = () => {
       <IconField class="flex items-center w-full">
         <InputText v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" class="w-full" />
         <InputIcon>
-          <i
-            :class="showConfirmPassword ? 'bi bi-eye' : 'bi bi-eye-slash'"
-            class="cursor-pointer"
-            @click="showConfirmPassword = !showConfirmPassword"
-          />
+          <i :class="showConfirmPassword ? 'bi bi-eye' : 'bi bi-eye-slash'" class="cursor-pointer"
+            @click="showConfirmPassword = !showConfirmPassword" />
         </InputIcon>
       </IconField>
-      <small v-if="submitted && !confirmPassword" class="text-warning">Potvrdenie PIN je povinné.</small>
-      <small v-else-if="submitted && password && confirmPassword && !passwordsMatch()" class="text-warning">
+      <small v-if="submitted && !confirmPassword" class="text-danger">Potvrdenie PIN je povinné.</small>
+      <small v-else-if="submitted && password && confirmPassword && !passwordsMatch()" class="text-danger">
         PINy sa nezhodujú.
       </small>
     </div>
 
     <div class="flex justify-end gap-2 mt-4">
       <Button label="Zrušiť" text @click="close" class="text-accent! px-2!" />
-      <Button
-        label="Zmeniť PIN"
-        :loading="saving"
-        class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
-        @click="save"
-      />
+      <Button label="Zmeniť PIN" :loading="saving"
+        class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" />
     </div>
   </div>
 </template>

@@ -146,14 +146,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <DocumentAlert
-    :visible="dialogVisible"
-    :document-id="documentId"
-    document-url="/documents/agreement/{id}"
-    @update:visible="dialogVisible = $event"
-    @close="closeDialog"
-    @deleted="checkDocumentExists"
-  />
+  <DocumentAlert :visible="dialogVisible" :document-id="documentId" document-url="/documents/agreement/{id}"
+    @update:visible="dialogVisible = $event" @close="closeDialog" @deleted="checkDocumentExists" />
 
   <div class="flex flex-col gap-6">
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
@@ -163,25 +157,17 @@ onMounted(() => {
           <label class="block text-normal mb-2">
             Dátum
           </label>
-          <DatePicker
-            v-model="date"
-            dateFormat="dd.mm.yy"
-            :showIcon="false"
-            class="w-full"
-            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
-          />
-          <small v-if="submitted && !isDateValid" class="text-warning">
+          <DatePicker v-model="date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+            inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0" />
+          <small v-if="submitted && !isDateValid" class="text-danger">
             Dátum je povinný.
           </small>
         </div>
       </section>
 
       <div class="flex justify-end">
-        <Button
-          type="submit"
-          :disabled="!currentPatient"
-          class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100"
-        >
+        <Button type="submit" :disabled="!currentPatient"
+          class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100">
           Generovať dokument
           <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
         </Button>

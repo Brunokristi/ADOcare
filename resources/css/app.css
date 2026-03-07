@@ -95,7 +95,8 @@ body {
     --c-almost-white: #F1F1F1;
     --c-light-grey: #CCCCCC;
     --c-accent: #5C9EAD;
-    --c-warning: #F72585;
+    --c-danger: #F72585;
+    --c-warning: #FBA94C;
     --c-success: #47905D;
     --c-tag-1: #D9D9D9;
     --c-tag-2: #575252;
@@ -126,7 +127,7 @@ body {
 
     --border-basic: 1px solid var(--c-dark-grey);
     --border-accent: 1px solid var(--c-accent);
-    --border-warning: 1px solid var(--c-warning);
+    --border-danger: 1px solid var(--c-danger);
     --border-white: 1px solid var(--c-white);
 
     --shadow: 0 2px 20px rgba(0, 0, 0, 0.25);
