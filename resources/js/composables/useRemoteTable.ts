@@ -61,6 +61,8 @@ export function useRemoteTable<T = any>(
 ) {
     const opts = customOptions || {}
 
+    const extraParams = ref<Record<string, any>>(opts.extraParams || {})
+
     const loading = ref(false)
     const items = ref<T[]>([])
     const total = ref<number>(0)
@@ -76,6 +78,7 @@ export function useRemoteTable<T = any>(
             page: Number(page.value),
             per_page: Number(per_page.value),
             ...opts.extraParams,
+            ...extraParams.value,
         }
 
         const qq = typeof q.value === 'string' ? q.value.trim() : ''
@@ -133,12 +136,12 @@ export function useRemoteTable<T = any>(
     }
 
     function setExtraParams(p: Record<string, any>) {
-        opts.extraParams = p
+        extraParams.value = p
     }
 
     function setExtraParam(key: string, value: any) {
         if (!opts.extraParams) opts.extraParams = {}
-        opts.extraParams[key] = value
+        extraParams.value[key] = value
     }
 
     return {

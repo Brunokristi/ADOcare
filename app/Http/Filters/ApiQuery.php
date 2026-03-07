@@ -53,21 +53,10 @@ class ApiQuery
             'paginate' => 'sometimes|in:true,false,1,0',
             'with' => 'sometimes|string|max:255',
             'scope' => 'sometimes|array',
+            'only_deleted' => 'sometimes|boolean',
+            'with_deleted' => 'sometimes|boolean',
         ]);
 
-
-        // handle trashed/deleted filtering globally
-        if ($request->boolean('only_deleted')) {
-            // only soft-deleted records
-            if (method_exists($query, 'onlyTrashed')) {
-                $query->onlyTrashed();
-            }
-        } elseif ($request->boolean('with_deleted')) {
-            // include trashed records alongside active ones
-            if (method_exists($query, 'withTrashed')) {
-                $query->withTrashed();
-            }
-        }
 
         // Apply modular parts
         static::applyWith($request, $query, $defaults);
@@ -150,6 +139,19 @@ class ApiQuery
      */
     protected static function applyFilters(Request $request, Builder $query, array|string $allowedFilters = 'all', array $defaults = []): void
     {
+
+        // handle trashed/deleted filtering globally
+        $model = $query->getModel();
+        if (method_exists($model, 'trashed')) {
+            if ($request->boolean('only_deleted')) {
+                $query->onlyTrashed();
+            } elseif ($request->boolean('with_deleted')) {
+                $query->withTrashed();
+            }
+        }
+
+
+
         $filters = $request->input('filter', $defaults['filter'] ?? []);
         if (!is_array($filters)) {
             return;

@@ -62,8 +62,13 @@ const options = computed<DataTableOptions<Patient>>(() => {
         },
 
         columns: [
-            { field: 'first_name', header: 'Meno', sortable: true },
-            { field: 'last_name', header: 'Priezvisko', sortable: true },
+            {
+                field: 'first_name', header: 'Meno', sortable: true,
+                render: (v) => showDeleted.value ? `<s>${v}</s>` + ' (zmazaný)' : v
+            },
+            {
+                field: 'last_name', header: 'Priezvisko', sortable: true,
+            },
             {
                 field: 'personal_number',
                 header: 'Rodné číslo',
@@ -179,15 +184,11 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 icon: () => showDeleted.value ? 'bi bi-eye' : 'bi bi-trash',
                 tooltip: () => showDeleted.value ? 'Zobraziť aktívnych' : 'Zobraziť zmazaných',
                 handler: async () => {
+                    if (!actionRemote.value) return;
+                    actionRemote.value.setExtraParam('only_deleted', !showDeleted.value)
+                    await actionRemote.value.reload()
                     showDeleted.value = !showDeleted.value
-                    if (actionRemote.value) {
-                        if (showDeleted.value) {
-                            actionRemote.value.setExtraParam('only_deleted', 1)
-                        } else {
-                            actionRemote.value.setExtraParam('only_deleted', 0)
-                        }
-                        await actionRemote.value.reload()
-                    }
+
                 },
             },
         ],
