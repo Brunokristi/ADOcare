@@ -1,33 +1,29 @@
 // Types for UniversalDataTable
 
 import type { useRemoteTable } from "@/composables/useRemoteTable";
+import type { Ref } from "vue";
 
 // loaders or plain components.
 type VueComponent = Component | (() => Promise<Component>);
 type ValueFormatter<T = any> = (value: any, row: T) => string | number | null;
 
+
 export type RemoteTableReturn = ReturnType<typeof useRemoteTable>;
+const refUseRemoteTable = ref<RemoteTableReturn>(useRemoteTable('')) // dummy value to extract type; not for actual use
+export type RemoteTableReturnDereferenced = typeof refUseRemoteTable.value
 
 interface ColumnDef<T = any> {
-    // key on the row object; optional if using custom slot/component
     field?: keyof T | string;
-    // header label
     header?: string;
-    // sortable and filterable flags
     sortable?: boolean;
     filterable?: boolean;
-    // width/style
     width?: string;
     style?: string;
     align?: 'left' | 'center' | 'right';
-    // a Vue component (sync) or an async component loader
     component?: VueComponent;
     componentOptions?: Record<string, any>;
-    // optional scoped slot name to use (slot receives { row, value })
     slot?: string;
-    // fallback value formatter if no component/slot
     render?: ValueFormatter<T>;
-    // exportable flag
     exportable?: boolean;
 
 }
@@ -35,14 +31,14 @@ interface ColumnDef<T = any> {
 interface ActionDef<T = any> {
     key: string;
     label?: string;
-    class?: string;
-    tooltip?: string | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => string);
-    disabled?: boolean | ((params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => boolean);
-    icon?: string | ((params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => string);
-    // optional confirm text or boolean
+    key: string;
+    label?: string;
+    class?: string | Ref<string> | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => string);
+    tooltip?: string | Ref<string> | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => string);
+    disabled?: boolean | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => boolean);
+    icon?: string | Ref<string> | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => string);
     confirm?: string | boolean;
-    // handler may be provided here or via component prop mapping
-    handler?: (params: { rows: T[], selectedRows: T[], remote: RemoteTableReturn }) => Promise<void> | void;
+    handler?: (params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => Promise<void> | void;
 }
 
 interface DataTableOptions<T = any> {

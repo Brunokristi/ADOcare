@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, unref } from 'vue'
 
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -148,25 +148,18 @@ watch(
 
                     <template v-if="opt.actions?.length">
                         <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function'
-                            ? a.icon({
-                                rows: remote.items.value,
-                                selectedRows: selectedRows,
-                                remote,
-                            })
-                            : a.icon
-                            " :label="a.label" :title="typeof a.tooltip === 'function'
-                                ? a.tooltip({ rows: remote.items.value, selectedRows: selectedRows, remote })
-                                : a.tooltip
-                                " :disabled="a.disabled &&
+                            ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote })
+                            : unref(a.icon)" :label="a.label" :title="typeof a.tooltip === 'function'
+                                    ? a.tooltip({ rows: remote.items.value, selectedRows: selectedRows, remote })
+                                    : unref(a.tooltip)" :disabled="a.disabled &&
                                     (typeof a.disabled === 'boolean'
                                         ? a.disabled
                                         : a.disabled({
                                             rows: remote.items.value,
                                             selectedRows: selectedRows,
                                             remote,
-                                        }))
-                                    " class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)"
-                            :class="a.class ?? ''" />
+                                        }))" class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)"
+                            :class="unref(a.class) ?? ''" />
                     </template>
                 </div>
             </template>

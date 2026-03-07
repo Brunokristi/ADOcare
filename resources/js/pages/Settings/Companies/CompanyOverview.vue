@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, markRaw } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 // PrimeVue 4 renamed/deprecated the old TabView component in favour of a
 // simpler "Tabs" container.  The old TabView import is now marked
 // deprecated and will eventually be removed; switch to the new implementation
@@ -17,6 +17,7 @@ import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 import { useRoute, useRouter } from 'vue-router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import PatientDataTable from '@/components/PatientDataTable.vue'
 import Menu from 'primevue/menu'
 import type { Company, Branch, User } from '@/types/models'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
@@ -24,7 +25,6 @@ import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import useModal from '@/composables/useModal'
-import CompanyForm from './CompanyForm.vue'
 import BranchForm from '../Branches/BranchForm.vue'
 import UserForm from '../Users/UserForm.vue'
 import api from '@/services/api'
@@ -98,17 +98,6 @@ async function openCreateUser() {
     }
 }
 
-// company editing is exposed on the manager/companies page; reuse the same
-// modal here so that admins can quickly adjust the current company without
-// leaving the overview.  identical logic to CompaniesPage.
-async function openEditCompany(companyId: number) {
-    const result = await openModal(markRaw(CompanyForm), { companyId }, { header: 'Upraviť spoločnosť', style: { width: '90%' } })
-    if (result) {
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená', life: 3000 })
-        // reload company data to pick up any name/code changes
-        await loadCompany()
-    }
-}
 
 // dropdown menu for actions next to company name
 const menu = ref<any>(null)
@@ -227,6 +216,9 @@ const userOptions = computed<DataTableOptions<User>>(() => ({
 
 // track the currently active tab (string values make the template easier to
 // read, but numeric indexes would work as well).  Default to the first one.
+// computed endpoint for patient listing when viewed from company overview
+const companyPatientEndpoint = computed(() => `v1/companies/${companyId}/patients`)
+
 const activeTab = ref<string>('info')
 </script>
 
@@ -244,6 +236,7 @@ const activeTab = ref<string>('info')
                 <Tab value="info">Informácie</Tab>
                 <Tab value="branches">Pobočky</Tab>
                 <Tab value="users">Používatelia</Tab>
+                <Tab value="patients">Pacienti</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel value="info">
@@ -274,6 +267,9 @@ const activeTab = ref<string>('info')
                 </TabPanel>
                 <TabPanel value="users">
                     <UniversalDataTable :options="userOptions" />
+                </TabPanel>
+                <TabPanel value="patients">
+                    <PatientDataTable :endpoint-url="companyPatientEndpoint" />
                 </TabPanel>
             </TabPanels>
         </Tabs>
