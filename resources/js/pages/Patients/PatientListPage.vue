@@ -26,8 +26,24 @@ const branchId = computed(() => authStore.currentBranch?.id ?? null)
 const companyId = computed(() => authStore.user?.company?.id ?? null)
 const tableKey = computed(() => `patients-${branchId.value ?? 'none'}`)
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
-// toggle showing deleted patients
-const showDeleted = ref(false)
+
+// soft-delete toggle helpers
+import { useTableActions } from '@/composables/useTableActions'
+const { showDeleted, toggleAction, deleteAction } = useTableActions(
+    actionRemote.value,
+    {
+        softDelete: {
+            restoreEndpoint: '/v1/patients/restore',
+            deletePrompt: async ({ selectedRows, remote }) => {
+                await openModal(
+                    markRaw(DeleteConfirmationForm),
+                    { title: 'Vymazať', selectedRows, remote },
+                    { style: { width: '60%' } },
+                )
+            },
+        },
+    },
+)
 
 function openPatientDocuments(patientId: number) {
     void openPatientDocumentsModal(patientId)
@@ -59,6 +75,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
         },
         extraParams: {
             ...(authStore.isManager ? { with: 'nurse,branch,doctor' } : {}),
+            ...(showDeleted.value ? { only_deleted: 1 } : {}),
         },
 
         columns: [
@@ -146,27 +163,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
         ],
 
         actions: [
-            {
-                key: 'delete',
-                disabled: ({ selectedRows }) => selectedRows.length === 0,
-                icon: () => showDeleted.value ? 'bi bi-arrow-counterclockwise' : 'bi bi-eraser',
-                class: showDeleted.value ? 'bg-success!' : 'bg-warning!',
-                tooltip: showDeleted.value ? 'Obnoviť' : undefined,
-                handler: async ({ selectedRows, remote }) => {
-                    if (showDeleted.value) {
-                        // restore deleted patients
-                        await api.post('v1/patients/restore', { ids: selectedRows.map(r => r.id) })
-                        toast.add({ severity: 'success', summary: 'Obnovené', detail: 'Pacienti boli obnovení', life: 3000 })
-                        remote.loadPage(remote.page.value)
-                    } else {
-                        await openModal(
-                            markRaw(DeleteConfirmationForm),
-                            { title: 'Vymazať', selectedRows, remote },
-                            { style: { width: '60%' } },
-                        )
-                    }
-                },
-            },
+            deleteAction,
             {
                 key: 'add',
                 icon: 'bi bi-plus-lg',
@@ -179,18 +176,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     )
                 },
             },
-            {
-                key: 'toggleDeleted',
-                icon: () => showDeleted.value ? 'bi bi-eye' : 'bi bi-trash',
-                tooltip: () => showDeleted.value ? 'Zobraziť aktívnych' : 'Zobraziť zmazaných',
-                handler: async () => {
-                    if (!actionRemote.value) return;
-                    actionRemote.value.setExtraParam('only_deleted', !showDeleted.value)
-                    await actionRemote.value.reload()
-                    showDeleted.value = !showDeleted.value
-
-                },
-            },
+            toggleAction,
         ],
     }
     if (authStore.isManager) {
