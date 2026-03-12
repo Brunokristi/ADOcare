@@ -1,5 +1,5 @@
 import Cars from "@/pages/Settings/Cars/Cars.vue";
-import CompanySettings from "@/pages/Settings/Company/CompanySettingsPage.vue";
+import CompanySettings from "@/pages/Settings/Companies/CompanySettingsPage.vue";
 import Patients from "@/pages/Patients/PatientListPage.vue";
 import Branches from "@/pages/Settings/Branches/BranchesPage.vue";
 import Settings from "@/pages/Settings.vue";

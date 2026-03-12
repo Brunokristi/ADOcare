@@ -4,6 +4,8 @@ import { computed, markRaw, ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Doctor, Patient } from '@/types/models'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/services/api'
+import { useToast } from 'primevue/usetoast'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { usePatientStore } from '@/stores/patientStore'
 import router from '@/router'
@@ -15,6 +17,7 @@ import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modal
 import { formatBranchFullName, formatUserFullName } from '@/utils/formatUtils'
 
 const patientStore = usePatientStore()
+const toast = useToast()
 
 const { openModal } = useModal()
 
@@ -23,6 +26,8 @@ const branchId = computed(() => authStore.currentBranch?.id ?? null)
 const companyId = computed(() => authStore.user?.company?.id ?? null)
 const tableKey = computed(() => `patients-${branchId.value ?? 'none'}`)
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
+// toggle showing deleted patients
+const showDeleted = ref(false)
 
 function openPatientDocuments(patientId: number) {
     void openPatientDocumentsModal(patientId)
@@ -52,9 +57,9 @@ const options = computed<DataTableOptions<Patient>>(() => {
         afterInit: ({ remote }) => {
             actionRemote.value = remote;
         },
-        extraParams: authStore.isManager
-            ? { with: 'nurse,branch,doctor' }
-            : {},
+        extraParams: {
+            ...(authStore.isManager ? { with: 'nurse,branch,doctor' } : {}),
+        },
 
         columns: [
             { field: 'first_name', header: 'Meno', sortable: true },
@@ -139,14 +144,22 @@ const options = computed<DataTableOptions<Patient>>(() => {
             {
                 key: 'delete',
                 disabled: ({ selectedRows }) => selectedRows.length === 0,
-                icon: 'bi bi-eraser',
-                class: 'bg-warning!',
+                icon: () => showDeleted.value ? 'bi bi-arrow-counterclockwise' : 'bi bi-eraser',
+                class: showDeleted.value ? 'bg-success!' : 'bg-warning!',
+                tooltip: showDeleted.value ? 'Obnoviť' : undefined,
                 handler: async ({ selectedRows, remote }) => {
-                    await openModal(
-                        markRaw(DeleteConfirmationForm),
-                        { title: 'Vymazať', selectedRows, remote },
-                        { style: { width: '60%' } },
-                    )
+                    if (showDeleted.value) {
+                        // restore deleted patients
+                        await api.post('v1/patients/restore', { ids: selectedRows.map(r => r.id) })
+                        toast.add({ severity: 'success', summary: 'Obnovené', detail: 'Pacienti boli obnovení', life: 3000 })
+                        remote.loadPage(remote.page.value)
+                    } else {
+                        await openModal(
+                            markRaw(DeleteConfirmationForm),
+                            { title: 'Vymazať', selectedRows, remote },
+                            { style: { width: '60%' } },
+                        )
+                    }
                 },
             },
             {
@@ -159,6 +172,22 @@ const options = computed<DataTableOptions<Patient>>(() => {
                         { title: 'Pridať Pacienta' },
                         { style: { width: '90%' } },
                     )
+                },
+            },
+            {
+                key: 'toggleDeleted',
+                icon: () => showDeleted.value ? 'bi bi-eye' : 'bi bi-trash',
+                tooltip: () => showDeleted.value ? 'Zobraziť aktívnych' : 'Zobraziť zmazaných',
+                handler: async () => {
+                    showDeleted.value = !showDeleted.value
+                    if (actionRemote.value) {
+                        if (showDeleted.value) {
+                            actionRemote.value.setExtraParam('only_deleted', 1)
+                        } else {
+                            actionRemote.value.setExtraParam('only_deleted', 0)
+                        }
+                        await actionRemote.value.reload()
+                    }
                 },
             },
         ],

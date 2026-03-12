@@ -94,8 +94,9 @@ function pickComp(components: any[], type: string) {
  * @returns {ParsedAddress}
  */
 export function parseComponents(components: PlaceDetailResponse['address_components']): ParsedAddress {
-    const streetNumber = pickComp(components, 'street_number')
-    const route = pickComp(components, 'route')
+    let streetNumber = pickComp(components, 'street_number')
+    let route = pickComp(components, 'route')
+
 
     const locality = pickComp(components, 'locality')
     const postalTown = pickComp(components, 'postal_town')
@@ -104,7 +105,26 @@ export function parseComponents(components: PlaceDetailResponse['address_compone
 
     const zip = (pickComp(components, 'postal_code') || '').replace(/\s+/g, '').trim()
 
-    const street = [route, streetNumber].filter(Boolean).join(' ').trim()
+
+    if (!streetNumber) {
+        const premise = pickComp(components, 'premise')
+        if (premise) {
+            streetNumber = premise
+        }
+    }
+
+    if (!route && streetNumber) {
+        route = locality;
+    }
+
+
+
+    let street = [route, streetNumber].filter(Boolean).join(' ').trim()
+
+    if (!street && city) {
+        street = city
+    }
+
     return { street, city, zip }
 }
 
@@ -131,9 +151,16 @@ export function useAddressForm(entity: Ref<Record<string, any> | null>) {
     function computeAddressQuery(ent: Record<string, any> | null, explicitAddress?: string | null) {
         // precedence: explicitAddress -> merged parts (street, city, psc) -> raw address -> null
         if (explicitAddress && String(explicitAddress).trim() !== '') return String(explicitAddress).trim()
-        const merged = mergeAddressParts(ent?.address, ent?.city, ent?.psc)
-        if (merged) return merged
-        if (ent?.address) return ent.address
+        let merged = mergeAddressParts(ent?.address, ent?.city, ent?.psc)
+        if (merged) {
+            // strip duplicate city if our street fallback inserted it twice
+            const parts = merged.split(',').map(p => p.trim()).filter(Boolean)
+            if (parts.length > 1 && parts[0] === parts[1]) {
+                parts.splice(1, 1)
+            }
+            return parts.join(', ')
+        }
+        if (ent?.address) return ent.address.trim().replace(/\s*,\s*/g, ', ')
         return null
     }
 
@@ -208,5 +235,9 @@ export function useAddressForm(entity: Ref<Record<string, any> | null>) {
 
 // small helper (kept here to avoid utility coupling)
 function mergeAddressParts(street?: string, city?: string, psc?: string) {
-    return [street, city, psc].filter(Boolean).join(', ') || ''
+    // ensure single space after commas and no accidental repetition
+    return [street, city, psc]
+        .filter(Boolean)
+        .map(p => String(p).trim())
+        .join(', ') || ''
 }

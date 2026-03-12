@@ -78,6 +78,11 @@ function toggleSidebar() {
  * If current selection isn't in options (or is null), force first option.
  */
 async function forceValidBranchSelection() {
+    if (authStore.isSuperadmin || authStore.isManager) {
+        // superadmin/manager does not use branch selection at all
+        selectedBranchId.value = -1;
+        return
+    }
     const opts = branchOptions.value ?? []
     if (!opts.length) return
 
@@ -91,7 +96,6 @@ async function forceValidBranchSelection() {
         selectedBranchId.value = nextId
     }
 
-    // Apply only with a real branch id
     await applyBranchSelection(nextId)
 }
 
@@ -264,7 +268,7 @@ watch(
                 }">
                 <template #value>
                     <span class="text-normal text-white">{{branchOptions?.find((b: any) => b.id ===
-                        selectedBranchId)?.label }}</span>
+                        selectedBranchId)?.label}}</span>
                 </template>
             </Select>
 

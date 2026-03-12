@@ -28,9 +28,7 @@ export default function useBranches() {
             role: branchRoleMap.get(branch.id) ?? 'nurse',
         }))
 
-        const isManager = userInfo.role?.position === 'manager'
-
-        if (isManager) {
+        if (userInfo.role?.position === 'manager') {
             options.push({ id: -1, label: 'Manažér', role: 'manager' })
         }
 
