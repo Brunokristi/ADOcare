@@ -133,11 +133,11 @@ function openMenu(event: Event) {
 
 const branchOptions = computed<DataTableOptions<Branch>>(() => ({
     rowKey: 'id',
-    endpointUrl: 'v1/branches',
+    endpointUrl: `v1/companies/${companyId}/branches`,
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,
-    extraParams: { company_id: companyId, with: 'representative', count: 'users' },
+    extraParams: { with: 'representative', count: 'users' },
     afterInit: ({ remote }) => { branchRemote.value = remote },
     columns: [
         { field: 'address', header: 'Adresa', sortable: false, render: (_v, row: Branch) => `${row.address || ''} ${row.city ? ', ' + row.city : ''}` },
@@ -174,7 +174,7 @@ const branchOptions = computed<DataTableOptions<Branch>>(() => ({
 
 const userOptions = computed<DataTableOptions<User>>(() => ({
     rowKey: 'id',
-    endpointUrl: 'v1/users',
+    endpointUrl: `v1/companies/${companyId}/users`,
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
     selectable: true,
