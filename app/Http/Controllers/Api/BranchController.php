@@ -16,6 +16,7 @@ use App\Models\Branch;
 use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -53,13 +54,23 @@ class BranchController extends Controller
 
     public function nurses(Branch $branch)
     {
-        $nursesQuery = User::query()
-            ->whereHas('branches', function ($q) use ($branch) {
-                $q->where('branch_id', $branch->id);
-            })
-            ->whereHas('role', function ($q) {
-                $q->where('position', 'nurse');
+        // Only users who are assigned to this branch with the "nurse" role should be returned.
+        $nurseRoleId = Role::where('position', 'nurse')
+            ->where('scope', 'branch')
+            ->value('id');
+
+        $nursesQuery = User::query();
+
+        if ($nurseRoleId) {
+            $nursesQuery->whereHas('branches', function ($q) use ($branch, $nurseRoleId) {
+                $q->where('branch_id', $branch->id)
+                    ->where('role_id', $nurseRoleId);
             });
+        } else {
+            // Fallback: no nurse role defined, return empty set.
+            $nursesQuery->whereRaw('0 = 1');
+        }
+
 
         $results = ApiQuery::apply(request(), $nursesQuery);
 
