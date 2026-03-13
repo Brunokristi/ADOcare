@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', {
         user: null as null | User,
         currentRole: null as null | string,
         currentBranch: null as null | Branch,
+        currentCompanyId: null as null | number,
     }),
     getters: {
         isAuthenticated: (state) => !!state.user,
@@ -49,6 +50,7 @@ export const useAuthStore = defineStore('auth', {
 
                 this.currentBranch = initialBranch;
                 this.currentRole = initialRole;
+                this.currentCompanyId = initialBranch ? initialBranch.company_id : null;
 
 
             } catch {
@@ -115,6 +117,10 @@ export const useAuthStore = defineStore('auth', {
         setCurrentRole(role: string) {
             this.currentRole = role;
             localStorage.setItem(ROLE_STORAGE_KEY, role);
+        },
+
+        setCurrentCompanyId(companyId: number | null) {
+            this.currentCompanyId = companyId;
         },
 
         setCurrentBranchById(branchId: number) {

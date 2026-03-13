@@ -68,6 +68,14 @@ router.beforeEach(async (to, _from, next) => {
         return next(false)
     }
 
+    // Superadmin: keep currently active company synced to URL
+    if (auth.isSuperadmin && to.params.companyId) {
+        const cid = Number(to.params.companyId)
+        if (!Number.isNaN(cid)) {
+            auth.setCurrentCompanyId(cid)
+        }
+    }
+
 
 
     return next();
