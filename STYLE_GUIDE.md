@@ -21,13 +21,17 @@ This guide is meant for both humans and automated agents that modify the codebas
 ## Functional Guidelines (Architecture & API)
 
 - API design
-	- GET list endpoints should be scoped to the most specific reasonable context: prefer `GET /v1/branches/{id}/users` or `GET /v1/my-company/users` instead of a broad `GET /v1/users` when context is available.
+	- GET list endpoints should be scoped to the **most specific reasonable context** (prefer branch-level over company-level when applicable).
+	  - **Branch-scoped resources** should use `GET /v1/branches/{id}/...` (do not prefix with `/companies/{id}`).
+	  - **Company-scoped resources** (no branch) should use `GET /v1/my-company/...` or, for superadmins, `GET /v1/companies/{id}/...`.
 	- Entity operations (GET/PUT/DELETE/POST on a single resource) must address the entity directly: `PUT /v1/users/{id}`, `GET /v1/users/{id}`.
 
 - Controllers & Services
 	- Controllers should handle request validation, authorization checks and transform request data into service calls. Move business logic to `app/Services/*` classes.
 	- Service methods should be focused, small, and independently testable.
 	- Prefer Laravel's route-model binding: **do not manually fetch an entity by ID when the ID is supplied in the route** — accept the model in the controller method signature and let the framework resolve it. This keeps controllers concise and leverages automatic 404 behavior and implicit authorization hooks (e.g. `$this->authorizeResource()`).
+	- Frontend (Vue) API calls should use the centralized `useApi()` composable where possible to ensure consistent request handling (loading, error, auth token headers, and company/branch scoping) instead of ad-hoc axios calls.
+	- Prefer calling `useApi()` for all frontend API requests; it will automatically prefix the request path with the default API version (e.g. `/v1/`) and provides a `version` option when you need a different API version.
 
 		// Bad: controller fetching model manually
 		public function update(Request $request, $branchId)
