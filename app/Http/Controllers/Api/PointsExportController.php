@@ -10,6 +10,7 @@ use \App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 
 class PointsExportController extends Controller
@@ -275,23 +276,23 @@ class PointsExportController extends Controller
 
         // Line 1 (with trailing |)
         $line1 = implode('|', [
-            $type,
+            $this->toAsciiString($type),
             '753b',
-            $company->ico ?? '',
+            $this->toAsciiString($company->ico ?? ''),
             $generatedYmd,
             $batchNumber,
             $rowCount,
             '1',
             '1',
-            $insuranceBranchCode ?? '',
+            $this->toAsciiString($insuranceBranchCode ?? ''),
             ''
         ]);
 
         // Line 2 (with trailing | and the empty field before EUR)
         $line2 = implode('|', [
-            $branch->identificator ?? '',
-            $branch->code ?? '',
-            $user->code ?? '',
+            $this->toAsciiString($branch->identificator ?? ''),
+            $this->toAsciiString($branch->code ?? ''),
+            $this->toAsciiString($user->code ?? ''),
             number_format((float) $workingTime, 2, '.', ''),
             $termYYYYMM,
             '850',
@@ -308,15 +309,15 @@ class PointsExportController extends Controller
             $dayDD = Carbon::parse($r->date)->format('d');
             $dateYmd = Carbon::parse($r->date)->format('Ymd');
 
-            $patientName = trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? ''));
+            $patientName = $this->toAsciiString(trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? '')));
 
             $fields = [
                 $i,
                 $dayDD,
-                in_array($type, ['E', 'F']) ? '' : ($r->personal_number ?? ''),
+                in_array($type, ['E', 'F']) ? '' : $this->toAsciiString($r->personal_number ?? ''),
                 $patientName,
-                $r->diagnosis_code ?? '',
-                $r->procedure_code ?? '',
+                $this->toAsciiString($r->diagnosis_code ?? ''),
+                $this->toAsciiString($r->procedure_code ?? ''),
                 $r->quantity ?? 1,
                 '',
                 '',
@@ -328,11 +329,11 @@ class PointsExportController extends Controller
                 '',
                 '',
                 'O',
-                $r->doctor_pzs ?? '',
-                $r->doctor_zpr ?? '',
-                in_array($type, ['E', 'F']) ? ($r->country_code ?? '') : '',
-                in_array($type, ['E', 'F']) ? ($r->personal_number ?? '') : '',
-                in_array($type, ['E', 'F']) ? ($r->sex ?? '') : '',
+                $this->toAsciiString($r->doctor_pzs ?? ''),
+                $this->toAsciiString($r->doctor_zpr ?? ''),
+                in_array($type, ['E', 'F']) ? $this->toAsciiString($r->country_code ?? '') : '',
+                in_array($type, ['E', 'F']) ? $this->toAsciiString($r->personal_number ?? '') : '',
+                in_array($type, ['E', 'F']) ? $this->toAsciiString($r->sex ?? '') : '',
                 $dateYmd,
                 '',
                 '',
@@ -475,6 +476,20 @@ class PointsExportController extends Controller
         $pdfName = "sprievodny_list_{$sheet['batchNumber']}.pdf";
 
         return $pdf->download($pdfName);
+    }
+
+    private function toAsciiString(?string $value, ?int $limit = null): string
+    {
+        $normalized = Str::ascii((string) ($value ?? ''));
+        $normalized = str_replace(["\r", "\n", '|'], ' ', $normalized);
+        $normalized = preg_replace('/[^\x20-\x7E]/', '', $normalized) ?? '';
+        $normalized = trim($normalized);
+
+        if ($limit !== null) {
+            return substr($normalized, 0, $limit);
+        }
+
+        return $normalized;
     }
 
 }

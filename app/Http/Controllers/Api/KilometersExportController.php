@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class KilometersExportController extends Controller
 {
@@ -339,33 +340,33 @@ class KilometersExportController extends Controller
 
         foreach ($rows as $idx => $r) {
             $dayDD = Carbon::parse($r->date)->format('d');
-            $patientName = trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? ''));
+            $patientName = $this->toAsciiString(trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? '')));
             $kilometers = $kilometersPerRow[$idx] ?? 0.0;
 
             $fields = [
                 $i,
                 $dayDD,
-                $r->personal_number ?? '',
+                $this->toAsciiString($r->personal_number ?? ''),
                 $patientName,
-                $r->diagnosis_code ?? '',
+                $this->toAsciiString($r->diagnosis_code ?? ''),
                 '',
                 '',
                 'ADOS',
                 round($kilometers, 0),
-                mb_substr($r->branch_city ?? '', 0, 50, 'UTF-8'),
-                mb_substr($r->branch_address ?? '', 0, 50, 'UTF-8'),
-                mb_substr($r->patient_city ?? '', 0, 50, 'UTF-8'),
-                mb_substr($r->patient_address ?? '', 0, 50, 'UTF-8'),
+                $this->toAsciiString($r->branch_city ?? '', 50),
+                $this->toAsciiString($r->branch_address ?? '', 50),
+                $this->toAsciiString($r->patient_city ?? '', 50),
+                $this->toAsciiString($r->patient_address ?? '', 50),
                 $i,
-                $userCar,
+                $this->toAsciiString($userCar),
                 '0',
                 '',
                 'N',
-                $r->doctor_pzs ?? '',
-                $r->doctor_zpr ?? '',
+                $this->toAsciiString($r->doctor_pzs ?? ''),
+                $this->toAsciiString($r->doctor_zpr ?? ''),
                 'SK',
                 '',
-                $r->sex ?? '',
+                $this->toAsciiString($r->sex ?? ''),
                 '',
             ];
 
@@ -561,5 +562,19 @@ class KilometersExportController extends Controller
     private function hasValidCoords($branchLat, $branchLng, $patientLat, $patientLng): bool
     {
         return $branchLat !== null && $branchLng !== null && $patientLat !== null && $patientLng !== null;
+    }
+
+    private function toAsciiString(?string $value, ?int $limit = null): string
+    {
+        $normalized = Str::ascii((string) ($value ?? ''));
+        $normalized = str_replace(["\r", "\n", '|'], ' ', $normalized);
+        $normalized = preg_replace('/[^\x20-\x7E]/', '', $normalized) ?? '';
+        $normalized = trim($normalized);
+
+        if ($limit !== null) {
+            return substr($normalized, 0, $limit);
+        }
+
+        return $normalized;
     }
 }
