@@ -12,27 +12,54 @@ class DZCDocumentService
 {
     public function createDzc(array $data, $actor): array
     {
-        $branch = Branch::findOrFail($data['branch_id']);
+        return DB::transaction(function () use ($data, $actor) {
+            $branch = Branch::findOrFail($data['branch_id']);
 
-        $startDate = date('Y-m-d', strtotime($data['start']));
-        $endDate = date('Y-m-d', strtotime($data['end']));
+            $startDate = date('Y-m-d', strtotime($data['start']));
+            $endDate = date('Y-m-d', strtotime($data['end']));
+            $period = date('Y-m', strtotime($data['start']));
 
-        $document = Document::create([
-            'patient_id' => null,
-            'user_id' => $actor->id,
-            'type' => 'dzc',
-            'mime_type' => 'application/json',
-            'name' => 'dzc_' . now()->format('d.m.Y'),
-            'path' => 'dzcs/' . now()->timestamp . '.json',
-            'branch_id' => $branch->id,
-            'period' => date('Y-m', strtotime($data['start'])),
-        ]);
+            $existing = Document::query()
+                ->where('type', 'dzc')
+                ->where('user_id', $actor->id)
+                ->where('branch_id', $branch->id)
+                ->where('period', $period)
+                ->lockForUpdate()
+                ->first();
 
-        $user = $actor;
-        $userId = $actor->id;
-        $car = $user->cars()->first();
+            $newPath = 'dzcs/' . now()->timestamp . '.json';
 
-        $visitRows = DB::table('visits')
+            if ($existing) {
+                if ($existing->path && Storage::disk('local')->exists($existing->path)) {
+                    Storage::disk('local')->delete($existing->path);
+                }
+
+                $existing->update([
+                    'mime_type' => 'application/json',
+                    'name' => 'dzc_' . now()->format('d.m.Y'),
+                    'path' => $newPath,
+                    'period' => $period,
+                ]);
+
+                $document = $existing;
+            } else {
+                $document = Document::create([
+                    'patient_id' => null,
+                    'user_id' => $actor->id,
+                    'type' => 'dzc',
+                    'mime_type' => 'application/json',
+                    'name' => 'dzc_' . now()->format('d.m.Y'),
+                    'path' => $newPath,
+                    'branch_id' => $branch->id,
+                    'period' => $period,
+                ]);
+            }
+
+            $user = $actor;
+            $userId = $actor->id;
+            $car = $user->cars()->first();
+
+            $visitRows = DB::table('visits')
             ->leftJoin('patients', 'patients.id', '=', 'visits.patient_id')
             ->where('visits.user_id', $userId)
             ->where('visits.branch_id', $branch->id)
@@ -54,17 +81,17 @@ class DZCDocumentService
             ])
             ->get();
 
-        $visitsByDate = [];
-        foreach ($visitRows as $r) {
+            $visitsByDate = [];
+            foreach ($visitRows as $r) {
             $d = $r->date;
             if (!isset($visitsByDate[$d])) $visitsByDate[$d] = [];
             $visitsByDate[$d][] = $r;
-        }
+            }
 
-        $patientAddresses = [];
-        $branchAddress = trim(($branch->address ?? '') . ', ' . ($branch->city ?? ''));
+            $patientAddresses = [];
+            $branchAddress = trim(($branch->address ?? '') . ', ' . ($branch->city ?? ''));
 
-        foreach ($visitsByDate as $date => $rows) {
+            foreach ($visitsByDate as $date => $rows) {
             $day = [];
             $day[] = [
                 'type' => 'branch_start',
@@ -101,9 +128,9 @@ class DZCDocumentService
             ];
 
             $patientAddresses[$date] = $day;
-        }
+            }
 
-        $dayRows = DB::table('visits')
+            $dayRows = DB::table('visits')
             ->join('branches', 'branches.id', '=', 'visits.branch_id')
             ->where('visits.user_id', $userId)
             ->where('visits.branch_id', $branch->id)
@@ -120,8 +147,8 @@ class DZCDocumentService
             ')
             ->get();
 
-        $dayTotals = [];
-        foreach ($dayRows as $r) {
+            $dayTotals = [];
+            foreach ($dayRows as $r) {
             $totalSeconds = 0;
             if ($r->terrain_start_time && $r->last_arrival) {
                 $journeyDate = $r->date;
@@ -141,9 +168,9 @@ class DZCDocumentService
                 'distance_km' => round(((int)($r->distance_m) / 1000), 2),
                 'total_time' => $totalTime,
             ];
-        }
+            }
 
-        $monthAgg = DB::table('visits')
+            $monthAgg = DB::table('visits')
             ->where('user_id', $userId)
             ->where('branch_id', $branch->id)
             ->whereBetween('date', [$startDate, $endDate])
@@ -156,13 +183,13 @@ class DZCDocumentService
             ')
             ->first();
 
-        $monthTotals = [
+            $monthTotals = [
             'from' => $monthAgg?->from_date ?? $startDate,
             'to' => $monthAgg?->to_date ?? $endDate,
             'distance_km' => round(((int)($monthAgg->distance_m ?? 0)) / 1000, 2),
-        ];
+            ];
 
-        $dzcData = [
+            $dzcData = [
             'user_id' => $userId,
             'user_name' => trim(($user->title ? $user->title . ' ' : '') . $user->first_name . ' ' . $user->last_name),
             'start_date' => $startDate,
@@ -177,42 +204,43 @@ class DZCDocumentService
             'month_totals' => $monthTotals,
             'document_id' => $document->id,
             'created_at' => now()->toISOString(),
-        ];
+            ];
 
-        try {
-            $disk = Storage::disk('local');
-            $directory = dirname($document->path);
+            try {
+                $disk = Storage::disk('local');
+                $directory = dirname($document->path);
             
-            // Ensure directory exists
-            if (!$disk->exists($directory)) {
-                $disk->makeDirectory($directory, 0755, true);
-                \Log::info('Created DZC directory', ['directory' => $directory]);
+                // Ensure directory exists
+                if (!$disk->exists($directory)) {
+                    $disk->makeDirectory($directory, 0755, true);
+                    \Log::info('Created DZC directory', ['directory' => $directory]);
+                }
+            
+                $disk->put($document->path, json_encode($dzcData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            
+                // Verify file was actually saved
+                if (!$disk->exists($document->path)) {
+                    throw new \Exception('File was not saved to disk');
+                }
+            
+                \Log::info('DZC file created successfully', [
+                    'document_id' => $document->id,
+                    'path' => $document->path,
+                    'full_path' => $disk->path($document->path),
+                    'file_size' => $disk->size($document->path)
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to save DZC file', [
+                    'document_id' => $document->id,
+                    'path' => $document->path,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
             }
-            
-            $disk->put($document->path, json_encode($dzcData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-            
-            // Verify file was actually saved
-            if (!$disk->exists($document->path)) {
-                throw new \Exception('File was not saved to disk');
-            }
-            
-            \Log::info('DZC file created successfully', [
-                'document_id' => $document->id,
-                'path' => $document->path,
-                'full_path' => $disk->path($document->path),
-                'file_size' => $disk->size($document->path)
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to save DZC file', [
-                'document_id' => $document->id,
-                'path' => $document->path,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            throw $e;
-        }
 
-        return [$document, $dzcData];
+            return [$document, $dzcData];
+        });
     }
 
     public function getDzcPayload(Document $document): ?array

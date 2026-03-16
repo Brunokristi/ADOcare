@@ -4,6 +4,7 @@ import { computed, ref, watch, onMounted, unref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
+import DatePicker from 'primevue/datepicker'
 import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 
@@ -16,6 +17,7 @@ import InputIcon from 'primevue/inputicon'
 
 import { useRemoteTable } from '@/composables/useRemoteTable'
 import type { ActionDef, DataTableOptions } from '@/types/datatable'
+import { parseDateInput, toApiDate, toApiMonth } from '@/utils/dateUtils'
 
 type IBaseModel = any
 
@@ -42,8 +44,15 @@ const remote = useRemoteTable<IBaseModel>(opt.value.endpointUrl, {
 // convenience computed
 const columns = computed(() => opt.value.columns ?? [])
 const selectedRows = ref<IBaseModel[]>([])
+const dateRangeFilter = computed(() => opt.value.dateRangeFilter)
+const filterMode = computed(() => dateRangeFilter.value?.mode ?? 'range')
+const isSingleDateFilter = computed(() => filterMode.value === 'single')
+const dateFilterValue = ref<Date | null>(null)
+const dateRangeStart = ref<Date | null>(null)
+const dateRangeEnd = ref<Date | null>(null)
 
 let searchTimer: number | null = null
+let initialRemoteLoadDone = false
 
 // --- Confirmation dialog state ---
 const confirmVisible = ref(false)
@@ -101,9 +110,68 @@ function onSort(e: any) {
     remote.loadPage(1)
 }
 
+function formatFilterValue(date: Date | null) {
+    return dateRangeFilter.value?.view === 'month' ? toApiMonth(date) : toApiDate(date)
+}
+
+function syncDateRangeParams() {
+    if (isSingleDateFilter.value) {
+        const param = dateRangeFilter.value?.param ?? 'period'
+        remote.setExtraParam(param, formatFilterValue(dateFilterValue.value))
+        return
+    }
+
+    const startParam = dateRangeFilter.value?.startParam ?? 'date_from'
+    const endParam = dateRangeFilter.value?.endParam ?? 'date_to'
+
+    remote.setExtraParam(startParam, formatFilterValue(dateRangeStart.value))
+    remote.setExtraParam(endParam, formatFilterValue(dateRangeEnd.value))
+}
+
+watch(
+    () => [
+        dateRangeFilter.value?.mode ?? 'range',
+        dateRangeFilter.value?.param ?? 'period',
+        dateRangeFilter.value?.value ?? null,
+        dateRangeFilter.value?.startValue ?? null,
+        dateRangeFilter.value?.endValue ?? null,
+        dateRangeFilter.value?.startParam ?? 'date_from',
+        dateRangeFilter.value?.endParam ?? 'date_to',
+    ],
+    ([, , value, startValue, endValue]) => {
+        if (!dateRangeFilter.value) return
+
+        dateFilterValue.value = parseDateInput(value)
+        dateRangeStart.value = parseDateInput(startValue)
+        dateRangeEnd.value = parseDateInput(endValue)
+        syncDateRangeParams()
+    },
+    { immediate: true },
+)
+
+watch(dateFilterValue, () => {
+    if (!dateRangeFilter.value || !isSingleDateFilter.value) return
+
+    syncDateRangeParams()
+
+    if (!initialRemoteLoadDone) return
+    remote.loadPage(1)
+})
+
+watch([dateRangeStart, dateRangeEnd], () => {
+    if (!dateRangeFilter.value || isSingleDateFilter.value) return
+
+    syncDateRangeParams()
+
+    if (!initialRemoteLoadDone) return
+    remote.loadPage(1)
+})
+
 // initial load
 onMounted(async () => {
+    syncDateRangeParams()
     await remote.loadPage(1)
+    initialRemoteLoadDone = true
     opt.value.afterInit?.({ remote })
 })
 
@@ -138,13 +206,52 @@ watch(
     <div class="h-full flex flex-col min-h-0 max-h-full overflow-auto">
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
             <template #end>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap justify-end">
                     <IconField>
                         <InputText v-model="remote.q.value" class="w-64" />
                         <InputIcon>
                             <i class="bi bi-search text-darkgrey" />
                         </InputIcon>
                     </IconField>
+
+                    <template v-if="dateRangeFilter && isSingleDateFilter">
+                        <IconField>
+                            <DatePicker v-model="dateFilterValue"
+                                :placeholder="dateRangeFilter.placeholder"
+                                :view="dateRangeFilter.view ?? 'month'"
+                                :dateFormat="dateRangeFilter.dateFormat ?? 'mm/yy'"
+                                :manualInput="dateRangeFilter.manualInput ?? false"
+                                inputClass="w-full! pr-10!" class="w-50" />
+                            <InputIcon>
+                                <i class="bi bi-filter text-darkgrey" />
+                            </InputIcon>
+                        </IconField>
+                    </template>
+
+                    <template v-else-if="dateRangeFilter">
+                        <IconField>
+                            <DatePicker v-model="dateRangeStart"
+                                :placeholder="dateRangeFilter.startPlaceholder ?? 'Od dátumu'"
+                                :view="dateRangeFilter.view ?? 'date'"
+                                :dateFormat="dateRangeFilter.dateFormat ?? 'dd.mm.yy'"
+                                :manualInput="dateRangeFilter.manualInput ?? false"
+                                inputClass="w-full! pr-10!" class="w-50" />
+                            <InputIcon>
+                                <i class="bi bi-calendar-frame text-darkgrey" />
+                            </InputIcon>
+                        </IconField>
+                        <IconField>
+                            <DatePicker v-model="dateRangeEnd"
+                                :placeholder="dateRangeFilter.endPlaceholder ?? 'Do dátumu'"
+                                :view="dateRangeFilter.view ?? 'date'"
+                                :dateFormat="dateRangeFilter.dateFormat ?? 'dd.mm.yy'"
+                                :manualInput="dateRangeFilter.manualInput ?? false"
+                                inputClass="w-full! pr-10!" class="w-50" />
+                            <InputIcon>
+                                <i class="bi bi-calendar-frame text-darkgrey" />
+                            </InputIcon>
+                        </IconField>
+                    </template>
 
                     <template v-if="opt.actions?.length">
                         <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function'

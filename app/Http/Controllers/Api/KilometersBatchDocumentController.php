@@ -7,6 +7,7 @@ use App\Http\Requests\StoreKilometersBatchRequest;
 use App\Models\Document;
 use App\Services\KilometersBatchDocumentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class KilometersBatchDocumentController extends Controller
 {
@@ -48,18 +49,17 @@ class KilometersBatchDocumentController extends Controller
     public function index(Request $request)
     {
         $branchId = $request->integer('branch_id');
+        $period = $request->string('period')->toString();
         $userId   = auth()->id();
 
-        $q = Document::query()
+        $items = Document::query()
             ->where('type', 'kilometers_batch')
             ->with(['insuranceCompany:id,name'])
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($period !== '', fn ($q) => $q->where('period', $period))
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
-            ->orderByDesc('created_at');
-
-        $page = $q->paginate($request->integer('per_page', 25));
-
-        $items = $page->getCollection()->map(function ($doc) {
+            ->get()
+            ->map(function ($doc) {
             $doc->insurance_company_name = $doc->insuranceCompany?->name;
             
             // Load amount from payload meta
@@ -69,14 +69,57 @@ class KilometersBatchDocumentController extends Controller
             return $doc;
         })->values();
 
+        $items = $this->applyDocumentSort($items, $request->input('sort', '-created_at'));
+
+        $perPage = $request->integer('per_page', 25);
+        $page = max(1, $request->integer('page', 1));
+        $total = $items->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $items = $items->slice(($page - 1) * $perPage, $perPage)->values();
+
         return $this->success([
             'items' => $items,                 // ✅ array of rows
             'meta'  => [                       // ✅ pagination info
-                'current_page' => $page->currentPage(),
-                'per_page'     => $page->perPage(),
-                'total'        => $page->total(),
-                'last_page'    => $page->lastPage(),
+                'current_page' => $page,
+                'per_page'     => $perPage,
+                'total'        => $total,
+                'last_page'    => $lastPage,
             ],
         ]);
+    }
+
+    private function applyDocumentSort(Collection $items, ?string $sort): Collection
+    {
+        $sortParts = array_filter(explode(',', $sort ?: '-created_at'));
+
+        if (empty($sortParts)) {
+            return $items->values();
+        }
+
+        foreach (array_reverse($sortParts) as $part) {
+            $direction = str_starts_with($part, '-') ? 'desc' : 'asc';
+            $field = ltrim($part, '-');
+
+            $items = $items->sortBy(
+                fn (Document $doc) => $this->normalizeSortableValue($doc, $field),
+                SORT_NATURAL | SORT_FLAG_CASE,
+                $direction === 'desc'
+            )->values();
+        }
+
+        return $items;
+    }
+
+    private function normalizeSortableValue(Document $doc, string $field): int|float|string
+    {
+        return match ($field) {
+            'insurance_company_name' => mb_strtolower((string) ($doc->insurance_company_name ?? '')),
+            'subtype' => mb_strtolower((string) ($doc->subtype ?? '')),
+            'period' => (string) ($doc->period ?? ''),
+            'name' => mb_strtolower((string) ($doc->name ?? '')),
+            'updated_at' => $doc->updated_at ? strtotime((string) $doc->updated_at) ?: 0 : 0,
+            'created_at' => $doc->created_at ? strtotime((string) $doc->created_at) ?: 0 : 0,
+            default => $doc->{$field} ?? '',
+        };
     }
 }

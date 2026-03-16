@@ -79,10 +79,10 @@ async function submit() {
 
             <form @submit.prevent="submit" class="flex flex-col gap-6">
                 <div>
-                    <label for="login" class="block text-normal mb-1">Prihlasovací kód</label>
+                    <label for="login" class="block text-normal mb-1">Prihlasovacie meno</label>
                     <InputText id="login" class="w-full" v-model="login" />
                     <small v-if="submitted && !login" class="text-danger">
-                        Prihlasovací kód je povinný.
+                        Prihlasovacie meno je povinné.
                     </small>
                 </div>
 

@@ -41,6 +41,22 @@ interface ActionDef<T = any> {
     handler?: (params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => Promise<void> | void;
 }
 
+interface DateRangeFilterDef {
+    mode?: 'range' | 'single';
+    param?: string;
+    startParam?: string;
+    endParam?: string;
+    placeholder?: string;
+    startPlaceholder?: string;
+    endPlaceholder?: string;
+    dateFormat?: string;
+    manualInput?: boolean;
+    view?: 'date' | 'month' | 'year';
+    value?: string | Date | null;
+    startValue?: string | Date | null;
+    endValue?: string | Date | null;
+}
+
 interface DataTableOptions<T = any> {
     endpointUrl: string;
     columns: ColumnDef<T>[];
@@ -52,6 +68,7 @@ interface DataTableOptions<T = any> {
     pageSizeOptions?: number[];
     // extra params appended to each request (filters, fixed scope)
     extraParams?: Record<string, any>;
+    dateRangeFilter?: DateRangeFilterDef;
 }
 
 interface RemoteLoadResult<T = any> {

@@ -4,6 +4,7 @@ import { onMounted, computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
+import Button from 'primevue/button'
 
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
@@ -23,6 +24,7 @@ const toast = useToast()
 const patientStore = usePatientStore()
 const { current: currentPatient } = storeToRefs(patientStore)
 const deathCheckRequestId = ref(0)
+const ROUTES_TOAST_GROUP = 'kilometers-routes-toast'
 
 
 onMounted(() => {
@@ -85,6 +87,11 @@ function handleToggleSidebar() {
     isSidebarOpen.value = !isSidebarOpen.value
 }
 
+function goToRoutesFromToast() {
+    toast.removeGroup(ROUTES_TOAST_GROUP)
+    router.push('/accounting/routes')
+}
+
 
 </script>
 
@@ -109,6 +116,21 @@ function handleToggleSidebar() {
         <Footer class="flex-none" />
 
         <Toast position="bottom-right" />
+        
+        <Toast :group="ROUTES_TOAST_GROUP" position="bottom-right">
+            <template #message="slotProps">
+                <div class="flex flex-col gap-2 w-full">
+                    <div class="font-semibold">{{ slotProps.message.summary }}</div>
+                    <div class="text-sm">{{ slotProps.message.detail }}</div>
+                    <Button
+                        label="Skontrolovať"
+                        size="small"
+                        class="!bg-white !border-0 !text-success hover:!bg-darkgrey !px-2 !w-auto self-start"
+                        @click="goToRoutesFromToast"
+                    />
+                </div>
+            </template>
+        </Toast>
 
         <!-- existing global modals -->
         <ModalProvider />

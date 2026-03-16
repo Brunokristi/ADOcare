@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
@@ -10,6 +11,7 @@ import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
 
 const authStore = useAuthStore();
+const toast = useToast();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
 
@@ -32,11 +34,13 @@ type Patient = {
 
 const router = useRouter();
 
+const ROUTES_TOAST_GROUP = 'kilometers-routes-toast'
+
 const batchNumber = ref<string | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
-const dates = ref<Date | null>(null);
-
+const now = new Date()
+const dates = ref<Date | null>(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 const allPatients = ref<Patient[]>([]);
 const filteredPatients = ref<Patient[]>([]);
 const selectedPatients = ref<Patient[]>([]);
@@ -139,9 +143,32 @@ function removePatient(patient: Patient) {
   );
 }
 
-function onBatchNumberInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  batchNumber.value = input.value.replace(/[^0-9]/g, '');
+function onBatchNumberKeydown(e: KeyboardEvent) {
+    const allowedKeys = [
+        'Backspace',
+        'Delete',
+        'ArrowLeft',
+        'ArrowRight',
+        'Tab'
+    ]
+
+    if (allowedKeys.includes(e.key)) {
+        return
+    }
+
+    if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault()
+    }
+}
+
+function showRoutesGeneratedToast() {
+    toast.add({
+        group: ROUTES_TOAST_GROUP,
+        severity: 'success',
+        summary: 'Úspech',
+        detail: 'Cestovný príkaz a Denný záznam ciest boli úspešne vygenerované.',
+        life: 10000,
+    })
 }
 
 async function onSubmit() {
@@ -170,6 +197,9 @@ async function onSubmit() {
   const month = monthDate.getMonth();
   const periodFrom = new Date(year, month, 1);
   const periodTo = new Date(year, month + 1, 0);
+  const periodFromLocal = formatLocalDate(periodFrom)
+  const periodToLocal = formatLocalDate(periodTo)
+  const selectedBranchId = authStore.currentBranch?.id
 
   loading.value = true;
 
@@ -190,6 +220,40 @@ async function onSubmit() {
     if (!sheet) {
       console.error('Missing sheet in response:', res.data);
       return;
+    }
+
+    if (selectedBranchId) {
+      void Promise.allSettled([
+        api.post('/v1/cps', {
+          start: periodFromLocal,
+          end: periodToLocal,
+          branch_id: selectedBranchId,
+        }),
+        api.post('/v1/dzcs', {
+          start: periodFromLocal,
+          end: periodToLocal,
+          branch_id: selectedBranchId,
+        }),
+      ]).then(([cpResult, dzcResult]) => {
+        if (cpResult.status === 'fulfilled' && dzcResult.status === 'fulfilled') {
+          showRoutesGeneratedToast()
+          return
+        }
+
+        toast.add({
+          severity: 'warn',
+          summary: 'Čiastočný úspech',
+          detail: 'Kilometre boli vytvorené, ale CP alebo DZC sa nepodarilo vygenerovať.',
+          life: 4500,
+        })
+      })
+    } else {
+      toast.add({
+        severity: 'info',
+        summary: 'Informácia',
+        detail: 'Kilometre boli vytvorené, ale CP/DZC sa negenerovali, pretože chýba pobočka.',
+        life: 4000,
+      })
     }
 
     await router.push({
@@ -214,10 +278,23 @@ async function onSubmit() {
       },
     });
   } catch (error) {
-    console.error('Preview or navigation failed', error);
+    console.error('Generation failed', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: 'Nepodarilo sa vygenerovať kilometre.',
+      life: 4000,
+    })
   } finally {
     loading.value = false;
   }
+}
+
+const formatLocalDate = (date: Date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 watch(branchId, (id) => {
@@ -258,26 +335,24 @@ const openKilometersDoc = (doc: DocRow) => {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-const periodKey = computed(() => {
-  if (!dates.value) return null
-  const y = dates.value.getFullYear()
-  const m = String(dates.value.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
-})
-
 const options = computed<DataTableOptions<DocRow>>(() => ({
   rowKey: 'id',
   endpointUrl: 'v1/kilometers-batches',
   extraParams: {
     ...(branchId.value ? { branch_id: branchId.value } : {}),
-    ...(periodKey.value ? { period: periodKey.value } : {}),
+  },
+  dateRangeFilter: {
+    mode: 'single',
+    param: 'period',
+    view: 'month',
+    dateFormat: 'mm/yy',
+    value: dates.value,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
   selectable: true,
 
   columns: [
-    { field: 'name', header: 'Názov', sortable: true },
     {
       field: 'insurance_company_name',
       header: 'Poisťovňa',
@@ -294,9 +369,10 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
       render: (v?: string) => formatSubtype(v),
     },
     { field: 'period', header: 'Obdobie', sortable: true },
+    { field: 'name', header: 'Názov', sortable: true },
     {
-      field: 'created_at',
-      header: 'Dátum a čas vytvorenia',
+      field: 'updated_at',
+      header: 'Naposledy upravené',
       sortable: true,
       render: (v?: string) => formatDateWithTime(v),
     },
@@ -343,9 +419,15 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Číslo dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Číslo dávky</label>
-            <InputText v-model="batchNumber" @input="onBatchNumberInput"
-              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-              class="border-none!" fluid />
+            <InputText
+                v-model="batchNumber"
+                @keydown="onBatchNumberKeydown"
+                maxlength="6"
+                inputmode="numeric"
+                inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+                class="border-none!"
+                fluid
+            />
             <small v-if="submitted && !batchNumber" class="text-danger">
               Číslo dávky je povinné.
             </small>
@@ -439,7 +521,7 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
     </form>
 
     <section>
-      <UniversalDataTable ref="tableRef" :options="options" />
+      <UniversalDataTable :options="options" />
     </section>
   </div>
 </template>

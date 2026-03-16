@@ -38,8 +38,8 @@ const router = useRouter();
 const batchNumber = ref<string | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
-const dates = ref<Date | null>(null);
-
+const now = new Date()
+const dates = ref<Date | null>(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 const allPatients = ref<Patient[]>([]);
 const filteredPatients = ref<Patient[]>([]);
 const selectedPatients = ref<Patient[]>([]);
@@ -150,9 +150,22 @@ function removePatient(patient: Patient) {
   );
 }
 
-function onBatchNumberInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  batchNumber.value = input.value.replace(/[^0-9]/g, '');
+function onBatchNumberKeydown(e: KeyboardEvent) {
+    const allowedKeys = [
+        'Backspace',
+        'Delete',
+        'ArrowLeft',
+        'ArrowRight',
+        'Tab'
+    ]
+
+    if (allowedKeys.includes(e.key)) {
+        return
+    }
+
+    if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault()
+    }
 }
 
 async function pollCalculationStatus(periodFrom: Date) {
@@ -376,26 +389,24 @@ const openPointsDoc = (doc: DocRow) => {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-const periodKey = computed(() => {
-  if (!dates.value) return null
-  const y = dates.value.getFullYear()
-  const m = String(dates.value.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
-})
-
 const options = computed<DataTableOptions<DocRow>>(() => ({
   rowKey: 'id',
   endpointUrl: 'v1/points-batches',
   extraParams: {
     ...(branchId.value ? { branch_id: branchId.value } : {}),
-    ...(periodKey.value ? { period: periodKey.value } : {}),
+  },
+  dateRangeFilter: {
+    mode: 'single',
+    param: 'period',
+    view: 'month',
+    dateFormat: 'mm/yy',
+    value: dates.value,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
   selectable: true,
 
   columns: [
-    { field: 'name', header: 'Názov', sortable: true },
     {
       field: 'insurance_company_name',
       header: 'Poisťovňa',
@@ -412,9 +423,10 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
       render: (v?: string) => formatSubtype(v),
     },
     { field: 'period', header: 'Obdobie', sortable: true },
+    { field: 'name', header: 'Názov', sortable: true },
     {
-      field: 'created_at',
-      header: 'Dátum a čas vytvorenia',
+      field: 'updated_at',
+      header: 'Naposledy upravené',
       sortable: true,
       render: (v?: string) => formatDateWithTime(v),
     },
@@ -462,9 +474,15 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Číslo dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Číslo dávky</label>
-            <InputText v-model="batchNumber" @input="onBatchNumberInput"
-              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-              class="border-none!" fluid />
+            <InputText
+                v-model="batchNumber"
+                @keydown="onBatchNumberKeydown"
+                maxlength="6"
+                inputmode="numeric"
+                inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+                class="border-none!"
+                fluid
+            />
             <small v-if="submitted && !batchNumber" class="text-danger">
               Číslo dávky je povinné.
             </small>

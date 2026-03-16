@@ -8,6 +8,7 @@ use App\Services\PointsBatchDocumentService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class BatchDocumentController extends Controller
 {
@@ -26,32 +27,15 @@ class BatchDocumentController extends Controller
         $page = $request->integer('page', 1);
         $perPage = $request->integer('per_page', 25);
 
-        $kilometersQ = Document::query()
-            ->where('type', 'kilometers_batch')
+        $items = Document::query()
+            ->whereIn('type', ['kilometers_batch', 'points_batch'])
             ->whereHas('user', fn ($q) => $q->where('company_id', $companyId))
-            ->with(['insuranceCompany:id,name', 'user:id,title,first_name,last_name', 'branch:id,address']);
-
-        $pointsQ = Document::query()
-            ->where('type', 'points_batch')
-            ->whereHas('user', fn ($q) => $q->where('company_id', $companyId))
-            ->with(['insuranceCompany:id,name', 'user:id,title,first_name,last_name', 'branch:id,address']);
-
-        // Union the queries and order by created_at desc
-        $q = $kilometersQ->union($pointsQ)
-            ->orderByDesc('created_at');
-
-        // Paginate
-        $page_obj = \Illuminate\Pagination\Paginator::resolveCurrentPath();
-        $items = $q->get();
-
-        // Manually paginate
-        $total = $items->count();
-        $lastPage = (int) ceil($total / $perPage);
-        $offset = ($page - 1) * $perPage;
-        $pageItems = $items->slice($offset, $perPage)->values();
-
-        // Map and add amounts
-        $items = $pageItems->map(function ($doc) {
+            ->when($request->filled('period'), fn ($q) => $q->where('period', Carbon::parse($request->input('period'))->format('Y-m')))
+            ->when($request->filled('date_from'), fn ($q) => $q->where('period', '>=', Carbon::parse($request->input('date_from'))->format('Y-m')))
+            ->when($request->filled('date_to'), fn ($q) => $q->where('period', '<=', Carbon::parse($request->input('date_to'))->format('Y-m')))
+            ->with(['insuranceCompany:id,name', 'user:id,title,first_name,last_name', 'branch:id,address'])
+            ->get()
+            ->map(function ($doc) {
             $doc->insurance_company_name = $doc->insuranceCompany?->name;
             $doc->branch_address = $doc->branch?->address;
             
@@ -76,6 +60,13 @@ class BatchDocumentController extends Controller
 
             return $doc;
         })->values();
+
+        $items = $this->applyDocumentSort($items, $request->input('sort', '-created_at'));
+
+        $total = $items->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $offset = ($page - 1) * $perPage;
+        $items = $items->slice($offset, $perPage)->values();
 
         return $this->success([
             'items' => $items,
@@ -243,5 +234,40 @@ class BatchDocumentController extends Controller
         }
 
         return (float) data_get($payload, 'meta.amount', 0);
+    }
+
+    private function applyDocumentSort(Collection $items, ?string $sort): Collection
+    {
+        $sortParts = array_filter(explode(',', $sort ?: '-created_at'));
+
+        if (empty($sortParts)) {
+            return $items->values();
+        }
+
+        foreach (array_reverse($sortParts) as $part) {
+            $direction = str_starts_with($part, '-') ? 'desc' : 'asc';
+            $field = ltrim($part, '-');
+
+            $items = $items->sortBy(
+                fn (Document $doc) => $this->normalizeSortableValue($doc, $field),
+                SORT_NATURAL | SORT_FLAG_CASE,
+                $direction === 'desc'
+            )->values();
+        }
+
+        return $items;
+    }
+
+    private function normalizeSortableValue(Document $doc, string $field): int|float|string
+    {
+        return match ($field) {
+            'type' => mb_strtolower((string) ($doc->type ?? '')),
+            'subtype' => mb_strtolower((string) ($doc->subtype ?? '')),
+            'created_at' => $doc->created_at ? strtotime((string) $doc->created_at) ?: 0 : 0,
+            'insurance_company_name' => mb_strtolower((string) ($doc->insurance_company_name ?? '')),
+            'created_by_user' => mb_strtolower((string) ($doc->created_by_user ?? '')),
+            'branch_address' => mb_strtolower((string) ($doc->branch_address ?? '')),
+            default => $doc->{$field} ?? '',
+        };
     }
 }
