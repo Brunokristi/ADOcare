@@ -47,7 +47,6 @@ export const usePatientStore = defineStore('patient', {
                 const isNew = !patient.id
 
                 if (isNew) {
-                    // create - send only valid fields
                     const payload = {
                         first_name: patient.first_name,
                         last_name: patient.last_name,
@@ -65,7 +64,7 @@ export const usePatientStore = defineStore('patient', {
                         longitude: patient.longitude,
                         reference_date: patient.reference_date,
                         death_date: patient.death_date,
-                        dekurz_number: patient.dekurz_number,
+                        dekurz_number: patient.dekurz_number || 1,
                         branch_id: patient.branch_id,
                         nurse_id: patient.nurse_id,
                     }
@@ -135,7 +134,7 @@ export const usePatientStore = defineStore('patient', {
                     longitude: patient.longitude,
                     reference_date: patient.reference_date,
                     death_date: patient.death_date,
-                    dekurz_number: patient.dekurz_number || 1,
+                    dekurz_number: 1,
                 }
                 const response = await api.post(`/v1/branches/${branchId}/patients`, payload);
                 const created = response.data.data as Patient;

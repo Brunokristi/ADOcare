@@ -46,6 +46,9 @@ const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
 const timelineCalculated = ref(false)
 const checkingTimeline = ref(false)
 const calculationInProgress = ref(false)
+const suspendSessionDatesPersist = ref(false)
+
+const DEKURZ_DATES_SESSION_KEY_PREFIX = 'dekurz:selected-dates:patient:'
 
 // Document existence check
 const documentExists = ref(false)
@@ -84,6 +87,70 @@ function isoDate(d: Date) {
   const mm = String(x.getMonth() + 1).padStart(2, '0')
   const dd = String(x.getDate()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd}`
+}
+
+function parseIsoDate(value: string) {
+  if (!value) return null
+  const d = new Date(`${value}T00:00:00`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function getDatesSessionKey(patientIdValue: number) {
+  return `${DEKURZ_DATES_SESSION_KEY_PREFIX}${patientIdValue}`
+}
+
+function clearAllSectionDates() {
+  for (const s of sections.value) {
+    s.dates = []
+  }
+}
+
+function persistSelectedDatesForSession() {
+  if (!patientId.value) return
+
+  const payload = {
+    month: dekurzMonth.value ? isoDate(new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)) : null,
+    sections: sections.value.map((s) => ({
+      text: s.text,
+      dates: (s.dates || []).map(isoDate),
+    })),
+  }
+
+  sessionStorage.setItem(getDatesSessionKey(patientId.value), JSON.stringify(payload))
+}
+
+function restoreSelectedDatesForSession(patientIdValue: number): boolean {
+  const raw = sessionStorage.getItem(getDatesSessionKey(patientIdValue))
+  if (!raw) return false
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      month?: string | null
+      sections?: { text: string; dates: string[] }[]
+    }
+
+    if (parsed.month) {
+      const restoredMonth = parseIsoDate(parsed.month)
+      if (restoredMonth) {
+        dekurzMonth.value = new Date(restoredMonth.getFullYear(), restoredMonth.getMonth(), 1)
+      }
+    }
+
+    const savedSections = Array.isArray(parsed.sections) ? parsed.sections : []
+    if (!savedSections.length) return false
+
+    // Rebuild sections with saved text and saved dates (dates applied after allowedDays are loaded)
+    sections.value = savedSections.map((s) => ({
+      id: makeId(),
+      text: s.text ?? '',
+      dates: (s.dates || []).map(parseIsoDate).filter((d): d is Date => !!d),
+    }))
+
+    return true
+  } catch (err) {
+    console.error('Failed to restore dekurz selected dates from session', err)
+    return false
+  }
 }
 
 function toLocalYMD(d: Date) {
@@ -183,7 +250,7 @@ function validateForm() {
   return Object.keys(e).length === 0
 }
 
-async function fetchAllowedDays() {
+async function fetchAllowedDays(keepDates = false) {
   if (!patientId.value || !dekurzMonth.value) {
     allowedDaysInMonth.value = []
     return
@@ -204,11 +271,14 @@ async function fetchAllowedDays() {
 
     allowedDaysInMonth.value = Array.from(new Set(days)).sort((a, b) => a - b)
 
-    const { year, month } = lockedMonth.value
-    for (const s of sections.value) {
-      s.dates = (s.dates || []).filter(
-        dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt),
-      )
+    if (!keepDates) {
+      // Only strip dates when NOT restoring from session
+      const { year, month } = lockedMonth.value
+      for (const s of sections.value) {
+        s.dates = (s.dates || []).filter(
+          dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt),
+        )
+      }
     }
   } catch (err) {
     console.error('Failed to fetch allowed dates:', err)
@@ -267,6 +337,13 @@ async function generateDekurz() {
     const res = await api.post('/v1/dekurz', payload)
 
     toast.add({ severity: 'success', summary: 'Úspešne', detail: 'Dekurz bol vygenerovaný.', life: 3000 })
+
+    // Persist the incremented dekurz_number so the next form load shows the correct number
+    const nextNumber = res.data?.next_dekurz_number
+    if (nextNumber && patientStore.current) {
+      patientStore.current.dekurz_number = nextNumber
+      localStorage.setItem('selected-patient', JSON.stringify(patientStore.current))
+    }
 
     if (res.data?.document_id) {
       router.push({ name: 'documents-dekurz', params: { documentId: res.data.document_id } })
@@ -474,24 +551,27 @@ async function pollCalculationStatus(dateObj: Date) {
 watch(
   patientDekurzNumber,
   val => {
-    if (!dekurzNumber.value.trim() && val) dekurzNumber.value = val
+    if (val) dekurzNumber.value = val
   },
   { immediate: true },
 )
 
+// Fires only on user-driven changes after init (no immediate).
+// The patientId watcher below is fully responsible for the initial load.
 watch(
   [() => dekurzMonth.value, () => patientId.value],
   async () => {
-    await fetchAllowedDays()
+    if (suspendSessionDatesPersist.value) return
+    await fetchAllowedDays(false)
     await checkTimelineCalculated()
     await checkDocumentExists()
   },
-  { immediate: true },
 )
 
 watch(
   () => dekurzMonth.value,
   () => {
+    if (suspendSessionDatesPersist.value) return
     const { year, month } = lockedMonth.value
     for (const s of sections.value) {
       s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
@@ -503,10 +583,49 @@ watch(
   () => patientId.value,
   async (val) => {
     if (!val) return
-    await fetchMacros()
-    await loadLastDekurzDraft()
+    suspendSessionDatesPersist.value = true
+    try {
+      draftLoaded.value = false
+      await fetchMacros()
+
+      // Try to restore from session first.
+      // restoreSelectedDatesForSession may change dekurzMonth — the dekurzMonth
+      // watcher is guarded by suspendSessionDatesPersist so it won't wipe dates.
+      const restored = restoreSelectedDatesForSession(val)
+
+      if (restored) {
+        // keepDates=true: load allowed days without touching section dates
+        await fetchAllowedDays(true)
+      } else {
+        // No session — load draft texts (empty dates) then fetch allowed days
+        await loadLastDekurzDraft()
+        clearAllSectionDates()
+        await fetchAllowedDays(false)
+      }
+
+      // These were previously triggered by the [dekurzMonth, patientId] watcher
+      // (immediate), which is now non-immediate to avoid racing with this watcher.
+      await checkTimelineCalculated()
+      await checkDocumentExists()
+    } finally {
+      suspendSessionDatesPersist.value = false
+      persistSelectedDatesForSession()
+    }
   },
   { immediate: true },
+)
+
+watch(
+  [
+    () => patientId.value,
+    () => dekurzMonth.value,
+    () => sections.value.map((s) => (s.dates || []).map(isoDate).join(',')),
+  ],
+  () => {
+    if (suspendSessionDatesPersist.value) return
+    persistSelectedDatesForSession()
+  },
+  { deep: true },
 )
 
 

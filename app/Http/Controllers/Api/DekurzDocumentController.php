@@ -27,6 +27,7 @@ class DekurzDocumentController extends Controller
         return response()->json([
             'success' => true,
             'document_id' => $document->id,
+            'next_dekurz_number' => $document->next_dekurz_number,
             'message' => 'Dekurz bol úspešne vytvorený',
         ], 201);
     }

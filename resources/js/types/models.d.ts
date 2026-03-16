@@ -177,6 +177,7 @@ export interface User {
   api_token?: string | null
   company_id: number | null
   role_id: number | null
+  signature_path: string | null
   // overrides
   branch_roles: Array<{ branch_id: int, role_id: ?int, position: ?string }>
   // relations
