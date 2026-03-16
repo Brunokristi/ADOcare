@@ -289,6 +289,7 @@ export interface Company {
   created_at: string | null
   updated_at: string | null
   representative_id: number | null
+  stamp_path: string | null
   // relations
   branches: Branch[]
   cars: Car[]
