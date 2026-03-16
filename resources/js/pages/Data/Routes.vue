@@ -149,11 +149,6 @@ const options = computed<DataTableOptions<Document>>(() => ({
 
   columns: [
     {
-      field: 'name',
-      header: 'Názov',
-      sortable: true,
-    },
-    {
       field: 'type',
       header: 'Typ',
       sortable: true,

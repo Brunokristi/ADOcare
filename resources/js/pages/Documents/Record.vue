@@ -77,6 +77,16 @@ const formSpec: { sections: Section[] } = {
       fields: [{ id: 'healthPerception.description', label: 'Subjektívny popis problémov pacienta' }],
     },
     {
+      id: 'consciousnessOrientation',
+      title: 'Vedomie a orientácia',
+      fields: [
+        { id: 'consciousness', label: 'Vedomie' },
+        { id: 'consciousnessOtherNotes', label: 'Iné zistenia' },
+        { id: 'orientation', label: 'Orientácia' },
+        { id: 'orientationOtherNotes', label: 'Iné zistenia' },
+      ],
+    },
+    {
       id: 'nursingAssessment',
       title: 'Vstupný záznam sesterského posúdenia zdravotného stavu pacienta',
       fields: [
@@ -88,16 +98,6 @@ const formSpec: { sections: Section[] } = {
         { id: 'nursing.department', label: 'Oddelenie' },
         { id: 'nursing.lastHospitalizationFrom', label: 'Posledná hospitalizácia od' },
         { id: 'nursing.lastHospitalizationTo', label: 'do' },
-      ],
-    },
-    {
-      id: 'consciousnessOrientation',
-      title: 'Vedomie a orientácia',
-      fields: [
-        { id: 'consciousness', label: 'Vedomie' },
-        { id: 'consciousnessOtherNotes', label: 'Iné zistenia' },
-        { id: 'orientation', label: 'Orientácia' },
-        { id: 'orientationOtherNotes', label: 'Iné zistenia' },
       ],
     },
     {
@@ -125,6 +125,44 @@ const formSpec: { sections: Section[] } = {
         { id: 'oxygenTherapy', label: 'Kyslíková terapia' },
         { id: 'mechanicalVentilation', label: 'Mechanická ventilácia' },
         { id: 'inhalation', label: 'Inhalácia' },
+      ],
+    },
+    {
+      id: 'sleep',
+      title: 'Spánok',
+      fields: [
+        { id: 'sleep.problemExists', label: 'Spánok – problém' },
+        { id: 'sleep.findings', label: 'Zistenia' },
+        { id: 'sleep.otherNotes', label: 'Iné zistenia' },
+      ],
+    },
+    {
+      id: 'mobility',
+      title: 'Mobilita',
+      fields: [
+        { id: 'mobility.level', label: 'Úroveň mobility' },
+        { id: 'mobility.compensatoryAids', label: 'Kompenzačné pomôcky' },
+        { id: 'mobility.compensatoryAidsDetails', label: 'Aké kompenzačné pomôcky' },
+      ],
+    },
+    {
+      id: 'movement',
+      title: 'Pohybový systém',
+      fields: [
+        { id: 'movement.problemExists', label: 'Pohybový systém – problém' },
+        { id: 'movement.findings', label: 'Zistenia' },
+        { id: 'movement.otherNotes', label: 'Iné zistenia' },
+      ],
+    },
+    {
+      id: 'pain',
+      title: 'Bolesť',
+      fields: [
+        { id: 'pain.problemExists', label: 'Bolesť – problém' },
+        { id: 'pain.type', label: 'Typ bolesti' },
+        { id: 'pain.location', label: 'Lokalizácia' },
+        { id: 'pain.character', label: 'Charakter' },
+        { id: 'pain.otherNotes', label: 'Iné zistenia' },
       ],
     },
     {
@@ -182,30 +220,13 @@ const formSpec: { sections: Section[] } = {
       ],
     },
     {
-      id: 'sleep',
-      title: 'Spánok',
+      id: 'communication',
+      title: 'Komunikácia',
       fields: [
-        { id: 'sleep.problemExists', label: 'Spánok – problém' },
-        { id: 'sleep.findings', label: 'Zistenia' },
-        { id: 'sleep.otherNotes', label: 'Iné zistenia' },
-      ],
-    },
-    {
-      id: 'mobility',
-      title: 'Mobilita',
-      fields: [
-        { id: 'mobility.level', label: 'Úroveň mobility' },
-        { id: 'mobility.compensatoryAids', label: 'Kompenzačné pomôcky' },
-        { id: 'mobility.compensatoryAidsDetails', label: 'Aké kompenzačné pomôcky' },
-      ],
-    },
-    {
-      id: 'movement',
-      title: 'Pohybový systém',
-      fields: [
-        { id: 'movement.problemExists', label: 'Pohybový systém – problém' },
-        { id: 'movement.findings', label: 'Zistenia' },
-        { id: 'movement.otherNotes', label: 'Iné zistenia' },
+        { id: 'communication.type', label: 'Spôsob komunikácie' },
+        { id: 'communication.problemExists', label: 'Komunikácia – problém' },
+        { id: 'communication.issues', label: 'problémy v komunikácii' },
+        { id: 'communication.otherNotes', label: 'Iné zistenia' },
       ],
     },
     {
@@ -253,27 +274,6 @@ const formSpec: { sections: Section[] } = {
         { id: 'postpartum.newbornHeadCircumference', label: 'Obvod hlavy (cm)' },
         { id: 'postpartum.newbornChestCircumference', label: 'Obvod hrudníka (cm)' },
         { id: 'postpartum.otherNotes', label: 'Iné zistenia' },
-      ],
-    },
-    {
-      id: 'pain',
-      title: 'Bolesť',
-      fields: [
-        { id: 'pain.problemExists', label: 'Bolesť – problém' },
-        { id: 'pain.type', label: 'Typ bolesti' },
-        { id: 'pain.location', label: 'Lokalizácia' },
-        { id: 'pain.character', label: 'Charakter' },
-        { id: 'pain.otherNotes', label: 'Iné zistenia' },
-      ],
-    },
-    {
-      id: 'communication',
-      title: 'Komunikácia',
-      fields: [
-        { id: 'communication.type', label: 'Spôsob komunikácie' },
-        { id: 'communication.problemExists', label: 'Komunikácia – problém' },
-        { id: 'communication.issues', label: 'problémy v komunikácii' },
-        { id: 'communication.otherNotes', label: 'Iné zistenia' },
       ],
     },
     {
@@ -454,7 +454,7 @@ async function recalcPagination() {
   const headerHeight = headerEl ? outerHeightWithMargins(headerEl) : 0
   const footerHeight = footerEl ? outerHeightWithMargins(footerEl) : 0
 
-  const SAFETY = 18
+  const SAFETY = 10
   const firstCapacity = innerHeight - headerHeight - SAFETY
   const otherCapacity = innerHeight - SAFETY
 
@@ -642,11 +642,31 @@ async function printPage() {
 }
 
 function handleAfterPrint() {
-  isPrinting.value = false
+    isPrinting.value = false
 }
 
-onMounted(() => window.addEventListener('afterprint', handleAfterPrint))
-onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint))
+function handlePrintShortcut(e: KeyboardEvent) {
+    const isPrintShortcut = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p'
+
+    if (!isPrintShortcut) {
+        return
+    }
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    void printPage()
+}
+
+onMounted(() => {
+    window.addEventListener('afterprint', handleAfterPrint)
+    window.addEventListener('keydown', handlePrintShortcut)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('afterprint', handleAfterPrint)
+    window.removeEventListener('keydown', handlePrintShortcut)
+})
 
 /* -------------------------------------------------------------------------- */
 /*  Small helpers                                                              */
@@ -685,14 +705,14 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                   {{ title }}
                 </div>
 
-                <table class="w-full border-collapse text-sm mb-2">
+                <table class="w-full border-collapse text-[0.5rem] mb-2">
                   <tbody>
                     <tr>
-                      <td class="border border-black p-2 w-1/2">
+                      <td class="border border-black p-1 w-1/2">
                         Zdravotnícke zariadenie:<br />
                         <strong>{{ documentData.facilityName }}</strong>
                       </td>
-                      <td class="border border-black p-2 w-1/2">
+                      <td class="border border-black p-1 w-1/2">
                         so sídlom v:<br />
                         <strong>{{ documentData.facilityAddress }}</strong>
                       </td>
@@ -700,46 +720,46 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                   </tbody>
                 </table>
 
-                <table class="w-full border-collapse text-sm mb-2" style="table-layout: fixed">
+                <table class="w-full border-collapse text-[0.5rem] mb-2" style="table-layout: fixed">
                   <tbody>
                     <tr>
-                      <td class="border border-black p-2 w-1/2">
+                      <td class="border border-black p-1 w-1/2">
                         Meno, priezvisko, titul pacienta/pacientky:<br />
                         <strong>{{ documentData.patientName }}</strong>
                       </td>
-                      <td class="border border-black p-2 w-1/4">
+                      <td class="border border-black p-1 w-1/4">
                         Rodné číslo:<br />
                         <strong>{{ documentData.patientIdNumber }}</strong>
                       </td>
-                      <td class="border border-black p-2 w-1/4">
+                      <td class="border border-black p-1 w-1/4">
                         Kód ZP:<br />
                         <strong>{{ documentData.patientHealthCode }}</strong>
                       </td>
                     </tr>
                     <tr>
-                      <td class="border border-black p-2" colspan="3">
+                      <td class="border border-black p-1" colspan="3">
                         Trvalý pobyt:<br />
                         <strong>{{ documentData.patientCurrentAddress }}</strong>
                       </td>
                     </tr>
                     <tr>
-                      <td class="border border-black p-2" colspan="3">
+                      <td class="border border-black p-1" colspan="3">
                         Prechodný pobyt:<br />
                         <strong></strong>
                       </td>
                     </tr>
                     <tr>
-                      <td class="border border-black p-2" colspan="2">
+                      <td class="border border-black p-1" colspan="2">
                         Kontaktná osoba a vzťah k pacientovi:<br />
                         <strong></strong>
                       </td>
-                      <td class="border border-black p-2" colspan="1">
+                      <td class="border border-black p-1" colspan="1">
                         Kontakt:<br />
                         <strong></strong>
                       </td>
                     </tr>
                     <tr>
-                      <td class="border border-black p-2" colspan="3">
+                      <td class="border border-black p-1" colspan="3">
                         Adresa kontaktnej osoby:<br />
                         <strong></strong>
                       </td>
@@ -747,14 +767,14 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                   </tbody>
                 </table>
 
-                <table class="w-full border-collapse text-sm mb-2">
+                <table class="w-full border-collapse text-[0.5rem] mb-2">
                   <tbody>
                     <tr>
-                      <td class="border border-black p-2 w-1/2">
+                      <td class="border border-black p-1 w-1/2">
                         Ošetrujúci lekár:<br />
                         <strong>{{ documentData.doctorName }}</strong>
                       </td>
-                      <td class="border border-black p-2 w-1/2">
+                      <td class="border border-black p-1 w-1/2">
                         Pracovisko:<br />
                         <strong>ADOS</strong>
                       </td>
@@ -768,13 +788,13 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                 <section v-for="section in page.sections" :key="section.id" class="print-section">
                   <div class="section-title">{{ section.title }}</div>
 
-                  <table class="w-full border-collapse text-xs field-table">
+                  <table class="w-full border-collapse text-[0.5rem] field-table">
                     <tbody>
                       <tr v-for="field in section.fields" :key="field.id" class="field-row border-b border-gray-300">
-                        <td class="p-1 w-2/5 text-xs font-semibold align-top">
+                        <td class=" w-2/5 text-[0.5rem] font-semibold align-top">
                           {{ field.label }}
                         </td>
-                        <td class="p-1 w-3/5 text-xs align-top">
+                        <td class=" w-3/5 text-[0.5rem] align-top">
                           {{ formatValue(documentData.formData[field.id], field.id) || '-' }}
                         </td>
                       </tr>
@@ -783,7 +803,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                 </section>
 
                 <div v-if="pageIndex === pages.length - 1" class="footer">
-                  <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
+                  <div class="mt-12 grid grid-cols-2 gap-12 text-=[0.5rem]">
                     <div class="text-center">
                       <div class="border-t-1 border-black mb-2"></div>
                       podpis pacienta
@@ -809,7 +829,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                 {{ title }}
               </div>
 
-              <table class="w-full border-collapse text-sm mb-2">
+              <table class="w-full border-collapse text-[0.5rem] mb-2">
                 <tbody>
                   <tr>
                     <td class="border border-black p-2 w-1/2">
@@ -824,7 +844,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                 </tbody>
               </table>
 
-              <table class="w-full border-collapse text-sm mb-2" style="table-layout: fixed">
+              <table class="w-full border-collapse text-[0.5rem] mb-2" style="table-layout: fixed">
                 <tbody>
                   <tr>
                     <td class="border border-black p-2 w-1/2">
@@ -871,7 +891,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
                 </tbody>
               </table>
 
-              <table class="w-full border-collapse text-sm mb-2">
+              <table class="w-full border-collapse text-[0.5rem] mb-2">
                 <tbody>
                   <tr>
                     <td class="border border-black p-2 w-1/2">
@@ -892,13 +912,13 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
               <section v-for="section in formSpec.sections" :key="section.id" class="print-section">
                 <div class="section-title">{{ section.title }}</div>
 
-                <table class="w-full border-collapse text-xs field-table">
+                <table class="w-full border-collapse text-[0.5rem] field-table">
                   <tbody>
                     <tr v-for="field in section.fields" :key="field.id" class="field-row border-b border-gray-300">
-                      <td class="p-1 w-2/5 text-xs font-semibold align-top">
+                      <td class="p-1 w-2/5 text-[0.5rem] font-semibold align-top">
                         {{ field.label }}
                       </td>
-                      <td class="p-1 w-3/5 text-xs align-top">
+                      <td class="p-1 w-3/5 text-[0.5rem] align-top">
                         {{ formatValue(documentData.formData[field.id], field.id) || '-' }}
                       </td>
                     </tr>
@@ -909,7 +929,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 
             <!-- Footer measurer (we use it to ensure last page has space) -->
             <div ref="measureFooterRef" class="footer">
-              <table class="w-full border-collapse text-sm">
+              <table class="w-full border-collapse text-[0.5rem]">
                 <tbody>
                   <tr>
                     <td class="border border-black p-2 w-1/2">
@@ -963,7 +983,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 .page {
   width: 210mm;
   height: 297mm;
-  margin: 0 auto;
+  margin: 5mm auto;
   background: #fff;
   box-sizing: border-box;
   padding: 14mm;
@@ -983,7 +1003,7 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 /* section blocks */
 .print-section {
   border: 1px solid #000;
-  padding: 8px;
+  padding: 2px;
   margin-bottom: 10px;
   font-size: 0.65rem;
 }
@@ -992,9 +1012,9 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
   font-weight: 700;
   text-transform: uppercase;
   border-bottom: 1px solid #000;
-  padding-bottom: 4px;
-  margin-bottom: 6px;
-  font-size: 0.7rem;
+  padding-bottom: 2px;
+  margin-bottom: 1px;
+  font-size: 0.5rem;
 }
 
 /* wrapping in values */

@@ -423,7 +423,16 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
       render: (v?: string) => formatSubtype(v),
     },
     { field: 'period', header: 'Obdobie', sortable: true },
-    { field: 'name', header: 'Názov', sortable: true },
+    {
+        field: 'name',
+        header: 'Číslo dávky',
+        sortable: true,
+        render: (v?: string) => {
+            if (!v) return ''
+            const parts = v.split('_')
+            return parts[3] ?? ''
+        }
+    },
     {
       field: 'updated_at',
       header: 'Naposledy upravené',
