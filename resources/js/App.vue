@@ -24,6 +24,8 @@ const toast = useToast()
 const patientStore = usePatientStore()
 const { current: currentPatient } = storeToRefs(patientStore)
 const deathCheckRequestId = ref(0)
+const deathUpdateInProgress = ref(false)
+const lastDeathToastKey = ref('')
 const ROUTES_TOAST_GROUP = 'kilometers-routes-toast'
 
 
@@ -37,7 +39,7 @@ watch(
     currentPatient,
     async (patient) => {
         await auth.waitUntilInitialized()
-        if (!auth.isAuthenticated || !patient) {
+        if (!auth.isAuthenticated || !patient || deathUpdateInProgress.value) {
             console.debug('[UDZS] Watcher: Not authenticated or no patient', { isAuthenticated: auth.isAuthenticated, patient });
             return;
         }
@@ -56,10 +58,31 @@ watch(
 
             const details = result.data ?? {};
             const fullName = [details.meno, details.priezvisko].filter(Boolean).join(' ').trim();
-            const rawDate = details.datumUmrtia ? new Date(details.datumUmrtia) : null;
-            const dateLabel = rawDate && !Number.isNaN(rawDate.getTime())
-                ? rawDate.toLocaleDateString('sk-SK')
+            const deathDate = typeof details.datumUmrtia === 'string'
+                ? details.datumUmrtia.slice(0, 10)
+                : null;
+
+            const dateLabel = deathDate
+                ? new Date(`${deathDate}T00:00:00`).toLocaleDateString('sk-SK')
                 : '';
+            const toastKey = `${patient.id}:${deathDate ?? 'unknown'}`;
+
+            if (deathDate && currentPatient.value && currentPatient.value.death_date !== deathDate) {
+                deathUpdateInProgress.value = true;
+                try {
+                    currentPatient.value.death_date = deathDate;
+                    await patientStore.persistPatientData(currentPatient.value);
+                } finally {
+                    deathUpdateInProgress.value = false;
+                }
+            }
+
+            if (lastDeathToastKey.value === toastKey) {
+                console.debug('[UDZS] Watcher: Duplicate death toast prevented', { toastKey });
+                return;
+            }
+
+            lastDeathToastKey.value = toastKey;
 
             const detailParts = [
                 fullName ? `Pacient: ${fullName}` : null,

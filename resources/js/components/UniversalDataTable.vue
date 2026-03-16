@@ -265,8 +265,11 @@ watch(
                                                 rows: remote.items.value,
                                                 selectedRows: selectedRows,
                                                 remote,
-                                            }))" class="border-none! hover:bg-darkgrey! h-7!" @click="onAction(a)"
-                            :class="unref(a.class) ?? ''" />
+                                            }))" :class="[
+                                                a.bordered ? 'hover:bg-darkgrey! h-7!' : 'border-none! hover:bg-darkgrey! h-7!',
+                                                unref(a.class) ?? ''
+                                            ]" @click="onAction(a)"
+                            />
                     </template>
                 </div>
             </template>

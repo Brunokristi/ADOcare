@@ -512,6 +512,7 @@ export interface Patient {
   branch_id: number | null
   nurse_id: number | null
   country_id: number | null
+  death_date: string | null
   // relations
   nurse: User
   branch: Branch

@@ -457,7 +457,7 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
 
           <!-- Records (ALL pages) -->
           <div v-for="record in page" :key="record.date" class="mb-4 dzc-block">
-            <table class="w-full border-collapse text-xs">
+            <table class="w-full border-collapse text-sm">
               <thead>
                 <tr>
                   <td class="border border-black p-2 text-left w-1/4">
@@ -483,7 +483,7 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
 
                 <tr>
                   <td class="border border-black p-2 text-left w-full" colspan="4">
-                    <table class="w-full text-xs mt-2">
+                    <table class="w-full text-[0.5rem] mt-2">
                       <tbody>
                         <tr class="border-b border-gray-300">
                           <td class="p-1 w-40 text-left"><strong>Poradové číslo</strong></td>
@@ -624,7 +624,7 @@ onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint)
 .travel-page {
   width: 210mm;
   height: 297mm;
-  margin: 0 auto;
+  margin: 5mm auto;
   background: white;
   box-sizing: border-box;
   padding: 14mm;

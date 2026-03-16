@@ -64,6 +64,7 @@ export const usePatientStore = defineStore('patient', {
                         latitude: patient.latitude,
                         longitude: patient.longitude,
                         reference_date: patient.reference_date,
+                        death_date: patient.death_date,
                         dekurz_number: patient.dekurz_number,
                         branch_id: patient.branch_id,
                         nurse_id: patient.nurse_id,
@@ -77,7 +78,11 @@ export const usePatientStore = defineStore('patient', {
                 // update
                 let payload: Partial<Patient>
                 if (useAuthStore().isManager) {
-                    payload = { branch_id: patient.branch_id, nurse_id: patient.nurse_id }
+                    payload = {
+                        branch_id: patient.branch_id,
+                        nurse_id: patient.nurse_id,
+                        death_date: patient.death_date,
+                    }
                 } else {
                     payload = {
                         first_name: patient.first_name,
@@ -95,6 +100,7 @@ export const usePatientStore = defineStore('patient', {
                         latitude: patient.latitude,
                         longitude: patient.longitude,
                         reference_date: patient.reference_date,
+                        death_date: patient.death_date,
                         dekurz_number: patient.dekurz_number,
                     }
                 }
@@ -128,6 +134,7 @@ export const usePatientStore = defineStore('patient', {
                     latitude: patient.latitude,
                     longitude: patient.longitude,
                     reference_date: patient.reference_date,
+                    death_date: patient.death_date,
                     dekurz_number: patient.dekurz_number || 1,
                 }
                 const response = await api.post(`/v1/branches/${branchId}/patients`, payload);
@@ -171,6 +178,18 @@ export const usePatientStore = defineStore('patient', {
             } catch (error) {
                 console.error('[UDZS] Store: API error', error);
                 throw new Error('Failed to check patient death status: ' + error);
+            }
+        },
+
+        async softDeletePatient(patientId: number) {
+            try {
+                await api.delete(`/v1/patients/${patientId}`);
+
+                if (this.current?.id === patientId) {
+                    this.clear();
+                }
+            } catch (error) {
+                throw new Error('Failed to delete patient: ' + error);
             }
         },
 
