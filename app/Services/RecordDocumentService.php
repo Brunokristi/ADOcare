@@ -44,7 +44,9 @@ class RecordDocumentService
         $recordData = [
             'company_address' => $companyAddress,
             'company_name' => $companyName,
+            'company_id' => $company?->id,
             'user_name' => $userName,
+            'user_id' => $user->id,
             'doctor_name' => $doctorName,
             'patient_name' => $patientName,
             'patient_birth_number' => $patientBirthNumber,

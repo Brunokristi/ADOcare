@@ -3,15 +3,17 @@ import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
 import { useUiOverlayStore } from '@/stores/uiOverlay';
-import { useAuthStore } from '@/stores/auth'
 
-const auth = useAuthStore()
 const stampUrl = ref<string | null>(null)
+const signatureUrl = ref<string | null>(null)
 
 type PatientCategory = 'H' | 'I' | 'F';
 type ExpectedDuration = 'do1mesiac' | 'do3mesiacov' | 'do6mesiacov' | 'nad6mesiacov';
 
 interface DocumentData {
+  companyId: number | null;
+  representativeId: number | null;
+  representativeName: string;
   facilityName: string;
   facilityAddress: string;
 
@@ -42,6 +44,9 @@ const loading = ref(false);
 const uiOverlayStore = useUiOverlayStore();
 
 const documentData = ref<DocumentData>({
+  companyId: null,
+  representativeId: null,
+  representativeName: '',
   facilityName: '',
   facilityAddress: '',
   patientName: '',
@@ -62,9 +67,8 @@ const documentData = ref<DocumentData>({
 });
 
 onBeforeUnmount(() => {
-    if (stampUrl.value) {
-        URL.revokeObjectURL(stampUrl.value)
-    }
+    if (stampUrl.value) URL.revokeObjectURL(stampUrl.value)
+    if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
 })
 
 onMounted(async () => {
@@ -81,7 +85,6 @@ async function loadProposal(documentId: string) {
     try {
         const res = await api.get(`/v1/proposals/${documentId}`)
         const proposal = res.data.data?.proposal_data ?? {}
-        const companyId = auth.currentCompanyId
 
         const doctorDiagnoses = Array.isArray(proposal.diagnosis)
             ? proposal.diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
@@ -92,6 +95,9 @@ async function loadProposal(documentId: string) {
             : (proposal.nurse_diagnosis ? [proposal.nurse_diagnosis] : [])
 
         documentData.value = {
+            companyId: proposal.company_id ?? null,
+            representativeId: proposal.representative_id ?? null,
+            representativeName: proposal.representative_name ?? '',
             facilityName: proposal.company_name ?? '',
             facilityAddress: proposal.company_address ?? '',
             patientName: proposal.patient_name ?? '',
@@ -111,24 +117,34 @@ async function loadProposal(documentId: string) {
             userName: proposal.user_name ?? '',
         }
 
-        if (stampUrl.value) {
-            URL.revokeObjectURL(stampUrl.value)
-            stampUrl.value = null
-        }
-
-        if (companyId) {
-            try {
-                const stampRes = await api.get(`/v1/companies/${companyId}/stamp`, {
-                    responseType: 'blob',
-                })
-                stampUrl.value = URL.createObjectURL(stampRes.data)
-            } catch (e) {
-                // no stamp uploaded, leave empty
-                stampUrl.value = null
-            }
-        }
+        await loadStampImage()
+        await loadSignatureImage()
     } finally {
         loading.value = false
+    }
+}
+
+async function loadStampImage() {
+    const companyId = documentData.value.companyId
+    if (!companyId) { stampUrl.value = null; return }
+    try {
+        if (stampUrl.value) URL.revokeObjectURL(stampUrl.value)
+        const res = await api.get(`/v1/companies/${companyId}/stamp`, { responseType: 'blob' })
+        stampUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        stampUrl.value = null
+    }
+}
+
+async function loadSignatureImage() {
+    const representativeId = documentData.value.representativeId
+    if (!representativeId) { signatureUrl.value = null; return }
+    try {
+        if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
+        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' })
+        signatureUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        signatureUrl.value = null
     }
 }
 
@@ -473,17 +489,21 @@ async function printPage() {
                     class="stamp-image"
                   />
 
-                  <span class="signature-text font-handwriting text-3xl">
-                    {{ documentData.userName?.trim().split(/\s+/)[1] }}
-                  </span>
+                  <img
+                    v-if="signatureUrl"
+                    :src="signatureUrl"
+                    alt="Podpis odborného zástupcu"
+                    class="signature-overlay"
+                  />
                 </div>
                 <div class="border-t-1 border-black mb-2"></div>
-                podpis odborného zástupcu poskytovateľa ošetrovateľskej starostlivosti a pečiatka
+                {{ documentData.representativeName }} <br>
+                <span class="text-xs">odborný zástupca poskytovateľa ošetrovateľskej starostlivosti</span>
               </div>
             </div>
           </div>
+          <!-- /sheet-grid -->
         </div>
-        <!-- /sheet-grid -->
       </div>
     </div>
   </div>
@@ -577,11 +597,15 @@ async function printPage() {
     opacity: 70%;
 }
 
-.signature-text {
+.signature-overlay {
     position: absolute;
     z-index: 2;
-    transform: translateX(50px);
-    color: rgba(5, 18, 164, 0.7);
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    top: 50%;
+    left: 60%;
+    transform: translate(-40%, -55%);
 }
 
 @page {

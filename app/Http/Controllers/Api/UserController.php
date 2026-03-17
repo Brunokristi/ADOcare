@@ -9,6 +9,7 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -69,5 +70,49 @@ class UserController extends Controller
     {
         $user->branches()->detach($branch);
         return $this->success(null, 'Branch assignment deleted', Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Upload or replace user signature image.
+     */
+    public function uploadSignature(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'signature' => 'required|file|mimes:png|max:5120',
+        ]);
+
+        if ($user->signature_path) {
+            Storage::disk('local')->delete($user->signature_path);
+        }
+
+        $path = $data['signature']->store('signatures/users', 'local');
+        $user->update(['signature_path' => $path]);
+
+        return $this->success($user->fresh(), 'Signature uploaded');
+    }
+
+    /**
+     * Stream user signature image.
+     */
+    public function signature(User $user)
+    {
+        if (!$user->signature_path || !Storage::disk('local')->exists($user->signature_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->response($user->signature_path, null, ['Content-Type' => 'image/png']);
+    }
+
+    /**
+     * Delete user signature image.
+     */
+    public function deleteSignature(User $user)
+    {
+        if ($user->signature_path) {
+            Storage::disk('local')->delete($user->signature_path);
+            $user->update(['signature_path' => null]);
+        }
+
+        return $this->success(null, 'Signature deleted', Response::HTTP_NO_CONTENT);
     }
 }

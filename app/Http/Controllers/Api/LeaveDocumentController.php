@@ -42,6 +42,8 @@ class LeaveDocumentController extends Controller
 
         $nursingData = [
             'user_name' => $userName,
+            'company_id' => $user->company_id,
+            'user_id' => $user->id,
             'patient_name' => $patientName,
             'patient_birth_number' => $patientBirthNumber,
             'date' => $validated['date'],

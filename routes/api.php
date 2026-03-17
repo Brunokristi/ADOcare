@@ -169,6 +169,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('text-blocks', TextBlockController::class);
     Route::delete('/users', [UserController::class, 'destroyMany']);
     Route::delete('/users/{user}/branches/{branch}', [UserController::class, 'deleteBranchAssignment']);
+    Route::get('/users/{user}/signature', [UserController::class, 'signature']);
+    Route::post('/users/{user}/signature', [UserController::class, 'uploadSignature']);
+    Route::delete('/users/{user}/signature', [UserController::class, 'deleteSignature']);
     Route::apiResourceComplete('users', UserController::class);
     Route::apiResourceComplete('companies', CompanyController::class);
     Route::get('companies/{company}/stats', [CompanyController::class, 'stats']);

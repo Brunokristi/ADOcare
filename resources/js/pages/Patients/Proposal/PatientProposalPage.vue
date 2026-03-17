@@ -398,6 +398,7 @@ async function generateDocument() {
   try {
     const payload = {
       patient_id: patientId.value,
+      branch_id: patientStore.current?.branch_id ?? null,
       medical_diagnosis_ids: medicalDiagnoses.value.map(d => d.id),
       nurse_diagnosis_ids: nurseDiagnoses.value.map(d => d.id),
       date: date.value ? toLocalYMD(date.value) : toLocalYMD(new Date()),

@@ -81,6 +81,7 @@ class CPDocumentService
                 'car_model' => $car?->model ?? '',
                 'car_license_plate' => $car?->evc ?? '',
                 'representative_name' => trim(($representative?->title ?? '') . ' ' . ($representative?->first_name ?? '') . ' ' . ($representative?->last_name ?? '')),
+                'representative_id' => $representative?->id,
                 'lastday_previous_month' => $lastdayPreviousMonth,
                 'document_id' => $document->id,
                 'created_at' => now(),

@@ -17,12 +17,14 @@ interface CPData {
     car_model: string;
     car_license_plate: string;
     representative_name: string;
+    representative_id: number | null;
     lastday_previous_month: string;
 }
 
 const route = useRoute();
 const loading = ref(false);
 const uiOverlayStore = useUiOverlayStore();
+const signatureUrl = ref<string | null>(null)
 
 const cpData = ref<CPData>({
     company_name: '',
@@ -37,6 +39,7 @@ const cpData = ref<CPData>({
     car_model: '',
     car_license_plate: '',
     representative_name: '',
+    representative_id: null,
     lastday_previous_month: '',
 });
 
@@ -68,8 +71,13 @@ async function loadCP(documentId: string) {
         car_model: cp.car_model ?? '',
         car_license_plate: cp.car_license_plate ?? '',
         representative_name: cp.representative_name ?? '',
+        representative_id: cp.representative_id ?? null,
         lastday_previous_month: cp.lastday_previous_month ?? '',
     };
+
+    await loadSignatureImage()
+
+    console.log('Loaded CP data:', cpData.value);
   } catch (error) {
     console.error('Failed to load agreement:', error);
   } finally {
@@ -89,6 +97,18 @@ function formatUserId(id?: number) {
 
 function printPage() {
   requestAnimationFrame(() => window.print());
+}
+
+async function loadSignatureImage() {
+    const representativeId = cpData.value.representative_id
+    if (!representativeId) { signatureUrl.value = null; return }
+    try {
+        if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
+        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' })
+        signatureUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        signatureUrl.value = null
+    }
 }
 </script>
 
@@ -194,9 +214,18 @@ function printPage() {
           <div class="text-center">
           </div>
           <div class="text-center">
+            <div class="signature-box">
+                  <img
+                    v-if="signatureUrl"
+                    :src="signatureUrl"
+                    alt="Podpis odborného zástupcu"
+                    class="signature-overlay"
+                  />
+                </div>
             <div class="border-t border-black mb-2"></div>
             podpis schválujúceho
           </div>
+
         </div>
       </div>
     </div>
@@ -220,6 +249,32 @@ function printPage() {
   display: flex;
   justify-content: center;
   padding: 2rem;
+}
+
+.signature-box {
+    position: relative;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stamp-image {
+    max-width: 150px;
+    max-height: 60px;
+    object-fit: contain;
+    opacity: 70%;
+}
+
+.signature-overlay {
+    position: absolute;
+    z-index: 2;
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    top: 50%;
+    left: 60%;
+    transform: translate(-40%, -55%);
 }
 
 @page {

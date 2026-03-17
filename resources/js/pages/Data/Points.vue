@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, watchEffect } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
@@ -51,7 +51,11 @@ const patientsLoading = ref(false);
 let calculationToastId: string | undefined;
 
 watchEffect(() => {
-  uiOverlayStore.setContentLoading(loading.value);
+    uiOverlayStore.setContentLoading(loading.value);
+});
+
+onBeforeUnmount(() => {
+    uiOverlayStore.setContentLoading(false);
 });
 
 const batchTypes = ref<BatchType[]>([
@@ -246,108 +250,105 @@ async function pollCalculationStatus(periodFrom: Date) {
 }
 
 async function onSubmit() {
-  submitted.value = true;
+    submitted.value = true;
 
-  const hasPeriod = !!dates.value;
-  const needsPatients = shouldShowPatients.value;
+    const hasPeriod = !!dates.value;
+    const needsPatients = shouldShowPatients.value;
 
-  if (
-    !batchNumber.value ||
-    !batchType.value ||
-    !insurance.value ||
-    !hasPeriod ||
-    (needsPatients && !selectedPatients.value.length)
-  ) {
-    return;
-  }
-
-  if (!dates.value) {
-    return;
-  }
-
-  // Convert selected month into range
-  const monthDate = dates.value as Date;
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const periodFrom = new Date(year, month, 1);
-  const periodTo = new Date(year, month + 1, 0);
-
-  loading.value = true;
-
-  try {
-    const res = await api.post('/v1/batches/points/preview', {
-      batchNumber: batchNumber.value,
-      batchType: { code: batchType.value.code },
-      insurance: { id: insurance.value.id },
-      period: [periodFrom.toISOString(), periodTo.toISOString()],
-      user: { id: authStore.user?.id },
-      branch: { id: authStore.currentBranch?.id },
-      company: { id: authStore.currentBranch?.company_id },
-      patients: selectedPatients.value.map(p => ({ id: p.id })),
-    });
-
-    const sheet = res.data?.data?.sheet;
-
-    if (!sheet) {
-      console.error('Missing sheet in response:', res.data);
-      return;
+    if (
+        !batchNumber.value ||
+        !batchType.value ||
+        !insurance.value ||
+        !hasPeriod ||
+        (needsPatients && !selectedPatients.value.length)
+    ) {
+        return;
     }
 
-    api.post('/v1/visits/timeline', {
-      month: toApiDate(periodFrom),
-      branch_id: authStore.currentBranch?.id,
-      user_id: authStore.user?.id,
-      persist: true,
-    })
-      .then(() => {
-        // Show persistent info toast (no auto-dismiss)
-        calculationToastId = 'calculation-in-progress';
-        toast.add({
-          group: calculationToastId,
-          severity: 'info',
-          summary: 'Výpočet v progrese',
-          detail: 'Časová os návštev sa počíta na pozadí.',
-          life: 0,
+    if (!dates.value) {
+        return;
+    }
+
+    const monthDate = dates.value as Date;
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const periodFrom = new Date(year, month, 1);
+    const periodTo = new Date(year, month + 1, 0);
+
+    loading.value = true;
+
+    try {
+        const res = await api.post('/v1/batches/points/preview', {
+            batchNumber: batchNumber.value,
+            batchType: { code: batchType.value.code },
+            insurance: { id: insurance.value.id },
+            period: [periodFrom.toISOString(), periodTo.toISOString()],
+            user: { id: authStore.user?.id },
+            branch: { id: authStore.currentBranch?.id },
+            company: { id: authStore.currentBranch?.company_id },
+            patients: selectedPatients.value.map(p => ({ id: p.id })),
         });
 
-        // Start polling for completion
-        pollCalculationStatus(periodFrom);
-      })
-      .catch(error => {
-        console.error('Background calculation failed:', error);
-        toast.add({
-          severity: 'warn',
-          summary: 'Upozornenie',
-          detail: 'Výpočet časovej osi návštev nebol spustený.',
-          life: 5000,
-        });
-      });
+        const sheet = res.data?.data?.sheet;
 
-    await router.push({
-      path: '/documents/points',
-      query: {
-        batchNumber: sheet.batchNumber,
-        fileName: sheet.fileName,
-        amount: sheet.amount,
-        periodFrom: sheet.periodFrom,
-        periodTo: sheet.periodTo,
-        performedBy: sheet.performedBy,
-        performedDate: sheet.performedDate,
-        companyName: sheet.companyName,
-        branchName: sheet.branchName,
-        insuranceId: insurance.value.id,
-        batchTypeCode: batchType.value.code,
-        period0: periodFrom.toISOString(),
-        period1: periodTo.toISOString(),
-        insuranceName: insurance.value.name,
-        patientIds: JSON.stringify(sheet.patients ?? []),
-      },
-    });
-  } catch (error) {
-    console.error('Preview or navigation failed', error);
-  } finally {
-    loading.value = false;
-  }
+        if (!sheet) {
+            console.error('Missing sheet in response:', res.data);
+            return;
+        }
+
+        api.post('/v1/visits/timeline', {
+            month: toApiDate(periodFrom),
+            branch_id: authStore.currentBranch?.id,
+            user_id: authStore.user?.id,
+            persist: true,
+        })
+            .then(() => {
+                calculationToastId = 'calculation-in-progress';
+                toast.add({
+                    group: calculationToastId,
+                    severity: 'info',
+                    summary: 'Výpočet v progrese',
+                    detail: 'Časová os návštev sa počíta na pozadí.',
+                    life: 0,
+                });
+
+                pollCalculationStatus(periodFrom);
+            })
+            .catch(error => {
+                console.error('Background calculation failed:', error);
+                toast.add({
+                    severity: 'warn',
+                    summary: 'Upozornenie',
+                    detail: 'Výpočet časovej osi návštev nebol spustený.',
+                    life: 5000,
+                });
+            });
+
+        await router.push({
+            path: '/documents/points',
+            query: {
+                batchNumber: sheet.batchNumber,
+                fileName: sheet.fileName,
+                amount: sheet.amount,
+                periodFrom: sheet.periodFrom,
+                periodTo: sheet.periodTo,
+                performedBy: sheet.performedBy,
+                performedDate: sheet.performedDate,
+                companyName: sheet.companyName,
+                branchName: sheet.branchName,
+                insuranceId: insurance.value.id,
+                batchTypeCode: batchType.value.code,
+                period0: periodFrom.toISOString(),
+                period1: periodTo.toISOString(),
+                insuranceName: insurance.value.name,
+                patientIds: JSON.stringify(sheet.patients ?? []),
+            },
+        });
+    } catch (error) {
+        console.error('Preview or navigation failed', error);
+    } finally {
+        loading.value = false;
+    }
 }
 
 watch(branchId, (id) => {
