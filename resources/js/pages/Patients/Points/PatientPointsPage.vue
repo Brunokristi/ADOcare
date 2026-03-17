@@ -54,6 +54,15 @@ patientStore.loadFromStorage()
 const authStore = useAuthStore()
 const { current: currentPatient } = storeToRefs(patientStore)
 const { user, currentBranch } = storeToRefs(authStore)
+const patientDeathDate = computed<Date | null>(() => {
+  const raw = (currentPatient.value as any)?.death_date
+  if (!raw || typeof raw !== 'string') return null
+
+  const d = new Date(`${raw.slice(0, 10)}T00:00:00`)
+  if (isNaN(d.getTime())) return null
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+})
+const maxSelectableDate = computed<Date | undefined>(() => patientDeathDate.value ?? undefined)
 
 const emit = defineEmits<{
   (e: 'submit', payload: RecordEntry): void
@@ -298,6 +307,13 @@ function truncate(text: string, max = 60) {
   return text.length > max ? text.slice(0, max) + '…' : text
 }
 
+function isAfterPatientDeath(date: Date | null): boolean {
+  if (!date || !patientDeathDate.value) return false
+  const left = toApiDate(date)
+  const right = toApiDate(patientDeathDate.value)
+  return !!left && !!right && left > right
+}
+
 function extractArray(raw: any): any[] {
   if (Array.isArray(raw)) return raw
   const candidates = [
@@ -466,6 +482,7 @@ function normalizeSelectedDates(input: unknown): Date[] {
     .map((d) => parseDateInput(d as any))
     .filter((d): d is Date => !!d)
     .map((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()))
+    .filter((d) => !isAfterPatientDeath(d))
 
   const map = new Map<string, Date>()
   for (const d of normalized) {
@@ -648,6 +665,16 @@ async function onSubmit() {
     return
   }
 
+  if (isAfterPatientDeath(referralDate.value)) {
+    toast.add({ severity: 'error', summary: 'Neplatný dátum', detail: 'Dátum odporučenia nemôže byť po dátume úmrtia pacienta.', life: 3000 })
+    return
+  }
+
+  if (dates.value.some((d) => isAfterPatientDeath(d))) {
+    toast.add({ severity: 'error', summary: 'Neplatný dátum', detail: 'Dátum výkonu nemôže byť po dátume úmrtia pacienta.', life: 3000 })
+    return
+  }
+
   const referralDateOnly = new Date(referralDate.value.getFullYear(), referralDate.value.getMonth(), referralDate.value.getDate())
   for (const d of dates.value) {
     const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -793,6 +820,16 @@ async function savePoint() {
   p.referralDate = normalizedReferral
 
   if (!p.date || !p.diagnosis || !p.procedure || !p.referralDate || !p.quantity || p.quantity <= 0) {
+    return
+  }
+
+  if (isAfterPatientDeath(p.date)) {
+    toast.add({ severity: 'error', summary: 'Neplatný dátum', detail: 'Dátum výkonu nemôže byť po dátume úmrtia pacienta.', life: 3000 })
+    return
+  }
+
+  if (isAfterPatientDeath(p.referralDate)) {
+    toast.add({ severity: 'error', summary: 'Neplatný dátum', detail: 'Dátum odporučenia nemôže byť po dátume úmrtia pacienta.', life: 3000 })
     return
   }
 
@@ -949,6 +986,7 @@ onMounted(() => {
 
             <DatePicker ref="multiDatePickerRef" v-model="dates" selectionMode="multiple" dateFormat="dd.mm.yy"
               :showIcon="false" showButtonBar class="w-full" :manualInput="false" :viewDate="viewDate"
+              :maxDate="maxSelectableDate"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
               <template #buttonbar="{ clearCallback }">
                 <div class="flex flex-wrap justify-start w-full gap-2">
@@ -1025,7 +1063,7 @@ onMounted(() => {
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Dátum odporučenia</label>
             <DatePicker v-model="referralDate" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
-              :manualInput="false"
+              :manualInput="false" :maxDate="maxSelectableDate"
               inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
             <small v-if="submitted && !referralDate" class="text-danger">Dátum je povinný.</small>
           </div>
@@ -1052,6 +1090,7 @@ onMounted(() => {
         <div>
           <label class="block text-normal mb-1">Dátum</label>
           <DatePicker v-model="editPoint.date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+            :maxDate="maxSelectableDate"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
           <small v-if="editSubmitted && !editPoint.date" class="text-danger">Dátum je povinný.</small>
         </div>
@@ -1093,6 +1132,7 @@ onMounted(() => {
         <div>
           <label class="block text-normal mb-1">Dátum odporučenia</label>
           <DatePicker v-model="editPoint.referralDate" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+            :maxDate="maxSelectableDate"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none" />
           <small v-if="editSubmitted && !editPoint.referralDate" class="text-danger">Dátum odporučenia je
             povinný.</small>

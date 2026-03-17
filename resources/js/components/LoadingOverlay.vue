@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { PropType } from 'vue'
+import { type PropType } from 'vue'
+
 const props = defineProps({
     show: { type: Boolean as PropType<boolean>, required: true },
     text: { type: String as PropType<string>, default: '' },
 })
+
 </script>
 
 <template>

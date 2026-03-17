@@ -1735,6 +1735,14 @@ const patientStore = usePatientStore()
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
+const patientDeathDate = computed<Date | null>(() => {
+  const raw = patientStore.current?.death_date
+  if (!raw || typeof raw !== 'string') return null
+
+  const d = new Date(`${raw.slice(0, 10)}T00:00:00`)
+  if (isNaN(d.getTime())) return null
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+})
 
 function extractArray(raw: any): any[] {
   if (Array.isArray(raw)) return raw
@@ -1987,6 +1995,15 @@ const setValue = (id: string, v: any) => {
   return props.setValue ? props.setValue(id, v) : answersSetValue(id, v)
 }
 const displaySpec = computed(() => props.spec ?? defaultSpec)
+const dateFieldIds = computed(() => {
+  const ids = new Set<string>()
+  for (const s of displaySpec.value.sections ?? []) {
+    for (const f of s.fields ?? []) {
+      if (f.type === 'date') ids.add(f.id)
+    }
+  }
+  return ids
+})
 
 /**
  * DatePicker wants Date | null, but you store strings.
@@ -2002,9 +2019,25 @@ const toDate = (v: any) => {
   return isNaN(d.getTime()) ? null : d
 }
 
+const toIsoUnclamped = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const clampDateToDeath = (d: Date | null) => {
+  if (!d) return null
+  const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  if (!patientDeathDate.value) return normalized
+  return normalized > patientDeathDate.value ? patientDeathDate.value : normalized
+}
+
 const toIso = (d: any) => {
   if (!d) return ''
-  const dt = d instanceof Date ? d : new Date(d)
+  const raw = d instanceof Date ? d : new Date(d)
+  const dt = clampDateToDeath(raw)
+  if (!dt) return ''
   if (isNaN(dt.getTime())) return ''
   // YYYY-MM-DD
   const y = dt.getFullYear()
@@ -2017,7 +2050,7 @@ const bindDateField = (fieldId: string) => {
   if (fieldId in dateProxy) return
 
   Object.defineProperty(dateProxy, fieldId, {
-    get: () => toDate(getValue(fieldId)),
+    get: () => clampDateToDeath(toDate(getValue(fieldId))),
     set: (val: any) => setValue(fieldId, toIso(val)),
     enumerable: true,
     configurable: true,
@@ -2025,9 +2058,19 @@ const bindDateField = (fieldId: string) => {
 }
 
 watchEffect(() => {
-  for (const s of displaySpec.value.sections ?? []) {
-    for (const f of s.fields ?? []) {
-      if (f.type === 'date') bindDateField(f.id)
+  for (const fieldId of dateFieldIds.value) {
+    bindDateField(fieldId)
+  }
+})
+
+watchEffect(() => {
+  if (!patientDeathDate.value) return
+  for (const fieldId of dateFieldIds.value) {
+    const current = toDate(getValue(fieldId))
+    const clamped = clampDateToDeath(current)
+    if (!current || !clamped) continue
+    if (toIsoUnclamped(current) !== toIsoUnclamped(clamped)) {
+      setValue(fieldId, toIso(clamped))
     }
   }
 })
@@ -2077,6 +2120,7 @@ watchEffect(() => {
           v-model="dateProxy[field.id]"
           dateFormat="dd.mm.yy"
           :showIcon="false"
+          :maxDate="patientDeathDate || undefined"
           class="w-full"
           inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0 text-normal"
         />

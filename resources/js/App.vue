@@ -28,6 +28,32 @@ const deathUpdateInProgress = ref(false)
 const lastDeathToastKey = ref('')
 const ROUTES_TOAST_GROUP = 'kilometers-routes-toast'
 
+const DEATH_CHECK_STORAGE_KEY = 'death-check-last-run'
+
+function todayIso() {
+    return new Date().toISOString().slice(0, 10)
+}
+
+function wasDeathCheckedToday(patientId: number): boolean {
+    try {
+        const raw = localStorage.getItem(DEATH_CHECK_STORAGE_KEY)
+        if (!raw) return false
+        const map = JSON.parse(raw) as Record<string, string>
+        return map[String(patientId)] === todayIso()
+    } catch {
+        return false
+    }
+}
+
+function markDeathCheckedToday(patientId: number) {
+    try {
+        const raw = localStorage.getItem(DEATH_CHECK_STORAGE_KEY)
+        const map = raw ? (JSON.parse(raw) as Record<string, string>) : {}
+        map[String(patientId)] = todayIso()
+        localStorage.setItem(DEATH_CHECK_STORAGE_KEY, JSON.stringify(map))
+    } catch {}
+}
+
 
 onMounted(() => {
     window.addEventListener('unauthenticated', () => {
@@ -36,20 +62,30 @@ onMounted(() => {
 })
 
 watch(
-    currentPatient,
-    async (patient) => {
+    () => currentPatient.value?.id,
+    async (patientId) => {
         await auth.waitUntilInitialized()
-        if (!auth.isAuthenticated || !patient || deathUpdateInProgress.value) {
-            console.debug('[UDZS] Watcher: Not authenticated or no patient', { isAuthenticated: auth.isAuthenticated, patient });
+        if (!auth.isAuthenticated || !patientId || deathUpdateInProgress.value) {
+            console.debug('[UDZS] Watcher: Not authenticated or no patient', { isAuthenticated: auth.isAuthenticated, patientId });
             return;
         }
 
+        if (wasDeathCheckedToday(patientId)) {
+            console.debug('[UDZS] Watcher: Already checked today, skipping', { patientId });
+            return;
+        }
+
+        const patient = currentPatient.value
+        if (!patient) return
+
         const requestId = ++deathCheckRequestId.value;
-        console.debug('[UDZS] Watcher: Checking patient death', { patientId: patient.id, requestId });
+        console.debug('[UDZS] Watcher: Checking patient death', { patientId, requestId });
 
         try {
-            const result = await patientStore.checkPatientDeath(patient.id);
+            const result = await patientStore.checkPatientDeath(patientId);
             console.debug('[UDZS] Watcher: Death check result', { result, requestId, currentRequestId: deathCheckRequestId.value });
+
+            markDeathCheckedToday(patientId)
 
             if (requestId !== deathCheckRequestId.value || result.status !== 'dead') {
                 console.debug('[UDZS] Watcher: Skipping toast', { requestId, currentRequestId: deathCheckRequestId.value, status: result.status });
@@ -65,7 +101,7 @@ watch(
             const dateLabel = deathDate
                 ? new Date(`${deathDate}T00:00:00`).toLocaleDateString('sk-SK')
                 : '';
-            const toastKey = `${patient.id}:${deathDate ?? 'unknown'}`;
+            const toastKey = `${patientId}:${deathDate ?? 'unknown'}`;
 
             if (deathDate && currentPatient.value && currentPatient.value.death_date !== deathDate) {
                 deathUpdateInProgress.value = true;

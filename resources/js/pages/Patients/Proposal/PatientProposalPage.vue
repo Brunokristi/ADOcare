@@ -42,6 +42,15 @@ const patientStore = usePatientStore()
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
+const patientDeathDate = computed<Date | null>(() => {
+  const raw = patientStore.current?.death_date
+  if (!raw || typeof raw !== 'string') return null
+
+  const d = new Date(`${raw.slice(0, 10)}T00:00:00`)
+  if (isNaN(d.getTime())) return null
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+})
+const maxSelectableDate = computed<Date | undefined>(() => patientDeathDate.value ?? undefined)
 
 // ✅ selected (multiple)
 const medicalDiagnoses = ref<Diagnosis[]>([])
@@ -169,7 +178,12 @@ async function preloadFromLatestProposal() {
 
     if (p.date) {
       const d = new Date(p.date)
-      if (!isNaN(d.getTime())) date.value = d
+      if (!isNaN(d.getTime())) {
+        const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+        date.value = patientDeathDate.value && normalized > patientDeathDate.value
+          ? patientDeathDate.value
+          : normalized
+      }
     }
 
     epicrisisDescription.value = p.epicrisis ?? ''
@@ -321,6 +335,7 @@ function validateForm() {
   if (medicalDiagnoses.value.length === 0) e.medicalDiagnosis = 'Vyberte aspoň jednu lekársku diagnózu.'
   if (nurseDiagnoses.value.length === 0) e.nurseDiagnosis = 'Vyberte aspoň jednu sestersku diagnózu.'
   if (!date.value) e.date = 'Dátum je povinný.'
+  if (date.value && isDateAfterDeath(date.value)) e.date = 'Dátum nemôže byť po dátume úmrtia pacienta.'
   if (!epicrisisDescription.value?.trim()) e.epicrisisDescription = 'Epizóda a zdôvodnenie sú povinné.'
   if (!carePlan.value?.trim()) e.carePlan = 'Plán ošetrovateľskej starostlivosti je povinný.'
   if (!expectedDuration.value) e.expectedDuration = 'Predpokladaná dĺžka je povinná.'
@@ -337,8 +352,17 @@ const toLocalYMD = (d: Date) => {
   return `${y}-${m}-${day}`
 }
 
+function isDateAfterDeath(d: Date): boolean {
+  return !!patientDeathDate.value && toLocalYMD(d) > toLocalYMD(patientDeathDate.value)
+}
+
 async function checkDocumentExists() {
   if (!patientId.value || !date.value) return
+  if (isDateAfterDeath(date.value)) {
+    documentId.value = null
+    dialogVisible.value = false
+    return
+  }
   try {
     const res = await api.post('/v1/documents/check-exists', {
       type: 'proposal',
@@ -363,6 +387,11 @@ async function generateDocument() {
 
   if (!validateForm()) {
     toast.add({ severity: 'error', summary: 'Chyba validácie', detail: 'Vyplňte všetky povinné polia.', life: 3000 })
+    return
+  }
+
+  if (date.value && isDateAfterDeath(date.value)) {
+    toast.add({ severity: 'error', summary: 'Neplatný dátum', detail: 'Dátum dokumentu nemôže byť po dátume úmrtia pacienta.', life: 3000 })
     return
   }
 
@@ -464,6 +493,7 @@ async function generateDocument() {
           <div>
             <label class="block text-normal mb-2">Dátum</label>
             <DatePicker v-model="date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+              :maxDate="maxSelectableDate"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
               :invalid="submitted && !!errors.date" />
             <small v-if="submitted && errors.date" class="text-danger">{{ errors.date }}</small>

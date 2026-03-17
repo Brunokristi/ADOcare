@@ -28,6 +28,7 @@ patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?? '')
+const patientDeathDate = computed(() => patientStore.current?.death_date ?? null)
 const dekurzMonth = ref<Date | null>((() => {
   const d = new Date()
   d.setMonth(d.getMonth() - 1)
@@ -76,6 +77,15 @@ const lockedMonth = computed(() => {
 
 const monthStart = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month, 1))
 const monthEnd = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month + 1, 0))
+const deathDate = computed(() => {
+  const value = patientDeathDate.value
+  if (!value || typeof value !== 'string') return null
+  return parseIsoDate(value.slice(0, 10))
+})
+const maxSectionDate = computed(() => {
+  if (!deathDate.value) return monthEnd.value
+  return deathDate.value < monthEnd.value ? deathDate.value : monthEnd.value
+})
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -160,11 +170,22 @@ function toLocalYMD(d: Date) {
   return `${y}-${m}-${day}`
 }
 
+function isAfterDeathDate(date: Date) {
+  return !!deathDate.value && toLocalYMD(date) > toLocalYMD(deathDate.value)
+}
+
 async function checkDocumentExists() {
   if (!patientId.value || !dekurzMonth.value) return
 
+  const selectedMonthStart = new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)
+  if (isAfterDeathDate(selectedMonthStart)) {
+    documentExists.value = false
+    dialogVisible.value = false
+    return
+  }
+
   try {
-    const monthStart = new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)
+    const monthStart = selectedMonthStart
     const res = await api.post('/v1/documents/check-exists', {
       type: 'dekurz',
       date: toLocalYMD(monthStart),
@@ -184,6 +205,7 @@ async function checkDocumentExists() {
 function isAllowedDate(date: Date) {
   const { year, month } = lockedMonth.value
   if (date.getFullYear() !== year || date.getMonth() !== month) return false
+  if (isAfterDeathDate(date)) return false
   return allowedDaysInMonth.value.includes(date.getDate())
 }
 
@@ -235,6 +257,9 @@ function validateForm() {
 
   if (!patientId.value) e.patient = 'Pacient nie je vybratý.'
   if (!dekurzMonth.value) e.dekurzMonth = 'Mesiac je povinný.'
+  if (dekurzMonth.value && isAfterDeathDate(new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1))) {
+    e.dekurzMonth = 'Mesiac dekurzu nemôže byť po dátume úmrtia pacienta.'
+  }
   if (!dekurzNumber.value.trim()) e.dekurzNumber = 'Číslo dekurzu je povinné.'
 
   if (!sections.value.length) {
@@ -242,7 +267,11 @@ function validateForm() {
   } else {
     sections.value.forEach((s, idx) => {
       if (!s.text.trim()) e[`sectionText-${s.id}`] = `Text v sekcii ${idx + 1} je povinný.`
-      if (!s.dates.length) e[`sectionDates-${s.id}`] = `Vyberte aspoň jeden deň v sekcii ${idx + 1}.`
+      if (!s.dates.length) {
+        e[`sectionDates-${s.id}`] = `Vyberte aspoň jeden deň v sekcii ${idx + 1}.`
+      } else if (s.dates.some(isAfterDeathDate)) {
+        e[`sectionDates-${s.id}`] = `Dátum v sekcii ${idx + 1} nemôže byť po dátume úmrtia pacienta.`
+      }
     })
   }
 
@@ -682,6 +711,7 @@ watch(
             <label class="block text-normal mb-2">Mesiac</label>
             <DatePicker v-model="dekurzMonth" view="month" dateFormat="M yy" :showIcon="false" class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+              :maxDate="deathDate || undefined"
               :invalid="submitted && !!errors.dekurzMonth" />
             <small v-if="submitted && errors.dekurzMonth" class="text-danger">{{ errors.dekurzMonth }}</small>
           </div>
@@ -796,7 +826,8 @@ watch(
         <div class="w-full">
           <label class="block text-normal mb-2">Dátumy</label>
 
-          <DatePicker v-model="section.dates" selectionMode="multiple" :minDate="monthStart" :maxDate="monthEnd"
+          <DatePicker v-model="section.dates" selectionMode="multiple" :minDate="monthStart"
+            :maxDate="maxSectionDate"
             :disabledDates="disabledDates" :showOtherMonths="false" :showButtonBar="false" :showIcon="false"
             :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
             dateFormat="dd.mm.yy" class="w-full"
