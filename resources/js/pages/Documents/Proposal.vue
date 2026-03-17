@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';import { useRoute } from 'vue-router';
 import api from '@/services/api';
 import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+const stampUrl = ref<string | null>(null)
 
 type PatientCategory = 'H' | 'I' | 'F';
 type ExpectedDuration = 'do1mesiac' | 'do3mesiacov' | 'do6mesiacov' | 'nad6mesiacov';
@@ -30,6 +33,7 @@ interface DocumentData {
 
   doctorName: string;
   documentDate: string;
+  userName: string;
 }
 
 const route = useRoute();
@@ -52,49 +56,74 @@ const documentData = ref<DocumentData>({
   expectedDuration: undefined,
   doctorName: '',
   documentDate: '',
+  userName: '',
 });
+
+onBeforeUnmount(() => {
+    if (stampUrl.value) {
+        URL.revokeObjectURL(stampUrl.value)
+    }
+})
 
 onMounted(async () => {
   await loadProposal(String(route.params.documentId));
 });
 
 async function loadProposal(documentId: string) {
-  loading.value = true;
+    loading.value = true
 
-  try {
-    const res = await api.get(`/v1/proposals/${documentId}`);
-    const proposal = res.data.data?.proposal_data ?? {};
+    try {
+        const res = await api.get(`/v1/proposals/${documentId}`)
+        const proposal = res.data.data?.proposal_data ?? {}
+        const companyId = auth.currentCompanyId
 
-    // Handle both single string and array formats for diagnoses
-    const doctorDiagnoses = Array.isArray(proposal.diagnosis)
-      ? proposal.diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
-      : (proposal.diagnosis ? [proposal.diagnosis] : []);
+        const doctorDiagnoses = Array.isArray(proposal.diagnosis)
+            ? proposal.diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
+            : (proposal.diagnosis ? [proposal.diagnosis] : [])
 
-    const nurseDiagnoses = Array.isArray(proposal.nurse_diagnosis)
-      ? proposal.nurse_diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
-      : (proposal.nurse_diagnosis ? [proposal.nurse_diagnosis] : []);
+        const nurseDiagnoses = Array.isArray(proposal.nurse_diagnosis)
+            ? proposal.nurse_diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
+            : (proposal.nurse_diagnosis ? [proposal.nurse_diagnosis] : [])
 
-    documentData.value = {
-      facilityName: proposal.company_name ?? '',
-      facilityAddress: proposal.company_address ?? '',
-      patientName: proposal.patient_name ?? '',
-      patientIdNumber: proposal.patient_birth_number ?? '',
-      patientHealthCode: proposal.insurance_code ?? '',
-      patientCurrentAddress: proposal.patient_address ?? '',
-      patientPreviousAddress: proposal.patient_previous_address ?? '',
-      prescriptionNote: proposal.epicrisis ?? '',
-      doctorDiagnoses,
-      nurseDiagnoses,
-      patientCategory: Array.isArray(proposal.mobility) ? proposal.mobility[0] : undefined,
-      carePlan: proposal.care_plan ?? '',
-      treatmentOutcomes: formatProcedures(proposal.procedures ?? []),
-      expectedDuration: mapExpectedDuration(proposal.expected_duration),
-      doctorName: proposal.doctor_name ?? '',
-      documentDate: proposal.date ?? '',
-    };
-  } finally {
-    loading.value = false;
-  }
+        documentData.value = {
+            facilityName: proposal.company_name ?? '',
+            facilityAddress: proposal.company_address ?? '',
+            patientName: proposal.patient_name ?? '',
+            patientIdNumber: proposal.patient_birth_number ?? '',
+            patientHealthCode: proposal.insurance_code ?? '',
+            patientCurrentAddress: proposal.patient_address ?? '',
+            patientPreviousAddress: proposal.patient_previous_address ?? '',
+            prescriptionNote: proposal.epicrisis ?? '',
+            doctorDiagnoses,
+            nurseDiagnoses,
+            patientCategory: Array.isArray(proposal.mobility) ? proposal.mobility[0] : undefined,
+            carePlan: proposal.care_plan ?? '',
+            treatmentOutcomes: formatProcedures(proposal.procedures ?? []),
+            expectedDuration: mapExpectedDuration(proposal.expected_duration),
+            doctorName: proposal.doctor_name ?? '',
+            documentDate: proposal.date ?? '',
+            userName: proposal.user_name ?? '',
+        }
+
+        if (stampUrl.value) {
+            URL.revokeObjectURL(stampUrl.value)
+            stampUrl.value = null
+        }
+
+        if (companyId) {
+            try {
+                const stampRes = await api.get(`/v1/companies/${companyId}/stamp`, {
+                    responseType: 'blob',
+                })
+                stampUrl.value = URL.createObjectURL(stampRes.data)
+            } catch (e) {
+                // no stamp uploaded, leave empty
+                stampUrl.value = null
+            }
+        }
+    } finally {
+        loading.value = false
+    }
 }
 
 function mapExpectedDuration(v?: string): ExpectedDuration | undefined {
@@ -422,12 +451,28 @@ async function printPage() {
               </tbody>
             </table>
 
-            <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
+            <div class="mt-4 grid grid-cols-2 gap-12 text-sm">
               <div class="text-center">
+                <div class="signature-box">
+                  
+                </div>
                 <div class="border-t-1 border-black mb-2"></div>
                 podpis lekára a pečiatka
               </div>
+
               <div class="text-center">
+               <div class="signature-box">
+                  <img
+                    v-if="stampUrl"
+                    :src="stampUrl"
+                    alt="Pečiatka spoločnosti"
+                    class="stamp-image"
+                  />
+
+                  <span class="signature-text font-handwriting text-3xl">
+                    {{ documentData.userName?.trim().split(/\s+/)[1] }}
+                  </span>
+                </div>
                 <div class="border-t-1 border-black mb-2"></div>
                 podpis odborného zástupcu poskytovateľa ošetrovateľskej starostlivosti a pečiatka
               </div>
@@ -511,6 +556,28 @@ async function printPage() {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.signature-box {
+    position: relative;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stamp-image {
+    max-width: 150px;
+    max-height: 60px;
+    object-fit: contain;
+    opacity: 70%;
+}
+
+.signature-text {
+    position: absolute;
+    z-index: 2;
+    transform: translateX(50px);
+    color: rgba(5, 18, 164, 0.7);
 }
 
 @page {
