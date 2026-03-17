@@ -29,6 +29,7 @@ class UpdateCompanyRequest extends FormRequest
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'representative_id' => 'nullable|integer|exists:users,id',
+            'stamp' => 'nullable|file|mimes:png|max:5120',
         ];
     }
 }

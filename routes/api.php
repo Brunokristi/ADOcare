@@ -174,6 +174,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('companies/{company}/stats', [CompanyController::class, 'stats']);
     Route::get('companies/{company}/users', [CompanyController::class, 'users']);
     Route::get('companies/{company}/branches', [CompanyController::class, 'branches']);
+    Route::get('companies/{company}/stamp', [CompanyController::class, 'stamp']);
+    Route::delete('companies/{company}/stamp', [CompanyController::class, 'deleteStamp']);
 
 
 

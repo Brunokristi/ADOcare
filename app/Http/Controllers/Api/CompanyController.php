@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 
@@ -89,8 +90,54 @@ class CompanyController extends Controller
      */
     public function update(\App\Http\Requests\UpdateCompanyRequest $request, Company $company)
     {
-        $company->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('stamp')) {
+            if ($company->stamp_path) {
+                Storage::disk('local')->delete($company->stamp_path);
+            }
+
+            $path = $request->file('stamp')->store('signatures', 'local');
+            $data['stamp_path'] = $path;
+        }
+
+        unset($data['stamp']);
+        $company->update($data);
+
         return $this->success($company, 'Updated');
+    }
+
+    /**
+     * Get the stamp image for a company
+     *
+     * @group Companies
+     * @urlParam company int required Company ID. Example: 1
+     * @response 200 {}
+     */
+    public function stamp(Company $company)
+    {
+        if (!$company->stamp_path || !Storage::disk('local')->exists($company->stamp_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->response($company->stamp_path, null, ['Content-Type' => 'image/png']);
+    }
+
+    /**
+     * Delete the stamp for a company
+     *
+     * @group Companies
+     * @urlParam company int required Company ID. Example: 1
+     * @response 204 {}
+     */
+    public function deleteStamp(Company $company)
+    {
+        if ($company->stamp_path) {
+            Storage::disk('local')->delete($company->stamp_path);
+            $company->update(['stamp_path' => null]);
+        }
+
+        return $this->success(null, 'Stamp deleted', Response::HTTP_NO_CONTENT);
     }
 
     /**
