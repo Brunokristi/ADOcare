@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';import { useRoute } from 'vue-router';
+import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect } from 'vue';
+import { useRoute } from 'vue-router';
 import api from '@/services/api';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -38,6 +39,7 @@ interface DocumentData {
 
 const route = useRoute();
 const loading = ref(false);
+const uiOverlayStore = useUiOverlayStore();
 
 const documentData = ref<DocumentData>({
   facilityName: '',
@@ -67,6 +69,10 @@ onBeforeUnmount(() => {
 
 onMounted(async () => {
   await loadProposal(String(route.params.documentId));
+});
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value);
 });
 
 async function loadProposal(documentId: string) {
@@ -260,8 +266,6 @@ async function printPage() {
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar

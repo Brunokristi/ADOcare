@@ -10,16 +10,20 @@ import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import TercialNavbar from './components/TercialNavbar.vue'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import AccessError from '@/pages/AccessError.vue'
 import { navigationAccessError } from '@/router'
 
 import { useAuthStore } from '@/stores/auth'
 import { usePatientStore } from '@/stores/patientStore'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 import ModalProvider from './components/ModalProvider.vue'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const uiStore = useUiOverlayStore()
+const { contentLoading } = storeToRefs(uiStore)
 const toast = useToast()
 const patientStore = usePatientStore()
 const { current: currentPatient } = storeToRefs(patientStore)
@@ -150,32 +154,40 @@ function goToRoutesFromToast() {
     toast.removeGroup(ROUTES_TOAST_GROUP)
     router.push('/accounting/routes')
 }
-
-
 </script>
 
 <template>
     <div class="h-screen flex flex-col bg-darkgrey">
-        <Navbar v-if="showNavbar" class="flex-none" :isSidebarOpen="isSidebarOpen"
-            @toggle-sidebar="handleToggleSidebar" />
+        <Navbar
+            v-if="showNavbar"
+            class="flex-none"
+            :isSidebarOpen="isSidebarOpen"
+            @toggle-sidebar="handleToggleSidebar"
+        />
 
         <TercialNavbar v-if="isLoggedIn && showNavbar" class="flex-none" />
 
         <div class="flex flex-1 overflow-hidden">
-            <div class="flex-1 overflow-auto bg-white p-8 relative">
-                <!-- show access error component inline when the guard has flagged it -->
+            <div
+                class="flex-1 bg-white p-8 relative"
+                :class="contentLoading ? 'overflow-hidden' : 'overflow-auto'"
+            >
+                <LoadingOverlay :show="contentLoading" text="" />
+
                 <AccessError v-if="navigationAccessError" />
                 <router-view v-else />
             </div>
 
-            <Sidebar v-if="isSidebarOpen && isLoggedIn"
-                class="flex-none bg-darkgrey text-white border-l border-lightgrey" />
+            <Sidebar
+                v-if="isSidebarOpen && isLoggedIn"
+                class="flex-none bg-darkgrey text-white border-l border-lightgrey"
+            />
         </div>
 
         <Footer class="flex-none" />
 
         <Toast position="bottom-right" />
-        
+
         <Toast :group="ROUTES_TOAST_GROUP" position="bottom-right">
             <template #message="slotProps">
                 <div class="flex flex-col gap-2 w-full">
@@ -191,10 +203,7 @@ function goToRoutesFromToast() {
             </template>
         </Toast>
 
-        <!-- existing global modals -->
         <ModalProvider />
-
-        <!-- keep if you still use named modal routes anywhere else -->
         <router-view name="modal" />
     </div>
 </template>

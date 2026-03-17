@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getValueLabel } from '@/utils/valueTranslations'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -339,6 +339,7 @@ const formSpec: { sections: Section[] } = {
 
 const route = useRoute()
 const loading = ref(false)
+const uiOverlayStore = useUiOverlayStore()
 const isPrinting = ref(false)
 
 const documentData = ref<DocumentData>({
@@ -367,6 +368,10 @@ const measureFooterRef = ref<HTMLElement | null>(null)
 
 onMounted(async () => {
   await loadRecord(String(route.params.documentId))
+})
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value)
 })
 
 async function loadRecord(documentId: string) {
@@ -676,8 +681,6 @@ const title = computed(() => 'OŠETROVATEĽSKÝ ZÁZNAM')
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">

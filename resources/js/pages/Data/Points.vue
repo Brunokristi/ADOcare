@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
 import { toApiDate } from '@/utils/dateUtils';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
 
 const authStore = useAuthStore();
+const uiOverlayStore = useUiOverlayStore();
 const toast = useToast();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
@@ -49,6 +50,9 @@ const loading = ref(false);
 const patientsLoading = ref(false);
 let calculationToastId: string | undefined;
 
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value);
+});
 
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
@@ -475,7 +479,6 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
 
 <template>
-  <LoadingOverlay :show="loading" />
   <div class="flex flex-col gap-6 relative">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">

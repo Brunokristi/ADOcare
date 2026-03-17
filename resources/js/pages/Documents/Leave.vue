@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 
 interface DocumentData {
   patientName: string;
@@ -18,6 +18,7 @@ interface DocumentData {
 
 const route = useRoute();
 const loading = ref(false);
+const uiOverlayStore = useUiOverlayStore();
 
 const documentData = ref<DocumentData>({
   patientName: '',
@@ -43,6 +44,10 @@ const problemLabels: Record<string, string> = {
 
 onMounted(async () => {
   await loadNursingDocument(String(route.params.documentId));
+});
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value);
 });
 
 async function loadNursingDocument(documentId: string) {
@@ -84,8 +89,6 @@ function printPage() {
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar

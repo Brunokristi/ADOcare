@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { usePatientStore } from '@/stores/patientStore'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
 const patientStore = usePatientStore()
 
@@ -42,6 +42,7 @@ type DekurzRow = {
 
 const route = useRoute()
 const loading = ref(false)
+const uiOverlayStore = useUiOverlayStore()
 const isPrinting = ref(false)
 
 const dekurz = ref<DekurzData>({
@@ -352,11 +353,13 @@ function handleAfterPrint() {
 
 onMounted(() => window.addEventListener('afterprint', handleAfterPrint))
 onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint))
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value)
+})
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
       <template #start>

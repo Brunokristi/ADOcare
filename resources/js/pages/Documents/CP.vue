@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 
 interface CPData {
     company_name: string;
@@ -22,6 +22,7 @@ interface CPData {
 
 const route = useRoute();
 const loading = ref(false);
+const uiOverlayStore = useUiOverlayStore();
 
 const cpData = ref<CPData>({
     company_name: '',
@@ -41,6 +42,10 @@ const cpData = ref<CPData>({
 
 onMounted(async () => {
   await loadCP(String(route.params.documentId));
+});
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value);
 });
 
 async function loadCP(documentId: string) {
@@ -88,8 +93,6 @@ function printPage() {
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar

@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watchEffect } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 import { useAddressForm } from '@/composables/address'
 import type { Company, User } from '@/types/models'
 import { mergeAddressParts } from '@/utils/formatUtils'
 
 const toast = useToast()
+const uiOverlayStore = useUiOverlayStore()
 const company = ref<Company & { representative?: User }>({} as any)
 const loading = ref(true)
 const saving = ref(false)
@@ -29,6 +30,10 @@ const STAMP_REQUIRED_HEIGHT = 100
 const STAMP_MAX_SIZE_MB = 5
 
 init()
+
+watchEffect(() => {
+    uiOverlayStore.setContentLoading(loading.value || saving.value)
+})
 
 onMounted(async () => {
     loading.value = true
@@ -240,7 +245,6 @@ async function handleStampSelected(event: Event) {
 </script>
 
 <template>
-    <LoadingOverlay :show="loading || saving" :text="loading ? 'Načítavam...' : 'Ukladám...'" />
     <div class="py-8">
         <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">

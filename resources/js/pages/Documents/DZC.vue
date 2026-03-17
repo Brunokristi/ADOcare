@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, nextTick, watch, onBeforeUnmount, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -74,6 +74,7 @@ type DailyRecord = { date: string; addresses: PatientAddress[] }
 
 const route = useRoute()
 const loading = ref(false)
+const uiOverlayStore = useUiOverlayStore()
 const isPrinting = ref(false)
 
 const cpData = ref<CPData>({
@@ -388,11 +389,13 @@ async function downloadCSV() {
 
 onMounted(() => window.addEventListener('afterprint', handleAfterPrint))
 onBeforeUnmount(() => window.removeEventListener('afterprint', handleAfterPrint))
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value)
+})
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4 cover-sheet-page">
       <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
 

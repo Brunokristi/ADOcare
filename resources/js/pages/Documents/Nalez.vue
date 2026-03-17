@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import api from '@/services/api'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 import { useToast } from 'primevue/usetoast';
 const toast = useToast();
 
@@ -13,6 +13,7 @@ type DialogState = { visible: boolean; imageIndex: number | null }
 
 const route = useRoute()
 const loading = ref(false)
+const uiOverlayStore = useUiOverlayStore()
 const isPrinting = ref(false)
 const dialogState = ref<DialogState>({ visible: false, imageIndex: null })
 const editedText = ref('')
@@ -45,6 +46,10 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   cleanupBlobs()
   window.removeEventListener('afterprint', handleAfterPrint)
+})
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value)
 })
 
 function handleAfterPrint() {
@@ -344,8 +349,6 @@ async function printPage() {
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
       <template #start>

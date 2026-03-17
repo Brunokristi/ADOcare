@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount, watchEffect } from 'vue'
 import api from '@/services/api'
 import { openPatientDocumentsModal } from '@/helpers/modalHelpers'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
 interface Props {
   patientId: number
@@ -10,6 +10,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const uiOverlayStore = useUiOverlayStore()
 const emit = defineEmits<{
   close: []
   'document-created': [documentId: number]
@@ -51,6 +52,10 @@ function stopPolling() {
 
 onBeforeUnmount(() => {
   stopPolling()
+})
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(isLoading.value)
 })
 
 function openPatientDocuments(patientId: number) {
@@ -218,8 +223,8 @@ watch(
         class="text-darkgrey! text-normal! px-2!" />
     </div>
 
-    <div v-else-if="isLoading" class="flex flex-col items-center gap-6 py-10">
-      <LoadingOverlay :active="true" :fullScreen="false" :show="true" />
+    <div v-else-if="isLoading" class="flex flex-col items-center gap-6 py-10 text-accent">
+      Načítavam...
     </div>
 
     <div v-else-if="qrUrl" class="flex flex-col gap-4 w-full">
