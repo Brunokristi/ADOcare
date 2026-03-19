@@ -18,6 +18,7 @@ class CarResource extends JsonResource
             'id' => $this->id,
             'evc' => $this->evc,
             'model' => $this->model,
+            'fuel_consumption_l_per_100km' => $this->fuel_consumption_l_per_100km,
             'company_id' => $this->company_id,
             'user_id' => $this->user_id,
             'user' => $this->whenLoaded('user', function () {

@@ -59,6 +59,7 @@ interface CPData {
     year: string
     car_model: string
     car_license_plate: string
+    car_consumption_l_per_100km: number | null
     branch_address: string
     patient_addresses: PatientAddressesByDate
     day_totals?: Record<string, DayTotal>
@@ -85,6 +86,7 @@ const cpData = ref<CPData>({
     year: '',
     car_model: '',
     car_license_plate: '',
+    car_consumption_l_per_100km: null,
     branch_address: '',
     patient_addresses: {},
     day_totals: {},
@@ -139,6 +141,9 @@ async function loadCP(documentId: string) {
             year: String(cp.year ?? ''),
             car_model: cp.car_model ?? '',
             car_license_plate: cp.car_license_plate ?? '',
+            car_consumption_l_per_100km: cp.car_consumption_l_per_100km == null
+                ? null
+                : Number(cp.car_consumption_l_per_100km),
             branch_address: cp.branch_address ?? '',
             patient_addresses: cp.patient_addresses ?? {},
             day_totals: cp.day_totals ?? {},
@@ -291,6 +296,17 @@ const monthTotalKm = computed(() => {
     return dailyRecords.value.reduce((sum, r) => sum + sumLegKm(r.addresses), 0)
 })
 
+const carConsumptionLabel = computed(() => {
+    const value = cpData.value.car_consumption_l_per_100km
+
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '-'
+    }
+
+    const normalized = Math.round(value * 100) / 100
+    return `${normalized.toLocaleString('sk-SK', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}`
+})
+
 /* -------------------------------------------------------------------------- */
 /*  Pagination                                                                */
 /* -------------------------------------------------------------------------- */
@@ -360,6 +376,7 @@ watch(
         cpData.value.year,
         cpData.value.car_model,
         cpData.value.car_license_plate,
+        cpData.value.car_consumption_l_per_100km,
     ],
     async () => {
         if (loading.value) return
@@ -570,11 +587,11 @@ watchEffect(() => {
                             <table class="w-full border-collapse text-sm mb-4">
                                 <tbody>
                                     <tr>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-1/3">
                                             Obdobie:<br />
                                             <strong>{{ cpData.month }}/{{ cpData.year }}</strong>
                                         </td>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-2/3" colspan="2">
                                             Pracovník:<br />
                                             <strong>{{ cpData.user_name }}</strong>
                                             <img
@@ -586,13 +603,17 @@ watchEffect(() => {
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-1/3">
                                             Celkový počet km:<br />
                                             <strong>{{ monthTotalKm ?? '-' }}</strong>
                                         </td>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-1/3">
                                             Dopravný prostriedok:<br />
-                                            <strong>{{ cpData.car_model }} - {{ cpData.car_license_plate }}</strong>
+                                            <strong>{{ cpData.car_model }} - {{ cpData.car_license_plate }}</strong><br />
+                                        </td>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Spotreba:<br>
+                                            <strong>{{ carConsumptionLabel }}</strong> L/100 km
                                         </td>
                                     </tr>
                                 </tbody>
@@ -681,11 +702,11 @@ watchEffect(() => {
                             <table class="w-full border-collapse text-sm mb-4">
                                 <tbody>
                                     <tr>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-1/3">
                                             Obdobie:<br />
                                             <strong>{{ cpData.month }}/{{ cpData.year }}</strong>
                                         </td>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-2/3">
                                             Pracovník:<br />
                                             <strong>{{ cpData.user_name }}</strong>
                                             <img
@@ -697,14 +718,19 @@ watchEffect(() => {
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-1/3">
                                             Celkový počet km:<br />
                                             <strong>{{ monthTotalKm ?? '-' }}</strong>
                                         </td>
-                                        <td class="border border-black p-2 w-1/2">
+                                        <td class="border border-black p-2 w-1/3">
                                             Dopravný prostriedok:<br />
-                                            <strong>{{ cpData.car_model }} - {{ cpData.car_license_plate }}</strong>
+                                            <strong>{{ cpData.car_model }} - {{ cpData.car_license_plate }}</strong><br />
                                         </td>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Spotreba:<br /> 
+                                            <strong>{{ carConsumptionLabel }}</strong>
+                                        </td>
+                                        
                                     </tr>
                                 </tbody>
                             </table>

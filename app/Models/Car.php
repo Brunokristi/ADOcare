@@ -13,7 +13,11 @@ class Car extends Model
 
     protected $table = 'cars';
 
-    protected $fillable = ['evc', 'model', 'company_id', 'user_id'];
+    protected $fillable = ['evc', 'model', 'fuel_consumption_l_per_100km', 'company_id', 'user_id'];
+
+    protected $casts = [
+        'fuel_consumption_l_per_100km' => 'float',
+    ];
 
     public function company()
     {

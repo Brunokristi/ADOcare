@@ -435,6 +435,20 @@ const getDocumentPreviewUrl = (doc: CarDocument) => {
                 </div>
 
                 <div>
+                    <label class="block text-sm mb-1">Spotreba (l/100 km)</label>
+                    <InputNumber
+                        v-model="car.fuel_consumption_l_per_100km"
+                        mode="decimal"
+                        locale="sk-SK"
+                        :min="0"
+                        :max="99.99"
+                        :minFractionDigits="1"
+                        :maxFractionDigits="2"
+                        class="w-full"
+                    />
+                </div>
+
+                <div>
                     <label class="block text-sm mb-1">Používateľ</label>
                     <Select v-model="car.user_id" :options="users" optionLabel="first_name" optionValue="id">
                         <template #value="slotProps">

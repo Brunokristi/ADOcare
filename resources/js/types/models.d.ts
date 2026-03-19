@@ -423,6 +423,7 @@ export interface Car {
   created_at: string | null
   updated_at: string | null
   model: string | null
+  fuel_consumption_l_per_100km: number | null
   // relations
   company: Company
   user: User

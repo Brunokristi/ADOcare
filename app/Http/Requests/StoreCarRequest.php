@@ -16,6 +16,7 @@ class StoreCarRequest extends FormRequest
         return [
             'evc' => 'required|string|max:255',
             'model' => 'nullable|string|max:255',
+            'fuel_consumption_l_per_100km' => 'nullable|numeric|min:0|max:99.99',
             'company_id' => 'nullable|integer',
             'user_id' => 'nullable|integer',
         ];
