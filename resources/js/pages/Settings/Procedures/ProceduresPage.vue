@@ -13,6 +13,17 @@ const { openModal } = useModal()
 const authStore = useAuthStore()
 const actionRemote = ref<any | null>(null)
 
+async function openCreate() {
+    try {
+        const res = await openModal(markRaw(ProcedureForm), { procedure: null }, { header: 'Výkon', style: { width: '760px' }, closable: true })
+        if (res?.changed && actionRemote.value?.reload) {
+            await actionRemote.value.reload()
+        }
+    } catch (e) {
+        console.error('Failed to open procedure modal', e)
+    }
+}
+
 async function openEdit(row: Procedure) {
     try {
         const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Výkon', style: { width: '760px' }, closable: true })
@@ -76,7 +87,7 @@ onMounted(async () => {
             ...companyCols,
         ]
 
-        if (authStore.isManager) {
+        if (authStore.isManager || authStore.isSuperadmin) {
             columns.push(editColumn)
         }
 
@@ -92,14 +103,45 @@ const options = ref<DataTableOptions<any>>({
     endpointUrl: 'v1/procedures',
     defaultPageSize: 25,
     pageSizeOptions: [10, 25, 50],
-    selectable: false,
+    selectable: authStore.isSuperadmin,
     columns: [
         { field: 'code', header: 'Kód', sortable: true },
         { field: 'description', header: 'Popis' },
         { field: 'prices_summary', header: 'Ceny', width: '30%' },
     ],
     afterInit: ({ remote }) => { actionRemote.value = remote },
-    actions: authStore.isManager ? [] : [],
+    actions: authStore.isSuperadmin ? [
+        {
+            key: 'delete',
+            label: '',
+            icon: 'bi bi-eraser',
+            class: 'bg-danger!',
+            tooltip: 'Vymazať vybrané výkony',
+            disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
+            confirm: 'Naozaj vymazať vybrané výkony?',
+            handler: async ({ remote, selectedRows }: any) => {
+                try {
+                    for (const r of selectedRows ?? []) {
+                        await api.delete(`/v1/procedures/${r.id}`)
+                    }
+                } catch (err) {
+                    console.error('Delete failed', err)
+                } finally {
+                    await remote.loadPage(1)
+                }
+            },
+        },
+        {
+            key: 'add',
+            label: '',
+            tooltip: 'Pridať nový výkon',
+            icon: 'bi bi-plus',
+            class: 'bg-accent!',
+            handler: async () => {
+                openCreate()
+            },
+        },
+    ] : [],
 })
 </script>
 

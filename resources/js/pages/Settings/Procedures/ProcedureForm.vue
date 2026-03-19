@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import api from '@/services/api'
 import type { InsuranceCompany } from '@/types/models'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
     procedure: { type: Object, default: null },
     modalResolve: { type: Function, required: false },
 })
 const emit = defineEmits(['save', 'close'])
+const authStore = useAuthStore()
+const canEditBaseFields = computed(() => authStore.isSuperadmin)
 
 const loading = ref(false)
 const insuranceCompanies = ref<InsuranceCompany[]>([])
@@ -96,11 +99,13 @@ async function save() {
         <div class="flex flex-col gap-4">
             <div class="col-span-6">
                 <label class="block text-normal text-lightgrey mb-1">Kód</label>
-                <InputText v-model.trim="model.code" class="w-full border-lightgrey! text-lightgrey!" disabled />
+                <InputText v-model.trim="model.code" class="w-full border-lightgrey! text-lightgrey!"
+                    :disabled="!canEditBaseFields" />
             </div>
             <div class="col-span-6">
                 <label class="block text-normal text-lightgrey mb-1">Popis</label>
-                <Textarea v-model.trim="model.description" :rows="3" autoResize class="w-full border-lightgrey! text-lightgrey!" disabled />
+                <Textarea v-model.trim="model.description" :rows="3" autoResize
+                    class="w-full border-lightgrey! text-lightgrey!" :disabled="!canEditBaseFields" />
             </div>
         </div>
 
@@ -115,16 +120,11 @@ async function save() {
                             <td class="p-2 pr-0">
                                 <div class="flex justify-end">
                                     <div class="relative">
-                                        <InputNumber
-                                            v-model="model.prices[idx]!.price"
-                                            :min="0"
-                                            :minFractionDigits="2"
-                                            :maxFractionDigits="2"
-                                            :useGrouping="false"
-                                            locale="en-US"
-                                            class="w-full price-input"
-                                        />
-                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-lightgrey pointer-events-none">
+                                        <InputNumber v-model="model.prices[idx]!.price" :min="0" :minFractionDigits="2"
+                                            :maxFractionDigits="2" :useGrouping="false" locale="en-US"
+                                            class="w-full price-input" />
+                                        <span
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-lightgrey pointer-events-none">
                                             &euro;
                                         </span>
                                     </div>
@@ -138,7 +138,9 @@ async function save() {
 
         <div class="mt-4 flex justify-end gap-2">
             <Button label="Zrušiť" text class="text-accent! px-2!" @click="close" />
-            <Button label="Uložiť" class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! " @click="save" :loading="loading" />
+            <Button label="Uložiť"
+                class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! "
+                @click="save" :loading="loading" />
         </div>
     </div>
 </template>
