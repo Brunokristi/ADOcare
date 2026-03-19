@@ -8,11 +8,11 @@ const props = defineProps<{ doctor?: Partial<Doctor> | null; modalResolve?: (val
 const emits = defineEmits(['save', 'close'])
 
 const toast = useToast()
-const local = ref<Partial<Doctor>>(props.doctor ? { ...props.doctor } : { first_name: '', last_name: '', title: '' })
+const local = ref<Partial<Doctor>>(props.doctor ? { ...props.doctor } : { first_name: '', last_name: '', title: '', zpr: '', pzs: '' })
 
 watch(
     () => props.doctor,
-    (v) => (local.value = v ? { ...v } : { first_name: '', last_name: '', title: '' }),
+    (v) => (local.value = v ? { ...v } : { first_name: '', last_name: '', title: '', zpr: '', pzs: '' }),
     { immediate: true }
 )
 
@@ -33,6 +33,8 @@ async function save() {
             first_name: local.value.first_name ?? local.value['first_name'] ?? '',
             last_name: local.value.last_name ?? local.value['last_name'] ?? '',
             title: local.value.title ?? '',
+            zpr: local.value.zpr ?? '',
+            pzs: local.value.pzs ?? '',
         }
 
         if (local.value.id) {
@@ -69,6 +71,14 @@ async function save() {
         <div class="col-span-12">
             <label class="block text-normal mb-1">Titul</label>
             <InputText v-model="local.title" fluid />
+        </div>
+        <div class="col-span-6">
+            <label class="block text-normal mb-1">ZPR</label>
+            <InputText v-model="local.zpr" fluid />
+        </div>
+        <div class="col-span-6">
+            <label class="block text-normal mb-1">PZS</label>
+            <InputText v-model="local.pzs" fluid />
         </div>
 
         <div class="col-span-12 mt-4 flex items-center justify-end gap-2">

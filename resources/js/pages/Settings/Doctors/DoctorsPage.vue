@@ -1,19 +1,39 @@
 <script setup lang="ts">
 import { markRaw, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Doctor } from '@/types/models'
+import DoctorForm from './DoctorForm.vue'
 import api from '@/services/api'
 import useAuthStore from '@/stores/auth'
-import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import { default as ActionButtons, type ActionButtonOptions } from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
 import { formatBranchFullName } from '@/utils/formatUtils'
+import useModal from '@/composables/useModal'
 
 const showFavouritesOnly = ref(false);
+const actionRemote = ref<any>(null)
+const { openModal } = useModal()
+
+async function openCreate() {
+    let response: any = null
+    try {
+        response = await openModal(markRaw(DoctorForm), { doctor: null }, { header: 'Lekár', style: { width: '640px' }, closable: true })
+    } finally {
+        response && await actionRemote.value?.loadPage(1)
+    }
+}
+
+async function openEdit(row: Doctor) {
+    let response: any = null
+    try {
+        response = await openModal(markRaw(DoctorForm), { doctor: row }, { header: 'Lekár', style: { width: '640px' }, closable: true })
+    } finally {
+        response && await actionRemote.value?.loadPage(1)
+    }
+}
 
 // shortcut references we need repeatedly below
 const auth = useAuthStore()
-const route = useRoute()
 const branchId = auth.currentBranch?.id
 
 const options = ref<DataTableOptions<Doctor>>({
@@ -26,6 +46,9 @@ const options = ref<DataTableOptions<Doctor>>({
     defaultPageSize: 50,
     pageSizeOptions: [25, 50, 100],
     selectable: false,
+    afterInit: ({ remote }) => {
+        actionRemote.value = remote
+    },
     columns: [
         { field: 'first_name', header: 'Meno', sortable: true },
         { field: 'last_name', header: 'Priezvisko', sortable: true },
@@ -120,11 +143,56 @@ const options = ref<DataTableOptions<Doctor>>({
 
 // adjust for role-specific scoping
 if (auth.isSuperadmin) {
-    // when a superadmin is viewing a particular company we need to
-    // scope to that company's doctors rather than the generic list.
-    // the route is guaranteed to have companyId when on a superadmin page.
-    const cid = Number(route.params.companyId)
-    options.value.endpointUrl = `v1/companies/${cid}/doctors`
+    options.value.endpointUrl = 'v1/doctors'
+    options.value.extraParams = undefined
+    options.value.selectable = true
+    options.value.columns = options.value.columns?.filter(c => c.field !== 'is_favourite')
+    options.value.columns?.push({
+        field: 'edit',
+        header: ' ',
+        width: '3rem',
+        component: markRaw(ActionButtons),
+        componentOptions: [{
+            color: 'info',
+            icon: 'bi bi-pencil',
+            tooltip: 'Upraviť lekára',
+            action: async (row: Doctor) => {
+                openEdit(row)
+            }
+        }] as ActionButtonOptions[]
+    })
+    options.value.actions = [
+        {
+            key: 'delete',
+            label: '',
+            icon: 'bi bi-eraser',
+            class: 'bg-danger!',
+            tooltip: 'Vymazať vybraných lekárov',
+            disabled: ({ selectedRows }) => !selectedRows || selectedRows.length === 0,
+            confirm: 'Naozaj vymazať vybraných lekárov?',
+            handler: async ({ remote, selectedRows }: any) => {
+                try {
+                    for (const r of selectedRows ?? []) {
+                        await api.delete(`/v1/doctors/${r.id}`)
+                    }
+                } catch (err) {
+                    console.error('Delete failed', err)
+                } finally {
+                    await remote.loadPage(1)
+                }
+            },
+        },
+        {
+            key: 'add',
+            label: '',
+            tooltip: 'Pridať nového lekára',
+            icon: 'bi bi-plus',
+            class: 'bg-accent!',
+            handler: async () => {
+                openCreate()
+            },
+        },
+    ]
 } else if (auth.isManager) {
     // managers should only see doctors that are assigned to a branch, so
     // we switch to the endpoint that applies company-level filtering by

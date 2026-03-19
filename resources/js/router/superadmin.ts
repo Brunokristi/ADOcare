@@ -118,7 +118,7 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
             },
             {
                 path: '/doctors',
-                name: 'superadmin-overview-doctors',
+                name: 'superadmin-settings-doctors',
                 component: Doctors,
                 meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
             },
