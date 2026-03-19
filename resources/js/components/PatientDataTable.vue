@@ -230,6 +230,8 @@ const options = computed<DataTableOptions<Patient>>(() => {
             {
                 key: 'show-active',
                 icon: 'bi bi-people',
+                position: 'start',
+                tooltip: 'Zobraziť aktívnych pacientov',
                 class: viewMode.value === 'active'
                     ? '!bg-darkgrey !text-white !border !border-solid !border-darkgrey !focus:!border-darkgrey !active:!border-darkgrey !shadow-none focus:!shadow-none'
                     : '!border !border-solid !border-darkgrey !bg-white !text-darkgrey hover:!bg-darkgrey hover:!text-white hover:!border-darkgrey !focus:!border-darkgrey !active:!border-darkgrey !shadow-none focus:!shadow-none',
@@ -237,11 +239,13 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     viewMode.value = 'active'
                     remote.reload()
                 },
-                bordered:true,
+                bordered: true,
             },
             {
                 key: 'show-deleted',
                 icon: 'bi bi-person-x',
+                position: 'start',
+                tooltip: 'Zobraziť zmazaných',
                 class: viewMode.value === 'deleted'
                     ? '!bg-darkgrey !text-white !border !border-solid !border-darkgrey !focus:!border-darkgrey !active:!border-darkgrey !shadow-none focus:!shadow-none'
                     : '!border !border-solid !border-darkgrey !bg-white !text-darkgrey hover:!bg-darkgrey hover:!text-white hover:!border-darkgrey !focus:!border-darkgrey !active:!border-darkgrey !shadow-none focus:!shadow-none',
@@ -249,11 +253,13 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     viewMode.value = 'deleted'
                     remote.reload()
                 },
-                bordered:true,
+                bordered: true,
             },
             {
                 key: 'show-dead',
                 icon: 'bi bi-person-exclamation',
+                position: 'start',
+                tooltip: 'Zobraziť zosulých',
                 class: viewMode.value === 'dead'
                     ? '!bg-darkgrey !text-white !border !border-solid !border-darkgrey !focus:!border-darkgrey !active:!border-darkgrey !shadow-none focus:!shadow-none'
                     : '!border !border-solid !border-darkgrey !bg-white !text-darkgrey hover:!bg-darkgrey hover:!text-white hover:!border-darkgrey !focus:!border-darkgrey !active:!border-darkgrey !shadow-none focus:!shadow-none',
@@ -261,7 +267,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     viewMode.value = 'dead'
                     remote.reload()
                 },
-                bordered:true,
+                bordered: true,
             },
         ],
     }

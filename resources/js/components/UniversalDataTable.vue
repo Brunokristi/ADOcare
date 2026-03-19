@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, unref } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -14,6 +14,7 @@ import Paginator from 'primevue/paginator'
 import Select from 'primevue/select'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import DataTableToolbarActions from '@/components/datatable/DataTableToolbarActions.vue'
 
 import { useRemoteTable } from '@/composables/useRemoteTable'
 import type { ActionDef, DataTableOptions } from '@/types/datatable'
@@ -47,6 +48,8 @@ const selectedRows = ref<IBaseModel[]>([])
 const dateRangeFilter = computed(() => opt.value.dateRangeFilter)
 const filterMode = computed(() => dateRangeFilter.value?.mode ?? 'range')
 const isSingleDateFilter = computed(() => filterMode.value === 'single')
+const startActions = computed(() => (opt.value.actions ?? []).filter((a) => a.position === 'start'))
+const endActions = computed(() => (opt.value.actions ?? []).filter((a) => !a.position || a.position === 'end'))
 const dateFilterValue = ref<Date | null>(null)
 const dateRangeStart = ref<Date | null>(null)
 const dateRangeEnd = ref<Date | null>(null)
@@ -205,6 +208,17 @@ watch(
 <template>
     <div class="h-full flex flex-col min-h-0 max-h-full overflow-auto">
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
+            <template #start>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <DataTableToolbarActions
+                        :actions="startActions"
+                        :rows="remote.items.value"
+                        :selectedRows="selectedRows"
+                        :remote="remote"
+                        @action="onAction"
+                    />
+                </div>
+            </template>
             <template #end>
                 <div class="flex items-center gap-2 flex-wrap justify-end">
                     <IconField>
@@ -253,24 +267,13 @@ watch(
                         </IconField>
                     </template>
 
-                    <template v-if="opt.actions?.length">
-                        <Button v-for="a in opt.actions" :key="a.key ?? a.icon ?? a.label" :icon="typeof a.icon === 'function'
-                            ? a.icon({ rows: remote.items.value, selectedRows: selectedRows, remote })
-                            : unref(a.icon)" :label="a.label" :title="typeof a.tooltip === 'function'
-                                ? a.tooltip({ rows: remote.items.value, selectedRows: selectedRows, remote })
-                                : unref(a.tooltip)" :disabled="a.disabled &&
-                                        (typeof a.disabled === 'boolean'
-                                            ? a.disabled
-                                            : a.disabled({
-                                                rows: remote.items.value,
-                                                selectedRows: selectedRows,
-                                                remote,
-                                            }))" :class="[
-                                                a.bordered ? 'hover:bg-darkgrey! h-7!' : 'border-none! hover:bg-darkgrey! h-7!',
-                                                unref(a.class) ?? ''
-                                            ]" @click="onAction(a)"
-                            />
-                    </template>
+                    <DataTableToolbarActions
+                        :actions="endActions"
+                        :rows="remote.items.value"
+                        :selectedRows="selectedRows"
+                        :remote="remote"
+                        @action="onAction"
+                    />
                 </div>
             </template>
         </Toolbar>
@@ -285,8 +288,8 @@ watch(
 
                 <div class="flex items-center gap-2">
                     <Button label="Nie" text @click="confirmNo"
-                        class="!bg-accent !px-4 !text-white hover:!bg-darkgrey !border-0" />
-                    <Button label="Áno" text @click="confirmYes" class="!bg-danger !px-4 !text-white" />
+                        class="bg-accent! px-4! text-white! hover:bg-darkgrey! border-0!" />
+                    <Button label="Áno" text @click="confirmYes" class="bg-danger! px-4! text-white!" />
                 </div>
             </div>
         </Dialog>
