@@ -210,13 +210,8 @@ watch(
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between">
             <template #start>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <DataTableToolbarActions
-                        :actions="startActions"
-                        :rows="remote.items.value"
-                        :selectedRows="selectedRows"
-                        :remote="remote"
-                        @action="onAction"
-                    />
+                    <DataTableToolbarActions :actions="startActions" :rows="remote.items.value"
+                        :selectedRows="selectedRows" :remote="remote" @action="onAction" />
                 </div>
             </template>
             <template #end>
@@ -230,12 +225,11 @@ watch(
 
                     <template v-if="dateRangeFilter && isSingleDateFilter">
                         <IconField>
-                            <DatePicker v-model="dateFilterValue"
-                                :placeholder="dateRangeFilter.placeholder"
+                            <DatePicker v-model="dateFilterValue" :placeholder="dateRangeFilter.placeholder"
                                 :view="dateRangeFilter.view ?? 'month'"
                                 :dateFormat="dateRangeFilter.dateFormat ?? 'mm/yy'"
-                                :manualInput="dateRangeFilter.manualInput ?? false"
-                                inputClass="w-full! pr-10!" class="w-50" />
+                                :manualInput="dateRangeFilter.manualInput ?? false" inputClass="w-full! pr-10!"
+                                class="w-50" />
                             <InputIcon>
                                 <i class="bi bi-filter text-darkgrey" />
                             </InputIcon>
@@ -248,8 +242,8 @@ watch(
                                 :placeholder="dateRangeFilter.startPlaceholder ?? 'Od dátumu'"
                                 :view="dateRangeFilter.view ?? 'date'"
                                 :dateFormat="dateRangeFilter.dateFormat ?? 'dd.mm.yy'"
-                                :manualInput="dateRangeFilter.manualInput ?? false"
-                                inputClass="w-full! pr-10!" class="w-50" />
+                                :manualInput="dateRangeFilter.manualInput ?? false" inputClass="w-full! pr-10!"
+                                class="w-50" />
                             <InputIcon>
                                 <i class="bi bi-calendar-frame text-darkgrey" />
                             </InputIcon>
@@ -259,21 +253,16 @@ watch(
                                 :placeholder="dateRangeFilter.endPlaceholder ?? 'Do dátumu'"
                                 :view="dateRangeFilter.view ?? 'date'"
                                 :dateFormat="dateRangeFilter.dateFormat ?? 'dd.mm.yy'"
-                                :manualInput="dateRangeFilter.manualInput ?? false"
-                                inputClass="w-full! pr-10!" class="w-50" />
+                                :manualInput="dateRangeFilter.manualInput ?? false" inputClass="w-full! pr-10!"
+                                class="w-50" />
                             <InputIcon>
                                 <i class="bi bi-calendar-frame text-darkgrey" />
                             </InputIcon>
                         </IconField>
                     </template>
 
-                    <DataTableToolbarActions
-                        :actions="endActions"
-                        :rows="remote.items.value"
-                        :selectedRows="selectedRows"
-                        :remote="remote"
-                        @action="onAction"
-                    />
+                    <DataTableToolbarActions :actions="endActions" :rows="remote.items.value"
+                        :selectedRows="selectedRows" :remote="remote" @action="onAction" />
                 </div>
             </template>
         </Toolbar>

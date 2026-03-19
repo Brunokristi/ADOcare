@@ -49,15 +49,7 @@ function getClass(action: ActionDef<IBaseModel>): string[] {
 
 <template>
     <template v-if="actions?.length">
-        <Button
-            v-for="a in actions"
-            :key="a.key ?? a.icon ?? a.label"
-            :icon="getIcon(a)"
-            :label="a.label"
-            :title="getTooltip(a)"
-            :disabled="isDisabled(a)"
-            :class="getClass(a)"
-            @click="emits('action', a)"
-        />
+        <Button v-for="a in actions" :key="a.key ?? a.icon ?? a.label" :icon="getIcon(a)" :label="a.label"
+            :title="getTooltip(a)" :disabled="isDisabled(a)" :class="getClass(a)" @click="emits('action', a)" />
     </template>
 </template>
