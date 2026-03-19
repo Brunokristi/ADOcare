@@ -11,6 +11,8 @@ class RecordDocumentService
 {
     public function create(array $data, $user): Document
     {
+        $period = !empty($data['date']) ? date('Y-m', strtotime((string) $data['date'])) : null;
+
         $document = Document::create([
             'patient_id' => $data['patient_id'],
             'user_id' => $user->id,
@@ -18,6 +20,8 @@ class RecordDocumentService
             'mime_type' => 'application/json',
             'name' => 'zaznam_' . now()->format('d.m.Y'),
             'path' => 'records/' . now()->timestamp . '.json',
+            'period' => $period,
+            'branch_id' => $data['branch_id'] ?? null,
         ]);
 
         $patient = Patient::findOrFail($data['patient_id']);

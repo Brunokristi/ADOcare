@@ -24,6 +24,7 @@ class DekurzDocumentService
             'name' => 'dekurz_' . now()->format('d.m.Y'),
             'path' => 'dekurz/' . now()->timestamp . '.json',
             'period' => date('Y-m', strtotime($data['month'] ?? now()->format('Y-m-d'))),
+            'branch_id' => $data['branch_id'] ?? null,
         ]);
 
         $sections = $this->normalizeSections($data['sections']);

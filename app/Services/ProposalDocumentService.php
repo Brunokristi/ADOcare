@@ -27,6 +27,7 @@ class ProposalDocumentService
             'name' => 'navrh_' . now()->format('d.m.Y'),
             'path' => 'proposals/' . now()->timestamp . '.json', 
             'period' => date('Y-m', strtotime($data['date'])),
+            'branch_id' => $data['branch_id'],
             ]);
 
         $company = $actor->company;

@@ -96,22 +96,24 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
 
     columns: [
         {
-            field: 'name',
-            header: 'Názov',
-            sortable: true
-        },
-        {
             field: 'type',
             header: 'Typ',
             sortable: true,
             render: (v: string | undefined) => formatDocumentType(v)
         },
         {
-            field: 'created_at',
-            header: 'Dátum a čas vytvorenia',
+            field: 'period',
+            header: 'Obdobie',
+            sortable: true,
+            render: (v: string | undefined) => v || ''
+        },
+        {
+            field: 'updated_at',
+            header: 'Naposledy upravené',
             sortable: true,
             render: (v: string | undefined) => formatDateWithTime(v)
         },
+        
         {
             field: 'preview',
             header: '',

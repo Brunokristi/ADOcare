@@ -124,6 +124,7 @@ function persistSelectedDatesForSession() {
       text: s.text,
       dates: (s.dates || []).map(isoDate),
     })),
+    branch_id: auth.currentBranch?.id ?? null,
   }
 
   sessionStorage.setItem(getDatesSessionKey(patientId.value), JSON.stringify(payload))

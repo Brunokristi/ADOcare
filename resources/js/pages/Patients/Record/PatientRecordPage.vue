@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
+import { useAuthStore } from '@/stores/auth'
 
 type Option = { label: string; value: string }
 
@@ -1731,6 +1732,7 @@ const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
+const authStore = useAuthStore()
 
 patientStore.loadFromStorage?.()
 
@@ -1930,9 +1932,17 @@ watchEffect(() => {
 
 async function saveRecord() {
   try {
+    const admissionDate = toIso(getValue('admissionDate'))
+    const branchId = authStore.currentBranch?.id ?? patientStore.current?.branch_id ?? null
+
     const payload = {
       patient_id: patientId.value,
-      record_data: answers,
+      branch_id: branchId,
+      date: admissionDate || null,
+      record_data: {
+        ...answers,
+        admissionDate,
+      },
     }
 
     const res = await api.post('/v1/records', payload)
