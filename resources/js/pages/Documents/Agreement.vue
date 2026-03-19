@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 
 interface AgreementData {
+    company_id: number | null;
     company_name: string;
     company_address: string;
     company_city: string;
     branch_city: string;
+    branch_representative_id: number | null;
     user_name: string;
     user_contact: string;
     patient_name: string;
@@ -19,12 +21,17 @@ interface AgreementData {
 
 const route = useRoute();
 const loading = ref(false);
+const uiOverlayStore = useUiOverlayStore();
+const stampImageUrl = ref<string | null>(null);
+const signatureImageUrl = ref<string | null>(null);
 
 const agreementData = ref<AgreementData>({
+    company_id: null,
     company_name: '',
     company_address: '',
     company_city: '',
     branch_city: '',
+    branch_representative_id: null,
     user_name: '',
     user_contact: '',
     patient_name: '',
@@ -37,6 +44,15 @@ onMounted(async () => {
     await loadAgreement(String(route.params.documentId));
 });
 
+onBeforeUnmount(() => {
+    if (stampImageUrl.value) URL.revokeObjectURL(stampImageUrl.value);
+    if (signatureImageUrl.value) URL.revokeObjectURL(signatureImageUrl.value);
+});
+
+watchEffect(() => {
+    uiOverlayStore.setContentLoading(loading.value);
+});
+
 async function loadAgreement(documentId: string) {
     loading.value = true;
 
@@ -45,10 +61,12 @@ async function loadAgreement(documentId: string) {
         const agreement = res.data.data?.agreement_data ?? {};
 
         agreementData.value = {
+            company_id: agreement.company_id ?? null,
             company_name: agreement.company_name ?? '',
             company_address: agreement.company_address ?? '',
             company_city: agreement.company_city ?? '',
             branch_city: agreement.branch_city ?? '',
+            branch_representative_id: agreement.branch_representative_id ?? null,
             user_name: agreement.user_name ?? '',
             user_contact: agreement.user_contact ?? '',
             patient_name: agreement.patient_name ?? '',
@@ -56,10 +74,45 @@ async function loadAgreement(documentId: string) {
             patient_address: agreement.patient_address ?? '',
             date: agreement.date ?? '',
         };
+
+        await loadStampImage();
+        await loadSignatureImage();
     } catch (error) {
         console.error('Failed to load agreement:', error);
     } finally {
         loading.value = false;
+    }
+}
+
+async function loadStampImage() {
+    const companyId = agreementData.value.company_id;
+    if (!companyId) {
+        stampImageUrl.value = null;
+        return;
+    }
+
+    try {
+        const res = await api.get(`/v1/companies/${companyId}/stamp`, { responseType: 'blob' });
+        if (stampImageUrl.value) URL.revokeObjectURL(stampImageUrl.value);
+        stampImageUrl.value = URL.createObjectURL(res.data);
+    } catch {
+        stampImageUrl.value = null;
+    }
+}
+
+async function loadSignatureImage() {
+    const representativeId = agreementData.value.branch_representative_id;
+    if (!representativeId) {
+        signatureImageUrl.value = null;
+        return;
+    }
+
+    try {
+        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' });
+        if (signatureImageUrl.value) URL.revokeObjectURL(signatureImageUrl.value);
+        signatureImageUrl.value = URL.createObjectURL(res.data);
+    } catch {
+        signatureImageUrl.value = null;
     }
 }
 
@@ -74,7 +127,6 @@ function printPage() {
 </script>
 
 <template>
-    <LoadingOverlay :show="loading" text="" />
     <div class="flex flex-col gap-4">
         <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
             <template #start>
@@ -204,13 +256,29 @@ function printPage() {
                     </tbody>
                 </table>
 
-                <div class="mt-16 grid grid-cols-2 gap-12 text-sm">
+                <div class="mt-3 grid grid-cols-2 gap-12 text-sm">
                     <div class="text-center">
+                        <div class="signature-stack mb-2">
+                            <img
+                                v-if="stampImageUrl"
+                                :src="stampImageUrl"
+                                alt="Pečiatka spoločnosti"
+                                class="stamp-image"
+                            />
+
+                            <img
+                                v-if="signatureImageUrl"
+                                :src="signatureImageUrl"
+                                alt="Podpis odborného zástupcu"
+                                class="signature-overlay"
+                            />
+                        </div>
                         <div class="border-t border-black mb-2"></div>
-                        podpis odborného zástupcu<br />
-                        a odtlačok pečiatky
+                        {{ agreementData.user_name }} <br>
+                        <span class="text-xs">odborný zástupca poskytovateľa ošetrovateľskej starostlivosti</span>
                     </div>
                     <div class="text-center">
+                        <div class="signature-stack mb-2"></div>
                         <div class="border-t border-black mb-2"></div>
                         podpis poistenca / zákonného zástupcu
                     </div>
@@ -237,6 +305,32 @@ function printPage() {
     display: flex;
     justify-content: center;
     padding: 2rem;
+}
+
+.signature-stack {
+    position: relative;
+    height: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stamp-image {
+    max-width: 150px;
+    max-height: 70px;
+    object-fit: contain;
+    opacity: 0.6;
+}
+
+.signature-overlay {
+    position: absolute;
+    z-index: 2;
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    top: 50%;
+    left: 60%;
+    transform: translate(-40%, -55%);
 }
 
 @page {

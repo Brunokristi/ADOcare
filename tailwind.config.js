@@ -19,6 +19,7 @@ export default {
             fontFamily: {
                 sans: "var(--font-sans)",
                 accent: "var(--font-accent)",
+                handwriting: "var(--font-handwriting)",
             },
             fontSize: {
                 'heading-accent': [

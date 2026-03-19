@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
+import { useAuthStore } from '@/stores/auth'
 
 type Option = { label: string; value: string }
 
@@ -1731,10 +1732,19 @@ const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
+const authStore = useAuthStore()
 
 patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
+const patientDeathDate = computed<Date | null>(() => {
+  const raw = patientStore.current?.death_date
+  if (!raw || typeof raw !== 'string') return null
+
+  const d = new Date(`${raw.slice(0, 10)}T00:00:00`)
+  if (isNaN(d.getTime())) return null
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+})
 
 function extractArray(raw: any): any[] {
   if (Array.isArray(raw)) return raw
@@ -1922,9 +1932,17 @@ watchEffect(() => {
 
 async function saveRecord() {
   try {
+    const admissionDate = toIso(getValue('admissionDate'))
+    const branchId = authStore.currentBranch?.id ?? patientStore.current?.branch_id ?? null
+
     const payload = {
       patient_id: patientId.value,
-      record_data: answers,
+      branch_id: branchId,
+      date: admissionDate || null,
+      record_data: {
+        ...answers,
+        admissionDate,
+      },
     }
 
     const res = await api.post('/v1/records', payload)
@@ -1987,6 +2005,15 @@ const setValue = (id: string, v: any) => {
   return props.setValue ? props.setValue(id, v) : answersSetValue(id, v)
 }
 const displaySpec = computed(() => props.spec ?? defaultSpec)
+const dateFieldIds = computed(() => {
+  const ids = new Set<string>()
+  for (const s of displaySpec.value.sections ?? []) {
+    for (const f of s.fields ?? []) {
+      if (f.type === 'date') ids.add(f.id)
+    }
+  }
+  return ids
+})
 
 /**
  * DatePicker wants Date | null, but you store strings.
@@ -2002,9 +2029,25 @@ const toDate = (v: any) => {
   return isNaN(d.getTime()) ? null : d
 }
 
+const toIsoUnclamped = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const clampDateToDeath = (d: Date | null) => {
+  if (!d) return null
+  const normalized = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  if (!patientDeathDate.value) return normalized
+  return normalized > patientDeathDate.value ? patientDeathDate.value : normalized
+}
+
 const toIso = (d: any) => {
   if (!d) return ''
-  const dt = d instanceof Date ? d : new Date(d)
+  const raw = d instanceof Date ? d : new Date(d)
+  const dt = clampDateToDeath(raw)
+  if (!dt) return ''
   if (isNaN(dt.getTime())) return ''
   // YYYY-MM-DD
   const y = dt.getFullYear()
@@ -2017,7 +2060,7 @@ const bindDateField = (fieldId: string) => {
   if (fieldId in dateProxy) return
 
   Object.defineProperty(dateProxy, fieldId, {
-    get: () => toDate(getValue(fieldId)),
+    get: () => clampDateToDeath(toDate(getValue(fieldId))),
     set: (val: any) => setValue(fieldId, toIso(val)),
     enumerable: true,
     configurable: true,
@@ -2025,9 +2068,19 @@ const bindDateField = (fieldId: string) => {
 }
 
 watchEffect(() => {
-  for (const s of displaySpec.value.sections ?? []) {
-    for (const f of s.fields ?? []) {
-      if (f.type === 'date') bindDateField(f.id)
+  for (const fieldId of dateFieldIds.value) {
+    bindDateField(fieldId)
+  }
+})
+
+watchEffect(() => {
+  if (!patientDeathDate.value) return
+  for (const fieldId of dateFieldIds.value) {
+    const current = toDate(getValue(fieldId))
+    const clamped = clampDateToDeath(current)
+    if (!current || !clamped) continue
+    if (toIsoUnclamped(current) !== toIsoUnclamped(clamped)) {
+      setValue(fieldId, toIso(clamped))
     }
   }
 })
@@ -2077,6 +2130,7 @@ watchEffect(() => {
           v-model="dateProxy[field.id]"
           dateFormat="dd.mm.yy"
           :showIcon="false"
+          :maxDate="patientDeathDate || undefined"
           class="w-full"
           inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0 text-normal"
         />

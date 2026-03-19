@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { PropType } from 'vue'
+import { type PropType } from 'vue'
+
 const props = defineProps({
     show: { type: Boolean as PropType<boolean>, required: true },
     text: { type: String as PropType<string>, default: '' },
 })
+
 </script>
 
 <template>
@@ -37,7 +39,7 @@ const props = defineProps({
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 100;
     animation: fadeIn 0.3s ease-out;
     gap: 2rem;
 }

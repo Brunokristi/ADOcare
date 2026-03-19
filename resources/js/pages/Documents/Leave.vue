@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 
 interface DocumentData {
   patientName: string;
@@ -14,10 +14,15 @@ interface DocumentData {
   results: string;
   education: string;
   received: string;
+  userId: number;
+  companyId: number;
 }
 
 const route = useRoute();
 const loading = ref(false);
+const uiOverlayStore = useUiOverlayStore();
+const stampUrl = ref<string | null>(null)
+const signatureUrl = ref<string | null>(null)
 
 const documentData = ref<DocumentData>({
   patientName: '',
@@ -29,6 +34,8 @@ const documentData = ref<DocumentData>({
   results: '',
   education: '',
   received: '',
+  userId: 0,
+  companyId: 0,
 });
 
 const problemLabels: Record<string, string> = {
@@ -43,6 +50,10 @@ const problemLabels: Record<string, string> = {
 
 onMounted(async () => {
   await loadNursingDocument(String(route.params.documentId));
+});
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value);
 });
 
 async function loadNursingDocument(documentId: string) {
@@ -62,10 +73,42 @@ async function loadNursingDocument(documentId: string) {
       results: leave.results ?? '',
       education: leave.education ?? '',
       received: leave.received ?? '',
+      userId: leave.user_id ?? 0,
+      companyId: leave.company_id ?? 0,
+
     };
+
+    await Promise.all([
+      loadStampImage(),
+      loadSignatureImage(),
+    ]);
   } finally {
     loading.value = false;
   }
+}
+
+async function loadStampImage() {
+    const companyId = documentData.value.companyId
+    if (!companyId) { stampUrl.value = null; return }
+    try {
+        if (stampUrl.value) URL.revokeObjectURL(stampUrl.value)
+        const res = await api.get(`/v1/companies/${companyId}/stamp`, { responseType: 'blob' })
+        stampUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        stampUrl.value = null
+    }
+}
+
+async function loadSignatureImage() {
+    const representativeId = documentData.value.userId
+    if (!representativeId) { signatureUrl.value = null; return }
+    try {
+        if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
+        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' })
+        signatureUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        signatureUrl.value = null
+    }
 }
 
 function getProblemLabel(value: string): string {
@@ -84,8 +127,6 @@ function printPage() {
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar
@@ -198,10 +239,26 @@ function printPage() {
               </tbody>
             </table>
 
-            <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
+            <div class="mt-4 grid grid-cols-2 gap-12 text-sm">
               <div class="text-center">
+               <div class="signature-box">
+                  <img
+                    v-if="stampUrl"
+                    :src="stampUrl"
+                    alt="Pečiatka spoločnosti"
+                    class="stamp-image"
+                  />
+
+                  <img
+                    v-if="signatureUrl"
+                    :src="signatureUrl"
+                    alt="Podpis odborného zástupcu"
+                    class="signature-overlay"
+                  />
+                </div>
                 <div class="border-t-1 border-black mb-2"></div>
-                podpis zdravotného pracovníka
+                {{ documentData.userName }} <br>
+                <span class="text-xs">zdravotný pracovník</span>
               </div>
             </div>
           </div>
@@ -270,6 +327,32 @@ function printPage() {
   line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.signature-box {
+    position: relative;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stamp-image {
+    max-width: 150px;
+    max-height: 60px;
+    object-fit: contain;
+    opacity: 70%;
+}
+
+.signature-overlay {
+    position: absolute;
+    z-index: 2;
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    top: 50%;
+    left: 60%;
+    transform: translate(-40%, -55%);
 }
 
 @page {

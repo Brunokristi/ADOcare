@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class DocumentController extends Controller
 {
@@ -19,6 +20,7 @@ class DocumentController extends Controller
 
         $branchId = $request->input('branch_id');
         $branchId = is_numeric($branchId) ? (int) $branchId : null;
+        $period = $request->input('period');
 
         $query = Document::query()
             ->whereIn('type', ['cp', 'dzc'])
@@ -26,6 +28,10 @@ class DocumentController extends Controller
 
         if ($branchId) {
             $query->where('branch_id', $branchId);
+        }
+
+        if ($period) {
+            $query->where('period', Carbon::parse($period)->format('Y-m'));
         }
 
         $documents = $query

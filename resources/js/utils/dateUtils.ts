@@ -36,3 +36,12 @@ export function toApiDate(date: Date | null): string | null {
 
     return `${y}-${m}-${d}`;
 }
+
+export function toApiMonth(date: Date | null): string | null {
+    if (!date) return null;
+
+    const y = date.getFullYear();
+    const m = `${date.getMonth() + 1}`.padStart(2, '0');
+
+    return `${y}-${m}`;
+}

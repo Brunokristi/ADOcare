@@ -31,18 +31,24 @@ class AgreementDocumentService
             'mime_type' => 'application/json',
             'name' => 'dohoda_' . now()->format('d.m.Y'),
             'path' => 'agreements/' . now()->timestamp . '.json',
+            'branch_id' => $branch->id,
             'period' => date('Y-m', strtotime($data['date'])),
         ]);
 
         $representative = $branch->representative;
 
         $agreementData = [
+            'company_id' => $branch->company?->id,
+            'branch_id' => $branch->id,
+            'branch_representative_id' => $representative?->id,
             'company_address' => $branch->company?->address ?? '',
             'company_name' => $branch->company?->name ?? '',
             'company_city' => $branch->company?->city ?? '',
+            'company_stamp_path' => $branch->company?->stamp_path,
             'branch_city' => $branch->city ?? '',
-            'user_name' => $representative?->title . ' ' . $representative?->first_name . ' ' . $representative?->last_name,
-            'user_contact' => $representative?->phone ?? '',
+            'user_name' => trim(($representative?->title ?? '') . ' ' . ($representative?->first_name ?? '') . ' ' . ($representative?->last_name ?? '')),
+            'user_contact' => $representative?->phone_number ?? '',
+            'representative_signature_path' => $representative?->signature_path,
             'patient_name' => trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '') . ' ' . ($patient->title ?? '')),
             'patient_birth_number' => $patient->personal_number ?? '',
             'patient_address' => trim(($patient->address ?? '') . ', ' . ($patient->city ?? '') . ', ' . ($patient->postal_code ?? '')),

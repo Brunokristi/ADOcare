@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
-import DocumentAlert from '@/components/DocumentAlert.vue'
 import type { DataTableOptions } from '@/types/datatable'
-import router from '@/router'
 
 interface BatchType {
   code: string
@@ -17,6 +14,7 @@ interface BatchType {
 type Document = {
   id: number
   name: string
+  period?: string
   type?: string
   mime_type?: string
   path?: string
@@ -25,23 +23,16 @@ type Document = {
 
 const authStore = useAuthStore()
 
-const toast = useToast()
 
 const branchId = computed(() => authStore.currentBranch?.id)
 const batchType = ref<BatchType | null>(null)
-const dates = ref<Date | null>(null)
-const submitted = ref(false)
-const loading = ref(false)
-const tableRef = ref<any>(null)
+const now = new Date()
+const dates = ref<Date | null>(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 const documentIdCp = ref<number | null>(null)
 const dialogVisibleCp = ref(false)
 const documentIdDzc = ref<number | null>(null)
 const dialogVisibleDzc = ref(false)
 
-const batchTypes = ref<BatchType[]>([
-  { code: 'CP', name: 'Cestovný príkaz' },
-  { code: 'DZC', name: 'Denný záznam ciest' },
-])
 
 
 const getDocumentUrl = (doc: { id: number; type?: string }) => {
@@ -58,11 +49,6 @@ const openDocumentInNewTab = (doc: Document) => {
     return
   }
   window.open(url, '_blank', 'noopener,noreferrer')
-}
-
-const openGeneratedInThisTab = (type: 'cp' | 'dzc', id: number) => {
-  const url = type === 'cp' ? `/documents/cp/${id}` : `/documents/dzc/${id}`
-  router.push(url)
 }
 
 const formatDocumentType = (type?: string) => {
@@ -83,6 +69,19 @@ const formatDateWithTime = (dateStr?: string) => {
     second: '2-digit',
   })
   return `${datePart} ${timePart}`
+}
+
+const formatPeriod = (period?: string) => {
+  if (!period) return '-'
+
+  const [year, month] = period.split('-').map(Number)
+  if (!year || !month) return period
+
+  const date = new Date(year, month - 1, 1)
+  return date.toLocaleDateString('sk-SK', {
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
 const formatLocalDate = (date: Date) => {
@@ -129,13 +128,6 @@ async function checkDocumentExists() {
   }
 }
 
-function closeDialogCp() {
-  dialogVisibleCp.value = false
-}
-
-function closeDialogDzc() {
-  dialogVisibleDzc.value = false
-}
 
 const options = computed<DataTableOptions<Document>>(() => ({
   rowKey: 'id',
@@ -143,16 +135,19 @@ const options = computed<DataTableOptions<Document>>(() => ({
   extraParams: branchId.value
     ? { branch_id: branchId.value }
     : {},
+  dateRangeFilter: {
+    mode: 'single',
+    param: 'period',
+    placeholder: 'Obdobie',
+    view: 'month',
+    dateFormat: 'mm/yy',
+    value: dates.value,
+  },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
   selectable: true,
 
   columns: [
-    {
-      field: 'name',
-      header: 'Názov',
-      sortable: true,
-    },
     {
       field: 'type',
       header: 'Typ',
@@ -160,8 +155,15 @@ const options = computed<DataTableOptions<Document>>(() => ({
       render: (v: string | undefined) => formatDocumentType(v),
     },
     {
-      field: 'created_at',
-      header: 'Dátum a čas vytvorenia',
+      field: 'period',
+      header: 'Obdobie',
+      sortable: true,
+      render: (v: string | undefined) => formatPeriod(v),
+      width: '8rem',
+    },
+    {
+      field: 'updated_at',
+      header: 'Naposledy upravené',
       sortable: true,
       render: (v: string | undefined) => formatDateWithTime(v),
     },
@@ -206,93 +208,6 @@ const options = computed<DataTableOptions<Document>>(() => ({
   ],
 }))
 
-async function onSubmit() {
-  submitted.value = true
-
-  const hasPeriod = !!dates.value
-  if (!batchType.value || !hasPeriod) return
-  if (!dates.value) return
-
-  const monthDate = dates.value as Date
-  const year = monthDate.getFullYear()
-  const month = monthDate.getMonth()
-  const startDate = new Date(year, month, 1)
-  const endDate = new Date(year, month + 1, 0)
-
-  loading.value = true
-
-  if (batchType.value.code === 'CP') {
-    try {
-      const res = await api.post('/v1/cps', {
-        start: formatLocalDate(startDate),
-        end: formatLocalDate(endDate),
-        branch_id: authStore.currentBranch?.id,
-      })
-
-      const documentId = res.data?.data?.document_id
-      if (!documentId) throw new Error('Missing document_id from API response')
-
-      toast.add({
-        severity: 'success',
-        summary: 'Úspech',
-        detail: 'Cestovný príkaz bol úspešne vytvorený',
-        life: 3000,
-      })
-
-      if (tableRef.value?.remote?.loadPage) {
-        await tableRef.value.remote.loadPage(1)
-      }
-
-      // ✅ generated -> same tab
-      openGeneratedInThisTab('cp', documentId)
-    } catch (error) {
-      toast.add({
-        severity: 'error',
-        summary: 'Chyba',
-        detail: 'Nepodarilo sa vytvoriť cestovný príkaz',
-        life: 3000,
-      })
-      console.error('Navigation failed', error)
-    } finally {
-      loading.value = false
-    }
-  } else if (batchType.value.code === 'DZC') {
-    try {
-      const res = await api.post('/v1/dzcs', {
-        start: formatLocalDate(startDate),
-        end: formatLocalDate(endDate),
-        branch_id: authStore.currentBranch?.id,
-      })
-
-      const documentId = res.data?.data?.document_id
-      if (!documentId) throw new Error('Missing document_id from API response')
-
-      toast.add({
-        severity: 'success',
-        summary: 'Úspech',
-        detail: 'Denný záznam ciest bol úspešne vytvorený',
-        life: 3000,
-      })
-
-      if (tableRef.value?.remote?.loadPage) {
-        await tableRef.value.remote.loadPage(1)
-      }
-
-      // ✅ generated -> same tab
-      openGeneratedInThisTab('dzc', documentId)
-    } catch (error) {
-      toast.add({
-        severity: 'error',
-        summary: 'Chyba',
-        detail: 'Nepodarilo sa vytvoriť denný záznam ciest',
-        life: 3000,
-      })
-      console.error('Navigation failed', error)
-    } finally {
-      loading.value = false
-    }
-  }
-}
 
 watch([() => batchType.value, () => dates.value], () => {
   checkDocumentExists()
@@ -301,46 +216,6 @@ watch([() => batchType.value, () => dates.value], () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
-      <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-        <div class="grid grid-cols-12 gap-4">
-          <!-- Typ -->
-          <div class="col-span-12 md:col-span-6">
-            <label class="block text-normal mb-1">Typ dokumentu</label>
-            <Select v-model="batchType" :options="batchTypes" optionLabel="name" fluid
-              class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" />
-            <small v-if="submitted && !batchType" class="text-danger">
-              Typ cestovného je povinný.
-            </small>
-          </div>
-
-          <!-- Obdobie -->
-          <div class="col-span-12 md:col-span-6">
-            <label class="block text-normal mb-1">Obdobie</label>
-            <DatePicker v-model="dates" view="month" dateFormat="MM yy" :manualInput="false"
-              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" fluid />
-            <small v-if="submitted && !dates" class="text-danger"> Obdobie je povinné. </small>
-          </div>
-        </div>
-      </section>
-
-      <DocumentAlert v-if="batchType?.code === 'CP'" :visible="dialogVisibleCp" :documentId="documentIdCp"
-        document-url="/documents/cp/{id}" @update:visible="dialogVisibleCp = $event" @close="closeDialogCp"
-        @deleted="checkDocumentExists" />
-
-      <DocumentAlert v-if="batchType?.code === 'DZC'" :visible="dialogVisibleDzc" :documentId="documentIdDzc"
-        document-url="/documents/dzc/{id}" @update:visible="dialogVisibleDzc = $event" @close="closeDialogDzc"
-        @deleted="checkDocumentExists" />
-
-      <div class="flex justify-end">
-        <Button type="submit" :disabled="loading"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
-          Vygenerovať
-          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
-        </Button>
-      </div>
-    </form>
-
     <section>
       <UniversalDataTable ref="tableRef" :options="options">
         <template #actions="{ row }">

@@ -36,6 +36,7 @@ class PatientStoreRequest extends FormRequest
             'longitude' => 'nullable|numeric',
 
             'reference_date' => 'nullable|date',
+            'death_date' => 'nullable|date',
         ];
     }
 }

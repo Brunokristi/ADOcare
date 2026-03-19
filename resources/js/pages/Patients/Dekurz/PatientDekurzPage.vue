@@ -28,6 +28,7 @@ patientStore.loadFromStorage?.()
 
 const patientId = computed(() => patientStore.current?.id ?? 0)
 const patientDekurzNumber = computed(() => patientStore.current?.dekurz_number ?? '')
+const patientDeathDate = computed(() => patientStore.current?.death_date ?? null)
 const dekurzMonth = ref<Date | null>((() => {
   const d = new Date()
   d.setMonth(d.getMonth() - 1)
@@ -46,6 +47,9 @@ const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
 const timelineCalculated = ref(false)
 const checkingTimeline = ref(false)
 const calculationInProgress = ref(false)
+const suspendSessionDatesPersist = ref(false)
+
+const DEKURZ_DATES_SESSION_KEY_PREFIX = 'dekurz:selected-dates:patient:'
 
 // Document existence check
 const documentExists = ref(false)
@@ -73,6 +77,15 @@ const lockedMonth = computed(() => {
 
 const monthStart = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month, 1))
 const monthEnd = computed(() => new Date(lockedMonth.value.year, lockedMonth.value.month + 1, 0))
+const deathDate = computed(() => {
+  const value = patientDeathDate.value
+  if (!value || typeof value !== 'string') return null
+  return parseIsoDate(value.slice(0, 10))
+})
+const maxSectionDate = computed(() => {
+  if (!deathDate.value) return monthEnd.value
+  return deathDate.value < monthEnd.value ? deathDate.value : monthEnd.value
+})
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -86,6 +99,71 @@ function isoDate(d: Date) {
   return `${yyyy}-${mm}-${dd}`
 }
 
+function parseIsoDate(value: string) {
+  if (!value) return null
+  const d = new Date(`${value}T00:00:00`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function getDatesSessionKey(patientIdValue: number) {
+  return `${DEKURZ_DATES_SESSION_KEY_PREFIX}${patientIdValue}`
+}
+
+function clearAllSectionDates() {
+  for (const s of sections.value) {
+    s.dates = []
+  }
+}
+
+function persistSelectedDatesForSession() {
+  if (!patientId.value) return
+
+  const payload = {
+    month: dekurzMonth.value ? isoDate(new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)) : null,
+    sections: sections.value.map((s) => ({
+      text: s.text,
+      dates: (s.dates || []).map(isoDate),
+    })),
+    branch_id: auth.currentBranch?.id ?? null,
+  }
+
+  sessionStorage.setItem(getDatesSessionKey(patientId.value), JSON.stringify(payload))
+}
+
+function restoreSelectedDatesForSession(patientIdValue: number): boolean {
+  const raw = sessionStorage.getItem(getDatesSessionKey(patientIdValue))
+  if (!raw) return false
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      month?: string | null
+      sections?: { text: string; dates: string[] }[]
+    }
+
+    if (parsed.month) {
+      const restoredMonth = parseIsoDate(parsed.month)
+      if (restoredMonth) {
+        dekurzMonth.value = new Date(restoredMonth.getFullYear(), restoredMonth.getMonth(), 1)
+      }
+    }
+
+    const savedSections = Array.isArray(parsed.sections) ? parsed.sections : []
+    if (!savedSections.length) return false
+
+    // Rebuild sections with saved text and saved dates (dates applied after allowedDays are loaded)
+    sections.value = savedSections.map((s) => ({
+      id: makeId(),
+      text: s.text ?? '',
+      dates: (s.dates || []).map(parseIsoDate).filter((d): d is Date => !!d),
+    }))
+
+    return true
+  } catch (err) {
+    console.error('Failed to restore dekurz selected dates from session', err)
+    return false
+  }
+}
+
 function toLocalYMD(d: Date) {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -93,11 +171,22 @@ function toLocalYMD(d: Date) {
   return `${y}-${m}-${day}`
 }
 
+function isAfterDeathDate(date: Date) {
+  return !!deathDate.value && toLocalYMD(date) > toLocalYMD(deathDate.value)
+}
+
 async function checkDocumentExists() {
   if (!patientId.value || !dekurzMonth.value) return
 
+  const selectedMonthStart = new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)
+  if (isAfterDeathDate(selectedMonthStart)) {
+    documentExists.value = false
+    dialogVisible.value = false
+    return
+  }
+
   try {
-    const monthStart = new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1)
+    const monthStart = selectedMonthStart
     const res = await api.post('/v1/documents/check-exists', {
       type: 'dekurz',
       date: toLocalYMD(monthStart),
@@ -117,6 +206,7 @@ async function checkDocumentExists() {
 function isAllowedDate(date: Date) {
   const { year, month } = lockedMonth.value
   if (date.getFullYear() !== year || date.getMonth() !== month) return false
+  if (isAfterDeathDate(date)) return false
   return allowedDaysInMonth.value.includes(date.getDate())
 }
 
@@ -168,6 +258,9 @@ function validateForm() {
 
   if (!patientId.value) e.patient = 'Pacient nie je vybratý.'
   if (!dekurzMonth.value) e.dekurzMonth = 'Mesiac je povinný.'
+  if (dekurzMonth.value && isAfterDeathDate(new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1))) {
+    e.dekurzMonth = 'Mesiac dekurzu nemôže byť po dátume úmrtia pacienta.'
+  }
   if (!dekurzNumber.value.trim()) e.dekurzNumber = 'Číslo dekurzu je povinné.'
 
   if (!sections.value.length) {
@@ -175,7 +268,11 @@ function validateForm() {
   } else {
     sections.value.forEach((s, idx) => {
       if (!s.text.trim()) e[`sectionText-${s.id}`] = `Text v sekcii ${idx + 1} je povinný.`
-      if (!s.dates.length) e[`sectionDates-${s.id}`] = `Vyberte aspoň jeden deň v sekcii ${idx + 1}.`
+      if (!s.dates.length) {
+        e[`sectionDates-${s.id}`] = `Vyberte aspoň jeden deň v sekcii ${idx + 1}.`
+      } else if (s.dates.some(isAfterDeathDate)) {
+        e[`sectionDates-${s.id}`] = `Dátum v sekcii ${idx + 1} nemôže byť po dátume úmrtia pacienta.`
+      }
     })
   }
 
@@ -183,7 +280,7 @@ function validateForm() {
   return Object.keys(e).length === 0
 }
 
-async function fetchAllowedDays() {
+async function fetchAllowedDays(keepDates = false) {
   if (!patientId.value || !dekurzMonth.value) {
     allowedDaysInMonth.value = []
     return
@@ -204,11 +301,14 @@ async function fetchAllowedDays() {
 
     allowedDaysInMonth.value = Array.from(new Set(days)).sort((a, b) => a - b)
 
-    const { year, month } = lockedMonth.value
-    for (const s of sections.value) {
-      s.dates = (s.dates || []).filter(
-        dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt),
-      )
+    if (!keepDates) {
+      // Only strip dates when NOT restoring from session
+      const { year, month } = lockedMonth.value
+      for (const s of sections.value) {
+        s.dates = (s.dates || []).filter(
+          dt => dt.getFullYear() === year && dt.getMonth() === month && isAllowedDate(dt),
+        )
+      }
     }
   } catch (err) {
     console.error('Failed to fetch allowed dates:', err)
@@ -267,6 +367,13 @@ async function generateDekurz() {
     const res = await api.post('/v1/dekurz', payload)
 
     toast.add({ severity: 'success', summary: 'Úspešne', detail: 'Dekurz bol vygenerovaný.', life: 3000 })
+
+    // Persist the incremented dekurz_number so the next form load shows the correct number
+    const nextNumber = res.data?.next_dekurz_number
+    if (nextNumber && patientStore.current) {
+      patientStore.current.dekurz_number = nextNumber
+      localStorage.setItem('selected-patient', JSON.stringify(patientStore.current))
+    }
 
     if (res.data?.document_id) {
       router.push({ name: 'documents-dekurz', params: { documentId: res.data.document_id } })
@@ -474,24 +581,27 @@ async function pollCalculationStatus(dateObj: Date) {
 watch(
   patientDekurzNumber,
   val => {
-    if (!dekurzNumber.value.trim() && val) dekurzNumber.value = val
+    if (val) dekurzNumber.value = val
   },
   { immediate: true },
 )
 
+// Fires only on user-driven changes after init (no immediate).
+// The patientId watcher below is fully responsible for the initial load.
 watch(
   [() => dekurzMonth.value, () => patientId.value],
   async () => {
-    await fetchAllowedDays()
+    if (suspendSessionDatesPersist.value) return
+    await fetchAllowedDays(false)
     await checkTimelineCalculated()
     await checkDocumentExists()
   },
-  { immediate: true },
 )
 
 watch(
   () => dekurzMonth.value,
   () => {
+    if (suspendSessionDatesPersist.value) return
     const { year, month } = lockedMonth.value
     for (const s of sections.value) {
       s.dates = (s.dates || []).filter(d => d.getFullYear() === year && d.getMonth() === month && isAllowedDate(d))
@@ -503,10 +613,49 @@ watch(
   () => patientId.value,
   async (val) => {
     if (!val) return
-    await fetchMacros()
-    await loadLastDekurzDraft()
+    suspendSessionDatesPersist.value = true
+    try {
+      draftLoaded.value = false
+      await fetchMacros()
+
+      // Try to restore from session first.
+      // restoreSelectedDatesForSession may change dekurzMonth — the dekurzMonth
+      // watcher is guarded by suspendSessionDatesPersist so it won't wipe dates.
+      const restored = restoreSelectedDatesForSession(val)
+
+      if (restored) {
+        // keepDates=true: load allowed days without touching section dates
+        await fetchAllowedDays(true)
+      } else {
+        // No session — load draft texts (empty dates) then fetch allowed days
+        await loadLastDekurzDraft()
+        clearAllSectionDates()
+        await fetchAllowedDays(false)
+      }
+
+      // These were previously triggered by the [dekurzMonth, patientId] watcher
+      // (immediate), which is now non-immediate to avoid racing with this watcher.
+      await checkTimelineCalculated()
+      await checkDocumentExists()
+    } finally {
+      suspendSessionDatesPersist.value = false
+      persistSelectedDatesForSession()
+    }
   },
   { immediate: true },
+)
+
+watch(
+  [
+    () => patientId.value,
+    () => dekurzMonth.value,
+    () => sections.value.map((s) => (s.dates || []).map(isoDate).join(',')),
+  ],
+  () => {
+    if (suspendSessionDatesPersist.value) return
+    persistSelectedDatesForSession()
+  },
+  { deep: true },
 )
 
 
@@ -563,6 +712,7 @@ watch(
             <label class="block text-normal mb-2">Mesiac</label>
             <DatePicker v-model="dekurzMonth" view="month" dateFormat="M yy" :showIcon="false" class="w-full"
               inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
+              :maxDate="deathDate || undefined"
               :invalid="submitted && !!errors.dekurzMonth" />
             <small v-if="submitted && errors.dekurzMonth" class="text-danger">{{ errors.dekurzMonth }}</small>
           </div>
@@ -677,7 +827,8 @@ watch(
         <div class="w-full">
           <label class="block text-normal mb-2">Dátumy</label>
 
-          <DatePicker v-model="section.dates" selectionMode="multiple" :minDate="monthStart" :maxDate="monthEnd"
+          <DatePicker v-model="section.dates" selectionMode="multiple" :minDate="monthStart"
+            :maxDate="maxSectionDate"
             :disabledDates="disabledDates" :showOtherMonths="false" :showButtonBar="false" :showIcon="false"
             :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
             dateFormat="dd.mm.yy" class="w-full"

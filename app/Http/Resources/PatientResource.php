@@ -35,7 +35,9 @@ class PatientResource extends JsonResource
             'longitude' => $this->longitude,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'deleted_at' => $this->deleted_at,
             'reference_date' => $this->reference_date,
+            'death_date' => $this->death_date,
             'dekurz_number' => $this->dekurz_number,
 
             // relations

@@ -11,6 +11,7 @@ import type { DataTableOptions } from '@/types/datatable'
 type Document = {
   id: number
   name: string
+  period?: string
   type?: string
   subtype?: string
   mime_type?: string
@@ -93,17 +94,37 @@ const formatDateWithTime = (dateStr?: string) => {
 }
 
 const formatAmount = (amount?: number) => {
-  if (!amount) return '-'
-  return amount.toLocaleString('sk-SK', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }) + ' €'
+    if (amount === null || amount === undefined) return '-'
+    return amount.toLocaleString('sk-SK', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }) + ' €'
+}
+
+const formatPeriod = (period?: string) => {
+  if (!period) return '-'
+
+  const [year, month] = period.split('-').map(Number)
+  if (!year || !month) return period
+
+  const date = new Date(year, month - 1, 1)
+  return date.toLocaleDateString('sk-SK', {
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
 const options = computed<DataTableOptions<Document>>(() => ({
   rowKey: 'id',
   endpointUrl: 'v1/batch-documents/company',
   extraParams: {},
+  dateRangeFilter: {
+    mode: 'single',
+    param: 'period',
+    placeholder: 'Obdobie',
+    view: 'month',
+    dateFormat: 'mm/yy',
+  },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
   selectable: true,
@@ -122,6 +143,13 @@ const options = computed<DataTableOptions<Document>>(() => ({
       render: (v: string | undefined) => v || '-',
     },
     {
+      field: 'period',
+      header: 'Obdobie',
+      sortable: true,
+      render: (v: string | undefined) => formatPeriod(v),
+      width: '8rem',
+    },
+    {
       field: 'amount',
       header: 'Suma',
       sortable: false,
@@ -138,8 +166,8 @@ const options = computed<DataTableOptions<Document>>(() => ({
       }
     },
     {
-      field: 'created_at',
-      header: 'Dátum a čas vytvorenia',
+      field: 'updated_at',
+      header: 'Naposledy upravené',
       sortable: true,
       render: (v: string | undefined) => formatDateWithTime(v),
     },

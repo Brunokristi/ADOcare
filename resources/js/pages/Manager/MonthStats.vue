@@ -5,7 +5,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Toolbar from 'primevue/toolbar'
 import api from '@/services/api'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
 type InsuranceCompany = { id: number; name: string }
 
@@ -55,7 +55,6 @@ const userTotalsAggregatedData = ref<any[]>([])
 const previousUserTotalsAggregatedData = ref<any[]>([])
 const userTotalsData = ref<UserTotalsRow[]>([])
 const insuranceCompanyTotalsData = ref<any[]>([])
-const initialLoading = ref(true)
 const loading = ref(false)
 const doctorLoading = ref(false)
 const branchLoading = ref(false)
@@ -63,6 +62,7 @@ const branchTotalsLoading = ref(false)
 const userTotalsLoading = ref(false)
 const userTotalsAggregatedLoading = ref(false)
 const insuranceCompanyTotalsLoading = ref(false)
+const uiOverlayStore = useUiOverlayStore()
 
 // 3-month trend data
 const threeMonthTrendData = ref<any[]>([])
@@ -192,7 +192,8 @@ const toMonthParam = (d: Date) => {
 }
 
 async function loadAllStatistics() {
-  initialLoading.value = true
+  uiOverlayStore.setContentLoading(true)
+
   try {
     await Promise.all([
       loadStatistics(),
@@ -205,10 +206,9 @@ async function loadAllStatistics() {
       load3MonthTrends(),
     ])
   } finally {
-    initialLoading.value = false
+    uiOverlayStore.setContentLoading(false)
   }
 }
-
 async function loadStatistics() {
   if (!dates.value) return
 
@@ -512,8 +512,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <LoadingOverlay :show="initialLoading" text="" />
-
   <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
     <div class="grid grid-cols-12 gap-4">
       <div class="col-span-12">

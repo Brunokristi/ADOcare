@@ -15,12 +15,13 @@ class LeaveDocumentController extends Controller
     {
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'date' => 'required|string',
+            'date' => 'required|date',
             'problems' => 'nullable|array',
             'other_findings' => 'nullable|string',
             'results' => 'nullable|string',
             'education' => 'nullable|string',
             'received' => 'nullable|string',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $document = Document::create([
@@ -31,6 +32,7 @@ class LeaveDocumentController extends Controller
             'name' => 'prepustacia_sprava_' . now()->format('d.m.Y'),
             'path' => 'leave/' . now()->timestamp . '.json',
             'period' => date('Y-m', strtotime($validated['date'])),
+            'branch_id' => $validated['branch_id'] ?? null,
         ]);
 
         $patient = Patient::findOrFail($validated['patient_id']);
@@ -42,6 +44,8 @@ class LeaveDocumentController extends Controller
 
         $nursingData = [
             'user_name' => $userName,
+            'company_id' => $user->company_id,
+            'user_id' => $user->id,
             'patient_name' => $patientName,
             'patient_birth_number' => $patientBirthNumber,
             'date' => $validated['date'],
@@ -112,18 +116,18 @@ class LeaveDocumentController extends Controller
         foreach ($files as $file) {
             $content = json_decode(Storage::disk('local')->get($file), true);
             if (($content['document_id'] ?? null) === $document->id) {
-                $nursingFile = $content;
+                $leaveFile = $content;
                 break;
             }
         }
 
-        if (!$nursingFile) {
-            return response()->json(['message' => 'Nursing document data not found'], 404);
+        if (!$leaveFile) {
+            return response()->json(['message' => 'Leave document data not found'], 404);
         }
 
         return response()->json([
             'document_id' => $document->id,
-            'nursing_data' => $nursingFile,
+            'leave_data' => $leaveFile,
         ]);
     }
 }

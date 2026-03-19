@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/services/api';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
+
+const stampUrl = ref<string | null>(null)
+const signatureUrl = ref<string | null>(null)
 
 type PatientCategory = 'H' | 'I' | 'F';
 type ExpectedDuration = 'do1mesiac' | 'do3mesiacov' | 'do6mesiacov' | 'nad6mesiacov';
 
 interface DocumentData {
+  companyId: number | null;
+  representativeId: number | null;
+  representativeName: string;
   facilityName: string;
   facilityAddress: string;
 
@@ -30,12 +36,17 @@ interface DocumentData {
 
   doctorName: string;
   documentDate: string;
+  userName: string;
 }
 
 const route = useRoute();
 const loading = ref(false);
+const uiOverlayStore = useUiOverlayStore();
 
 const documentData = ref<DocumentData>({
+  companyId: null,
+  representativeId: null,
+  representativeName: '',
   facilityName: '',
   facilityAddress: '',
   patientName: '',
@@ -52,49 +63,89 @@ const documentData = ref<DocumentData>({
   expectedDuration: undefined,
   doctorName: '',
   documentDate: '',
+  userName: '',
 });
+
+onBeforeUnmount(() => {
+    if (stampUrl.value) URL.revokeObjectURL(stampUrl.value)
+    if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
+})
 
 onMounted(async () => {
   await loadProposal(String(route.params.documentId));
 });
 
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value);
+});
+
 async function loadProposal(documentId: string) {
-  loading.value = true;
+    loading.value = true
 
-  try {
-    const res = await api.get(`/v1/proposals/${documentId}`);
-    const proposal = res.data.data?.proposal_data ?? {};
+    try {
+        const res = await api.get(`/v1/proposals/${documentId}`)
+        const proposal = res.data.data?.proposal_data ?? {}
 
-    // Handle both single string and array formats for diagnoses
-    const doctorDiagnoses = Array.isArray(proposal.diagnosis)
-      ? proposal.diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
-      : (proposal.diagnosis ? [proposal.diagnosis] : []);
+        const doctorDiagnoses = Array.isArray(proposal.diagnosis)
+            ? proposal.diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
+            : (proposal.diagnosis ? [proposal.diagnosis] : [])
 
-    const nurseDiagnoses = Array.isArray(proposal.nurse_diagnosis)
-      ? proposal.nurse_diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
-      : (proposal.nurse_diagnosis ? [proposal.nurse_diagnosis] : []);
+        const nurseDiagnoses = Array.isArray(proposal.nurse_diagnosis)
+            ? proposal.nurse_diagnosis.map((d: any) => (typeof d === 'string' ? d : d.description ?? ''))
+            : (proposal.nurse_diagnosis ? [proposal.nurse_diagnosis] : [])
 
-    documentData.value = {
-      facilityName: proposal.company_name ?? '',
-      facilityAddress: proposal.company_address ?? '',
-      patientName: proposal.patient_name ?? '',
-      patientIdNumber: proposal.patient_birth_number ?? '',
-      patientHealthCode: proposal.insurance_code ?? '',
-      patientCurrentAddress: proposal.patient_address ?? '',
-      patientPreviousAddress: proposal.patient_previous_address ?? '',
-      prescriptionNote: proposal.epicrisis ?? '',
-      doctorDiagnoses,
-      nurseDiagnoses,
-      patientCategory: Array.isArray(proposal.mobility) ? proposal.mobility[0] : undefined,
-      carePlan: proposal.care_plan ?? '',
-      treatmentOutcomes: formatProcedures(proposal.procedures ?? []),
-      expectedDuration: mapExpectedDuration(proposal.expected_duration),
-      doctorName: proposal.doctor_name ?? '',
-      documentDate: proposal.date ?? '',
-    };
-  } finally {
-    loading.value = false;
-  }
+        documentData.value = {
+            companyId: proposal.company_id ?? null,
+            representativeId: proposal.representative_id ?? null,
+            representativeName: proposal.representative_name ?? '',
+            facilityName: proposal.company_name ?? '',
+            facilityAddress: proposal.company_address ?? '',
+            patientName: proposal.patient_name ?? '',
+            patientIdNumber: proposal.patient_birth_number ?? '',
+            patientHealthCode: proposal.insurance_code ?? '',
+            patientCurrentAddress: proposal.patient_address ?? '',
+            patientPreviousAddress: proposal.patient_previous_address ?? '',
+            prescriptionNote: proposal.epicrisis ?? '',
+            doctorDiagnoses,
+            nurseDiagnoses,
+            patientCategory: Array.isArray(proposal.mobility) ? proposal.mobility[0] : undefined,
+            carePlan: proposal.care_plan ?? '',
+            treatmentOutcomes: formatProcedures(proposal.procedures ?? []),
+            expectedDuration: mapExpectedDuration(proposal.expected_duration),
+            doctorName: proposal.doctor_name ?? '',
+            documentDate: proposal.date ?? '',
+            userName: proposal.user_name ?? '',
+        }
+
+        await loadStampImage()
+        await loadSignatureImage()
+    } finally {
+        loading.value = false
+    }
+}
+
+async function loadStampImage() {
+    const companyId = documentData.value.companyId
+    if (!companyId) { stampUrl.value = null; return }
+    try {
+        if (stampUrl.value) URL.revokeObjectURL(stampUrl.value)
+        const res = await api.get(`/v1/companies/${companyId}/stamp`, { responseType: 'blob' })
+        stampUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        stampUrl.value = null
+    }
+}
+
+async function loadSignatureImage() {
+    const representativeId = documentData.value.representativeId
+    if (!representativeId) { signatureUrl.value = null; return }
+    try {
+        if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
+        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' })
+        signatureUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        signatureUrl.value = null
+    }
 }
 
 function mapExpectedDuration(v?: string): ExpectedDuration | undefined {
@@ -231,8 +282,6 @@ async function printPage() {
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
-
   <div class="flex flex-col gap-4">
     <!-- Toolbar -->
     <Toolbar
@@ -422,19 +471,39 @@ async function printPage() {
               </tbody>
             </table>
 
-            <div class="mt-12 grid grid-cols-2 gap-12 text-sm">
+            <div class="mt-4 grid grid-cols-2 gap-12 text-sm">
               <div class="text-center">
+                <div class="signature-box">
+                  
+                </div>
                 <div class="border-t-1 border-black mb-2"></div>
                 podpis lekára a pečiatka
               </div>
+
               <div class="text-center">
+               <div class="signature-box">
+                  <img
+                    v-if="stampUrl"
+                    :src="stampUrl"
+                    alt="Pečiatka spoločnosti"
+                    class="stamp-image"
+                  />
+
+                  <img
+                    v-if="signatureUrl"
+                    :src="signatureUrl"
+                    alt="Podpis odborného zástupcu"
+                    class="signature-overlay"
+                  />
+                </div>
                 <div class="border-t-1 border-black mb-2"></div>
-                podpis odborného zástupcu poskytovateľa ošetrovateľskej starostlivosti a pečiatka
+                {{ documentData.representativeName }} <br>
+                <span class="text-xs">odborný zástupca poskytovateľa ošetrovateľskej starostlivosti</span>
               </div>
             </div>
           </div>
+          <!-- /sheet-grid -->
         </div>
-        <!-- /sheet-grid -->
       </div>
     </div>
   </div>
@@ -511,6 +580,32 @@ async function printPage() {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.signature-box {
+    position: relative;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stamp-image {
+    max-width: 150px;
+    max-height: 60px;
+    object-fit: contain;
+    opacity: 70%;
+}
+
+.signature-overlay {
+    position: absolute;
+    z-index: 2;
+    max-width: 200px;
+    max-height: 100px;
+    object-fit: contain;
+    top: 50%;
+    left: 60%;
+    transform: translate(-40%, -55%);
 }
 
 @page {

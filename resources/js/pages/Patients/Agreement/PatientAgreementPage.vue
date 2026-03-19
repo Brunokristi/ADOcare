@@ -21,6 +21,7 @@ patientStore.loadFromStorage();
 const { current: currentPatient } = storeToRefs(patientStore);
 
 const patientId = computed(() => currentPatient.value?.id ?? null);
+const patientDeathDate = computed(() => currentPatient.value?.death_date ?? null);
 
 // Document existence check
 const documentExists = ref(false);
@@ -29,11 +30,39 @@ const dialogVisible = ref(false);
 const date = ref<Date>(new Date());
 const submitted = ref(false);
 
+const toLocalYMD = (d: Date) => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const deathDateYmd = computed(() => {
+  const value = patientDeathDate.value
+  if (!value) return null
+  if (typeof value !== 'string') return null
+  return value.slice(0, 10)
+})
+
+const maxSelectableDate = computed<Date | undefined>(() => {
+  if (!deathDateYmd.value) return undefined
+  const d = new Date(`${deathDateYmd.value}T00:00:00`)
+  return isNaN(d.getTime()) ? undefined : new Date(d.getFullYear(), d.getMonth(), d.getDate())
+})
+
 // Validation
 const isDateValid = computed(() => !!date.value);
+const isDateAfterDeath = computed(() => {
+  if (!date.value || !deathDateYmd.value) return false
+  return toLocalYMD(date.value) > deathDateYmd.value
+})
 
 async function checkDocumentExists() {
-  if (!patientId.value || !date.value) return;
+  if (!patientId.value || !date.value || isDateAfterDeath.value) {
+    documentExists.value = false;
+    dialogVisible.value = false;
+    return;
+  }
 
   try {
     const res = await api.post('/v1/documents/check-exists', {
@@ -61,14 +90,7 @@ function closeDialog() {
 }
 
 function validateForm(): boolean {
-  return isDateValid.value && !!patientId.value;
-}
-
-const toLocalYMD = (d: Date) => {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return isDateValid.value && !!patientId.value && !isDateAfterDeath.value;
 }
 
 async function generateDocument() {
@@ -77,8 +99,8 @@ async function generateDocument() {
   if (!validateForm()) {
     toast.add({
       severity: 'error',
-      summary: 'Chyba validácie',
-      detail: 'Vyplňte všetky povinné polia.',
+      summary: 'Chyba',
+      detail: 'Dokument sa nepodarilo vytvoriť. Skontrolujte zadané údaje.',
       life: 3000,
     });
     return;
@@ -90,6 +112,16 @@ async function generateDocument() {
       summary: 'Chýbajúci pacient',
       detail: 'Najprv vyberte pacienta.',
       life: 3000,
+    });
+    return;
+  }
+
+  if (isDateAfterDeath.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Neplatný dátum',
+      detail: 'Dátum dokumentu nemôže byť po dátume úmrtia pacienta.',
+      life: 4000,
     });
     return;
   }
@@ -158,9 +190,13 @@ onMounted(() => {
             Dátum
           </label>
           <DatePicker v-model="date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full"
+            :maxDate="maxSelectableDate"
             inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0" />
           <small v-if="submitted && !isDateValid" class="text-danger">
             Dátum je povinný.
+          </small>
+          <small v-if="submitted && isDateAfterDeath" class="text-danger">
+            Dátum dokumentu nemôže byť po dátume úmrtia pacienta.
           </small>
         </div>
       </section>

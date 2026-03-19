@@ -46,9 +46,15 @@ export function useTableActions(
          * Whether the table starts in "deleted" mode.  Defaults to `false`.
          */
         defaultShowDeleted?: boolean
+        /**
+         * Query parameter name toggled for "deleted mode".
+         * Defaults to `only_deleted` for backward compatibility.
+         */
+        toggleParam?: string
     },
 ) {
     const showDeleted = ref(opts?.defaultShowDeleted ?? false)
+    const toggleParam = opts?.toggleParam ?? 'only_deleted'
 
 
     // toggle action is always available, caller can choose to include it or
@@ -61,12 +67,15 @@ export function useTableActions(
 
     const toggleAction: ActionDef = {
         key: 'toggleDeleted',
-        icon: computed(() => (showDeleted.value ? 'bi bi-eye' : 'bi bi-eye-slash')),
-        class: computed(() => (showDeleted.value ? 'bg-alert!' : 'bg-warning!')),
+        icon: computed(() => (showDeleted.value ? 'bi bi-person-check' : 'bi bi-person-dash')),
+        class: computed(() => (showDeleted.value ? 'bg-lightgrey!' : 'bg-lightgrey!')),
         tooltip: computed(() => (showDeleted.value ? 'Zobraziť aktívnych' : 'Zobraziť zmazaných')),
         handler: async ({ remote }) => {
             if (remote) {
-                remote.setExtraParam('only_deleted', !showDeleted.value)
+                remote.setExtraParam(toggleParam, !showDeleted.value)
+                if (toggleParam !== 'only_deleted') {
+                    remote.setExtraParam('only_deleted', undefined)
+                }
                 await remote.reload()
             }
             showDeleted.value = !showDeleted.value

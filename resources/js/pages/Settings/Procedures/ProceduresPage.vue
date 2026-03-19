@@ -16,8 +16,8 @@ const actionRemote = ref<any | null>(null)
 async function openEdit(row: Procedure) {
     try {
         const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Výkon', style: { width: '760px' }, closable: true })
-        if (res?.changed && actionRemote.value?.loadPage) {
-            await actionRemote.value.loadPage(1)
+        if (res?.changed && actionRemote.value?.reload) {
+            await actionRemote.value.reload()
         }
     } catch (e) {
         console.error('Failed to open procedure modal', e)
@@ -39,7 +39,17 @@ onMounted(async () => {
                     const existing = row.insurance_companies_prices_minimal ?? []
                     const found: any = existing.find((p: any) => Number(p.id) === Number(c.id))
                     const price = found ? (found.pivot?.price ?? null) : null
-                    return price === null || price === undefined ? '-' : String(price)
+
+                    if (price === null || price === undefined) {
+                        return '-'
+                    }
+
+                    return `
+                        <div class="flex items-center justify-end gap-1 whitespace-nowrap">
+                            <span>${Number(price).toFixed(2)}</span>
+                            <span class="text-normal text-darkgrey">€</span>
+                        </div>
+                    `
                 }
             }
             return ret

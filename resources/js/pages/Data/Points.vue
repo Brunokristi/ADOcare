@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import api from '@/services/api';
 import { toApiDate } from '@/utils/dateUtils';
 import type { Patient as PatientModel, InsuranceCompany } from '@/types/models';
 import { useAuthStore } from '@/stores/auth';
-import LoadingOverlay from '@/components/LoadingOverlay.vue';
+import { useUiOverlayStore } from '@/stores/uiOverlay';
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import type { DataTableOptions } from '@/types/datatable'
 
 const authStore = useAuthStore();
+const uiOverlayStore = useUiOverlayStore();
 const toast = useToast();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 
@@ -38,8 +39,8 @@ const router = useRouter();
 const batchNumber = ref<string | null>(null);
 const batchType = ref<BatchType | null>(null);
 const insurance = ref<Insurance | null>(null);
-const dates = ref<Date | null>(null);
-
+const now = new Date()
+const dates = ref<Date | null>(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 const allPatients = ref<Patient[]>([]);
 const filteredPatients = ref<Patient[]>([]);
 const selectedPatients = ref<Patient[]>([]);
@@ -49,6 +50,13 @@ const loading = ref(false);
 const patientsLoading = ref(false);
 let calculationToastId: string | undefined;
 
+watchEffect(() => {
+    uiOverlayStore.setContentLoading(loading.value);
+});
+
+onBeforeUnmount(() => {
+    uiOverlayStore.setContentLoading(false);
+});
 
 const batchTypes = ref<BatchType[]>([
   { code: 'N', name: 'Nová dávka' },
@@ -150,9 +158,22 @@ function removePatient(patient: Patient) {
   );
 }
 
-function onBatchNumberInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  batchNumber.value = input.value.replace(/[^0-9]/g, '');
+function onBatchNumberKeydown(e: KeyboardEvent) {
+    const allowedKeys = [
+        'Backspace',
+        'Delete',
+        'ArrowLeft',
+        'ArrowRight',
+        'Tab'
+    ]
+
+    if (allowedKeys.includes(e.key)) {
+        return
+    }
+
+    if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault()
+    }
 }
 
 async function pollCalculationStatus(periodFrom: Date) {
@@ -229,108 +250,105 @@ async function pollCalculationStatus(periodFrom: Date) {
 }
 
 async function onSubmit() {
-  submitted.value = true;
+    submitted.value = true;
 
-  const hasPeriod = !!dates.value;
-  const needsPatients = shouldShowPatients.value;
+    const hasPeriod = !!dates.value;
+    const needsPatients = shouldShowPatients.value;
 
-  if (
-    !batchNumber.value ||
-    !batchType.value ||
-    !insurance.value ||
-    !hasPeriod ||
-    (needsPatients && !selectedPatients.value.length)
-  ) {
-    return;
-  }
-
-  if (!dates.value) {
-    return;
-  }
-
-  // Convert selected month into range
-  const monthDate = dates.value as Date;
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const periodFrom = new Date(year, month, 1);
-  const periodTo = new Date(year, month + 1, 0);
-
-  loading.value = true;
-
-  try {
-    const res = await api.post('/v1/batches/points/preview', {
-      batchNumber: batchNumber.value,
-      batchType: { code: batchType.value.code },
-      insurance: { id: insurance.value.id },
-      period: [periodFrom.toISOString(), periodTo.toISOString()],
-      user: { id: authStore.user?.id },
-      branch: { id: authStore.currentBranch?.id },
-      company: { id: authStore.currentBranch?.company_id },
-      patients: selectedPatients.value.map(p => ({ id: p.id })),
-    });
-
-    const sheet = res.data?.data?.sheet;
-
-    if (!sheet) {
-      console.error('Missing sheet in response:', res.data);
-      return;
+    if (
+        !batchNumber.value ||
+        !batchType.value ||
+        !insurance.value ||
+        !hasPeriod ||
+        (needsPatients && !selectedPatients.value.length)
+    ) {
+        return;
     }
 
-    api.post('/v1/visits/timeline', {
-      month: toApiDate(periodFrom),
-      branch_id: authStore.currentBranch?.id,
-      user_id: authStore.user?.id,
-      persist: true,
-    })
-      .then(() => {
-        // Show persistent info toast (no auto-dismiss)
-        calculationToastId = 'calculation-in-progress';
-        toast.add({
-          group: calculationToastId,
-          severity: 'info',
-          summary: 'Výpočet v progrese',
-          detail: 'Časová os návštev sa počíta na pozadí.',
-          life: 0,
+    if (!dates.value) {
+        return;
+    }
+
+    const monthDate = dates.value as Date;
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const periodFrom = new Date(year, month, 1);
+    const periodTo = new Date(year, month + 1, 0);
+
+    loading.value = true;
+
+    try {
+        const res = await api.post('/v1/batches/points/preview', {
+            batchNumber: batchNumber.value,
+            batchType: { code: batchType.value.code },
+            insurance: { id: insurance.value.id },
+            period: [periodFrom.toISOString(), periodTo.toISOString()],
+            user: { id: authStore.user?.id },
+            branch: { id: authStore.currentBranch?.id },
+            company: { id: authStore.currentBranch?.company_id },
+            patients: selectedPatients.value.map(p => ({ id: p.id })),
         });
 
-        // Start polling for completion
-        pollCalculationStatus(periodFrom);
-      })
-      .catch(error => {
-        console.error('Background calculation failed:', error);
-        toast.add({
-          severity: 'warn',
-          summary: 'Upozornenie',
-          detail: 'Výpočet časovej osi návštev nebol spustený.',
-          life: 5000,
-        });
-      });
+        const sheet = res.data?.data?.sheet;
 
-    await router.push({
-      path: '/documents/points',
-      query: {
-        batchNumber: sheet.batchNumber,
-        fileName: sheet.fileName,
-        amount: sheet.amount,
-        periodFrom: sheet.periodFrom,
-        periodTo: sheet.periodTo,
-        performedBy: sheet.performedBy,
-        performedDate: sheet.performedDate,
-        companyName: sheet.companyName,
-        branchName: sheet.branchName,
-        insuranceId: insurance.value.id,
-        batchTypeCode: batchType.value.code,
-        period0: periodFrom.toISOString(),
-        period1: periodTo.toISOString(),
-        insuranceName: insurance.value.name,
-        patientIds: JSON.stringify(sheet.patients ?? []),
-      },
-    });
-  } catch (error) {
-    console.error('Preview or navigation failed', error);
-  } finally {
-    loading.value = false;
-  }
+        if (!sheet) {
+            console.error('Missing sheet in response:', res.data);
+            return;
+        }
+
+        api.post('/v1/visits/timeline', {
+            month: toApiDate(periodFrom),
+            branch_id: authStore.currentBranch?.id,
+            user_id: authStore.user?.id,
+            persist: true,
+        })
+            .then(() => {
+                calculationToastId = 'calculation-in-progress';
+                toast.add({
+                    group: calculationToastId,
+                    severity: 'info',
+                    summary: 'Výpočet v progrese',
+                    detail: 'Časová os návštev sa počíta na pozadí.',
+                    life: 0,
+                });
+
+                pollCalculationStatus(periodFrom);
+            })
+            .catch(error => {
+                console.error('Background calculation failed:', error);
+                toast.add({
+                    severity: 'warn',
+                    summary: 'Upozornenie',
+                    detail: 'Výpočet časovej osi návštev nebol spustený.',
+                    life: 5000,
+                });
+            });
+
+        await router.push({
+            path: '/documents/points',
+            query: {
+                batchNumber: sheet.batchNumber,
+                fileName: sheet.fileName,
+                amount: sheet.amount,
+                periodFrom: sheet.periodFrom,
+                periodTo: sheet.periodTo,
+                performedBy: sheet.performedBy,
+                performedDate: sheet.performedDate,
+                companyName: sheet.companyName,
+                branchName: sheet.branchName,
+                insuranceId: insurance.value.id,
+                batchTypeCode: batchType.value.code,
+                period0: periodFrom.toISOString(),
+                period1: periodTo.toISOString(),
+                insuranceName: insurance.value.name,
+                patientIds: JSON.stringify(sheet.patients ?? []),
+            },
+        });
+    } catch (error) {
+        console.error('Preview or navigation failed', error);
+    } finally {
+        loading.value = false;
+    }
 }
 
 watch(branchId, (id) => {
@@ -376,26 +394,34 @@ const openPointsDoc = (doc: DocRow) => {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-const periodKey = computed(() => {
-  if (!dates.value) return null
-  const y = dates.value.getFullYear()
-  const m = String(dates.value.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
-})
-
 const options = computed<DataTableOptions<DocRow>>(() => ({
   rowKey: 'id',
   endpointUrl: 'v1/points-batches',
   extraParams: {
     ...(branchId.value ? { branch_id: branchId.value } : {}),
-    ...(periodKey.value ? { period: periodKey.value } : {}),
+  },
+  dateRangeFilter: {
+    mode: 'single',
+    param: 'period',
+    view: 'month',
+    dateFormat: 'mm/yy',
+    value: dates.value,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
   selectable: true,
 
   columns: [
-    { field: 'name', header: 'Názov', sortable: true },
+    {
+        field: 'name',
+        header: 'Číslo dávky',
+        sortable: true,
+        render: (v?: string) => {
+            if (!v) return ''
+            const parts = v.split('_')
+            return parts[3] ?? ''
+        }
+    },
     {
       field: 'insurance_company_name',
       header: 'Poisťovňa',
@@ -413,8 +439,8 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
     },
     { field: 'period', header: 'Obdobie', sortable: true },
     {
-      field: 'created_at',
-      header: 'Dátum a čas vytvorenia',
+      field: 'updated_at',
+      header: 'Naposledy upravené',
       sortable: true,
       render: (v?: string) => formatDateWithTime(v),
     },
@@ -454,7 +480,6 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
 
 <template>
-  <LoadingOverlay :show="loading" />
   <div class="flex flex-col gap-6 relative">
     <form @submit.prevent="onSubmit" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
@@ -462,9 +487,15 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
           <!-- Číslo dávky -->
           <div class="col-span-12 md:col-span-3">
             <label class="block text-normal mb-1">Číslo dávky</label>
-            <InputText v-model="batchNumber" @input="onBatchNumberInput"
-              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-              class="border-none!" fluid />
+            <InputText
+                v-model="batchNumber"
+                @keydown="onBatchNumberKeydown"
+                maxlength="6"
+                inputmode="numeric"
+                inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+                class="border-none!"
+                fluid
+            />
             <small v-if="submitted && !batchNumber" class="text-danger">
               Číslo dávky je povinné.
             </small>

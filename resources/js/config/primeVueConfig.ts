@@ -25,6 +25,7 @@ const baseField =
     'border-darkgrey! ' +
     'text-normal! text-darkgrey! ' +
     'outline-none! ring-0! shadow-none! ' +
+    'placeholder:text-lightgrey! ' +
     'focus:outline-none! focus:ring-0! focus:shadow-none!';
 
 const baseNoOutline =

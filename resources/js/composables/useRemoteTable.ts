@@ -140,8 +140,15 @@ export function useRemoteTable<T = any>(
     }
 
     function setExtraParam(key: string, value: any) {
-        if (!opts.extraParams) opts.extraParams = {}
-        extraParams.value[key] = value
+        const next = { ...extraParams.value }
+
+        if (value === undefined || value === null || value === '') {
+            delete next[key]
+        } else {
+            next[key] = value
+        }
+
+        extraParams.value = next
     }
 
     return {

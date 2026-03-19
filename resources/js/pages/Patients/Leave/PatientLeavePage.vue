@@ -4,11 +4,13 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
+import { useAuthStore } from '@/stores/auth'
 import DocumentAlert from '@/components/DocumentAlert.vue'
 
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
+const authStore = useAuthStore()
 
 patientStore.loadFromStorage?.()
 
@@ -162,6 +164,8 @@ async function generateDocument() {
   }
 
   try {
+    const branchId = authStore.currentBranch?.id ?? patientStore.current?.branch_id ?? null
+
     const payload = {
       patient_id: patientId.value,
       date: toIsoDateTime(date.value),
@@ -169,8 +173,10 @@ async function generateDocument() {
       other_findings: other_findings.value,
       results: results.value,
       education: education.value,
-      received: received.value
+      received: received.value,
+      branch_id: branchId
     }
+
 
     const res = await api.post('/v1/leave-documents', payload)
 

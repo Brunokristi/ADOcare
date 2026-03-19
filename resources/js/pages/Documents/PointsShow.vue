@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 import Toolbar from 'primevue/toolbar'
 import Button from 'primevue/button'
 
@@ -46,6 +46,7 @@ type PointsBatchPayload = {
 
 const route = useRoute()
 const documentId = computed(() => Number(route.params.documentId))
+const uiOverlayStore = useUiOverlayStore()
 
 const loading = ref(false)
 const payload = ref<PointsBatchPayload | null>(null)
@@ -101,6 +102,10 @@ function printPage() {
 
 onMounted(loadDocument)
 
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value)
+})
+
 async function downloadTxt() {
   try {
     if (!payload.value) {
@@ -151,7 +156,6 @@ function triggerDownload(blob: Blob, filename: string) {
 
 
 <template>
-  <LoadingOverlay :show="loading" text="" />
 
     <div class="bg-tag3 justify-between flex items-center p-3! rounded-md">
 

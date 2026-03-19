@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import LoadingOverlay from '@/components/LoadingOverlay.vue'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
 type CoverSheet = {
   batchNumber: number
@@ -43,6 +43,7 @@ type KilometersBatchPayload = {
 
 const route = useRoute()
 const documentId = computed(() => Number(route.params.documentId))
+const uiOverlayStore = useUiOverlayStore()
 
 const loading = ref(false)
 const payload = ref<KilometersBatchPayload | null>(null)
@@ -150,6 +151,10 @@ function triggerDownload(blob: Blob, filename: string) {
 }
 
 onMounted(loadDocument)
+
+watchEffect(() => {
+  uiOverlayStore.setContentLoading(loading.value)
+})
 </script>
 
 <template>
@@ -165,9 +170,6 @@ onMounted(loadDocument)
           :disabled="loading || !payload" @click="downloadTxt" />
       </div>
     </div>
-
-
-    <LoadingOverlay :show="loading" text="" />
 
     <div class="flex flex-col gap-4">
       <!-- Toolbar -->

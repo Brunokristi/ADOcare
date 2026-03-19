@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, markRaw } from 'vue'
+import { ref, onMounted, computed, markRaw, onBeforeUnmount } from 'vue'
 import router from '@/router'
 import type { IModalContentProps } from '@/types/ui'
 import api from '@/services/api'
@@ -9,6 +9,7 @@ import type { Branch, Role, User } from '@/types/models'
 import { useAuthStore } from '@/stores/auth'
 import useModal from '@/composables/useModal'
 import ChangePasswordModal from './ChangePasswordModal.vue'
+import SignaturePad from '@/components/SignaturePad.vue'
 
 const props = defineProps<IModalContentProps & { userId?: number; baseUrl?: string; companyId?: number }>()
 
@@ -69,6 +70,10 @@ const submitted = ref(false)
 const emailError = ref<string | null>(null)
 const deleteConfirmVisible = ref(false)
 const pendingDeleteIndex = ref<number | null>(null)
+const signaturePreviewUrl = ref<string | null>(null)
+const signatureBlob = ref<Blob | null>(null)
+const signatureChanged = ref(false)
+const signatureLoading = ref(false)
 
 // use auth helper if you have it; otherwise keep this check
 const isAdmin = computed(() => auth.user?.role?.position === 'admin')
@@ -99,6 +104,54 @@ function normalizeUserFromApi(data: any) {
     }))
 }
 
+function revokeSignaturePreview() {
+    if (signaturePreviewUrl.value && signaturePreviewUrl.value.startsWith('blob:')) {
+        URL.revokeObjectURL(signaturePreviewUrl.value)
+    }
+}
+
+async function loadSignaturePreview(userId: number) {
+    try {
+        signatureLoading.value = true
+        const res = await api.get(`v1/users/${userId}/signature`, { responseType: 'blob' })
+        revokeSignaturePreview()
+        signaturePreviewUrl.value = URL.createObjectURL(res.data)
+    } catch {
+        revokeSignaturePreview()
+        signaturePreviewUrl.value = null
+    } finally {
+        signatureLoading.value = false
+    }
+}
+
+function onSignatureChange(blob: Blob | null) {
+    signatureBlob.value = blob
+    signatureChanged.value = true
+    if (blob) {
+        revokeSignaturePreview()
+        signaturePreviewUrl.value = URL.createObjectURL(blob)
+    } else {
+        revokeSignaturePreview()
+        signaturePreviewUrl.value = null
+    }
+}
+
+async function persistSignature(userId: number) {
+    if (!signatureChanged.value) return
+
+    if (!signatureBlob.value) {
+        await api.delete(`v1/users/${userId}/signature`)
+        return
+    }
+
+    const formData = new FormData()
+    formData.append('signature', signatureBlob.value, `signature_${userId}.png`)
+
+    await api.post(`v1/users/${userId}/signature`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    })
+}
+
 onMounted(async () => {
     // Load lookup data first (so selects have options)
     try {
@@ -117,6 +170,7 @@ onMounted(async () => {
         try {
             const data = await api.fetchEntity<User>(`v1/users/${props.userId}`)
             normalizeUserFromApi(data)
+            await loadSignaturePreview(props.userId)
         } catch (e) {
             console.error('Nepodarilo sa načítať používateľa', e)
         }
@@ -128,6 +182,10 @@ onMounted(async () => {
             user.value.company_id = props.companyId
         }
     }
+})
+
+onBeforeUnmount(() => {
+    revokeSignaturePreview()
 })
 
 const save = async () => {
@@ -181,6 +239,11 @@ const save = async () => {
         const resp = creating
             ? await api.post('v1/users/', payload)
             : await api.patch(`v1/users/${props.userId}`, payload)
+
+        const savedUserId = Number(resp?.data?.data?.id ?? props.userId)
+        if (savedUserId && signatureChanged.value) {
+            await persistSignature(savedUserId)
+        }
 
         if (props.modalResolve) props.modalResolve(resp.data.data)
     } catch (err: any) {
@@ -363,6 +426,11 @@ async function openChangePasswordModal() {
                     class="w-full! bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
                     @click="branchAssignments.push({ branch_id: null, working_time: null, role_id: null })" />
             </div>
+        </div>
+
+        <h4 class="text-accent text-normal mt-2">Podpis používateľa</h4>
+        <div class="flex flex-col gap-2">
+            <SignaturePad :initial-image-url="signaturePreviewUrl" :disabled="signatureLoading" @change="onSignatureChange" />
         </div>
 
         <div class="flex justify-end gap-2 mt-4">

@@ -1,4 +1,3 @@
-import { openPriceAlertModal } from '@/helpers/modalHelpers';
 import router from '@/router';
 import api from '@/services/api';
 import type { Branch, User } from '@/types/models';
@@ -61,7 +60,6 @@ export const useAuthStore = defineStore('auth', {
                 router.push({ name: 'login' });
             } finally {
                 this.storeStatus = 'ready';
-                openPriceAlertModal();
             }
         },
 

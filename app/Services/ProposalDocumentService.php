@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\Procedure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Branch;
 
 class ProposalDocumentService
 {
@@ -26,10 +27,12 @@ class ProposalDocumentService
             'name' => 'navrh_' . now()->format('d.m.Y'),
             'path' => 'proposals/' . now()->timestamp . '.json', 
             'period' => date('Y-m', strtotime($data['date'])),
+            'branch_id' => $data['branch_id'],
             ]);
 
         $company = $actor->company;
         $doctor = $patient->doctor;
+        $branch = Branch::findOrFail($data['branch_id']);
 
         $diagnosis = [];
         if (!empty($data['medical_diagnosis_ids']) && is_array($data['medical_diagnosis_ids'])) {
@@ -65,9 +68,12 @@ class ProposalDocumentService
         }
 
         $payload = [
+            'company_id' => $company?->id,
+            'representative_id' => $branch->representative?->id ?? null,
+            'representative_name' => trim(($branch->representative?->title ?? '') . ' ' . ($branch->representative?->first_name ?? '') . ' ' . ($branch->representative?->last_name ?? '')),
             'company_address' => $company?->address ?? '',
             'company_name' => $company?->name ?? '',
-            'user_name' => trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '') . ' ' . ($actor->title ?? '')),
+            'user_name' => trim(' ' . ($actor->title ?? '')) . ' ' . ($actor->first_name ?? '') . ' ' . ($actor->last_name ?? ''),
             'doctor_name' => trim(($doctor->title ?? '') . ' ' . ($doctor->first_name ?? '') . ' ' . ($doctor->last_name ?? '')),
             'patient_name' => trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '') . ' ' . ($patient->title ?? '')),
             'patient_birth_number' => $patient->personal_number ?? '',

@@ -32,6 +32,19 @@ class BranchPatientController extends Controller
 
         $query = $this->service->queryForUserBranch($user, $branch);
 
+        if ($request->boolean('only_dead')) {
+            $query->withTrashed()->whereNotNull('patients.death_date');
+        } elseif ($request->boolean('only_deleted')) {
+            $query->withTrashed()->whereNotNull('patients.deleted_at');
+        } elseif ($request->boolean('dead_or_deleted')) {
+            $query->withTrashed()->where(function ($q) {
+                $q->whereNotNull('patients.deleted_at')
+                    ->orWhereNotNull('patients.death_date');
+            });
+        } else {
+            $query->whereNull('patients.death_date');
+        }
+
         $results = ApiQuery::apply(
             $request,
             $query,

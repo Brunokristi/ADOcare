@@ -24,6 +24,7 @@ class DekurzDocumentService
             'name' => 'dekurz_' . now()->format('d.m.Y'),
             'path' => 'dekurz/' . now()->timestamp . '.json',
             'period' => date('Y-m', strtotime($data['month'] ?? now()->format('Y-m-d'))),
+            'branch_id' => $data['branch_id'] ?? null,
         ]);
 
         $sections = $this->normalizeSections($data['sections']);
@@ -67,6 +68,15 @@ class DekurzDocumentService
         ];
 
         Storage::disk('local')->put('dekurz/' . now()->timestamp . '.json', json_encode($dekurzData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        // dekurz_number is stored as varchar; cast to int, add 1, cast back.
+        DB::table('patients')
+            ->where('id', $patient->id)
+            ->update([
+                'dekurz_number' => DB::raw("CAST(CAST(dekurz_number AS INTEGER) + 1 AS VARCHAR)"),
+                'updated_at'    => now(),
+            ]);
+        $document->next_dekurz_number = (int) $patient->fresh()->dekurz_number + 1;
 
         return $document;
     }

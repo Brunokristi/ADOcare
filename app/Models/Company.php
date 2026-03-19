@@ -26,7 +26,8 @@ class Company extends Model
         'email',
         'latitude',
         'longitude',
-        'representative_id'
+        'representative_id',
+        'stamp_path',
     ];
 
     public function branches()

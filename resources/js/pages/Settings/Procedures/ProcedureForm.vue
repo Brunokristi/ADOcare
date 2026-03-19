@@ -109,10 +109,26 @@ async function save() {
                 <table class="w-full table-auto">
                     <tbody>
                         <tr v-for="(ic, idx) in insuranceCompanies" :key="ic.id">
-                            <td class="p-2 pl-0 text-normal">{{ ic.name ?? ic.id }}</td>
-                            <td class="p-2 pr-0 flex justify-end">
-                                <InputNumber v-model="model.prices[idx]!.price" :min="0" :step="0.01" mode="decimal"
-                                    :useGrouping="false" />
+                            <td class="p-2 pl-0 text-normal">
+                                {{ ic.name ?? ic.id }}
+                            </td>
+                            <td class="p-2 pr-0">
+                                <div class="flex justify-end">
+                                    <div class="relative">
+                                        <InputNumber
+                                            v-model="model.prices[idx]!.price"
+                                            :min="0"
+                                            :minFractionDigits="2"
+                                            :maxFractionDigits="2"
+                                            :useGrouping="false"
+                                            locale="en-US"
+                                            class="w-full price-input"
+                                        />
+                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-lightgrey pointer-events-none">
+                                            &euro;
+                                        </span>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

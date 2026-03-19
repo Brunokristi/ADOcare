@@ -27,6 +27,7 @@ class CompanyResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'representative_id' => $this->representative_id,
+            'stamp_path' => $this->stamp_path,
 
             'branches_count' => $this->whenCounted('branches'),
             'cars_count' => $this->whenCounted('cars'),
