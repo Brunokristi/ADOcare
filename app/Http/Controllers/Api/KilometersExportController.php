@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use \App\Http\Controllers\Controller;
+use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 
 class KilometersExportController extends Controller
 {
+    private const GROUPING_BUFFER_METERS = 50.0;
+
     public function preview(Request $request)
     {
         $data = $request->validate([
@@ -66,17 +68,19 @@ class KilometersExportController extends Controller
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->select([
                 'pp.id',
+                'pp.patient_id',
                 'pp.date',
                 'b.latitude as branch_lat',
                 'b.longitude as branch_lng',
                 'p.latitude as patient_lat',
                 'p.longitude as patient_lng',
-                'pcp.price'
+                'pcp.price',
             ])
             ->orderBy('pp.date')
+            ->orderBy('pp.patient_id')
+            ->orderBy('pp.id')
             ->get();
 
-        // If empty, nothing will be calculated.
         if ($rows->isEmpty()) {
             Log::warning('Kilometers preview: no rows matched query');
         }
@@ -86,30 +90,33 @@ class KilometersExportController extends Controller
         $calledRouteService = 0;
 
         foreach ($rows as $row) {
-            // ✅ Fix: do NOT use truthy checks (0 is falsy). Check null explicitly.
             if (
                 $row->branch_lat === null || $row->branch_lng === null ||
                 $row->patient_lat === null || $row->patient_lng === null
             ) {
                 $skippedMissingCoords++;
+
                 Log::warning('Skipping row due to missing coords', [
                     'pp_id' => $row->id,
+                    'patient_id' => $row->patient_id,
                     'branch_lat' => $row->branch_lat,
                     'branch_lng' => $row->branch_lng,
                     'patient_lat' => $row->patient_lat,
                     'patient_lng' => $row->patient_lng,
                 ]);
+
                 continue;
             }
 
-            $dateString = is_string($row->date)
-                ? $row->date
-                : (method_exists($row->date, 'toDateString') ? $row->date->toDateString() : 'unknown');
-
-            $patientAddressKey = "{$row->patient_lat},{$row->patient_lng}";
+            $dateString = $this->normalizeDateString($row->date);
             $visitedAddressesPerDay[$dateString] ??= [];
 
-            if (in_array($patientAddressKey, $visitedAddressesPerDay[$dateString], true)) {
+            if ($this->hasNearbyVisitedAddress(
+                $visitedAddressesPerDay[$dateString],
+                (float) $row->patient_lat,
+                (float) $row->patient_lng,
+                self::GROUPING_BUFFER_METERS
+            )) {
                 $distanceKm = 0.0;
             } else {
                 $calledRouteService++;
@@ -121,7 +128,12 @@ class KilometersExportController extends Controller
                     (float) $row->patient_lng
                 );
 
-                $visitedAddressesPerDay[$dateString][] = $patientAddressKey;
+                $visitedAddressesPerDay[$dateString][] = [
+                    'lat' => (float) $row->patient_lat,
+                    'lng' => (float) $row->patient_lng,
+                    'patient_id' => (int) $row->patient_id,
+                    'pp_id' => (int) $row->id,
+                ];
             }
 
             $totalKilometers += $distanceKm;
@@ -129,6 +141,7 @@ class KilometersExportController extends Controller
         }
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
+
         $branchName = DB::table('branches')
             ->where('id', $branchId)
             ->selectRaw("TRIM(CONCAT(COALESCE(city,''), ', ', COALESCE(address,''))) as name")
@@ -156,6 +169,11 @@ class KilometersExportController extends Controller
             'branchName' => $branchName,
             'patients' => $patientIds,
             'insuranceName' => $insuranceName,
+            'debug' => [
+                'grouping_buffer_meters' => self::GROUPING_BUFFER_METERS,
+                'skipped_missing_coords' => $skippedMissingCoords,
+                'route_service_calls' => $calledRouteService,
+            ],
         ];
 
         return response()->json([
@@ -185,7 +203,7 @@ class KilometersExportController extends Controller
         $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
         $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
 
-        $type = $data['batchType']['code']; // N or O
+        $type = $data['batchType']['code'];
         $batchNumber = (int) $data['batchNumber'];
         $userId = (int) $data['user']['id'];
         $branchId = (int) $data['branch']['id'];
@@ -236,7 +254,6 @@ class KilometersExportController extends Controller
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('doctors as d', 'd.id', '=', 'p.doctor_id')
             ->join('branches as b', 'b.id', '=', 'pp.branch_id')
-            // replaced pivot join with direct patient fields (nurse_id, branch_id)
             ->whereColumn('p.nurse_id', 'pp.user_id')
             ->whereColumn('p.branch_id', 'pp.branch_id')
             ->join('procedures as proc', function ($join) {
@@ -253,7 +270,10 @@ class KilometersExportController extends Controller
             ->whereIn('pp.procedure_code', ['3439', '3440'])
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->orderBy('pp.date')
+            ->orderBy('pp.patient_id')
+            ->orderBy('pp.id')
             ->select([
+                'pp.id',
                 'pp.date',
                 'pp.patient_id',
                 'p.personal_number',
@@ -273,10 +293,9 @@ class KilometersExportController extends Controller
                 'b.address as branch_address',
                 'b.latitude as branch_lat',
                 'b.longitude as branch_lng',
-                'pcp.price'
+                'pcp.price',
             ])
             ->get();
-
 
         $visitedAddressesPerDay = [];
         $kilometersPerRow = [];
@@ -287,24 +306,33 @@ class KilometersExportController extends Controller
                 continue;
             }
 
-            $dateString = is_string($row->date) ? $row->date : (method_exists($row->date, 'toDateString') ? $row->date->toDateString() : 'unknown');
-            $patientAddressKey = "{$row->patient_lat},{$row->patient_lng}";
-
+            $dateString = $this->normalizeDateString($row->date);
             $visitedAddressesPerDay[$dateString] ??= [];
 
-            if (in_array($patientAddressKey, $visitedAddressesPerDay[$dateString], true)) {
+            if ($this->hasNearbyVisitedAddress(
+                $visitedAddressesPerDay[$dateString],
+                (float) $row->patient_lat,
+                (float) $row->patient_lng,
+                self::GROUPING_BUFFER_METERS
+            )) {
                 $kilometersPerRow[$idx] = 0.0;
                 continue;
             }
 
             $km = $this->getDistanceFromRouteService(
-                $row->branch_lat,
-                $row->branch_lng,
-                $row->patient_lat,
-                $row->patient_lng
+                (float) $row->branch_lat,
+                (float) $row->branch_lng,
+                (float) $row->patient_lat,
+                (float) $row->patient_lng
             );
 
-            $visitedAddressesPerDay[$dateString][] = $patientAddressKey;
+            $visitedAddressesPerDay[$dateString][] = [
+                'lat' => (float) $row->patient_lat,
+                'lng' => (float) $row->patient_lng,
+                'patient_id' => (int) $row->patient_id,
+                'pp_id' => (int) $row->id,
+            ];
+
             $kilometersPerRow[$idx] = $km;
         }
 
@@ -320,7 +348,7 @@ class KilometersExportController extends Controller
             '1',
             '1',
             $insuranceBranchCode ?? '',
-            ''
+            '',
         ]);
 
         $line2 = implode('|', [
@@ -331,7 +359,7 @@ class KilometersExportController extends Controller
             $termYYYYMM,
             $batchNumber,
             'EUR',
-            ''
+            '',
         ]);
 
         $dataLines = [];
@@ -407,7 +435,10 @@ class KilometersExportController extends Controller
         $insuranceId = (int) $data['insurance']['id'];
 
         $patientIds = collect($data['patients'] ?? [])
-            ->pluck('id')->filter()->values()->all();
+            ->pluck('id')
+            ->filter()
+            ->values()
+            ->all();
 
         $amount = 0.0;
         $totalKilometers = 0.0;
@@ -430,14 +461,17 @@ class KilometersExportController extends Controller
             ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
             ->select([
                 'pp.id',
+                'pp.patient_id',
                 'pp.date',
                 'b.latitude as branch_lat',
                 'b.longitude as branch_lng',
                 'p.latitude as patient_lat',
                 'p.longitude as patient_lng',
-                'pcp.price'
+                'pcp.price',
             ])
             ->orderBy('pp.date')
+            ->orderBy('pp.patient_id')
+            ->orderBy('pp.id')
             ->get();
 
         $visitedAddressesPerDay = [];
@@ -447,21 +481,30 @@ class KilometersExportController extends Controller
                 continue;
             }
 
-            $dateString = is_string($row->date) ? $row->date : (method_exists($row->date, 'toDateString') ? $row->date->toDateString() : 'unknown');
-            $patientAddressKey = "{$row->patient_lat},{$row->patient_lng}";
-
+            $dateString = $this->normalizeDateString($row->date);
             $visitedAddressesPerDay[$dateString] ??= [];
 
-            if (in_array($patientAddressKey, $visitedAddressesPerDay[$dateString], true)) {
+            if ($this->hasNearbyVisitedAddress(
+                $visitedAddressesPerDay[$dateString],
+                (float) $row->patient_lat,
+                (float) $row->patient_lng,
+                self::GROUPING_BUFFER_METERS
+            )) {
                 $distanceKm = 0.0;
             } else {
                 $distanceKm = $this->getDistanceFromRouteService(
-                    $row->branch_lat,
-                    $row->branch_lng,
-                    $row->patient_lat,
-                    $row->patient_lng
+                    (float) $row->branch_lat,
+                    (float) $row->branch_lng,
+                    (float) $row->patient_lat,
+                    (float) $row->patient_lng
                 );
-                $visitedAddressesPerDay[$dateString][] = $patientAddressKey;
+
+                $visitedAddressesPerDay[$dateString][] = [
+                    'lat' => (float) $row->patient_lat,
+                    'lng' => (float) $row->patient_lng,
+                    'patient_id' => (int) $row->patient_id,
+                    'pp_id' => (int) $row->id,
+                ];
             }
 
             $totalKilometers += $distanceKm;
@@ -505,6 +548,47 @@ class KilometersExportController extends Controller
         return $pdf->download($pdfName);
     }
 
+    private function normalizeDateString($date): string
+    {
+        return is_string($date)
+            ? $date
+            : (method_exists($date, 'toDateString') ? $date->toDateString() : 'unknown');
+    }
+
+    private function hasNearbyVisitedAddress(array $visitedPoints, float $lat, float $lng, float $bufferMeters = 100.0): bool
+    {
+        foreach ($visitedPoints as $point) {
+            $distance = $this->distanceInMeters(
+                (float) $point['lat'],
+                (float) $point['lng'],
+                $lat,
+                $lng
+            );
+
+            if ($distance <= $bufferMeters) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function distanceInMeters(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371000.0;
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2)
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
+            * sin($dLng / 2) * sin($dLng / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
+
     private function getDistanceFromRouteService($startLat, $startLng, $endLat, $endLng): float
     {
         try {
@@ -515,10 +599,9 @@ class KilometersExportController extends Controller
             $url = "{$baseUrl}/{$endpoint}";
 
             $payload = [
-                'start_location' => [(float) $startLng, (float) $startLat], // [lng, lat]
+                'start_location' => [(float) $startLng, (float) $startLat],
                 'end_location' => [(float) $endLng, (float) $endLat],
-                'points_locations' => [
-                ],
+                'points_locations' => [],
             ];
 
             $response = Http::timeout($timeout)
@@ -534,6 +617,7 @@ class KilometersExportController extends Controller
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+
                 return 0.0;
             }
 
@@ -545,6 +629,7 @@ class KilometersExportController extends Controller
                     'parsed_length' => $lengthMeters,
                     'json' => $json,
                 ]);
+
                 return 0.0;
             }
 
@@ -554,13 +639,17 @@ class KilometersExportController extends Controller
                 'exception' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return 0.0;
         }
     }
 
     private function hasValidCoords($branchLat, $branchLng, $patientLat, $patientLng): bool
     {
-        return $branchLat !== null && $branchLng !== null && $patientLat !== null && $patientLng !== null;
+        return $branchLat !== null
+            && $branchLng !== null
+            && $patientLat !== null
+            && $patientLng !== null;
     }
 
     private function toAsciiString(?string $value, ?int $limit = null): string

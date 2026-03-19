@@ -244,6 +244,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
+    Route::post('/documents/travel/company/email', [DocumentController::class, 'emailTravelDocuments']);
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
     Route::get('/documents/travel/company', [DocumentController::class, 'indexTravelDocumentsForCompany']);

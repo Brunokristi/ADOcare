@@ -198,6 +198,7 @@ class DZCDocumentService
             'year' => date('Y', strtotime($startDate)),
             'car_model' => $car?->model ?? '',
             'car_license_plate' => $car?->evc ?? '',
+            'car_consumption_l_per_100km' => $car?->fuel_consumption_l_per_100km,
             'branch_address' => $branchAddress ?? '',
             'patient_addresses' => $patientAddresses,
             'day_totals' => $dayTotals,

@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
 use App\Models\Document;
 use App\Models\Patient;
+use App\Models\User;
+use App\Services\CPDocumentService;
+use App\Services\DZCDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -45,6 +49,7 @@ class DocumentController extends Controller
     {
         $perPage = (int) $request->input('per_page', 25);
         $branchIds = $request->input('branch_ids');
+        $period = $request->input('period');
 
         $branchIdArray = [];
         if ($branchIds) {
@@ -64,6 +69,10 @@ class DocumentController extends Controller
 
         if (!empty($branchIdArray)) {
             $query->whereIn('branch_id', $branchIdArray);
+        }
+
+        if ($period) {
+            $query->where('period', Carbon::parse($period)->format('Y-m'));
         }
 
         $documents = $query
@@ -88,7 +97,9 @@ class DocumentController extends Controller
                 'type' => $doc->type,
                 'mime_type' => $doc->mime_type,
                 'path' => $doc->path,
-                'created_at' => $doc->created_at,
+                'created_at' => $doc->created_at?->toDateTimeString(),
+                'updated_at' => $doc->updated_at?->toDateTimeString(),
+                'period' => $doc->period,
 
                 // what your frontend expects:
                 'created_by_user' => $userName ?: null,
@@ -256,6 +267,68 @@ class DocumentController extends Controller
         return response()->json(['message' => 'Documents deleted successfully']);
     }
 
+    public function emailTravelDocuments(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $user = Auth::user();
+        $userName = trim(implode(' ', array_filter([$user->title, $user->first_name, $user->last_name])));
+
+
+        $companyId = Auth::user()?->company_id;
+        $compnayName = $user->company?->name;
+
+        $documentsQuery = Document::query()
+            ->whereIn('id', $validated['ids'])
+            ->whereIn('type', ['cp', 'dzc']);
+
+        if ($companyId) {
+            $documentsQuery->whereHas('user', fn ($q) => $q->where('company_id', $companyId));
+        }
+
+        $documents = $documentsQuery->get();
+
+        if ($documents->isEmpty()) {
+            return response()->json(['message' => 'No valid documents found'], 404);
+        }
+
+        $attachments = [];
+        foreach ($documents as $document) {
+            $pdfAttachment = $this->buildTravelPdfAttachment($document);
+            if ($pdfAttachment) {
+                $attachments[] = $pdfAttachment;
+            }
+        }
+
+        if (empty($attachments)) {
+            return response()->json(['message' => 'No readable document files found for attachments'], 422);
+        }
+
+        $to = $validated['email'];
+        $subject = 'Cestovné dokumenty - ' . ($compnayName ?: 'ADOcare');
+        $body = "Dobrý deň,\n\nV prílohe posielame cestovné dokumenty.\n\nS pozdravom,\n$userName";
+
+        Mail::raw($body, function ($message) use ($to, $subject, $attachments) {
+            $message->to($to)->subject($subject);
+
+            foreach ($attachments as $attachment) {
+                $message->attachData($attachment['data'], $attachment['name'], [
+                    'as' => $attachment['name'],
+                    'mime' => $attachment['mime'],
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Email sent successfully',
+            'attachments_count' => count($attachments),
+        ]);
+    }
+
     private function deleteScanAssetsIfAny(Document $document): void
     {
         if ($document->type !== 'scan') {
@@ -287,9 +360,146 @@ class DocumentController extends Controller
         }
     }
 
-    /**
-     * Get documents by type for a patient.
-     */
+    private function buildAttachmentFilename(Document $document): string
+    {
+        $rawName = trim((string) ($document->name ?: ('document_' . $document->id)));
+        $base = pathinfo($rawName, PATHINFO_FILENAME);
+        $base = $base !== '' ? $base : ('document_' . $document->id);
+
+        $ext = pathinfo($rawName, PATHINFO_EXTENSION);
+        if ($ext === '' && $document->path) {
+            $ext = pathinfo((string) $document->path, PATHINFO_EXTENSION);
+        }
+
+        if ($ext === '') {
+            $ext = match ($document->mime_type) {
+                'application/pdf' => 'pdf',
+                'application/json' => 'json',
+                default => 'bin',
+            };
+        }
+
+        return $base . '.' . $ext;
+    }
+
+    private function buildTravelPdfAttachment(Document $document): ?array
+    {
+        if ($document->type === 'cp') {
+            $payload = app(CPDocumentService::class)->getCpPayload($document);
+            if (!$payload) {
+                return null;
+            }
+
+            $representativeId = isset($payload['representative_id']) ? (int) $payload['representative_id'] : null;
+            $signatureDataUri = $this->loadUserSignatureDataUri($representativeId);
+
+            $pdf = Pdf::loadView('pdf.travel_cp', [
+                'cpData' => $payload,
+                'signatureDataUri' => $signatureDataUri,
+            ])->setPaper('a4', 'portrait');
+
+            $filename = $this->buildTravelPdfFilename('CP', $payload, $document);
+
+            return [
+                'data' => $pdf->output(),
+                'name' => $filename,
+                'mime' => 'application/pdf',
+            ];
+        }
+
+        if ($document->type === 'dzc') {
+            $payload = app(DZCDocumentService::class)->getDzcPayload($document);
+            if (!$payload) {
+                return null;
+            }
+
+            $userId = isset($payload['user_id']) ? (int) $payload['user_id'] : null;
+            $signatureDataUri = $this->loadUserSignatureDataUri($userId);
+
+            $pdf = Pdf::loadView('pdf.travel_dzc', [
+                'dzcData' => $payload,
+                'signatureDataUri' => $signatureDataUri,
+            ])->setPaper('a4', 'portrait');
+
+            $filename = $this->buildTravelPdfFilename('DZP', $payload, $document);
+
+            return [
+                'data' => $pdf->output(),
+                'name' => $filename,
+                'mime' => 'application/pdf',
+            ];
+        }
+
+        return null;
+    }
+
+    private function loadUserSignatureDataUri(?int $userId): ?string
+    {
+        if (!$userId) {
+            return null;
+        }
+
+        $user = User::find($userId);
+        $signaturePath = $user?->signature_path;
+
+        if (!$signaturePath || !Storage::disk('local')->exists($signaturePath)) {
+            return null;
+        }
+
+        $binary = Storage::disk('local')->get($signaturePath);
+        if ($binary === null || $binary === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . base64_encode($binary);
+    }
+
+    private function buildTravelPdfFilename(string $prefix, array $payload, Document $document): string
+    {
+        $period = (string) ($payload['period'] ?? $document->period ?? 'unknown-period');
+
+        if ($period === 'unknown-period') {
+            $month = (string) ($payload['month'] ?? '');
+            $year = (string) ($payload['year'] ?? '');
+            if ($month !== '' && $year !== '') {
+                $period = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+            }
+        }
+
+        $rawUserName = trim(implode(' ', array_filter([
+            $document->user->last_name ?? null,
+        ])));
+
+        if ($rawUserName === '') {
+            $rawUserName = 'unknown-user';
+        }
+
+        $normalizedUserName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $rawUserName);
+
+        if ($normalizedUserName === false || trim($normalizedUserName) === '') {
+            $normalizedUserName = $rawUserName;
+        }
+
+        $safePrefix = $this->sanitizeFilenamePart($prefix);
+        $safePeriod = $this->sanitizeFilenamePart($period);
+        $safeUserName = $this->sanitizeFilenamePart($normalizedUserName);
+
+        return $safePrefix . '_' . $safePeriod . '_' . $safeUserName . '.pdf';
+    }
+
+    private function sanitizeFilenamePart(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('/\s+/', '_', $value) ?? $value;
+        $value = preg_replace('/[^A-Za-z0-9_\-.]/', '', $value) ?? $value;
+
+        if ($value === '') {
+            return 'unknown';
+        }
+
+        return $value;
+    }
+
     public function getByType($patientId, $type)
     {
         $patient = Patient::findOrFail($patientId);
