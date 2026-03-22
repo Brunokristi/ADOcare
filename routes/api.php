@@ -54,6 +54,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/scans/{sessionId}/{filename}', [\App\Http\Controllers\Api\ScanFileController::class, 'image'])
+    ->middleware('api.auth')
     ->where('filename', '.*');
 
 Route::get('/user', function (Request $request) {
@@ -76,11 +77,18 @@ Route::prefix('auth')->group(function () {
 
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
-    Route::macro('apiResourceComplete', function ($name, $controller) {
+    Route::macro('apiResourceComplete', function ($name, $controller, ?string $middleware = null) {
         // register the normal resource routes
-        Route::apiResource($name, $controller);
+        $resource = Route::apiResource($name, $controller);
+        if ($middleware) {
+            $resource->middleware($middleware);
+        }
+
         // register a collection-level DELETE route for bulk deletions
-        Route::delete($name, [$controller, 'destroyMany']);
+        $deleteRoute = Route::delete($name, [$controller, 'destroyMany']);
+        if ($middleware) {
+            $deleteRoute->middleware($middleware);
+        }
     });
 
 
@@ -101,13 +109,18 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('cars/services/due-this-month', [CarServiceController::class, 'dueThisMonth']);
     Route::get('my-cars/services/due-this-month', [CarServiceController::class, 'dueThisMonthForUser']);
 
-    Route::apiResource('patients', PatientController::class)->except(['index', 'store']);
-    Route::delete('patients', [PatientController::class, 'destroyMany']);
-    Route::post('patients/restore', [PatientController::class, 'restoreMany']);
+    Route::apiResource('patients', PatientController::class)
+        ->except(['index', 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::delete('patients', [PatientController::class, 'destroyMany'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::post('patients/restore', [PatientController::class, 'restoreMany'])
+        ->middleware('role:manager,admin,superadmin');
 
-    Route::get('patients/{patientId}/death-check', [PatientDeathCheckController::class, 'show']);
+    Route::get('patients/{patientId}/death-check', [PatientDeathCheckController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,patient']);
 
-    Route::group(['prefix' => 'patients/{patient}'], function () {
+    Route::group(['prefix' => 'patients/{patient}', 'middleware' => ['role:nurse,manager,admin,superadmin', 'can:view,patient']], function () {
         Route::get('insurance-company', [PatientController::class, 'insuranceCompany']);
         Route::get('doctor', [PatientController::class, 'doctor']);
         Route::get('diagnoses', [PatientController::class, 'diagnoses']);
@@ -116,16 +129,23 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('documents', [PatientController::class, 'documents']);
     });
 
-    Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class);
+    Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class, 'role:manager,admin,superadmin');
 
-    Route::apiResourceComplete('branches', BranchController::class);
-    Route::delete('branches/delete-many', [BranchController::class, 'destroyMany']);
-    Route::get('branches/{branch}/patients', [BranchPatientController::class, 'index']);
-    Route::post('branches/{branch}/patients', [BranchPatientController::class, 'store']);
-    Route::get('branches/{branch}/nurses', [BranchController::class, 'nurses']);
-    Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors']);
-    Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach']);
-    Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach']);
+    Route::apiResourceComplete('branches', BranchController::class, 'role:manager,admin,superadmin');
+    Route::delete('branches/delete-many', [BranchController::class, 'destroyMany'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('branches/{branch}/patients', [BranchPatientController::class, 'index'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::post('branches/{branch}/patients', [BranchPatientController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('branches/{branch}/nurses', [BranchController::class, 'nurses'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach'])
+        ->middleware('role:manager,admin,superadmin');
 
     Route::get('/my-company/branches', [MyCompanyController::class, 'branches']);
     Route::get('/my-company', [MyCompanyController::class, 'show']);
@@ -147,100 +167,152 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('/statistics', [\App\Http\Controllers\Api\SuperadminController::class, 'statistics']);
     });
 
-    Route::apiResourceComplete('totals', TotalsController::class);
+    Route::apiResourceComplete('totals', TotalsController::class, 'role:manager,admin,superadmin');
 
-    Route::apiResourceComplete('doctors', DoctorController::class);
-    Route::apiResourceComplete('diagnoses', DiagnosisController::class);
-    Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class);
+    Route::apiResourceComplete('doctors', DoctorController::class, 'role:manager,admin,superadmin');
+    Route::apiResourceComplete('diagnoses', DiagnosisController::class, 'role:manager,admin,superadmin');
+    Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class, 'role:manager,admin,superadmin');
     Route::apiResourceComplete('macros', MacroController::class);
     Route::apiResourceComplete('plans', PlanController::class);
     Route::delete('/plans', [PlanController::class, 'destroyMany']);
-    Route::apiResourceComplete('procedures', ProcedureController::class);
-    Route::apiResourceComplete('patient-points', PatientPointController::class);
-    Route::apiResourceComplete('report-months', ReportMonthController::class);
-    Route::group(['prefix' => 'roles'], function () {
+    Route::apiResourceComplete('procedures', ProcedureController::class, 'role:manager,admin,superadmin');
+    Route::apiResourceComplete('patient-points', PatientPointController::class, 'role:nurse,manager,admin,superadmin');
+    Route::apiResourceComplete('report-months', ReportMonthController::class, 'role:nurse,manager,admin,superadmin');
+    Route::group(['prefix' => 'roles', 'middleware' => 'role:admin,superadmin'], function () {
         Route::get('/branch', [RoleController::class, 'branchRoles']);
         Route::get('/company', [RoleController::class, 'companyRoles']);
         Route::get('/system', [RoleController::class, 'systemRoles']);
         Route::get('/all', [RoleController::class, 'allRoles']);
     });
-    Route::apiResourceComplete('roles', RoleController::class);
+    Route::apiResourceComplete('roles', RoleController::class, 'role:admin,superadmin');
 
     Route::apiResourceComplete('text-blocks', TextBlockController::class);
-    Route::delete('/users', [UserController::class, 'destroyMany']);
-    Route::delete('/users/{user}/branches/{branch}', [UserController::class, 'deleteBranchAssignment']);
-    Route::get('/users/{user}/signature', [UserController::class, 'signature']);
-    Route::post('/users/{user}/signature', [UserController::class, 'uploadSignature']);
-    Route::delete('/users/{user}/signature', [UserController::class, 'deleteSignature']);
-    Route::apiResourceComplete('users', UserController::class);
-    Route::apiResourceComplete('companies', CompanyController::class);
-    Route::get('companies/{company}/stats', [CompanyController::class, 'stats']);
-    Route::get('companies/{company}/users', [CompanyController::class, 'users']);
-    Route::get('companies/{company}/branches', [CompanyController::class, 'branches']);
-    Route::get('companies/{company}/stamp', [CompanyController::class, 'stamp']);
-    Route::delete('companies/{company}/stamp', [CompanyController::class, 'deleteStamp']);
+    Route::delete('/users', [UserController::class, 'destroyMany'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::delete('/users/{user}/branches/{branch}', [UserController::class, 'deleteBranchAssignment'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('/users/{user}/signature', [UserController::class, 'signature'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::post('/users/{user}/signature', [UserController::class, 'uploadSignature'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::delete('/users/{user}/signature', [UserController::class, 'deleteSignature'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::apiResourceComplete('users', UserController::class, 'role:manager,admin,superadmin');
+    Route::apiResourceComplete('companies', CompanyController::class, 'role:admin,superadmin');
+    Route::get('companies/{company}/stats', [CompanyController::class, 'stats'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('companies/{company}/users', [CompanyController::class, 'users'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('companies/{company}/branches', [CompanyController::class, 'branches'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('companies/{company}/stamp', [CompanyController::class, 'stamp'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::delete('companies/{company}/stamp', [CompanyController::class, 'deleteStamp'])
+        ->middleware('role:manager,admin,superadmin');
 
 
 
-    Route::post('/batches/points/preview', [PointsExportController::class, 'preview']);
-    Route::post('/batches/points/download', [PointsExportController::class, 'download']);
-    Route::post('/batches/points/statement-pdf', [PointsExportController::class, 'statementPdf']);
+    Route::post('/batches/points/preview', [PointsExportController::class, 'preview'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::post('/batches/points/download', [PointsExportController::class, 'download'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::post('/batches/points/statement-pdf', [PointsExportController::class, 'statementPdf'])
+        ->middleware('role:manager,admin,superadmin');
 
-    Route::post('/batches/kilometers/preview', [KilometersExportController::class, 'preview']);
-    Route::post('/batches/kilometers/download', [KilometersExportController::class, 'download']);
-    Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf']);
+    Route::post('/batches/kilometers/preview', [KilometersExportController::class, 'preview'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::post('/batches/kilometers/download', [KilometersExportController::class, 'download'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf'])
+        ->middleware('role:manager,admin,superadmin');
 
     Route::get('/geocode/autocomplete', [GeocodeController::class, 'autocomplete']);
     Route::get('/geocode/details', [GeocodeController::class, 'details']);
     Route::get('/geocode/reverse', [GeocodeController::class, 'reverse']);
 
-    Route::get('/companies/{company}/patients', [CompanyController::class, 'patients']);
+    Route::get('/companies/{company}/patients', [CompanyController::class, 'patients'])
+        ->middleware('role:manager,admin,superadmin');
 
-    Route::post('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'attach']);
-    Route::delete('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'detach']);
+    Route::post('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'attach'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::delete('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'detach'])
+        ->middleware('role:manager,admin,superadmin');
 
-    Route::post('/proposals', [ProposalDocumentController::class, 'store']);
-    Route::get('/proposals/{document}', [ProposalDocumentController::class, 'show']);
-    Route::get('/patients/{patient}/proposals', [ProposalDocumentController::class, 'getByPatient']);
-    Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient']);
+    Route::post('/proposals', [ProposalDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/proposals/{document}', [ProposalDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
+    Route::get('/patients/{patient}/proposals', [ProposalDocumentController::class, 'getByPatient'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,patient']);
+    Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,patient']);
 
-    Route::post('/agreements', [AgreementDocumentController::class, 'store']);
-    Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show']);
+    Route::post('/agreements', [AgreementDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
 
-    Route::get('/cps', [CPDocumentController::class, 'index']);
-    Route::post('/cps', [CPDocumentController::class, 'store']);
-    Route::get('/cps/{document}', [CPDocumentController::class, 'show']);
+    Route::get('/cps', [CPDocumentController::class, 'index'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::post('/cps', [CPDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/cps/{document}', [CPDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
 
-    Route::get('/dzcs', [DZCDocumentController::class, 'index']);
-    Route::post('/dzcs', [DZCDocumentController::class, 'store']);
-    Route::get('/dzcs/{document}', [DZCDocumentController::class, 'show']);
-    Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv']);
+    Route::get('/dzcs', [DZCDocumentController::class, 'index'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::post('/dzcs', [DZCDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/dzcs/{document}', [DZCDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
+    Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
 
-    Route::post('/dekurz', [DekurzDocumentController::class, 'store']);
-    Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates']);
-    Route::get('/dekurz/last', [DekurzDocumentController::class, 'last']);
-    Route::get('/dekurz/{document}', [DekurzDocumentController::class, 'show']);
+    Route::post('/dekurz', [DekurzDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/dekurz/last', [DekurzDocumentController::class, 'last'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/dekurz/{document}', [DekurzDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
 
-    Route::post('/leave-documents', [LeaveDocumentController::class, 'store']);
-    Route::get('/leave-documents/{document}', [LeaveDocumentController::class, 'show']);
-    Route::get('/patients/{patient}/leave/latest', [LeaveDocumentController::class, 'latestByPatient']);
+    Route::post('/leave-documents', [LeaveDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/leave-documents/{document}', [LeaveDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
+    Route::get('/patients/{patient}/leave/latest', [LeaveDocumentController::class, 'latestByPatient'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,patient']);
 
-    Route::post('/records', [RecordDocumentController::class, 'store']);
-    Route::get('/records/{document}', [RecordDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/records/latest', [RecordDocumentController::class, 'latestByPatient']);
+    Route::post('/records', [RecordDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/records/{document}', [RecordDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
+    Route::get('/patients/{patient}/records/latest', [RecordDocumentController::class, 'latestByPatient'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,patient']);
 
-    Route::post('/kilometers-batches', [KilometersBatchDocumentController::class, 'store']);
-    Route::get('/kilometers-batches', [KilometersBatchDocumentController::class, 'index']);
-    Route::get('/kilometers-batches/{document}', [KilometersBatchDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/kilometers-batches/latest', [KilometersBatchDocumentController::class, 'latestByPatient']);
+    Route::post('/kilometers-batches', [KilometersBatchDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/kilometers-batches', [KilometersBatchDocumentController::class, 'index'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/kilometers-batches/{document}', [KilometersBatchDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
+    Route::get('/patients/{patient}/kilometers-batches/latest', [KilometersBatchDocumentController::class, 'latestByPatient'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,patient']);
 
-    Route::post('/points-batches', [PointsBatchDocumentController::class, 'store']);
-    Route::get('/points-batches', [PointsBatchDocumentController::class, 'index']);
-    Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show']);
+    Route::post('/points-batches', [PointsBatchDocumentController::class, 'store'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/points-batches', [PointsBatchDocumentController::class, 'index'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show'])
+        ->middleware(['role:nurse,manager,admin,superadmin', 'can:view,document']);
 
-    Route::get('/batch-documents/company', [BatchDocumentController::class, 'indexByCompany']);
-    Route::get('/batch-documents/company/aggregated-branch', [BatchDocumentController::class, 'aggregatedByBranch']);
-    Route::get('/batch-documents/company/aggregated-user', [BatchDocumentController::class, 'aggregatedByUser']);
+    Route::get('/batch-documents/company', [BatchDocumentController::class, 'indexByCompany'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('/batch-documents/company/aggregated-branch', [BatchDocumentController::class, 'aggregatedByBranch'])
+        ->middleware('role:manager,admin,superadmin');
+    Route::get('/batch-documents/company/aggregated-user', [BatchDocumentController::class, 'aggregatedByUser'])
+        ->middleware('role:manager,admin,superadmin');
 
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
@@ -250,12 +322,18 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/documents/travel/company', [DocumentController::class, 'indexTravelDocumentsForCompany']);
     Route::get('/documents/travel', [DocumentController::class, 'indexTravelDocuments']);
 
-    Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline']);
-    Route::get('/visits/timeline/status', [VisitsController::class, 'checkCalculationStatus']);
-    Route::get('/visits', [VisitsController::class, 'index']);
-    Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay']);
-    Route::get('visits/day-totals', [VisitsController::class, 'dayTotals']);
-    Route::get('visits/month-totals', [VisitsController::class, 'monthTotals']);
+    Route::post('/visits/timeline', [VisitsController::class, 'monthTimeline'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/visits/timeline/status', [VisitsController::class, 'checkCalculationStatus'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('/visits', [VisitsController::class, 'index'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('visits/patient-time', [VisitsController::class, 'patientTimeForDay'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('visits/day-totals', [VisitsController::class, 'dayTotals'])
+        ->middleware('role:nurse,manager,admin,superadmin');
+    Route::get('visits/month-totals', [VisitsController::class, 'monthTotals'])
+        ->middleware('role:nurse,manager,admin,superadmin');
 
     Route::get('/cities/suggest', [CityController::class, 'suggest']);
     Route::get('/cities/by-zip', [CityController::class, 'byZip']);
