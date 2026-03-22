@@ -3,109 +3,132 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Responses\ApiResponse;
-use App\Http\Requests\MacroRequest;
-use App\Models\Macro;
-use Illuminate\Http\Request;
-use App\Http\Requests\DestroyManyRequest;
-use Illuminate\Http\Response;
 use App\Http\Filters\ApiQuery;
-use App\Http\Resources\BaseCollection;
+use App\Http\Requests\DestroyManyRequest;
+use App\Http\Requests\MacroRequest;
+use App\Http\Resources\MacroCollection;
+use App\Http\Resources\MacroResource;
+use App\Models\Macro;
+use App\Models\User;
+use App\Services\MacroService;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
-
+/**
+ * Manage user macros with owner-scoped access and superadmin override.
+ */
 class MacroController extends Controller
 {
-    public function __construct()
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(private readonly MacroService $macroService)
     {
-        $this->middleware('api.auth')->only(['index']);
     }
 
     /**
-     * GET /v1/macros?q=
-     * Returns only macros belonging to logged-in user
+     * List macros available to the authenticated user.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $userId = request()->user()->id;
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', Response::HTTP_UNAUTHORIZED);
+        }
 
-        $query = Macro::query()
-            ->where('user_id', $userId);
-
-        // Apply server-side search/sort/pagination
         $results = ApiQuery::apply(
-            request(),
-            $query,
+            $request,
+            $this->macroService->queryForUser($user),
             ['name', 'abbreviation', 'text'],
             ['name', 'abbreviation', 'created_at'],
             ['name' => 'asc']
         );
 
-        return $this->success(new BaseCollection($results), 'Macros retrieved');
+        return $this->success(new MacroCollection($results), 'Makrá boli načítané');
     }
 
-
     /**
-     * POST /v1/macros
+     * Create a new macro for the authenticated user.
      */
     public function store(MacroRequest $request)
     {
-        $userId = (int) ($request->user()?->id);
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', Response::HTTP_UNAUTHORIZED);
+        }
 
-        $validated = $request->validated();
+        $macro = $this->macroService->createForUser($request->validated(), $user);
 
-        $macro = Macro::create(array_merge(
-            $validated,
-            ['user_id' => $userId]
-        ));
-
-        return $this->success($macro, 'Created', Response::HTTP_CREATED);
+        return $this->success(new MacroResource($macro), 'Makro bolo vytvorené', Response::HTTP_CREATED);
     }
 
     /**
-     * GET /v1/macros/{macro}
+     * Show a single macro when the user is allowed to access it.
      */
     public function show(Request $request, Macro $macro)
     {
-        return $this->success($macro->only(['id', 'name', 'abbreviation', 'text', 'user_id']), 'Macro retrieved');
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$this->macroService->canAccess($user, $macro)) {
+            return $this->forbidden('Nemáte oprávnenie na prístup k tomuto makru');
+        }
+
+        return $this->success(new MacroResource($macro), 'Makro bolo načítané');
     }
 
     /**
-     * PUT/PATCH /v1/macros/{macro}
+     * Update an existing macro when the user is allowed to access it.
      */
     public function update(MacroRequest $request, Macro $macro)
     {
-        $validated = $request->validated();
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', Response::HTTP_UNAUTHORIZED);
+        }
 
-        $macro->update($validated);
+        if (!$this->macroService->canAccess($user, $macro)) {
+            return $this->forbidden('Nemáte oprávnenie upraviť toto makro');
+        }
 
-        return $this->success($macro->only(['id', 'name', 'abbreviation', 'text', 'user_id']), 'Updated');
+        $macro = $this->macroService->updateMacro($macro, $request->validated());
+
+        return $this->success(new MacroResource($macro), 'Makro bolo aktualizované');
     }
 
     /**
-     * DELETE /v1/macros/{macro}
+     * Delete a macro when the user is allowed to access it.
      */
     public function destroy(Request $request, Macro $macro)
     {
-        $macro->delete();
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', Response::HTTP_UNAUTHORIZED);
+        }
 
-        return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
+        if (!$this->macroService->canAccess($user, $macro)) {
+            return $this->forbidden('Nemáte oprávnenie odstrániť toto makro');
+        }
+
+        $this->macroService->deleteMacro($macro);
+
+        return $this->success(null, 'Makro bolo odstránené', Response::HTTP_NO_CONTENT);
     }
 
     /**
-     * POST /v1/macros/bulk-delete
-     * body: { ids: number[] }
+     * Delete multiple macros accessible to the authenticated user.
      */
     public function destroyMany(DestroyManyRequest $request)
     {
-        $userId = (int) ($request->user()?->id);
-        $validated = $request->validated();
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', Response::HTTP_UNAUTHORIZED);
+        }
 
-        // Only delete user-owned macros
-        Macro::where('user_id', $userId)
-            ->whereIn('id', $validated['ids'])
-            ->delete();
+        $this->macroService->deleteManyForUser($user, $request->validated()['ids']);
 
-        return $this->success(null, 'Deleted');
+        return $this->success(null, 'Makrá boli odstránené');
     }
-
 }
