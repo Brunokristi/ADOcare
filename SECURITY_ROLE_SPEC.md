@@ -55,56 +55,56 @@ Legend:
 
 ### 3.1 Global reference tables
 
-| Domain / table | Nurse | Manager | Superadmin | Enforcement |
-|---|---|---|---|---|
-| Insurance companies | View | View | View + Mutate | Routes split read `role:any`, write `role:superadmin` |
-| Doctors (global catalog) | View | View | View + Mutate | Routes split read `role:any`, write `role:superadmin` |
-| Diagnoses | View | View | View + Mutate | Routes split read `role:any`, write `role:superadmin` |
-| Procedures | View | View | View + Mutate | `apiResourceComplete(..., 'role:superadmin', 'role:any')` |
+| Domain / table           | Nurse | Manager | Superadmin    | Enforcement                                               |
+| ------------------------ | ----- | ------- | ------------- | --------------------------------------------------------- |
+| Insurance companies      | View  | View    | View + Mutate | Routes split read `role:any`, write `role:superadmin`     |
+| Doctors (global catalog) | View  | View    | View + Mutate | Routes split read `role:any`, write `role:superadmin`     |
+| Diagnoses                | View  | View    | View + Mutate | Routes split read `role:any`, write `role:superadmin`     |
+| Procedures               | View  | View    | View + Mutate | `apiResourceComplete(..., 'role:superadmin', 'role:any')` |
 
 Source: `routes/api.php`
 
 ### 3.2 Company administration
 
-| Domain | Nurse | Manager | Superadmin | Enforcement |
-|---|---|---|---|---|
-| Companies CRUD | No | No | Yes | `role:superadmin` |
-| Company stats/users/branches/stamp endpoints | No | Yes (company expected) | Yes | `role:manager,superadmin` + controller/service scoping |
-| Branches CRUD | No | Yes | Yes | `role:manager,superadmin` |
-| Users CRUD / signatures / branch assignment | No | Yes | Yes | `role:manager,superadmin` |
-| Manager reporting endpoints | No | Yes | Yes | `role:manager,superadmin` |
+| Domain                                       | Nurse | Manager                | Superadmin | Enforcement                                            |
+| -------------------------------------------- | ----- | ---------------------- | ---------- | ------------------------------------------------------ |
+| Companies CRUD                               | No    | No                     | Yes        | `role:superadmin`                                      |
+| Company stats/users/branches/stamp endpoints | No    | Yes (company expected) | Yes        | `role:manager,superadmin` + controller/service scoping |
+| Branches CRUD                                | No    | Yes                    | Yes        | `role:manager,superadmin`                              |
+| Users CRUD / signatures / branch assignment  | No    | Yes                    | Yes        | `role:manager,superadmin`                              |
+| Manager reporting endpoints                  | No    | Yes                    | Yes        | `role:manager,superadmin`                              |
 
 Source: `routes/api.php`
 
 ### 3.3 Patient and branch operations
 
-| Domain | Nurse | Manager | Superadmin | Enforcement |
-|---|---|---|---|---|
-| Patients resource (except index/store in current route registration) | Yes | Yes | Yes | `role:any` + patient policy where `can:view,patient` is applied |
-| Patient nested endpoints (`/patients/{patient}/...`) | Yes (assigned patient/branch) | Yes (same company) | Yes | `role:any` + `can:view,patient` |
-| Branch patient listing/assignments and favourite doctors read | Yes | Yes | Yes | `role:any` |
-| Branch favourite doctor attach/detach | No | Yes | Yes | `role:manager,superadmin` |
+| Domain                                                               | Nurse                         | Manager            | Superadmin | Enforcement                                                     |
+| -------------------------------------------------------------------- | ----------------------------- | ------------------ | ---------- | --------------------------------------------------------------- |
+| Patients resource (except index/store in current route registration) | Yes                           | Yes                | Yes        | `role:any` + patient policy where `can:view,patient` is applied |
+| Patient nested endpoints (`/patients/{patient}/...`)                 | Yes (assigned patient/branch) | Yes (same company) | Yes        | `role:any` + `can:view,patient`                                 |
+| Branch patient listing/assignments and favourite doctors read        | Yes                           | Yes                | Yes        | `role:any`                                                      |
+| Branch favourite doctor attach/detach                                | No                            | Yes                | Yes        | `role:manager,superadmin`                                       |
 
 Policy scope source: `app/Policies/PatientPolicy.php`
 
 ### 3.4 Clinical documents and batches
 
-| Domain | Nurse | Manager | Superadmin | Enforcement |
-|---|---|---|---|---|
-| Proposals/Agreements/CP/DZC/Dekurz/Leave/Record routes | Yes | Yes | Yes | `role:any` + `can:view,patient/document` on read routes where configured |
-| Kilometers batches / points batches | Yes | Yes | Yes | `role:any` + `can:view,document` on detail routes |
-| Batch company aggregations | No | Yes | Yes | `role:manager,superadmin` |
+| Domain                                                 | Nurse | Manager | Superadmin | Enforcement                                                              |
+| ------------------------------------------------------ | ----- | ------- | ---------- | ------------------------------------------------------------------------ |
+| Proposals/Agreements/CP/DZC/Dekurz/Leave/Record routes | Yes   | Yes     | Yes        | `role:any` + `can:view,patient/document` on read routes where configured |
+| Kilometers batches / points batches                    | Yes   | Yes     | Yes        | `role:any` + `can:view,document` on detail routes                        |
+| Batch company aggregations                             | No    | Yes     | Yes        | `role:manager,superadmin`                                                |
 
 Policy scope source: `app/Policies/DocumentPolicy.php`
 
 ### 3.5 Other domains
 
-| Domain | Nurse | Manager | Superadmin | Enforcement |
-|---|---|---|---|---|
-| Roles CRUD and role metadata endpoints | No | No | Yes | `role:superadmin` |
-| Totals endpoints | No | Yes | Yes | `role:manager,superadmin` |
-| Visits endpoints | Yes | Yes | Yes | `role:any` |
-| Cities/Countries/Geocode | Yes | Yes | Yes | inherited `api.auth` (no extra role gate) |
+| Domain                                 | Nurse | Manager | Superadmin | Enforcement                               |
+| -------------------------------------- | ----- | ------- | ---------- | ----------------------------------------- |
+| Roles CRUD and role metadata endpoints | No    | No      | Yes        | `role:superadmin`                         |
+| Totals endpoints                       | No    | Yes     | Yes        | `role:manager,superadmin`                 |
+| Visits endpoints                       | Yes   | Yes     | Yes        | `role:any`                                |
+| Cities/Countries/Geocode               | Yes   | Yes     | Yes        | inherited `api.auth` (no extra role gate) |
 
 ## 4. Policy Rules (Model-Level)
 
