@@ -52,6 +52,7 @@ This guide is meant for both humans and automated agents that modify the codebas
 
 - Responses
 	- Always use the ApiResponse methods (`$this->success()` / `$this->error()`) in controllers.
+	- Response `message` values returned by the backend (success and error messages) must be in Slovak.
 	- Return Eloquent Resource classes for single entities and Collection classes for lists.
 	- Use appropriate HTTP status codes (201 for created, 204 for successful delete with no content, 422 for validation errors, etc.).
 
@@ -160,7 +161,8 @@ This guide is meant for both humans and automated agents that modify the codebas
 	- Favor small, well-documented functions over large ones. Extract common logic into services or helpers s.
 
 - Language & internationalization
-    - Be consistent with language in code and messages. The primary languasge is Slovak for anything that the user sees (UI, API messages) and English for code, variable names, and technical comments. Avoid mixing languages in the same context (e.g., don't use Slovak variable names or English messages).
+	- Be consistent with language in code and messages. The primary language is Slovak for anything that the user sees (UI text and backend API response messages) and English for code, variable names, and technical comments.
+	- Avoid mixing languages in the same context (e.g., do not use Slovak variable names or English user-facing backend/UI messages).
 
 ---
 
