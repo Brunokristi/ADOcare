@@ -17,8 +17,9 @@ class PatientPolicy extends BasePolicy
         // A nurse can view a patient if assigned to the same branch and assigned to the patient
         if ($user->isInBranch($patient->branch_id)) {
             // check nurse assignment (patient->nurse_id or visit pivot) — fallback to allowing branch nurses to view
-            return $patient->nurse_id === $user->id || $user->isInBranch($patient->branch_id);
+            return $patient->nurse_id === $user->id;
         }
+
 
         return false;
     }

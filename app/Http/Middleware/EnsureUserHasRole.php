@@ -19,7 +19,10 @@ class EnsureUserHasRole
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        if ($roles === null || trim($roles) === '') {
+        $globalRole = $user->role?->position ?? 'nurse';
+        $hasGlobalRole = is_string($globalRole) && trim($globalRole) !== '';
+
+        if ($roles === null || trim($roles) === 'any' || trim($roles) === '') {
             // no roles specified, allow by default
             return $next($request);
         }
@@ -30,13 +33,7 @@ class EnsureUserHasRole
         }
 
         // role checks operate on the user's global role column.
-        $exists = false;
-        foreach ($wanted as $roleName) {
-            if ($user->hasGlobalRole($roleName)) {
-                $exists = true;
-                break;
-            }
-        }
+        $exists = ($hasGlobalRole && in_array($globalRole, $wanted, true));
 
         if (!$exists) {
             return response()->json(['message' => 'Forbidden'], 403);

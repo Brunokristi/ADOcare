@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Branch;
 use App\Models\Company;
 use App\Models\Document;
+use App\Models\InsuranceCompany;
 use App\Models\Patient;
 use App\Models\User;
 use App\Policies\BranchPolicy;
@@ -29,8 +30,7 @@ class AuthServiceProvider extends ServiceProvider
         Company::class => CompanyPolicy::class,
         User::class => UserPolicy::class,
         Document::class => DocumentPolicy::class,
-        // InsuranceCompany model (if present) -> policy
-        \App\Models\InsuranceCompany::class => InsuranceCompanyPolicy::class,
+        InsuranceCompany::class => InsuranceCompanyPolicy::class,
     ];
 
     public function boot(): void
@@ -39,7 +39,7 @@ class AuthServiceProvider extends ServiceProvider
 
         // Example gates for convenience
         Gate::define('manage-company', function (User $user, $companyId) {
-            return $user->hasGlobalRole('admin') || ($user->hasGlobalRole('manager') && $user->isInCompany($companyId));
+            return $user->hasGlobalRole('superadmin') || ($user->hasGlobalRole('manager') && $user->isInCompany($companyId));
         });
     }
 }

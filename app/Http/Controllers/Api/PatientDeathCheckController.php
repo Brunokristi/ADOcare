@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Patient;
 use App\Services\UdzsDeathService;
 
 class PatientDeathCheckController extends Controller
@@ -17,21 +18,15 @@ class PatientDeathCheckController extends Controller
      * @group Patients
      * @response 200 {"message":"OK","data":{"status":"alive","data":null}}
      */
-    public function show(string $patientId)
+    public function show(Patient $patient)
     {
-        $needle = preg_replace('/\s+/', '', trim($patientId));
 
-        \Log::debug('[UDZS] Death check requested', ['input' => $patientId, 'needle' => $needle]);
+        $needle = preg_replace('/\s+/', '', trim($patient->id));
 
-        $patient = \App\Models\Patient::query()
-            ->where('id', $patientId)
-            ->when($needle !== '', function ($query) use ($needle) {
-                $query->orWhereRaw("replace(personal_number, ' ', '') = ?", [$needle]);
-            })
-            ->first();
+        \Log::debug('[UDZS] Death check requested', ['input' => $patient->id, 'needle' => $needle]);
 
         if (!$patient) {
-            \Log::warning('[UDZS] Patient not found', ['input' => $patientId]);
+            \Log::warning('[UDZS] Patient not found', ['input' => $patient->id]);
             return $this->notFound('Patient not found');
         }
 
