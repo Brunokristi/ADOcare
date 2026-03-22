@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRecordDocumentRequest;
 use App\Models\Document;
+use App\Models\Patient;
 use App\Services\RecordDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,29 +28,27 @@ class RecordDocumentController extends Controller
         $document->loadMissing('patient');
 
         $recordFile = $service->findRecordFileForDocument($document);
-        if (! $recordFile) {
+        if (!$recordFile) {
             return response()->json(['message' => 'Record data not found'], 404);
         }
 
         return response()->json(['document' => $document, 'record_data' => $recordFile]);
     }
 
-    public function latestByPatient($patientId, RecordDocumentService $service)
+    public function latestByPatient(Patient $patient, RecordDocumentService $service)
     {
-        $patientId = (int) $patientId;
-
-        $document = Document::where('patient_id', $patientId)
+        $document = Document::where('patient_id', $patient->id)
             ->where('type', 'record')
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->first();
 
-        if (! $document) {
+        if (!$document) {
             return response()->json(['message' => 'No record found'], 404);
         }
 
         $recordFile = $service->findRecordFileForDocument($document);
-        if (! $recordFile) {
+        if (!$recordFile) {
             return response()->json(['message' => 'Record data not found'], 404);
         }
 
