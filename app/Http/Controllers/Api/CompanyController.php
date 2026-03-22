@@ -171,7 +171,7 @@ class CompanyController extends Controller
             $request,
             $query,
             searchable: ['first_name', 'last_name', 'personal_number'],
-            allowedFilters: ['sex'],
+            allowedFilters: ['sex', 'nurse_id'],
             defaults: ['sort' => 'last_name']
         );
         return $this->success(new BaseCollection(resource: $results), 'Patients retrieved');

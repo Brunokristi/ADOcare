@@ -32,6 +32,8 @@ type Branch = {
 const toast = useToast()
 const branches = ref<Branch[]>([])
 const loading = ref(true)
+const now = new Date()
+const dates = ref<Date | null>(new Date(now.getFullYear(), now.getMonth() - 1, 1))
 
 onMounted(async () => {
   try {
@@ -124,6 +126,7 @@ const options = computed<DataTableOptions<Document>>(() => ({
     placeholder: 'Obdobie',
     view: 'month',
     dateFormat: 'mm/yy',
+    value: dates.value,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
@@ -135,6 +138,15 @@ const options = computed<DataTableOptions<Document>>(() => ({
       header: 'Typ',
       sortable: true,
       render: (v: string | undefined) => formatDocumentType(v),
+    },
+    {
+      field: 'insurance_company_name',
+      header: 'Poisťovňa',
+      sortable: true,
+      render: (v?: string) => {
+        if (!v) return ''
+        return v.trim().split(/\s+/)[0] ?? ''
+      }
     },
     {
       field: 'subtype',
@@ -150,28 +162,6 @@ const options = computed<DataTableOptions<Document>>(() => ({
       width: '8rem',
     },
     {
-      field: 'amount',
-      header: 'Suma',
-      sortable: false,
-      render: (v: number | undefined) => formatAmount(v),
-      width: '10rem',
-    },
-    {
-      field: 'insurance_company_name',
-      header: 'Poisťovňa',
-      sortable: true,
-      render: (v?: string) => {
-        if (!v) return ''
-        return v.trim().split(/\s+/)[0] ?? ''
-      }
-    },
-    {
-      field: 'updated_at',
-      header: 'Naposledy upravené',
-      sortable: true,
-      render: (v: string | undefined) => formatDateWithTime(v),
-    },
-    {
       field: 'created_by_user',
       header: 'Používateľ',
       sortable: true,
@@ -183,7 +173,19 @@ const options = computed<DataTableOptions<Document>>(() => ({
       sortable: true,
       render: (v: string | undefined) => v || 'Neznáma',
     },
-
+    {
+      field: 'amount',
+      header: 'Suma',
+      sortable: false,
+      render: (v: number | undefined) => formatAmount(v),
+      width: '10rem',
+    },
+    {
+      field: 'updated_at',
+      header: 'Naposledy upravené',
+      sortable: true,
+      render: (v: string | undefined) => formatDateWithTime(v),
+    },
     {
       field: 'preview',
       header: '',
@@ -239,8 +241,7 @@ const options = computed<DataTableOptions<Document>>(() => ({
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <section>
+  <div class="h-full flex flex-col overflow-hidden min-h-0">
       <UniversalDataTable v-if="!loading" ref="tableRef" :options="options">
         <template #actions="{ row }">
           <button @click.stop="openDocumentInNewTab(row)" class="btn btn-sm btn-link p-0" title="Otvoriť dokument">
@@ -248,9 +249,5 @@ const options = computed<DataTableOptions<Document>>(() => ({
           </button>
         </template>
       </UniversalDataTable>
-      <div v-else class="flex items-center justify-center p-8">
-        <span>Načítavam dokumenty...</span>
-      </div>
-    </section>
   </div>
 </template>

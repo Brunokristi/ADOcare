@@ -15,6 +15,7 @@ import Documents from "@/pages/Manager/Documents.vue";
 import DataDocuments from "@/pages/Manager/DataDocuments.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import useAuthStore from "@/stores/auth";
+import PatientsPrintPreview from "@/pages/Documents/PatientsPrintPreview.vue";
 
 
 function showOnSidebar() {
@@ -100,6 +101,16 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
             },
         ],
+    },
+    {
+        path: '/manager/overview/patients/print-preview',
+        name: 'manager-overview-patients-print',
+        component: PatientsPrintPreview,
+        meta: {
+            title: 'Náhľad tlače pacientov',
+            sidebar: false,
+            navbar: false,
+        },
     },
     {
         path: '/manager/settings',

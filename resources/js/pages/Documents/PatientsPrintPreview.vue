@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
-import { useRouter } from 'vue-router'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import api from '@/services/api'
 import type { Patient, Doctor } from '@/types/models'
 import { formatBranchFullName, formatUserFullName } from '@/utils/formatUtils'
@@ -13,7 +12,6 @@ interface PatientsPrintPayload {
     params?: Record<string, any>
 }
 
-const router = useRouter()
 const loading = ref(false)
 const isPrinting = ref(false)
 const uiOverlayStore = useUiOverlayStore()
@@ -22,15 +20,19 @@ const printedAt = ref('')
 const patients = ref<Patient[]>([])
 const errorMessage = ref('')
 
-const ROWS_PER_PAGE = 24
+const pagedPatients = ref<Patient[][]>([])
+
+const measurePageInnerRef = ref<HTMLElement | null>(null)
+const measureHeaderRef = ref<HTMLElement | null>(null)
+const measureTableHeadRef = ref<HTMLElement | null>(null)
+const measureRowsWrapRef = ref<HTMLElement | null>(null)
+const measureFooterRef = ref<HTMLElement | null>(null)
+
+let resizeTimer: number | null = null
 
 watchEffect(() => {
     uiOverlayStore.setContentLoading(loading.value)
 })
-
-function goBack() {
-    router.back()
-}
 
 function extractPatientsAndLastPage(payload: any): { items: Patient[]; lastPage: number } {
     const wrapped = payload?.data ?? payload
@@ -85,21 +87,12 @@ function formatDoctor(doctor?: Doctor | null) {
     return `${doctor.title ?? ''} ${doctor.first_name ?? ''} ${doctor.last_name ?? ''}`.trim() || '-'
 }
 
-function formatStatus(patient: Patient) {
-    if (patient.deleted_at) return 'Zmazaný'
-    if (patient.death_date) return 'Zosnulý'
-    return 'Aktívny'
+function outerHeightWithMargins(el: HTMLElement) {
+    const style = window.getComputedStyle(el)
+    const mt = parseFloat(style.marginTop || '0')
+    const mb = parseFloat(style.marginBottom || '0')
+    return el.getBoundingClientRect().height + mt + mb
 }
-
-const pagedPatients = computed(() => {
-    const chunks: Patient[][] = []
-
-    for (let i = 0; i < patients.value.length; i += ROWS_PER_PAGE) {
-        chunks.push(patients.value.slice(i, i + ROWS_PER_PAGE))
-    }
-
-    return chunks.length ? chunks : [[]]
-})
 
 async function waitForFonts(doc: Document = document) {
     try {
@@ -134,10 +127,89 @@ async function waitForImagesInElement(root: ParentNode | null) {
     )
 }
 
+async function settleLayout() {
+    await nextTick()
+    await waitForFonts()
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    await waitForImagesInElement(document.getElementById('measure-root'))
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+}
+
+async function recalcPagination() {
+    if (loading.value || errorMessage.value) return
+
+    await settleLayout()
+
+    const inner = measurePageInnerRef.value
+    const headerEl = measureHeaderRef.value
+    const tableHeadEl = measureTableHeadRef.value
+    const rowsWrap = measureRowsWrapRef.value
+    const footerEl = measureFooterRef.value
+
+    if (!inner || !rowsWrap) {
+        pagedPatients.value = patients.value.length ? [patients.value] : [[]]
+        return
+    }
+
+    const innerHeight = inner.clientHeight
+    const headerHeight = headerEl ? outerHeightWithMargins(headerEl) : 0
+    const tableHeadHeight = tableHeadEl ? outerHeightWithMargins(tableHeadEl) : 0
+    const footerHeight = footerEl ? outerHeightWithMargins(footerEl) : 0
+
+    const safety = 10
+    const pageCapacity = innerHeight - headerHeight - tableHeadHeight - footerHeight - safety
+
+    const rowEls = Array.from(rowsWrap.children) as HTMLElement[]
+    const rowHeights = rowEls.map((el) => outerHeightWithMargins(el))
+
+    const src = patients.value
+    const pages: Patient[][] = []
+
+    let current: Patient[] = []
+    let used = 0
+
+    for (let i = 0; i < src.length; i++) {
+        const patient = src[i]
+        const rowHeight = rowHeights[i] ?? 0
+
+        if (!patient) continue
+
+        if (current.length > 0 && used + rowHeight > pageCapacity) {
+            pages.push(current)
+            current = []
+            used = 0
+        }
+
+        current.push(patient)
+        used += rowHeight
+    }
+
+    pagedPatients.value = pages.length
+        ? current.length
+            ? [...pages, current]
+            : pages
+        : current.length
+          ? [current]
+          : [[]]
+}
+
+function handleResize() {
+    if (resizeTimer) {
+        window.clearTimeout(resizeTimer)
+    }
+
+    resizeTimer = window.setTimeout(() => {
+        void recalcPagination()
+    }, 120)
+}
+
 async function printPage() {
     isPrinting.value = true
 
     try {
+        await recalcPagination()
+
         const src = document.getElementById('print-root')
         if (!src) return
 
@@ -261,7 +333,21 @@ async function printPage() {
     }
 }
 
+watch(
+    () => [
+        patients.value,
+        printedAt.value,
+    ],
+    async () => {
+        if (loading.value || errorMessage.value) return
+        await recalcPagination()
+    },
+    { deep: true },
+)
+
 onMounted(async () => {
+    window.addEventListener('resize', handleResize)
+
     loading.value = true
 
     try {
@@ -283,6 +369,13 @@ onMounted(async () => {
         }
 
         printedAt.value = new Date().toLocaleString('sk-SK')
+
+        await settleLayout()
+        await recalcPagination()
+
+        window.setTimeout(() => {
+            void recalcPagination()
+        }, 100)
     } catch (error) {
         console.error('Failed to build patients print preview', error)
         errorMessage.value = 'Nepodarilo sa pripraviť náhľad tlače.'
@@ -292,6 +385,12 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+    window.removeEventListener('resize', handleResize)
+
+    if (resizeTimer) {
+        window.clearTimeout(resizeTimer)
+    }
+
     isPrinting.value = false
 })
 </script>
@@ -307,11 +406,6 @@ onBeforeUnmount(() => {
 
             <template #end>
                 <div class="flex items-center gap-2">
-                    <Button
-                        icon="bi bi-arrow-left"
-                        class="bg-tag3! border-tag3! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-                        @click="goBack"
-                    />
                     <Button
                         icon="bi bi-printer"
                         class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
@@ -334,28 +428,30 @@ onBeforeUnmount(() => {
                     class="print-page"
                 >
                     <div class="page-inner">
-                        <div class="text-center font-bold text-lg mb-4">
-                            ZOZNAM PACIENTOV
-                        </div>
+                        <div class="page-header" :ref="pageIdx === 0 ? undefined : undefined">
+                            <div class="text-center font-bold text-lg mb-4">
+                                ZOZNAM PACIENTOV
+                            </div>
 
-                        <table class="w-full border-collapse text-sm mb-4">
-                            <tbody>
-                                <tr>
-                                    <td class="border border-black p-2 w-1/3">
-                                        Dátum tlače:<br />
-                                        <strong>{{ printedAt }}</strong>
-                                    </td>
-                                    <td class="border border-black p-2 w-1/3">
-                                        Počet pacientov:<br />
-                                        <strong>{{ patients.length }}</strong>
-                                    </td>
-                                    <td class="border border-black p-2 w-1/3">
-                                        Strana:<br />
-                                        <strong>{{ pageIdx + 1 }} / {{ pagedPatients.length }}</strong>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                            <table class="w-full border-collapse text-sm mb-4">
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Dátum tlače:<br />
+                                            <strong>{{ printedAt }}</strong>
+                                        </td>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Počet pacientov:<br />
+                                            <strong>{{ patients.length }}</strong>
+                                        </td>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Strana:<br />
+                                            <strong>{{ pageIdx + 1 }} / {{ pagedPatients.length }}</strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <table v-if="pagePatients.length" class="w-full border-collapse text-sm patients-table">
                             <thead>
@@ -366,7 +462,6 @@ onBeforeUnmount(() => {
                                     <th>Sestra</th>
                                     <th>Lekár</th>
                                     <th>Prevádzka</th>
-                                    <th>Stav</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -375,7 +470,7 @@ onBeforeUnmount(() => {
                                     :key="patient.id"
                                 >
                                     <td class="text-center">
-                                        {{ pageIdx * ROWS_PER_PAGE + rowIdx + 1 }}
+                                        {{ pageIdx * 1000 + rowIdx + 1 > 0 ? (pagedPatients.slice(0, pageIdx).reduce((sum, page) => sum + page.length, 0) + rowIdx + 1) : rowIdx + 1 }}
                                     </td>
                                     <td>
                                         {{ `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim() || '-' }}
@@ -384,7 +479,6 @@ onBeforeUnmount(() => {
                                     <td>{{ patient.nurse ? formatUserFullName(patient.nurse) : '-' }}</td>
                                     <td>{{ formatDoctor(patient.doctor) }}</td>
                                     <td>{{ patient.branch ? formatBranchFullName(patient.branch) : '-' }}</td>
-                                    <td>{{ formatStatus(patient) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -392,6 +486,65 @@ onBeforeUnmount(() => {
                         <div v-else class="empty">
                             Neboli vybrané žiadne záznamy.
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="measure-root" aria-hidden="true">
+                <div class="print-page measure-page">
+                    <div ref="measurePageInnerRef" class="page-inner">
+                        <div ref="measureHeaderRef" class="page-header">
+                            <div class="text-center font-bold text-lg mb-4">
+                                ZOZNAM PACIENTOV
+                            </div>
+
+                            <table class="w-full border-collapse text-sm mb-4">
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Dátum tlače:<br />
+                                            <strong>{{ printedAt }}</strong>
+                                        </td>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Počet pacientov:<br />
+                                            <strong>{{ patients.length }}</strong>
+                                        </td>
+                                        <td class="border border-black p-2 w-1/3">
+                                            Strana:<br />
+                                            <strong>1 / 1</strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <table class="w-full border-collapse text-sm patients-table">
+                            <thead ref="measureTableHeadRef">
+                                <tr>
+                                    <th class="text-center">#</th>
+                                    <th>Meno a priezvisko</th>
+                                    <th>Rodné číslo</th>
+                                    <th>Sestra</th>
+                                    <th>Lekár</th>
+                                    <th>Prevádzka</th>
+                                </tr>
+                            </thead>
+                            <tbody ref="measureRowsWrapRef">
+                                <tr
+                                    v-for="(patient, rowIdx) in patients"
+                                    :key="patient.id"
+                                >
+                                    <td class="text-center">{{ rowIdx + 1 }}</td>
+                                    <td>
+                                        {{ `${patient.first_name ?? ''} ${patient.last_name ?? ''}`.trim() || '-' }}
+                                    </td>
+                                    <td>{{ patient.personal_number ?? '-' }}</td>
+                                    <td>{{ patient.nurse ? formatUserFullName(patient.nurse) : '-' }}</td>
+                                    <td>{{ formatDoctor(patient.doctor) }}</td>
+                                    <td>{{ patient.branch ? formatBranchFullName(patient.branch) : '-' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -414,6 +567,21 @@ onBeforeUnmount(() => {
 .page-inner {
     height: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-header {
+    flex: 0 0 auto;
+}
+
+.page-footer {
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 6mm;
+    font-size: 10px;
+    color: #6b7280;
+    text-align: right;
 }
 
 .agreement-sheet-wrapper {
@@ -453,7 +621,7 @@ onBeforeUnmount(() => {
 
 .patients-table td:nth-child(2),
 .patients-table th:nth-child(2) {
-    width: 20%;
+    width: 22%;
 }
 
 .patients-table td:nth-child(3),
@@ -473,7 +641,7 @@ onBeforeUnmount(() => {
 
 .patients-table td:nth-child(6),
 .patients-table th:nth-child(6) {
-    width: 16%;
+    width: 14%;
 }
 
 .patients-table td:nth-child(7),
@@ -484,6 +652,20 @@ onBeforeUnmount(() => {
 .empty {
     margin-top: 28px;
     font-size: 14px;
+}
+
+#measure-root {
+    position: absolute;
+    left: -99999px;
+    top: 0;
+    width: 210mm;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.measure-page {
+    box-shadow: none !important;
 }
 
 @page {
@@ -536,7 +718,8 @@ onBeforeUnmount(() => {
     }
 
     :global(.no-print),
-    :global(.p-toolbar) {
+    :global(.p-toolbar),
+    :global(#measure-root) {
         display: none !important;
     }
 }
