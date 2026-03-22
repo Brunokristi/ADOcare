@@ -3,131 +3,78 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreLeaveDocumentRequest;
 use App\Models\Document;
-use App\Models\Patient;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use App\Models\User;
+use App\Services\LeaveDocumentService;
 
+/**
+ * Handles leave document endpoints.
+ */
 class LeaveDocumentController extends Controller
 {
-    public function store(Request $request)
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(private LeaveDocumentService $service)
     {
-        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
-            'date' => 'required|date',
-            'problems' => 'nullable|array',
-            'other_findings' => 'nullable|string',
-            'results' => 'nullable|string',
-            'education' => 'nullable|string',
-            'received' => 'nullable|string',
-            'branch_id' => 'nullable|exists:branches,id',
-        ]);
-
-        $document = Document::create([
-            'patient_id' => $validated['patient_id'],
-            'user_id' => Auth::id(),
-            'type' => 'leave',
-            'mime_type' => 'application/json',
-            'name' => 'prepustacia_sprava_' . now()->format('d.m.Y'),
-            'path' => 'leave/' . now()->timestamp . '.json',
-            'period' => date('Y-m', strtotime($validated['date'])),
-            'branch_id' => $validated['branch_id'] ?? null,
-        ]);
-
-        $patient = Patient::findOrFail($validated['patient_id']);
-        $user = Auth::user();
-
-        $patientName = $patient->title . ' ' . $patient->first_name . ' ' . $patient->last_name;
-        $patientBirthNumber = $patient->personal_number;
-        $userName = $user->title . ' ' . $user->first_name . ' ' . $user->last_name;
-
-        $nursingData = [
-            'user_name' => $userName,
-            'company_id' => $user->company_id,
-            'user_id' => $user->id,
-            'patient_name' => $patientName,
-            'patient_birth_number' => $patientBirthNumber,
-            'date' => $validated['date'],
-            'problems' => $validated['problems'] ?? [],
-            'other_findings' => $validated['other_findings'] ?? '',
-            'results' => $validated['results'],
-            'education' => $validated['education'],
-            'received' => $validated['received'],
-            'document_id' => $document->id,
-            'created_at' => now(),
-        ];
-
-        Storage::disk('local')->put(
-            'leave/' . now()->timestamp . '.json',
-            json_encode($nursingData, JSON_PRETTY_PRINT)
-        );
-        
-        return response()->json([
-            'success' => true,
-            'document_id' => $document->id,
-            'message' => 'Ošetrovateľský dokument bol úspešne vytvorený',
-        ], 201);
     }
 
-    public function show($documentId)
+    /**
+     * Store a new leave document.
+     */
+    public function store(StoreLeaveDocumentRequest $request)
     {
-        $documentId = (int) $documentId;
-        $document = Document::with(['patient'])->findOrFail($documentId);
-
-        $leaveFile = null;
-
-        $files = Storage::disk('local')->files('leave');
-        foreach ($files as $file) {
-            $content = json_decode(Storage::disk('local')->get($file), true);
-            if ($content['document_id'] === $documentId) {
-                $leaveFile = $content;
-                break;
-            }
+        $user = $request->user();
+        if (!$user instanceof User) {
+            return $this->error('Používateľ nie je autentifikovaný', 401);
         }
+
+        $document = $this->service->create($request->validated(), $user);
+
+        return $this->success([
+            'document_id' => $document->id,
+        ], 'Prepúšťacia správa bola úspešne vytvorená', 201);
+    }
+
+    /**
+     * Show leave document payload for the provided document id.
+     */
+    public function show(int $documentId)
+    {
+        $document = Document::with(['patient'])->findOrFail($documentId);
+        $leaveFile = $this->service->findLeaveFileForDocument($document);
 
         if (!$leaveFile) {
-            return response()->json(['message' => 'Leave document data not found'], 404);
+            return $this->error('Dáta prepúšťacej správy sa nenašli', 404);
         }
 
-        $responseData = [
+        return $this->success([
             'document' => $document,
             'leave_data' => $leaveFile,
-        ];
-
-        return response()->json($responseData);
+        ], 'Prepúšťacia správa bola načítaná');
     }
 
-    public function latestByPatient($patientId)
+    /**
+     * Show latest leave document payload by patient id.
+     */
+    public function latestByPatient(int $patientId)
     {
-        $patientId = (int) $patientId;
-
-        $document = Document::where('patient_id', $patientId)
-            ->where('type', 'leave')
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $document = $this->service->findLatestDocumentByPatientId($patientId);
 
         if (!$document) {
-            return response()->json(['message' => 'No leave document found'], 404);
+            return $this->error('Prepúšťacia správa sa nenašla', 404);
         }
 
-        $leaveFile = null;
-        $files = Storage::disk('local')->files('leave');
-        foreach ($files as $file) {
-            $content = json_decode(Storage::disk('local')->get($file), true);
-            if (($content['document_id'] ?? null) === $document->id) {
-                $leaveFile = $content;
-                break;
-            }
-        }
+        $leaveFile = $this->service->findLeaveFileForDocument($document);
 
         if (!$leaveFile) {
-            return response()->json(['message' => 'Leave document data not found'], 404);
+            return $this->error('Dáta prepúšťacej správy sa nenašli', 404);
         }
 
-        return response()->json([
+        return $this->success([
             'document_id' => $document->id,
             'leave_data' => $leaveFile,
-        ]);
+        ], 'Najnovšia prepúšťacia správa bola načítaná');
     }
 }
