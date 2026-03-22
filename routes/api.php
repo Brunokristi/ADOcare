@@ -77,9 +77,20 @@ Route::prefix('auth')->group(function () {
 
 Route::prefix('v1')->middleware('api.auth')->group(function () {
 
-    Route::macro('apiResourceComplete', function ($name, $controller, ?string $middleware = null) {
-        // register the normal resource routes
-        $resource = Route::apiResource($name, $controller);
+    Route::macro('apiResourceComplete', function ($name, $controller, ?string $middleware = null, ?string $readMiddleware = null) {
+        if ($readMiddleware) {
+            // Split read and write routes when read access should be broader than write access.
+            Route::apiResource($name, $controller)
+                ->only(['index', 'show'])
+                ->middleware($readMiddleware);
+
+            $resource = Route::apiResource($name, $controller)
+                ->except(['index', 'show']);
+        } else {
+            // register the normal resource routes
+            $resource = Route::apiResource($name, $controller);
+        }
+
         if ($middleware) {
             $resource->middleware($middleware);
         }
@@ -129,7 +140,14 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('documents', [PatientController::class, 'documents']);
     });
 
-    Route::apiResourceComplete('insurance-companies', InsuranceCompanyController::class, 'role:manager,superadmin');
+    Route::apiResource('insurance-companies', InsuranceCompanyController::class)
+        ->only(['index', 'show'])
+        ->middleware('role:any');
+    Route::apiResource('insurance-companies', InsuranceCompanyController::class)
+        ->except(['index', 'show'])
+        ->middleware('role:superadmin');
+    Route::delete('insurance-companies', [InsuranceCompanyController::class, 'destroyMany'])
+        ->middleware('role:superadmin');
 
     Route::apiResourceComplete('branches', BranchController::class, 'role:manager,superadmin');
     Route::delete('branches/delete-many', [BranchController::class, 'destroyMany'])
@@ -169,13 +187,28 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::apiResourceComplete('totals', TotalsController::class, 'role:manager,superadmin');
 
-    Route::apiResourceComplete('doctors', DoctorController::class, 'role:manager,superadmin');
-    Route::apiResourceComplete('diagnoses', DiagnosisController::class, 'role:manager,superadmin');
+    Route::apiResource('doctors', DoctorController::class)
+        ->only(['index', 'show'])
+        ->middleware('role:any');
+    Route::apiResource('doctors', DoctorController::class)
+        ->except(['index', 'show'])
+        ->middleware('role:superadmin');
+    Route::delete('doctors', [DoctorController::class, 'destroyMany'])
+        ->middleware('role:superadmin');
+
+    Route::apiResource('diagnoses', DiagnosisController::class)
+        ->only(['index', 'show'])
+        ->middleware('role:any');
+    Route::apiResource('diagnoses', DiagnosisController::class)
+        ->except(['index', 'show'])
+        ->middleware('role:superadmin');
+    Route::delete('diagnoses', [DiagnosisController::class, 'destroyMany'])
+        ->middleware('role:superadmin');
     Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class, 'role:manager,superadmin');
     Route::apiResourceComplete('macros', MacroController::class);
     Route::apiResourceComplete('plans', PlanController::class);
     Route::delete('/plans', [PlanController::class, 'destroyMany']);
-    Route::apiResourceComplete('procedures', ProcedureController::class, 'role:manager,superadmin');
+    Route::apiResourceComplete('procedures', ProcedureController::class, 'role:superadmin', 'role:any');
     Route::apiResourceComplete('patient-points', PatientPointController::class, 'role:any');
     Route::apiResourceComplete('report-months', ReportMonthController::class, 'role:any');
     Route::group(['prefix' => 'roles', 'middleware' => 'role:superadmin'], function () {
@@ -317,7 +350,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
     Route::post('/documents/travel/company/email', [DocumentController::class, 'emailTravelDocuments']);
-    Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
+        ->middleware(['role:any', 'can:delete,document']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
     Route::get('/documents/travel/company', [DocumentController::class, 'indexTravelDocumentsForCompany']);
     Route::get('/documents/travel', [DocumentController::class, 'indexTravelDocuments']);
@@ -342,8 +376,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
     Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
     Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
-    Route::get('/scan/{document}', [ScanFileController::class, 'show']);
-    Route::patch('/scan/{document}/text', [ScanFileController::class, 'updateText']);
+    Route::get('/scan/{document}', [ScanFileController::class, 'show'])
+        ->middleware(['role:any', 'can:view,document']);
+    Route::patch('/scan/{document}/text', [ScanFileController::class, 'updateText'])
+        ->middleware(['role:any', 'can:update,document']);
 
 });
 
