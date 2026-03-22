@@ -77,6 +77,18 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         },
         children: [
             {
+                path: 'data',
+                name: 'manager-overview-data',
+                component: DataDocuments,
+                meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
+            },
+            {
+                path: 'documents',
+                name: 'manager-overview-documents',
+                component: Documents,
+                meta: { title: 'Cestovné Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'cestovné dokumenty' },
+            },
+            {
                 path: 'patients',
                 name: 'manager-overview-patients',
                 component: Patients,
@@ -87,18 +99,6 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'manager-overview-doctors',
                 component: Doctors,
                 meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
-            },
-            {
-                path: 'documents',
-                name: 'manager-overview-documents',
-                component: Documents,
-                meta: { title: 'Cestovné Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'cestovné dokumenty' },
-            },
-            {
-                path: 'data',
-                name: 'manager-overview-data',
-                component: DataDocuments,
-                meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
             },
         ],
     },
@@ -142,6 +142,17 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: { title: 'Používatelia', link: 'používatelia', sidebar: showOnSidebar, navbar: true, },
             },
             {
+                path: 'procedures',
+                name: 'manager-settings-procedures',
+                component: Procedures,
+                meta: {
+                    title: 'Výkony',
+                    link: 'výkony',
+                    sidebar: showOnSidebar,
+                    navbar: true,
+                },
+            },
+            {
                 path: 'cars',
                 name: 'manager-settings-cars',
                 component: Cars,
@@ -153,17 +164,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: PlansPage,
                 meta: { title: 'Plány starostlivosti', link: 'plány starostlivosti', sidebar: showOnSidebar, navbar: true, },
             },
-            {
-                path: 'procedures',
-                name: 'manager-settings-procedures',
-                component: Procedures,
-                meta: {
-                    title: 'Výkony',
-                    link: 'výkony',
-                    sidebar: showOnSidebar,
-                    navbar: true,
-                },
-            },
+
         ],
     },
 ];
