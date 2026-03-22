@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLeaveDocumentRequest;
 use App\Models\Document;
+use App\Models\Patient;
 use App\Models\User;
 use App\Services\LeaveDocumentService;
 
@@ -40,9 +41,11 @@ class LeaveDocumentController extends Controller
     /**
      * Show leave document payload for the provided document id.
      */
-    public function show(int $documentId)
+    public function show(Document $document)
     {
-        $document = Document::with(['patient'])->findOrFail($documentId);
+        $this->authorize('view', $document);
+
+        $document->loadMissing(['patient']);
         $leaveFile = $this->service->findLeaveFileForDocument($document);
 
         if (!$leaveFile) {
@@ -58,9 +61,11 @@ class LeaveDocumentController extends Controller
     /**
      * Show latest leave document payload by patient id.
      */
-    public function latestByPatient(int $patientId)
+    public function latestByPatient(Patient $patient)
     {
-        $document = $this->service->findLatestDocumentByPatientId($patientId);
+        $this->authorize('view', $patient);
+
+        $document = $this->service->findLatestDocumentByPatientId($patient->id);
 
         if (!$document) {
             return $this->error('Prepúšťacia správa sa nenašla', 404);

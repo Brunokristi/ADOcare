@@ -133,7 +133,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
     Route::get('/my-company/doctors', [MyCompanyController::class, 'doctors']);
 
-    Route::group(['prefix' => 'manager'], function () {
+    Route::group(['prefix' => 'manager', 'middleware' => 'role:manager,admin,superadmin'], function () {
         Route::get('/user-statistics', [ManagerController::class, 'userStatistics']);
         Route::get('/doctor-statistics', [ManagerController::class, 'doctorStatistics']);
         Route::get('/user-totals', [ManagerController::class, 'userTotals']);
@@ -222,8 +222,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/dekurz/{document}', [DekurzDocumentController::class, 'show']);
 
     Route::post('/leave-documents', [LeaveDocumentController::class, 'store']);
-    Route::get('/leave-documents/{documentId}', [LeaveDocumentController::class, 'show']);
-    Route::get('/patients/{patientId}/leave/latest', [LeaveDocumentController::class, 'latestByPatient']);
+    Route::get('/leave-documents/{document}', [LeaveDocumentController::class, 'show']);
+    Route::get('/patients/{patient}/leave/latest', [LeaveDocumentController::class, 'latestByPatient']);
 
     Route::post('/records', [RecordDocumentController::class, 'store']);
     Route::get('/records/{document}', [RecordDocumentController::class, 'show']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Patient;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -14,7 +15,31 @@ class StoreLeaveDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        $user = $this->user();
+        if ($user === null) {
+            return false;
+        }
+
+        $patientId = (int) $this->input('patient_id');
+        if ($patientId <= 0) {
+            return false;
+        }
+
+        $patient = Patient::find($patientId);
+        if (!$patient) {
+            return false;
+        }
+
+        if (!$user->can('view', $patient)) {
+            return false;
+        }
+
+        $branchId = $this->input('branch_id');
+        if ($branchId !== null && (int) $branchId !== (int) $patient->branch_id) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
