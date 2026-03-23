@@ -134,14 +134,22 @@ async function runAction(action: ActionDef) {
     const allSelectedRows = getAllSelectedRows()
 
     if (action.handler) {
-        return await action.handler({
+        const result = await action.handler({
             rows,
             selectedRows: allSelectedRows,
             remote,
         })
+        if (action.key === 'delete') {
+            clearSelection()
+        }
+        return result
     }
 
     emits('action', action.key, { rows, selectedRows: allSelectedRows, remote })
+
+    if (action.key === 'delete') {
+        clearSelection()
+    }
 }
 
 function onAction(action: ActionDef) {

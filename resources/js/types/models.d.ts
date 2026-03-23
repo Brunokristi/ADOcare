@@ -290,6 +290,7 @@ export interface Company {
   updated_at: string | null
   representative_id: number | null
   stamp_path: string | null
+  invoice_number: number
   // relations
   branches: Branch[]
   cars: Car[]
@@ -390,6 +391,32 @@ export interface Procedure {
   // exists
   insurance_companies_prices_exists: boolean
   insurance_companies_prices_minimal_exists: boolean
+}
+
+export interface Invoice {
+  // columns
+  id: number
+  user_id: number
+  name: string
+  path: string
+  insurance_company_id: number | null
+  period: string
+  total: number
+  invoice_number: string
+  mime_type: string | null
+  created_at: string | null
+  updated_at: string | null
+  type: string
+  related_invoice_id: number | null
+  // relations
+  user: User
+  insurance_company: InsuranceCompany
+  related_invoice: Invoice
+  // counts
+  // exists
+  user_exists: boolean
+  insurance_company_exists: boolean
+  related_invoice_exists: boolean
 }
 
 export interface PatientPoint {

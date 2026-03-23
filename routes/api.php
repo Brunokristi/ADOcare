@@ -27,6 +27,7 @@ use \App\Http\Controllers\Api\MacroController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\DekurzController;
 use App\Http\Controllers\Api\NurseDiagnosisController;
+use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\ProposalDocumentController;
 use App\Http\Controllers\Api\AgreementDocumentController;
@@ -166,6 +167,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware('role:manager,superadmin');
 
     Route::get('/my-company', [MyCompanyController::class, 'show']);
+    Route::patch('/my-company', [MyCompanyController::class, 'update'])
+        ->middleware('role:manager,superadmin');
     Route::get('/my-company/branches', [MyCompanyController::class, 'branches']);
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
@@ -206,6 +209,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware('role:superadmin');
     Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class, 'role:manager,superadmin');
     Route::apiResourceComplete('macros', MacroController::class);
+    Route::get('/invoices/{invoice}/file', [InvoiceController::class, 'file'])
+        ->middleware('role:manager,superadmin');
+    Route::apiResourceComplete('invoices', InvoiceController::class, 'role:manager,superadmin');
     Route::apiResourceComplete('plans', PlanController::class);
     Route::delete('/plans', [PlanController::class, 'destroyMany']);
     Route::apiResourceComplete('procedures', ProcedureController::class, 'role:superadmin', 'role:any');
@@ -246,18 +252,18 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
 
 
     Route::post('/batches/points/preview', [PointsExportController::class, 'preview'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::post('/batches/points/download', [PointsExportController::class, 'download'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::post('/batches/points/statement-pdf', [PointsExportController::class, 'statementPdf'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
 
     Route::post('/batches/kilometers/preview', [KilometersExportController::class, 'preview'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::post('/batches/kilometers/download', [KilometersExportController::class, 'download'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::post('/batches/kilometers/statement-pdf', [KilometersExportController::class, 'statementPdf'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
 
     Route::get('/geocode/autocomplete', [GeocodeController::class, 'autocomplete']);
     Route::get('/geocode/details', [GeocodeController::class, 'details']);

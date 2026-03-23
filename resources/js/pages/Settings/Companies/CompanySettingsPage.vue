@@ -76,6 +76,7 @@ onMounted(async () => {
 async function save() {
     submitted.value = true
     if (!company.value.id) return
+    const auth = useAuthStore()
 
     if (
         !company.value.name ||
@@ -109,6 +110,7 @@ async function save() {
         formData.append('bic', company.value.bic ?? '')
         formData.append('phone', company.value.phone ?? '')
         formData.append('email', company.value.email ?? '')
+        formData.append('invoice_number', String(company.value.invoice_number ?? 0))
         formData.append('address', company.value.address ?? '')
         formData.append('city', company.value.city ?? '')
         formData.append('psc', company.value.psc ?? '')
@@ -121,7 +123,11 @@ async function save() {
             formData.append('stamp', selectedStampFile.value)
         }
 
-        await api.post(`v1/companies/${company.value.id}?_method=PATCH`, formData, {
+        const saveUrl = auth.isSuperadmin && router.currentRoute.value.params.companyId
+            ? `v1/companies/${company.value.id}?_method=PATCH`
+            : 'v1/my-company?_method=PATCH'
+
+        await api.post(saveUrl, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
 
@@ -290,6 +296,16 @@ async function handleStampSelected(event: Event) {
                         <div>
                             <label class="block text-sm mb-1">BIČ</label>
                             <InputText v-model="company.bic" class="w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1">Číselný rad faktúr (Aktuálne číslo FA)</label>
+                            <InputNumber
+                                v-model="company.invoice_number"
+                                :min="0"
+                                :useGrouping="false"
+                                class="w-full"
+                                inputClass="w-full"
+                            />
                         </div>
 
                     </div>

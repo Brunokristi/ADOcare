@@ -24,6 +24,7 @@ class Company extends Model
         'psc',
         'phone',
         'email',
+        'invoice_number',
         'latitude',
         'longitude',
         'representative_id',

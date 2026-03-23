@@ -209,7 +209,7 @@ watch(
                     loading: patientsLoading,
                     delay: 10,
                 }" :placeholder="patientsLoading ? 'Načítavam pacientov...' : 'Vyberte pacienta'"
-                dropdownIcon="bi bi-chevron-down !text-white"
+                dropdownIcon="bi bi-chevron-down text-white!"
                 class="w-60 h-7! flex items-center border-none! bg-tag2! text-normal text-white!">
                 <template #value>
                     <span class="text-normal text-white">Vyberte pacienta</span>
