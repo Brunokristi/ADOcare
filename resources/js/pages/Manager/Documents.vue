@@ -303,44 +303,80 @@ const options = computed<DataTableOptions<Document>>(() => ({
         <span>Načítavam dokumenty...</span>
       </div>
 
-      <Dialog v-model:visible="showEmailDialog" header="Odoslať dokumenty emailom" :modal="true" :style="{ width: '40rem' }">
+      <Dialog
+        v-model:visible="showEmailDialog"
+        header="Odoslať dokumenty emailom"
+        :modal="true"
+        :style="{ width: '40rem' }"
+      >
         <div class="flex flex-col gap-4">
-          <div>
-            <label class="block text-sm mb-2">Email príjemcu</label>
-            <InputText
-              v-model="recipientEmail"
-              type="email"
-              class="w-full"
-              placeholder="napr. meno@firma.sk"
-              :disabled="sendingEmail"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm mb-2">Vybrané dokumenty ({{ selectedDocumentsForEmail.length }})</label>
-            <div class="max-h-56 overflow-auto border border-darkgrey rounded-md p-2">
-              <div
-                v-for="doc in selectedDocumentsForEmail"
-                :key="doc.id"
-                class="py-1 text-sm border-b border-darkgrey last:border-b-0"
-              >
-                {{ formatDocumentType(doc.type) }} - {{ doc.created_by_user }}
-              </div>
+            <div>
+                <label class="block text-sm mb-2">Email príjemcu</label>
+                <InputText
+                    v-model="recipientEmail"
+                    type="email"
+                    class="w-full"
+                    placeholder="napr. meno@firma.sk"
+                    :disabled="sendingEmail"
+                />
             </div>
-          </div>
 
-          <div class="flex justify-end gap-2 mt-2">
-            <Button label="Zrušiť" text :disabled="sendingEmail" @click="closeEmailDialog" class="text-accent!" />
-            <Button
-              label="Odoslať"
-              :loading="sendingEmail"
-              :disabled="sendingEmail || selectedDocumentsForEmail.length === 0"
-              class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! !px-2"
-              @click="sendSelectedDocumentsByEmail"
-            />
-          </div>
+            <div>
+                <label class="block text-sm mb-2">
+                    Vybrané dokumenty ({{ selectedDocumentsForEmail.length }})
+                </label>
+
+                <div class="max-h-64 overflow-auto border rounded-md bg-white border-none">
+                    <div
+                        v-for="doc in selectedDocumentsForEmail"
+                        :key="doc.id"
+                        class="flex items-start gap-3 p-3 rounded-md border border-lightgrey mb-2 last:mb-0"
+                    >
+                        <div class="flex items-center justify-center w-10 h-10 rounded-md bg-tag3 shrink-0">
+                            <i class="bi bi-file-earmark text-lg text-accent"></i>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-sm text-darkgrey">
+                                {{ formatDocumentType(doc.type) }}
+                            </div>
+
+                            <div class="text-xs text-darkgrey mt-1">
+                                Vytvoril: {{ doc.created_by_user || '-' }}
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="selectedDocumentsForEmail.length === 0"
+                        class="text-sm text-darkgrey text-center py-6"
+                    >
+                        Nie sú vybrané žiadne dokumenty.
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-2">
+                <Button
+                    label="Zrušiť"
+                    text
+                    :disabled="sendingEmail"
+                    @click="closeEmailDialog"
+                    class="text-accent!"
+                />
+
+                <Button
+                    label="Odoslať"
+                    :loading="sendingEmail"
+                    :disabled="sendingEmail || selectedDocumentsForEmail.length === 0"
+                    class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! !px-2"
+                    @click="sendSelectedDocumentsByEmail"
+                />
+            </div>
         </div>
-      </Dialog>
+    </Dialog>
     </section>
   </div>
 </template>

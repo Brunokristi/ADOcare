@@ -78,6 +78,29 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         },
         children: [
             {
+                path: 'patients',
+                name: 'manager-overview-patients',
+                component: Patients,
+                meta: { title: 'Pacienti', sidebar: showOnSidebar, navbar: true, link: 'pacienti' },
+            },
+            {
+                path: 'doctors',
+                name: 'manager-overview-doctors',
+                component: Doctors,
+                meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
+            },
+        ],
+    },
+    {
+        path: '/manager/documents',
+        name: 'manager-documents',
+        component: Settings,
+        meta: {
+            title: 'Dokumenty',
+            sidebar: showOnSidebar,
+        },
+        children: [
+            {
                 path: 'data',
                 name: 'manager-overview-data',
                 component: DataDocuments,
@@ -94,18 +117,6 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'manager-overview-invoices',
                 component: Invoices,
                 meta: { title: 'Faktúry', sidebar: showOnSidebar, navbar: true, link: 'faktúry' },
-            },
-            {
-                path: 'patients',
-                name: 'manager-overview-patients',
-                component: Patients,
-                meta: { title: 'Pacienti', sidebar: showOnSidebar, navbar: true, link: 'pacienti' },
-            },
-            {
-                path: 'doctors',
-                name: 'manager-overview-doctors',
-                component: Doctors,
-                meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
             },
         ],
     },
@@ -130,6 +141,37 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
             sidebar: showOnSidebar,
         },
         children: [
+
+            {
+                path: 'plans',
+                name: 'manager-settings-plans',
+                component: PlansPage,
+                meta: { title: 'Plány ošetrovateľskej starostlivosti', link: 'plány ošetrovateľskej starostlivosti', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'procedures',
+                name: 'manager-settings-procedures',
+                component: Procedures,
+                meta: {
+                    title: 'Výkony',
+                    link: 'výkony',
+                    sidebar: showOnSidebar,
+                    navbar: true,
+                },
+            },
+        ],
+    },
+    {
+        path: '/manager/company',
+        name: 'manager-company',
+        component: Settings,
+        redirect: { name: 'manager-settings-company' },
+        meta: {
+            title: 'Spoločnosť',
+            sectionRoot: 'manager-company',
+            sidebar: showOnSidebar,
+        },
+        children: [
             {
                 path: 'company',
                 name: 'manager-settings-company',
@@ -149,31 +191,14 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: { title: 'Používatelia', link: 'používatelia', sidebar: showOnSidebar, navbar: true, },
             },
             {
-                path: 'procedures',
-                name: 'manager-settings-procedures',
-                component: Procedures,
-                meta: {
-                    title: 'Výkony',
-                    link: 'výkony',
-                    sidebar: showOnSidebar,
-                    navbar: true,
-                },
-            },
-            {
                 path: 'cars',
                 name: 'manager-settings-cars',
                 component: Cars,
                 meta: { title: 'Autá', link: 'autá', sidebar: showOnSidebar, navbar: true, },
             },
-            {
-                path: 'plans',
-                name: 'manager-settings-plans',
-                component: PlansPage,
-                meta: { title: 'Plány starostlivosti', link: 'plány starostlivosti', sidebar: showOnSidebar, navbar: true, },
-            },
-
         ],
     },
+
 ];
 
 managerRoutes.forEach(route => {
