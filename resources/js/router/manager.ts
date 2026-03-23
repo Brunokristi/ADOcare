@@ -8,8 +8,6 @@ import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
-import MonthStats from "@/pages/Manager/MonthStats.vue";
-import QuarterStats from "@/pages/Manager/QuarterStats.vue";
 import Manager from "@/pages/Manager.vue";
 import Documents from "@/pages/Manager/Documents.vue";
 import DataDocuments from "@/pages/Manager/DataDocuments.vue";
@@ -17,6 +15,8 @@ import Invoices from "@/pages/Manager/Invoices.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import useAuthStore from "@/stores/auth";
 import PatientsPrintPreview from "@/pages/Documents/PatientsPrintPreview.vue";
+import PatientStats from "@/pages/Manager/PatientStats.vue";
+import FinancialStats from "@/pages/Manager/FinancialStats.vue";
 
 
 function showOnSidebar() {
@@ -40,27 +40,27 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         name: 'manager-reports',
         component: Manager,
         meta: {
-            title: 'Reporty',
+            title: 'Výkonnosť',
             sidebar: showOnSidebar,
         },
         children: [
             {
-                path: 'monthly',
-                name: 'manager-month-stats',
-                component: MonthStats,
+                path: 'patients-stats',
+                name: 'manager-patients-statistics',
+                component: PatientStats,
                 meta: {
-                    title: 'Výkonnosť za mesiac',
+                    title: 'Podľa pacientov',
                     sidebar: showOnSidebar,
-                    link: 'výkonnosť za mesiac',
+                    link: 'podľa pacientov',
                     navbar: true,
                 },
             },
             {
-                path: 'trends',
-                name: 'manager-trends',
-                component: QuarterStats,
+                path: 'financial-stats',
+                name: 'manager-financial-stats',
+                component: FinancialStats,
                 meta: {
-                    title: 'Trendy',
+                    title: 'Finančné trendy',
                     sidebar: showOnSidebar,
                     link: 'trendy',
                     navbar: true,

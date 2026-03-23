@@ -71,7 +71,10 @@ class ManagerController extends Controller
             ->orderBy('name')
             ->get();
 
-        // long rows: (branch, user, insurance) -> patients_count
+                // long rows: (branch, user, insurance) -> patients_count
+                // Performance note:
+                // We pre-aggregate 2-month patient_points counts per (patient,user,branch)
+                // and join once, instead of a correlated subquery executed repeatedly.
         $placeholders = implode(',', array_fill(0, count($branchIds), '?'));
         $rows = DB::select(
             "
@@ -88,21 +91,30 @@ class ManagerController extends Controller
 
               COUNT(DISTINCT pp.patient_id) AS patients_count,
               SUM(pp.quantity) AS total_points,
-              COUNT(DISTINCT CASE 
-                WHEN (
-                  SELECT COUNT(*) FROM patient_points pp2 
-                  WHERE pp2.patient_id = pp.patient_id 
-                  AND pp2.user_id = pp.user_id
-                  AND pp2.branch_id = pp.branch_id
-                  AND pp2.date >= ?
-                  AND pp2.date < ?
-                ) > 14 
-                THEN pp.patient_id ELSE NULL 
-              END) AS chronic_patients_count
+                            COUNT(DISTINCT CASE
+                                WHEN COALESCE(recent_pp.recent_points_count, 0) > 14
+                                THEN pp.patient_id ELSE NULL
+                            END) AS chronic_patients_count
 
             FROM patient_points pp
             JOIN patients p
               ON p.id = pp.patient_id
+
+                        LEFT JOIN (
+                            SELECT
+                                pp2.patient_id,
+                                pp2.user_id,
+                                pp2.branch_id,
+                                COUNT(*) AS recent_points_count
+                            FROM patient_points pp2
+                            WHERE pp2.branch_id IN (" . $placeholders . ")
+                                AND pp2.date >= ?
+                                AND pp2.date < ?
+                            GROUP BY pp2.patient_id, pp2.user_id, pp2.branch_id
+                        ) recent_pp
+                            ON recent_pp.patient_id = pp.patient_id
+                         AND recent_pp.user_id = pp.user_id
+                         AND recent_pp.branch_id = pp.branch_id
 
             LEFT JOIN branches b
               ON b.id = pp.branch_id
@@ -126,7 +138,7 @@ class ManagerController extends Controller
               b.address NULLS LAST,
               u.first_name, u.last_name
             ",
-            array_merge([$twoMonthsBack, $to], $branchIds, [$from, $to])
+                        array_merge($branchIds, [$twoMonthsBack, $to], $branchIds, [$from, $to])
         );
 
         $wide = [];
@@ -423,11 +435,18 @@ class ManagerController extends Controller
     public function branchStatistics(Request $request)
     {
         $month = $request->string('month')->toString(); // "2026-01"
+        $dateFrom = $request->input('date_from');
+        $dateTo   = $request->input('date_to');
 
         // Set date range
-        $month = $month ?: now()->format('Y-m');
-        $from = $month . '-01';
-        $to = date('Y-m-d', strtotime($from . ' +1 month'));
+        if ($dateFrom && $dateTo) {
+            $from = $dateFrom;
+            $to   = $dateTo;
+        } else {
+            $month = $month ?: now()->format('Y-m');
+            $from = $month . '-01';
+            $to = date('Y-m-d', strtotime($from . ' +1 month'));
+        }
 
         $user = $request->user();
         $company = $user->company;
@@ -452,7 +471,7 @@ class ManagerController extends Controller
             ]);
         }
 
-        // Query patients by branch for the month
+        // Query patients by branch for the selected date range
         $placeholders = implode(',', array_fill(0, count($branchIds), '?'));
         $rows = DB::select(
             "
