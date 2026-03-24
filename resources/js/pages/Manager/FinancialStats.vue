@@ -1,388 +1,755 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
-import Chart from 'primevue/chart'
+import { computed, onMounted, ref } from 'vue'
 import DatePicker from 'primevue/datepicker'
-import Toolbar from 'primevue/toolbar'
+import Button from 'primevue/button'
+import Chart from 'primevue/chart'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import api from '@/services/api'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
 
-/** =========================
- *  Types
- *  ========================= */
-type UserStatisticsRow = {
-  id: string
-  branch_id: number
-  branch_name: string
+type FinancialKpis = {
+  invoices_count: number
+  credit_notes_count: number
+  debit_notes_count: number
+  invoice_revenue: number
+  credit_notes_total: number
+  debit_notes_total: number
+  notes_net: number
+  notes_absolute: number
+  error_percentage: number
+  net_revenue: number
+  procedures_revenue: number
+  transport_revenue: number
+  activity_total_revenue: number
+}
+
+type FinancialMonthlyRow = {
+  month: string
+  invoice_revenue: number
+  credit_notes_total: number
+  debit_notes_total: number
+  notes_net: number
+  net_revenue: number
+  procedures_revenue: number
+  transport_revenue: number
+}
+
+type FinancialUserRow = {
   user_id: number
   user_name: string
-  patients_total?: number
-  [key: string]: any
+  points_revenue: number
+  kilometers_revenue: number
+  revenue_total: number
 }
 
-type UserTotalsAggRow = {
+type FinancialBranchRow = {
+  branch_id: number | null
+  branch_name: string
+  points_revenue: number
+  kilometers_revenue: number
+  revenue_total: number
+}
+
+type FinancialInsuranceRow = {
+  insurance_company_id: number | null
+  insurance_company_name: string
+  invoice_revenue: number
+  credit_notes_total: number
+  debit_notes_total: number
+  notes_net: number
+  net_revenue: number
+  documents_count: number
+}
+
+type FinancialActivityRow = {
+  activity_type: 'points_batch' | 'kilometers_batch'
+  activity_name: string
+  documents_count: number
+  revenue: number
+}
+
+type FinancialUserInsuranceCompany = {
+  insurance_company_id: number
+  insurance_company_name: string
+}
+
+type FinancialUserInsuranceItem = {
+  insurance_company_id: number
+  insurance_company_name: string
+  points_revenue: number
+  kilometers_revenue: number
+  revenue_total: number
+}
+
+type FinancialUserInsuranceRow = {
   user_id: number
   user_name: string
-  total_points?: number
-  total_kilometers?: number
-  total_amount?: number
-  [key: string]: any
+  revenue_total: number
+  insurances: FinancialUserInsuranceItem[]
 }
 
-type BranchTotalsRow = {
-  branch_id: number
-  branch_name: string
-  total_points?: number
-  total_kilometers?: number
-  total_amount?: number
-  [key: string]: any
+const uiOverlayStore = useUiOverlayStore()
+
+const getPreviousMonthRange = () => {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const end = new Date(now.getFullYear(), now.getMonth(), 0)
+  return { start, end }
 }
 
-/** =========================
- *  Month picker
- *  ========================= */
-const dates = ref<Date>(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1))
+const initialRange = getPreviousMonthRange()
+const startDate = ref<Date>(initialRange.start)
+const endDate = ref<Date>(initialRange.end)
+const submitted = ref(false)
+const loading = ref(false)
 
-const toMonthParam = (d: Date) => {
+const kpis = ref<FinancialKpis>({
+  invoices_count: 0,
+  credit_notes_count: 0,
+  debit_notes_count: 0,
+  invoice_revenue: 0,
+  credit_notes_total: 0,
+  debit_notes_total: 0,
+  notes_net: 0,
+  notes_absolute: 0,
+  error_percentage: 0,
+  net_revenue: 0,
+  procedures_revenue: 0,
+  transport_revenue: 0,
+  activity_total_revenue: 0,
+})
+
+const monthly = ref<FinancialMonthlyRow[]>([])
+const byUser = ref<FinancialUserRow[]>([])
+const byBranch = ref<FinancialBranchRow[]>([])
+const byInsurance = ref<FinancialInsuranceRow[]>([])
+const byUserInsuranceCompanies = ref<FinancialUserInsuranceCompany[]>([])
+const byUserInsuranceRows = ref<FinancialUserInsuranceRow[]>([])
+const activity = ref<FinancialActivityRow[]>([])
+
+const toApiDateParam = (d: Date) => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
-const getLastFourMonths = (date: Date): string[] => {
-  const out: string[] = []
-  for (let i = 3; i >= 0; i--) {
-    const d = new Date(date)
-    d.setDate(1)
-    d.setMonth(d.getMonth() - i)
-    out.push(toMonthParam(d))
-  }
-  return out
+const addDays = (date: Date, days: number) => {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
 }
 
-const last4MonthsLabels = computed(() => getLastFourMonths(dates.value))
+const getRangeParams = () => {
+  if (!startDate.value || !endDate.value) return null
 
-/** =========================
- *  PATIENTS charts (from /v1/manager/user-statistics)
- *  ========================= */
-const last4MonthsPatientsTotalByMonth = ref<Record<string, number>>({})
-const last4MonthsPatientsByBranch = ref<Record<string, { name: string; months: Record<string, number> }>>({})
-const last4MonthsPatientsByUser = ref<Record<string, { name: string; months: Record<string, number> }>>({})
-
-async function loadLast4MonthsPatientsCharts() {
-  const monthKeys = last4MonthsLabels.value
-
-  const results = await Promise.all(
-    monthKeys.map((m) =>
-      api
-        .get('/v1/manager/user-statistics', { params: { month: m } })
-        .then((r: any) => ({ month: m, rows: (r?.data?.data ?? []) as UserStatisticsRow[] }))
-        .catch(() => ({ month: m, rows: [] as UserStatisticsRow[] }))
-    )
-  )
-
-  const totals: Record<string, number> = {}
-  monthKeys.forEach((m) => (totals[m] = 0))
-
-  const branchMap: Record<string, { name: string; months: Record<string, number> }> = {}
-  const userMap: Record<string, { name: string; months: Record<string, number> }> = {}
-
-  results.forEach(({ month, rows }) => {
-    rows.forEach((row) => {
-      const patients = Number(row.patients_total ?? 0) || 0
-      totals[month] = (totals[month] ?? 0) + patients
-
-      const bid = String(row.branch_id)
-      if (!branchMap[bid]) branchMap[bid] = { name: row.branch_name ?? `Branch ${bid}`, months: {} }
-      branchMap[bid].months[month] = (branchMap[bid].months[month] ?? 0) + patients
-
-      const uid = String(row.user_id)
-      if (!userMap[uid]) userMap[uid] = { name: row.user_name ?? `User ${uid}`, months: {} }
-      userMap[uid].months[month] = (userMap[uid].months[month] ?? 0) + patients
-    })
-  })
-
-  last4MonthsPatientsTotalByMonth.value = totals
-  last4MonthsPatientsByBranch.value = branchMap
-  last4MonthsPatientsByUser.value = userMap
-}
-
-/** Patients chart data */
-const chartPatientsTotal4M = computed(() => {
-  const labels = last4MonthsLabels.value
   return {
-    labels,
-    datasets: [{ label: 'Pacienti celkom', data: labels.map((m) => last4MonthsPatientsTotalByMonth.value[m] ?? 0) }],
+    date_from: toApiDateParam(startDate.value),
+    date_to: toApiDateParam(addDays(endDate.value, 1)),
+  }
+}
+
+function getCssVar(name: string, fallback = '') {
+  if (typeof window === 'undefined') return fallback
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+
+const chartColors = computed(() => {
+  return {
+    accent: getCssVar('--c-accent', '#5C9EAD'),
+    darkgrey: getCssVar('--c-darkgrey', '#333333'),
+    lightgrey: getCssVar('--c-light-grey', '#e5e7eb'),
+    white: getCssVar('--c-white', '#ffffff'),
+    success: getCssVar('--c-success', '#16a34a'),
+    danger: getCssVar('--c-danger', '#dc2626'),
+    text: getCssVar('--c-darkgrey', '#374151'),
+    grid: getCssVar('--c-light-grey', '#e5e7eb'),
   }
 })
 
-const chartPatientsByBranch4M = computed(() => {
-  const labels = last4MonthsLabels.value
-  const branches = Object.values(last4MonthsPatientsByBranch.value).sort((a, b) => a.name.localeCompare(b.name))
+const topUser = computed(() => byUser.value[0] ?? null)
+const topBranch = computed(() => byBranch.value[0] ?? null)
+const topInsurance = computed(() => byInsurance.value[0] ?? null)
+
+const topUsersRevenueChartData = computed(() => {
+  const rows = byUser.value.slice(0, 8)
   return {
-    labels,
-    datasets: branches.map((b) => ({ label: b.name, data: labels.map((m) => b.months[m] ?? 0) })),
-  }
-})
-
-const chartPatientsByUser4M = computed(() => {
-  const labels = last4MonthsLabels.value
-  const users = Object.values(last4MonthsPatientsByUser.value).sort((a, b) => a.name.localeCompare(b.name))
-  return {
-    labels,
-    datasets: users.map((u) => ({ label: u.name, data: labels.map((m) => u.months[m] ?? 0) })),
-  }
-})
-
-/** =========================
- *  MONEY charts
- *  - general (total_amount per month)
- *  - per points + per kilometers (ratios €/point and €/km per month)
- *  - per user (total_amount split by user)
- *  - per branch (total_amount split by branch)
- *  ========================= */
-
-/** General money totals by month (from branch-totals sum) */
-const last4MonthsMoneyTotalByMonth = ref<Record<string, number>>({})
-
-/** Ratios by month */
-const last4MonthsMoneyPerPointByMonth = ref<Record<string, number>>({})
-const last4MonthsMoneyPerKmByMonth = ref<Record<string, number>>({})
-
-/** Split by user (from user-totals-aggregated) */
-const last4MonthsMoneyByUser = ref<Record<string, { name: string; months: Record<string, number> }>>({})
-
-/** Split by branch (from branch-totals) */
-const last4MonthsMoneyByBranch = ref<Record<string, { name: string; months: Record<string, number> }>>({})
-
-async function loadLast4MonthsMoneyCharts() {
-  const monthKeys = last4MonthsLabels.value
-
-  // Fetch both endpoints for 4 months
-  const [userAggResults, branchTotalsResults] = await Promise.all([
-    Promise.all(
-      monthKeys.map((m) =>
-        api
-          .get('/v1/manager/user-totals-aggregated', { params: { month: m } })
-          .then((r: any) => ({ month: m, rows: (r?.data?.data ?? []) as UserTotalsAggRow[] }))
-          .catch(() => ({ month: m, rows: [] as UserTotalsAggRow[] }))
-      )
-    ),
-    Promise.all(
-      monthKeys.map((m) =>
-        api
-          .get('/v1/manager/branch-totals', { params: { month: m } })
-          .then((r: any) => ({ month: m, rows: (r?.data?.data ?? []) as BranchTotalsRow[] }))
-          .catch(() => ({ month: m, rows: [] as BranchTotalsRow[] }))
-      )
-    ),
-  ])
-
-  // Init per-month
-  const moneyTotal: Record<string, number> = {}
-  const eurPerPoint: Record<string, number> = {}
-  const eurPerKm: Record<string, number> = {}
-  monthKeys.forEach((m) => {
-    moneyTotal[m] = 0
-    eurPerPoint[m] = 0
-    eurPerKm[m] = 0
-  })
-
-  // Split maps
-  const userMap: Record<string, { name: string; months: Record<string, number> }> = {}
-  const branchMap: Record<string, { name: string; months: Record<string, number> }> = {}
-
-  // Build user split + also monthly sums (amount, points, km) from userAgg
-  const monthSumsFromUsers: Record<string, { amount: number; points: number; km: number }> = {}
-  monthKeys.forEach((m) => (monthSumsFromUsers[m] = { amount: 0, points: 0, km: 0 }))
-
-  userAggResults.forEach(({ month, rows }) => {
-    rows.forEach((row) => {
-      const amount = Number(row.total_amount ?? 0) || 0
-      const points = Number(row.total_points ?? 0) || 0
-      const km = Number(row.total_kilometers ?? 0) || 0
-
-      if (monthSumsFromUsers[month]) {
-        monthSumsFromUsers[month].amount += amount
-        monthSumsFromUsers[month].points += points
-        monthSumsFromUsers[month].km += km
-      }
-
-      const uid = String(row.user_id)
-      if (!userMap[uid]) userMap[uid] = { name: row.user_name ?? `User ${uid}`, months: {} }
-      userMap[uid].months[month] = (userMap[uid].months[month] ?? 0) + amount
-    })
-  })
-
-  // Build branch split + general money total from branch-totals (less risk of missing users)
-  const monthSumsFromBranches: Record<string, { amount: number }> = {}
-  monthKeys.forEach((m) => (monthSumsFromBranches[m] = { amount: 0 }))
-
-  branchTotalsResults.forEach(({ month, rows }) => {
-    rows.forEach((row) => {
-      const amount = Number(row.total_amount ?? 0) || 0
-      if (monthSumsFromBranches[month]) {
-        monthSumsFromBranches[month].amount += amount
-      }
-
-      const bid = String(row.branch_id)
-      if (!branchMap[bid]) branchMap[bid] = { name: row.branch_name ?? `Branch ${bid}`, months: {} }
-      branchMap[bid].months[month] = (branchMap[bid].months[month] ?? 0) + amount
-    })
-  })
-
-  // Finalize per-month money totals (use branch sums)
-  monthKeys.forEach((m) => {
-    moneyTotal[m] = monthSumsFromBranches[m]?.amount ?? 0
-
-    // ratios use sums from userAgg (needs points/km)
-    const amt = monthSumsFromUsers[m]?.amount ?? 0
-    const pts = monthSumsFromUsers[m]?.points ?? 0
-    const kms = monthSumsFromUsers[m]?.km ?? 0
-
-    eurPerPoint[m] = pts > 0 ? amt / pts : 0
-    eurPerKm[m] = kms > 0 ? amt / kms : 0
-  })
-
-  last4MonthsMoneyTotalByMonth.value = moneyTotal
-  last4MonthsMoneyPerPointByMonth.value = eurPerPoint
-  last4MonthsMoneyPerKmByMonth.value = eurPerKm
-  last4MonthsMoneyByUser.value = userMap
-  last4MonthsMoneyByBranch.value = branchMap
-}
-
-/** Money chart data */
-const chartMoneyTotal4M = computed(() => {
-  const labels = last4MonthsLabels.value
-  return {
-    labels,
-    datasets: [{ label: 'Tržby celkom (€)', data: labels.map((m) => last4MonthsMoneyTotalByMonth.value[m] ?? 0) }],
-  }
-})
-
-const chartMoneyRatios4M = computed(() => {
-  const labels = last4MonthsLabels.value
-  return {
-    labels,
+    labels: rows.map((r) => r.user_name),
     datasets: [
-      { label: '€ / výkony', data: labels.map((m) => last4MonthsMoneyPerPointByMonth.value[m] ?? 0) },
-      { label: '€ / km', data: labels.map((m) => last4MonthsMoneyPerKmByMonth.value[m] ?? 0) },
+      {
+        label: 'Aktivita (€)',
+        data: rows.map((r) => r.revenue_total ?? 0),
+        backgroundColor: chartColors.value.accent,
+        borderColor: chartColors.value.accent,
+        borderWidth: 1,
+        borderRadius: 6,
+      },
     ],
   }
 })
 
-const chartMoneyByUser4M = computed(() => {
-  const labels = last4MonthsLabels.value
-  const users = Object.values(last4MonthsMoneyByUser.value).sort((a, b) => a.name.localeCompare(b.name))
+const topBranchesRevenueChartData = computed(() => {
+  const rows = byBranch.value.slice(0, 8)
   return {
-    labels,
-    datasets: users.map((u) => ({ label: u.name, data: labels.map((m) => u.months[m] ?? 0) })),
+    labels: rows.map((r) => r.branch_name),
+    datasets: [
+      {
+        label: 'Tržby (€)',
+        data: rows.map((r) => r.revenue_total ?? 0),
+        backgroundColor: chartColors.value.accent,
+        borderColor: chartColors.value.accent,
+        borderWidth: 1,
+        borderRadius: 6,
+      },
+    ],
   }
 })
 
-const chartMoneyByBranch4M = computed(() => {
-  const labels = last4MonthsLabels.value
-  const branches = Object.values(last4MonthsMoneyByBranch.value).sort((a, b) => a.name.localeCompare(b.name))
-  return {
-    labels,
-    datasets: branches.map((b) => ({ label: b.name, data: labels.map((m) => b.months[m] ?? 0) })),
-  }
-})
+const activitySplitChartData = computed(() => ({
+  labels: activity.value.map((a) => a.activity_name),
+  datasets: [
+    {
+      data: activity.value.map((a) => a.revenue ?? 0),
+      backgroundColor: [chartColors.value.accent, chartColors.value.darkgrey],
+      borderColor: chartColors.value.white,
+      borderWidth: 2,
+      hoverOffset: 8,
+    },
+  ],
+}))
 
-/** =========================
- *  Options
- *  ========================= */
-const chartOptions = {
+const horizontalBarOptions = computed(() => ({
+  indexAxis: 'y',
   responsive: true,
-  maintainAspectRatio: true,
-  plugins: { legend: { position: 'top' as const } },
-  scales: { y: { beginAtZero: true } },
-}
-
-/** =========================
- *  Load
- *  ========================= */
-async function loadAllCharts() {
-  await Promise.all([loadLast4MonthsPatientsCharts(), loadLast4MonthsMoneyCharts()])
-}
-
-watch(
-  () => dates.value,
-  async () => {
-    await loadAllCharts()
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+      labels: {
+        color: chartColors.value.text,
+      },
+    },
+    tooltip: {
+      callbacks: {
+        label: (context: { dataset: { label?: string }; parsed?: { x?: number } }) => {
+          const label = context.dataset?.label ? `${context.dataset.label}: ` : ''
+          return `${label}${formatCurrency(Number(context.parsed?.x ?? 0))}`
+        },
+      },
+    },
   },
-  { deep: true }
-)
+  scales: {
+    x: {
+      beginAtZero: true,
+      ticks: {
+        color: chartColors.value.text,
+        callback: (value: number | string) => formatCurrency(Number(value)),
+      },
+      grid: {
+        color: chartColors.value.grid,
+      },
+    },
+    y: {
+      ticks: {
+        color: chartColors.value.text,
+      },
+      grid: {
+        display: false,
+      },
+    },
+  },
+}))
+
+const doughnutOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        color: chartColors.value.text,
+      },
+    },
+    tooltip: {
+      callbacks: {
+        label: (context: { label?: string; parsed?: number }) => {
+          const label = context.label ? `${context.label}: ` : ''
+          return `${label}${formatCurrency(Number(context.parsed ?? 0))}`
+        },
+      },
+    },
+  },
+}))
+
+function formatCurrency(value: number) {
+  return Number(value ?? 0).toLocaleString('sk-SK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + ' €'
+}
+
+function formatPercent(value: number) {
+  return Number(value ?? 0).toLocaleString('sk-SK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + ' %'
+}
+
+function getUserActivityRevenue(row: FinancialUserRow, type: 'points' | 'kilometers') {
+  return type === 'points'
+    ? Number(row.points_revenue ?? 0)
+    : Number(row.kilometers_revenue ?? 0)
+}
+
+function getUserActivitySharePercent(row: FinancialUserRow, type: 'points' | 'kilometers') {
+  const total = Number(row.revenue_total ?? 0)
+  if (total <= 0) return 0
+
+  return Math.min(100, (getUserActivityRevenue(row, type) / total) * 100)
+}
+
+function getBranchActivityRevenue(row: FinancialBranchRow, type: 'points' | 'kilometers') {
+  return type === 'points'
+    ? Number(row.points_revenue ?? 0)
+    : Number(row.kilometers_revenue ?? 0)
+}
+
+function getBranchActivitySharePercent(row: FinancialBranchRow, type: 'points' | 'kilometers') {
+  const total = Number(row.revenue_total ?? 0)
+  if (total <= 0) return 0
+
+  return Math.min(100, (getBranchActivityRevenue(row, type) / total) * 100)
+}
+
+function getUserInsuranceAmount(row: FinancialUserInsuranceRow, companyId: number) {
+  const found = row.insurances?.find((x) => Number(x.insurance_company_id) === Number(companyId))
+  return Number(found?.revenue_total ?? 0)
+}
+
+function getUserInsuranceSharePercent(row: FinancialUserInsuranceRow, companyId: number) {
+  const total = Number(row.revenue_total ?? 0)
+  if (total <= 0) return 0
+
+  return Math.min(100, (getUserInsuranceAmount(row, companyId) / total) * 100)
+}
+
+async function loadFinancialStatistics() {
+  const rangeParams = getRangeParams()
+  if (!rangeParams) return
+
+  loading.value = true
+  uiOverlayStore.setContentLoading(true)
+
+  try {
+    const response = await api.get('/v1/manager/financial-statistics', { params: rangeParams })
+    const payload = response.data?.data ?? {}
+
+    kpis.value = {
+      ...kpis.value,
+      ...(payload.kpis ?? {}),
+    }
+
+    monthly.value = (payload.monthly ?? []) as FinancialMonthlyRow[]
+    byUser.value = (payload.by_user ?? []) as FinancialUserRow[]
+    byBranch.value = (payload.by_branch ?? []) as FinancialBranchRow[]
+    byInsurance.value = (payload.by_insurance ?? []) as FinancialInsuranceRow[]
+    byUserInsuranceCompanies.value = (payload.by_user_insurance?.companies ?? []) as FinancialUserInsuranceCompany[]
+    byUserInsuranceRows.value = (payload.by_user_insurance?.rows ?? []) as FinancialUserInsuranceRow[]
+    activity.value = (payload.activity ?? []) as FinancialActivityRow[]
+  } catch (error) {
+    console.error('Failed to load financial statistics', error)
+    kpis.value = {
+      invoices_count: 0,
+      credit_notes_count: 0,
+      debit_notes_count: 0,
+      invoice_revenue: 0,
+      credit_notes_total: 0,
+      debit_notes_total: 0,
+      notes_net: 0,
+      notes_absolute: 0,
+      error_percentage: 0,
+      net_revenue: 0,
+      procedures_revenue: 0,
+      transport_revenue: 0,
+      activity_total_revenue: 0,
+    }
+    monthly.value = []
+    byUser.value = []
+    byBranch.value = []
+    byInsurance.value = []
+    byUserInsuranceCompanies.value = []
+    byUserInsuranceRows.value = []
+    activity.value = []
+  } finally {
+    loading.value = false
+    uiOverlayStore.setContentLoading(false)
+  }
+}
+
+async function onSubmitFilters() {
+  submitted.value = true
+
+  if (!startDate.value || !endDate.value) {
+    return
+  }
+
+  await loadFinancialStatistics()
+}
 
 onMounted(async () => {
-  await loadAllCharts()
+  await loadFinancialStatistics()
 })
 </script>
 
 <template>
+  <div class="statistics-page flex flex-col gap-5">
+    <div class="mb-8 flex flex-col gap-4">
+      <div class="bg-tag3 no-print p-4 rounded-md">
+        <div class="grid grid-cols-12 gap-4 w-full md:w-auto">
+          <div class="col-span-6">
+            <label class="block text-normal mb-1">Dátum od</label>
+            <DatePicker
+              v-model="startDate"
+              dateFormat="dd.mm.yy"
+              :manualInput="false"
+              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+              fluid
+            />
+            <small v-if="submitted && !startDate" class="text-danger">Dátum od je povinný.</small>
+          </div>
 
-  <section class="bg-tag3 p-6 rounded-md flex flex-col gap-4">
-    <div class="grid grid-cols-12 gap-4">
-      <div class="col-span-12">
-        <label class="block text-normal mb-1">Obdobie</label>
-        <DatePicker
-          v-model="dates"
-          view="month"
-          dateFormat="MM yy"
-          :manualInput="false"
-          inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-          fluid
-        />
+          <div class="col-span-6">
+            <label class="block text-normal mb-1">Dátum do</label>
+            <DatePicker
+              v-model="endDate"
+              dateFormat="dd.mm.yy"
+              :manualInput="false"
+              inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+              fluid
+            />
+            <small v-if="submitted && !endDate" class="text-danger">Dátum do je povinný.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <Button
+          @click="onSubmitFilters"
+          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100"
+        >
+          Načítať
+          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
+        </Button>
       </div>
     </div>
-  </section>
 
-  <!-- PATIENTS -->
-  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-5! shadow-none! flex items-center justify-between no-print">
-    <template #start><span class="text-heading">Výkonnosť v počte pacientov</span></template>
-  </Toolbar>
+    <div class="summary-grid">
+      <div class="bg-darkgrey text-white rounded-md p-4">
+        <div class="text-tag1">Čisté tržby</div>
+        <div class="text-2xl font-bold">{{ formatCurrency(kpis.net_revenue) }}</div>
+      </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 bg-tag3 p-6 rounded-md">
-    <div class="bg-white p-6 rounded-lg">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Celkový počet pacientov</h3>
-      <Chart type="bar" :data="chartPatientsTotal4M" :options="chartOptions" />
-    </div>
-    <div class="bg-white p-6 rounded-lg">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Počet pacientov podľa pobočky</h3>
-      <Chart type="bar" :data="chartPatientsByBranch4M" :options="chartOptions" />
-    </div>
-    <div class="bg-white p-6 rounded-lg">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Počet pacientov podľa používateľa</h3>
-      <Chart type="bar" :data="chartPatientsByUser4M" :options="chartOptions" />
-    </div>
-  </div>
+      <div class="bg-darkgrey text-white rounded-md p-4">
+        <div class="text-tag1">Fakturovaná suma</div>
+        <div class="text-2xl font-bold">{{ formatCurrency(kpis.invoice_revenue) }}</div>
+      </div>
 
-  <!-- MONEY -->
-  <Toolbar class="bg-transparent! border-0! p-0! py-3! mt-8! shadow-none! flex items-center justify-between no-print">
-    <template #start><span class="text-heading">Finančná výkonnosť</span></template>
-  </Toolbar>
+      <div class="bg-darkgrey text-white rounded-md p-4">
+        <div class="text-tag1">Chybovosť</div>
+        <div class="text-2xl font-bold">{{ formatPercent(kpis.error_percentage) }}</div>
+      </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 bg-tag3 p-6 rounded-md">
-    <!-- Money general -->
-    <div class="bg-white p-6 rounded-md">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Celkové tržby (€)</h3>
-      <Chart type="bar" :data="chartMoneyTotal4M" :options="chartOptions" />
-    </div>
+      <div class="bg-darkgrey text-white rounded-md p-4">
+        <div class="text-tag1">Najvýkonnejšia sestra</div>
+        <div class="text-2xl font-bold">{{ topUser?.user_name ?? '-' }}</div>
+        <div class="text-mini">{{ formatCurrency(topUser?.revenue_total ?? 0) }}</div>
+      </div>
 
-    <!-- Money ratios -->
-    <div class="bg-white p-6 rounded-md">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Tržby podľa typu</h3>
-      <Chart type="bar" :data="chartMoneyRatios4M" :options="chartOptions" />
+      <div class="bg-darkgrey text-white rounded-md p-4">
+        <div class="text-tag1">Najvýkonnejšia pobočka</div>
+        <div class="text-2xl font-bold">{{ topBranch?.branch_name ?? '-' }}</div>
+        <div class="text-mini">{{ formatCurrency(topBranch?.revenue_total ?? 0) }}</div>
+      </div>
+
+      <div class="bg-darkgrey text-white rounded-md p-4">
+        <div class="text-tag1">Najsilnejšia poisťovňa</div>
+        <div class="text-2xl font-bold">
+            {{ (topInsurance?.insurance_company_name ?? '-').split(' ')[0] }}
+        </div>        
+        <div class="text-mini">{{ formatCurrency(topInsurance?.net_revenue ?? 0) }}</div>
+      </div>
     </div>
 
-    <!-- Money split by branch -->
-    <div class="bg-white p-6 rounded-md">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Tržby podľa pobočky (€)</h3>
-      <Chart type="bar" :data="chartMoneyByBranch4M" :options="chartOptions" />
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 no-print mb-8">
+        <div class="border-darkgrey border rounded-md p-4">
+            <div class="section-header">
+            <div class="section-title-wrap">
+                <span class="section-title">Aktivity podľa typu</span>
+            </div>
+            </div>
+            <div class="">
+            <Chart type="doughnut" :data="activitySplitChartData" :options="doughnutOptions" />
+            </div>
+        </div>
+
+        <div class="border-darkgrey border rounded-md p-4">
+            <div class="section-header">
+                <div class="section-title-wrap">
+                <span class="section-title">Top sestry</span>
+                </div>
+            </div>
+            <div class="">
+                <Chart type="bar" :data="topUsersRevenueChartData" :options="horizontalBarOptions" />
+            </div>
+        </div>
+
+        <div class="border-darkgrey border rounded-md p-4">
+            <div class="section-header">
+            <div class="section-title-wrap">
+                <span class="section-title">Top pobočky podľa tržieb</span>
+            </div>
+            </div>
+            <div class="">
+            <Chart type="bar" :data="topBranchesRevenueChartData" :options="horizontalBarOptions" />
+            </div>
+        </div>
     </div>
 
-    <!-- Money split by user -->
-    <div class="bg-white p-6 rounded-md">
-      <h3 class="text-heading mb-3 text-darkgrey text-center">Tržby podľa používateľa (€)</h3>
-      <Chart type="bar" :data="chartMoneyByUser4M" :options="chartOptions" />
+    <div class="no-print mb-8">
+      <div class="section-header">
+        <span class="section-title">Aktivita podľa pobočky</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <DataTable :value="byBranch" stripedRows class="text-sm">
+          <Column header="#" style="width: 3rem">
+            <template #body="{ index }">{{ index + 1 }}</template>
+          </Column>
+          <Column field="branch_name" header="Pobočka" />
+          <Column field="points_revenue" header="Výkony" align="right">
+            <template #body="{ data }">
+              <div class="activity-cell">
+                <div class="flex items-center gap-2 w-full justify-between">
+                  <span class="text-mini">{{ formatCurrency(getBranchActivityRevenue(data, 'points')) }}</span>
+                  <span class="text-mini text-accent">{{ getBranchActivitySharePercent(data, 'points').toFixed(1) }}%</span>
+                </div>
+                <div class="activity-cell-track">
+                  <div
+                    class="activity-cell-fill"
+                    :style="{ width: `${getBranchActivitySharePercent(data, 'points')}%` }"
+                  ></div>
+                </div>
+              </div>
+            </template>
+          </Column>
+          <Column field="kilometers_revenue" header="Doprava" align="right">
+            <template #body="{ data }">
+              <div class="activity-cell">
+                <div class="flex items-center gap-2 w-full justify-between">
+                  <span class="text-mini">{{ formatCurrency(getBranchActivityRevenue(data, 'kilometers')) }}</span>
+                  <span class="text-mini text-accent">{{ getBranchActivitySharePercent(data, 'kilometers').toFixed(1) }}%</span>
+                </div>
+                <div class="activity-cell-track">
+                  <div
+                    class="activity-cell-fill"
+                    :style="{ width: `${getBranchActivitySharePercent(data, 'kilometers')}%` }"
+                  ></div>
+                </div>
+              </div>
+            </template>
+          </Column>
+          <Column field="revenue_total" header="Spolu" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.revenue_total ?? 0) }}</template>
+          </Column>
+        </DataTable>
+      </div>
+    </div>
+
+    <div class="no-print mb-8">
+      <div class="section-header">
+        <span class="section-title">Aktivita podľa používateľa</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <DataTable :value="byUser" stripedRows class="text-sm">
+          <Column header="#" style="width: 3rem">
+            <template #body="{ index }">{{ index + 1 }}</template>
+          </Column>
+          <Column field="user_name" header="Používateľ" />
+          <Column field="points_revenue" header="Výkony" align="right">
+            <template #body="{ data }">
+              <div class="activity-cell">
+                <div class="flex items-center gap-2 w-full justify-between">
+                  <span class="text-mini">{{ formatCurrency(getUserActivityRevenue(data, 'points')) }}</span>
+                  <span class="text-mini text-accent">{{ getUserActivitySharePercent(data, 'points').toFixed(1) }}%</span>
+                </div>
+                <div class="activity-cell-track">
+                  <div
+                    class="activity-cell-fill"
+                    :style="{ width: `${getUserActivitySharePercent(data, 'points')}%` }"
+                  ></div>
+                </div>
+              </div>
+            </template>
+          </Column>
+          <Column field="kilometers_revenue" header="Doprava" align="right">
+            <template #body="{ data }">
+              <div class="activity-cell">
+                <div class="flex items-center gap-2 w-full justify-between">
+                  <span class="text-mini">{{ formatCurrency(getUserActivityRevenue(data, 'kilometers')) }}</span>
+                  <span class="text-mini text-accent">{{ getUserActivitySharePercent(data, 'kilometers').toFixed(1) }}%</span>
+                </div>
+                <div class="activity-cell-track">
+                  <div
+                    class="activity-cell-fill"
+                    :style="{ width: `${getUserActivitySharePercent(data, 'kilometers')}%` }"
+                  ></div>
+                </div>
+              </div>
+            </template>
+          </Column>
+          <Column field="revenue_total" header="Spolu" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.revenue_total ?? 0) }}</template>
+          </Column>
+        </DataTable>
+      </div>
+    </div>
+
+    <div class="no-print mb-8">
+      <div class="section-header">
+        <span class="section-title">Rozdelenie podľa poisťovne</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <DataTable :value="byUserInsuranceRows" stripedRows class="text-sm">
+          <Column header="#" style="width: 3rem">
+            <template #body="{ index }">{{ index + 1 }}</template>
+          </Column>
+
+          <Column field="user_name" header="Používateľ" />
+
+          <Column
+            v-for="company in byUserInsuranceCompanies"
+            :key="company.insurance_company_id"
+            :header="company.insurance_company_name.split(' ')[0]"
+            style="min-width: 180px"
+          >
+            <template #body="{ data }">
+              <div class="activity-cell">
+                <div class="flex items-center gap-2 w-full justify-between">
+                  <span class="text-mini">{{ formatCurrency(getUserInsuranceAmount(data, company.insurance_company_id)) }}</span>
+                  <span class="text-mini text-accent">{{ getUserInsuranceSharePercent(data, company.insurance_company_id).toFixed(1) }}%</span>
+                </div>
+                <div class="activity-cell-track">
+                  <div
+                    class="activity-cell-fill"
+                    :style="{ width: `${getUserInsuranceSharePercent(data, company.insurance_company_id)}%` }"
+                  ></div>
+                </div>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="revenue_total" header="Spolu" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.revenue_total ?? 0) }}</template>
+          </Column>
+        </DataTable>
+      </div>
+    </div>
+
+    <div class="no-print mb-8">
+      <div class="section-header">
+        <span class="section-title">Fakturácia na poisťovne</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <DataTable :value="byInsurance" stripedRows class="text-sm">
+          <Column header="#" style="width: 3rem">
+            <template #body="{ index }">{{ index + 1 }}</template>
+          </Column>
+          <Column field="insurance_company_name" header="Poisťovňa" />
+          <Column field="invoice_revenue" header="Faktúry" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.invoice_revenue ?? 0) }}</template>
+          </Column>
+          <Column field="credit_notes_total" header="Dobropisy" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.credit_notes_total ?? 0) }}</template>
+          </Column>
+          <Column field="debit_notes_total" header="Ťarchopisy" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.debit_notes_total ?? 0) }}</template>
+          </Column>
+          <Column field="net_revenue" header="Spolu" align="right">
+            <template #body="{ data }">{{ formatCurrency(data.net_revenue ?? 0) }}</template>
+          </Column>
+        </DataTable>
+      </div>
     </div>
   </div>
 </template>
+
+<style>
+.statistics-page {
+  padding-bottom: 2rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.chart-box {
+  height: 280px;
+}
+
+.activity-cell {
+  min-width: 180px;
+}
+
+.activity-cell-track {
+  width: 100%;
+  height: 0.36rem;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 0.3rem;
+}
+
+.activity-cell-fill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: 9999px;
+}
+
+@media (min-width: 768px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+</style>

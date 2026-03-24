@@ -181,6 +181,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         Route::get('/branch-statistics', [ManagerController::class, 'branchStatistics']);
         Route::get('/branch-totals', [ManagerController::class, 'branchTotals']);
         Route::get('/user-totals-aggregated', [ManagerController::class, 'userTotalsAggregated']);
+        Route::get('/financial-statistics', [ManagerController::class, 'financialStatistics']);
     });
 
     // superadmin-specific endpoints

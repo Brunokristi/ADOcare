@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -224,16 +224,6 @@ const topBranch = computed(() => branchTableDataWithTrend.value[0] ?? null)
 const topUser = computed(() => tableDataWithTrend.value[0] ?? null)
 const topDoctor = computed(() => doctorTableDataWithTrend.value[0] ?? null)
 
-const printTopBranches = computed(() => branchTableDataWithTrend.value.slice(0, 10))
-const printTopUsers = computed(() => tableDataWithTrend.value.slice(0, 10))
-const printTopDoctors = computed(() => doctorTableDataWithTrend.value.slice(0, 10))
-const printTopTermBreakdown = computed(() => termBreakdownTableData.value.slice(0, 10))
-
-const formattedSelectedRange = computed(() => {
-    if (!startDate.value || !endDate.value) return '-'
-    return `${formatDate(startDate.value)} - ${formatDate(endDate.value)}`
-})
-
 const toMonthParam = (d: Date) => {
     const y = d.getFullYear()
     const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -436,16 +426,6 @@ const patientSplitChartOptions = computed(() => {
 })
 
 
-function formatDate(date: Date | string) {
-    const d = new Date(date)
-    if (Number.isNaN(d.getTime())) return '-'
-    return d.toLocaleDateString('sk-SK')
-}
-
-function printPage() {
-    window.print()
-}
-
 function getTrendBadgeClass(diff: number) {
     if (diff > 0) return 'trend-badge trend-up'
     if (diff < 0) return 'trend-badge trend-down'
@@ -460,6 +440,16 @@ function getInsuranceSharePercent(row: UserStatisticsRow, companyId: number) {
     const total = Number(row.patients_total ?? 0)
     if (total <= 0) return 0
     return Math.min(100, (getInsurancePatientsCount(row, companyId) / total) * 100)
+}
+
+async function onSubmitFilters() {
+    submitted.value = true
+
+    if (!startDate.value || !endDate.value) {
+        return
+    }
+
+    await loadAllStatistics()
 }
 
 async function loadAllStatistics() {
@@ -741,15 +731,6 @@ async function load3MonthTrends() {
     }
 }
 
-watch(
-    () => [startDate.value, endDate.value],
-    async () => {
-        if (!startDate.value || !endDate.value) return
-        await loadAllStatistics()
-    },
-    { deep: true }
-)
-
 onMounted(async () => {
     await loadAllStatistics()
 })
@@ -757,51 +738,47 @@ onMounted(async () => {
 
 <template>
     <div class="statistics-page flex flex-col gap-5">
-        <div class="bg-tag3 no-print p-4 rounded-md mb-8">
-            <div class="flex items-center justify-between gap-4 flex-wrap">
-              <div class="grid grid-cols-12 gap-4 w-full md:w-auto">
-                <div class="col-span-12 md:col-span-6 xl:col-span-4">
-                    <label class="block text-normal mb-1">Dátum od</label>
-                    <DatePicker
-                        v-model="startDate"
-                        dateFormat="dd.mm.yy"
-                        :manualInput="false"
-                        inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                        fluid
-                    />
-                    <small v-if="submitted && !startDate" class="text-danger">
-                        Dátum od je povinný.
-                    </small>
-                </div>
+        <div class="mb-8 flex flex-col gap-4">
+            <div class="bg-tag3 no-print p-4 rounded-md">
+                <div class="grid grid-cols-12 gap-4 w-full md:w-auto">
+                  <div class="col-span-6">
+                      <label class="block text-normal mb-1">Dátum od</label>
+                      <DatePicker
+                          v-model="startDate"
+                          dateFormat="dd.mm.yy"
+                          :manualInput="false"
+                          inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+                          fluid
+                      />
+                      <small v-if="submitted && !startDate" class="text-danger">
+                          Dátum od je povinný.
+                      </small>
+                  </div>
 
-                <div class="col-span-12 md:col-span-6 xl:col-span-4">
-                    <label class="block text-normal mb-1">Dátum do</label>
-                    <DatePicker
-                        v-model="endDate"
-                        dateFormat="dd.mm.yy"
-                        :manualInput="false"
-                        inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                        fluid
-                    />
-                    <small v-if="submitted && !endDate" class="text-danger">
-                        Dátum do je povinný.
-                    </small>
+                  <div class="col-span-6">
+                      <label class="block text-normal mb-1">Dátum do</label>
+                      <DatePicker
+                          v-model="endDate"
+                          dateFormat="dd.mm.yy"
+                          :manualInput="false"
+                          inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+                          fluid
+                      />
+                      <small v-if="submitted && !endDate" class="text-danger">
+                          Dátum do je povinný.
+                      </small>
+                  </div>
                 </div>
-              </div>
-
-              <Button
-                  icon="bi bi-printer"
-                  class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey!"
-                  @click="printPage"
-              />
             </div>
 
-            
-        </div>
-
-        <div class="print-only print-header">
-            <div class="print-title">Mesačný prehľad štatistík</div>
-            <div class="print-subtitle">Obdobie: {{ formattedSelectedRange }}</div>
+            <div class="flex justify-end">
+            <Button
+              @click="onSubmitFilters"
+              class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
+              Načítať
+              <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
+            </Button>
+          </div>
         </div>
 
         <div class="summary-grid">
@@ -847,7 +824,7 @@ onMounted(async () => {
                     </div>
                 </div>
 
-                <div class="chart-box">
+                <div class="">
                     <Chart type="bar" :data="nursePatientsChartData" :options="nursePatientsChartOptions" />
                 </div>
             </div>
@@ -859,7 +836,7 @@ onMounted(async () => {
                     </div>
                 </div>
 
-                <div class="chart-box">
+                <div class="">
                     <Chart type="bar" :data="topBranchesChartData" :options="topBranchesChartOptions" />
                 </div>
             </div>
@@ -871,32 +848,12 @@ onMounted(async () => {
                     </div>
                 </div>
 
-                <div class="chart-box">
+                <div class="">
                     <Chart type="doughnut" :data="patientSplitChartData" :options="patientSplitChartOptions" />
                 </div>
             </div>
         </div>
 
-        <div class="summary-grid print-only print-summary-grid">
-            <div class="print-summary-box">
-                <strong>Pacienti spolu:</strong> {{ totalPatients }}
-            </div>
-            <div class="print-summary-box">
-                <strong>Dlhodobí pacienti:</strong> {{ totalChronicPatients }}
-            </div>
-            <div class="print-summary-box">
-                <strong>Krátkodobí pacienti:</strong> {{ totalShortTermPatients }}
-            </div>
-            <div class="print-summary-box">
-                <strong>Najvýkonnejšia pobočka:</strong> {{ topBranch?.branch_name ?? '-' }}
-            </div>
-            <div class="print-summary-box">
-                <strong>Najvýkonnejšia sestra:</strong> {{ topUser?.user_name ?? '-' }}
-            </div>
-            <div class="print-summary-box">
-                <strong>Najvýkonnejší lekár:</strong> {{ topDoctor?.doctor_name ?? '-' }}
-            </div>
-        </div>
 
         <div class="no-print mb-8">
             <div class="section-header">
@@ -1074,102 +1031,6 @@ onMounted(async () => {
             </div>
         </div>
 
-        <div class="print-only print-section">
-            <div class="print-section-title">Najvýkonnejšie pobočky</div>
-            <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Pobočka</th>
-                        <th>Počet pacientov</th>
-                        <th>Trend</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(row, index) in printTopBranches" :key="`print-branch-${row.branch_id}`">
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ row.branch_name }}</td>
-                        <td>{{ row.patients_count ?? 0 }}</td>
-                        <td>{{ row.trendDifference > 0 ? '+' : '' }}{{ row.trendDifference }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="print-only print-section">
-            <div class="print-section-title">Najvýkonnejší užívatelia</div>
-            <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Užívateľ</th>
-                        <th>Pobočka</th>
-                        <th>Spolu</th>
-                        <th>Trend</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(row, index) in printTopUsers" :key="`print-user-${row.user_id}-${row.branch_id}`">
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ row.user_name }}</td>
-                        <td>{{ row.branch_name }}</td>
-                        <td>{{ row.patients_total ?? 0 }}</td>
-                        <td>{{ row.trendDifference > 0 ? '+' : '' }}{{ row.trendDifference }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="print-only print-section">
-            <div class="print-section-title">Dlhodobí vs. krátkodobí pacienti</div>
-            <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Užívateľ</th>
-                        <th>Pobočka</th>
-                        <th>Dlhodobí</th>
-                        <th>Krátkodobí</th>
-                        <th>Spolu</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="(row, index) in printTopTermBreakdown"
-                        :key="`print-term-${row.user_id}-${row.branch_id}`"
-                    >
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ row.user_name }}</td>
-                        <td>{{ row.branch_name }}</td>
-                        <td>{{ row.longTerm ?? 0 }}</td>
-                        <td>{{ row.shortTerm ?? 0 }}</td>
-                        <td>{{ row.patients_total ?? 0 }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="print-only print-section">
-            <div class="print-section-title">Najvýkonnejší lekári</div>
-            <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Lekár</th>
-                        <th>Počet pacientov</th>
-                        <th>Trend</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(row, index) in printTopDoctors" :key="`print-doctor-${row.doctor_id}`">
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ row.doctor_name }}</td>
-                        <td>{{ row.patients_count ?? 0 }}</td>
-                        <td>{{ row.trendDifference > 0 ? '+' : '' }}{{ row.trendDifference }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
     </div>
 </template>
 
@@ -1355,56 +1216,6 @@ onMounted(async () => {
     color: #111827;
 }
 
-.print-only {
-    display: none;
-}
-
-.print-header {
-    margin-bottom: 1rem;
-}
-
-.print-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-}
-
-.print-subtitle {
-    margin-top: 0.25rem;
-    font-size: 0.95rem;
-}
-
-.print-summary-grid {
-    margin-bottom: 1rem;
-}
-
-.print-summary-box {
-    border: 1px solid #000;
-    padding: 0.4rem 0.5rem;
-    font-size: 0.8rem;
-}
-
-.print-section {
-    margin-top: 1rem;
-}
-
-.print-section-title {
-    font-weight: 700;
-    margin-bottom: 0.35rem;
-    font-size: 0.95rem;
-}
-
-.print-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.78rem;
-}
-
-.print-table th,
-.print-table td {
-    border: 1px solid #000;
-    padding: 0.3rem 0.4rem;
-    text-align: left;
-}
 
 @media (min-width: 768px) {
     .summary-grid {
@@ -1422,54 +1233,4 @@ onMounted(async () => {
     }
 }
 
-@page {
-    size: A4;
-    margin: 10mm;
-}
-
-@media print {
-    body {
-        margin: 0;
-        padding: 0;
-        background: white;
-    }
-
-    body * {
-        visibility: hidden !important;
-    }
-
-    .statistics-page,
-    .statistics-page * {
-        visibility: visible !important;
-    }
-
-    .statistics-page {
-        position: static !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        background: white !important;
-    }
-
-    .no-print {
-        display: none !important;
-    }
-
-    .print-only {
-        display: block !important;
-    }
-
-    .print-summary-grid {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.35rem;
-    }
-
-    .summary-grid {
-        display: none !important;
-    }
-
-    .section-card {
-        display: none !important;
-    }
-}
 </style>

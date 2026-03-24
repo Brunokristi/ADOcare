@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ManagerController extends Controller
 {
@@ -638,5 +640,399 @@ class ManagerController extends Controller
             'message' => 'User totals aggregated retrieved',
             'data' => $data,
         ]);
+    }
+
+    public function financialStatistics(Request $request)
+    {
+        $month = $request->string('month')->toString();
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        if ($dateFrom && $dateTo) {
+            $from = Carbon::parse($dateFrom)->startOfDay();
+            $to = Carbon::parse($dateTo)->startOfDay();
+        } else {
+            $month = $month ?: now()->format('Y-m');
+            $from = Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfDay();
+            $to = (clone $from)->addMonth();
+        }
+
+        if ($to->lessThanOrEqualTo($from)) {
+            return response()->json([
+                'message' => 'Invalid date range',
+                'data' => null,
+            ], 422);
+        }
+
+        $monthKeys = [];
+        $cursor = (clone $from)->startOfMonth();
+        $lastMonth = (clone $to)->subDay()->startOfMonth();
+        while ($cursor->lessThanOrEqualTo($lastMonth)) {
+            $monthKeys[] = $cursor->format('Y-m');
+            $cursor->addMonth();
+        }
+
+        $user = $request->user();
+        $company = $user->company;
+
+        if (!$company) {
+            return response()->json([
+                'message' => 'No company associated with user',
+                'data' => [
+                    'range' => [
+                        'date_from' => $from->toDateString(),
+                        'date_to' => $to->toDateString(),
+                        'months' => $monthKeys,
+                    ],
+                    'kpis' => [],
+                    'monthly' => [],
+                    'by_user' => [],
+                    'by_branch' => [],
+                    'by_insurance' => [],
+                    'by_user_insurance' => [],
+                    'activity' => [],
+                ],
+            ]);
+        }
+
+        $invoiceBase = DB::table('invoices as i')
+            ->join('users as u', 'u.id', '=', 'i.user_id')
+            ->where('u.company_id', $company->id)
+            ->whereIn('i.period', $monthKeys);
+
+        $invoiceAgg = (clone $invoiceBase)
+            ->selectRaw("\n                COUNT(*) AS invoices_all_count,\n                SUM(CASE WHEN i.type IN ('procedures', 'transport') THEN 1 ELSE 0 END) AS invoices_count,\n                SUM(CASE WHEN i.type = 'credit_note' THEN 1 ELSE 0 END) AS credit_notes_count,\n                SUM(CASE WHEN i.type = 'debit_note' THEN 1 ELSE 0 END) AS debit_notes_count,\n                SUM(CASE WHEN i.type IN ('procedures', 'transport') THEN i.total ELSE 0 END) AS invoice_revenue,\n                SUM(CASE WHEN i.type = 'credit_note' THEN i.total ELSE 0 END) AS credit_notes_total,\n                SUM(CASE WHEN i.type = 'debit_note' THEN i.total ELSE 0 END) AS debit_notes_total,\n                SUM(CASE WHEN i.type = 'procedures' THEN i.total ELSE 0 END) AS procedures_revenue,\n                SUM(CASE WHEN i.type = 'transport' THEN i.total ELSE 0 END) AS transport_revenue\n            ")
+            ->first();
+
+        $invoiceRevenue = (float)($invoiceAgg->invoice_revenue ?? 0);
+        $creditNotesTotal = (float)($invoiceAgg->credit_notes_total ?? 0);
+        $debitNotesTotal = (float)($invoiceAgg->debit_notes_total ?? 0);
+        $notesNet = $creditNotesTotal + $debitNotesTotal;
+        $notesAbsolute = abs($creditNotesTotal) + abs($debitNotesTotal);
+        $netRevenue = $invoiceRevenue + $notesNet;
+        $errorPercentage = $invoiceRevenue > 0 ? (abs($debitNotesTotal) / $invoiceRevenue) * 100 : 0;
+
+        $monthlyRows = (clone $invoiceBase)
+            ->selectRaw("\n                i.period AS month,\n                SUM(CASE WHEN i.type IN ('procedures', 'transport') THEN i.total ELSE 0 END) AS invoice_revenue,\n                SUM(CASE WHEN i.type = 'credit_note' THEN i.total ELSE 0 END) AS credit_notes_total,\n                SUM(CASE WHEN i.type = 'debit_note' THEN i.total ELSE 0 END) AS debit_notes_total,\n                SUM(CASE WHEN i.type = 'procedures' THEN i.total ELSE 0 END) AS procedures_revenue,\n                SUM(CASE WHEN i.type = 'transport' THEN i.total ELSE 0 END) AS transport_revenue\n            ")
+            ->groupBy('i.period')
+            ->orderBy('i.period')
+            ->get();
+
+        $monthlyMap = [];
+        foreach ($monthKeys as $m) {
+            $monthlyMap[$m] = [
+                'month' => $m,
+                'invoice_revenue' => 0.0,
+                'credit_notes_total' => 0.0,
+                'debit_notes_total' => 0.0,
+                'notes_net' => 0.0,
+                'net_revenue' => 0.0,
+                'procedures_revenue' => 0.0,
+                'transport_revenue' => 0.0,
+            ];
+        }
+
+        foreach ($monthlyRows as $row) {
+            $monthKey = (string)$row->month;
+            if (!isset($monthlyMap[$monthKey])) {
+                continue;
+            }
+
+            $monthInvoiceRevenue = (float)($row->invoice_revenue ?? 0);
+            $monthCredit = (float)($row->credit_notes_total ?? 0);
+            $monthDebit = (float)($row->debit_notes_total ?? 0);
+            $monthNotesNet = $monthCredit + $monthDebit;
+
+            $monthlyMap[$monthKey] = [
+                'month' => $monthKey,
+                'invoice_revenue' => $monthInvoiceRevenue,
+                'credit_notes_total' => $monthCredit,
+                'debit_notes_total' => $monthDebit,
+                'notes_net' => $monthNotesNet,
+                'net_revenue' => $monthInvoiceRevenue + $monthNotesNet,
+                'procedures_revenue' => (float)($row->procedures_revenue ?? 0),
+                'transport_revenue' => (float)($row->transport_revenue ?? 0),
+            ];
+        }
+
+        $byInsuranceRows = (clone $invoiceBase)
+            ->leftJoin('insurance_companies as ic', 'ic.id', '=', 'i.insurance_company_id')
+            ->selectRaw("\n                i.insurance_company_id,\n                COALESCE(ic.name, 'Neznáma poisťovňa') AS insurance_company_name,\n                SUM(CASE WHEN i.type IN ('procedures', 'transport') THEN i.total ELSE 0 END) AS invoice_revenue,\n                SUM(CASE WHEN i.type = 'credit_note' THEN i.total ELSE 0 END) AS credit_notes_total,\n                SUM(CASE WHEN i.type = 'debit_note' THEN i.total ELSE 0 END) AS debit_notes_total\n            ")
+            ->groupBy('i.insurance_company_id', 'ic.name')
+            ->orderByDesc(DB::raw("SUM(CASE WHEN i.type IN ('procedures', 'transport') THEN i.total ELSE 0 END) + SUM(CASE WHEN i.type = 'credit_note' THEN i.total ELSE 0 END) + SUM(CASE WHEN i.type = 'debit_note' THEN i.total ELSE 0 END)"))
+            ->get();
+
+        $insuranceDocCounts = DB::table('documents as d')
+            ->join('users as u', 'u.id', '=', 'd.user_id')
+            ->where('u.company_id', $company->id)
+            ->whereIn('d.period', $monthKeys)
+            ->whereIn('d.type', ['points_batch', 'kilometers_batch'])
+            ->selectRaw('d.insurance_company_id, COUNT(*) AS documents_count')
+            ->groupBy('d.insurance_company_id')
+            ->get()
+            ->keyBy('insurance_company_id');
+
+        $byInsurance = $byInsuranceRows->map(function ($row) use ($insuranceDocCounts) {
+            $invoiceRevenueByInsurance = (float)($row->invoice_revenue ?? 0);
+            $creditByInsurance = (float)($row->credit_notes_total ?? 0);
+            $debitByInsurance = (float)($row->debit_notes_total ?? 0);
+            $notesNetByInsurance = $creditByInsurance + $debitByInsurance;
+            $docCount = (int)($insuranceDocCounts[$row->insurance_company_id]->documents_count ?? 0);
+
+            return [
+                'insurance_company_id' => $row->insurance_company_id,
+                'insurance_company_name' => $row->insurance_company_name,
+                'invoice_revenue' => $invoiceRevenueByInsurance,
+                'credit_notes_total' => $creditByInsurance,
+                'debit_notes_total' => $debitByInsurance,
+                'notes_net' => $notesNetByInsurance,
+                'net_revenue' => $invoiceRevenueByInsurance + $notesNetByInsurance,
+                'documents_count' => $docCount,
+            ];
+        })->values();
+
+        $batchDocuments = DB::table('documents as d')
+            ->join('users as u', 'u.id', '=', 'd.user_id')
+            ->leftJoin('branches as b', 'b.id', '=', 'd.branch_id')
+            ->leftJoin('insurance_companies as ic', 'ic.id', '=', 'd.insurance_company_id')
+            ->where('u.company_id', $company->id)
+            ->whereIn('d.period', $monthKeys)
+            ->whereIn('d.type', ['points_batch', 'kilometers_batch'])
+            ->select(
+                'd.type',
+                'd.path',
+                'd.user_id',
+                'd.branch_id',
+                'd.insurance_company_id',
+                'u.title',
+                'u.first_name',
+                'u.last_name',
+                'b.address as branch_name',
+                'ic.name as insurance_company_name'
+            )
+            ->get();
+
+        $byUserAggregate = [];
+        $byBranchAggregate = [];
+        $byUserInsuranceAggregate = [];
+        $insuranceCompaniesSet = [];
+
+        $activityDocCounts = [
+            'points_batch' => 0,
+            'kilometers_batch' => 0,
+        ];
+
+        $activityDocRevenue = [
+            'points_batch' => 0.0,
+            'kilometers_batch' => 0.0,
+        ];
+
+        foreach ($batchDocuments as $document) {
+            $type = (string)($document->type ?? '');
+            if (!array_key_exists($type, $activityDocCounts)) {
+                continue;
+            }
+
+            $amount = $this->readDocumentAmount((string)($document->path ?? ''));
+            $userKey = (int)($document->user_id ?? 0);
+            $branchKey = $document->branch_id === null ? 'null' : (string)$document->branch_id;
+            $insuranceId = $document->insurance_company_id !== null ? (int)$document->insurance_company_id : 0;
+            $insuranceName = $document->insurance_company_name ?: 'Neznáma poisťovňa';
+
+            if (!isset($byUserAggregate[$userKey])) {
+                $userName = trim(implode(' ', array_filter([
+                    (string)($document->title ?? ''),
+                    (string)($document->first_name ?? ''),
+                    (string)($document->last_name ?? ''),
+                ])));
+
+                $byUserAggregate[$userKey] = [
+                    'user_id' => $userKey,
+                    'user_name' => $userName !== '' ? $userName : 'Neznámy používateľ',
+                    'points_revenue' => 0.0,
+                    'kilometers_revenue' => 0.0,
+                    'revenue_total' => 0.0,
+                ];
+            }
+
+            if (!isset($insuranceCompaniesSet[$insuranceId])) {
+                $insuranceCompaniesSet[$insuranceId] = [
+                    'insurance_company_id' => $insuranceId,
+                    'insurance_company_name' => $insuranceName,
+                ];
+            }
+
+            if (!isset($byUserInsuranceAggregate[$userKey])) {
+                $byUserInsuranceAggregate[$userKey] = [
+                    'user_id' => $userKey,
+                    'user_name' => $byUserAggregate[$userKey]['user_name'],
+                    'revenue_total' => 0.0,
+                    'insurances' => [],
+                ];
+            }
+
+            if (!isset($byUserInsuranceAggregate[$userKey]['insurances'][$insuranceId])) {
+                $byUserInsuranceAggregate[$userKey]['insurances'][$insuranceId] = [
+                    'insurance_company_id' => $insuranceId,
+                    'insurance_company_name' => $insuranceName,
+                    'points_revenue' => 0.0,
+                    'kilometers_revenue' => 0.0,
+                    'revenue_total' => 0.0,
+                ];
+            }
+
+            if (!isset($byBranchAggregate[$branchKey])) {
+                $byBranchAggregate[$branchKey] = [
+                    'branch_id' => $document->branch_id,
+                    'branch_name' => $document->branch_name ?: 'Neznáma pobočka',
+                    'points_revenue' => 0.0,
+                    'kilometers_revenue' => 0.0,
+                    'revenue_total' => 0.0,
+                ];
+            }
+
+            if ($type === 'points_batch') {
+                $byUserAggregate[$userKey]['points_revenue'] += $amount;
+                $byBranchAggregate[$branchKey]['points_revenue'] += $amount;
+                $byUserInsuranceAggregate[$userKey]['insurances'][$insuranceId]['points_revenue'] += $amount;
+            } else {
+                $byUserAggregate[$userKey]['kilometers_revenue'] += $amount;
+                $byBranchAggregate[$branchKey]['kilometers_revenue'] += $amount;
+                $byUserInsuranceAggregate[$userKey]['insurances'][$insuranceId]['kilometers_revenue'] += $amount;
+            }
+
+            $byUserAggregate[$userKey]['revenue_total'] += $amount;
+            $byBranchAggregate[$branchKey]['revenue_total'] += $amount;
+            $byUserInsuranceAggregate[$userKey]['insurances'][$insuranceId]['revenue_total'] += $amount;
+            $byUserInsuranceAggregate[$userKey]['revenue_total'] += $amount;
+            $activityDocCounts[$type] += 1;
+            $activityDocRevenue[$type] += $amount;
+        }
+
+        $byUserRows = collect(array_values($byUserAggregate))
+            ->sortByDesc('revenue_total')
+            ->values()
+            ->map(function ($row) {
+                return [
+                    'user_id' => (int)$row['user_id'],
+                    'user_name' => (string)$row['user_name'],
+                    'points_revenue' => round((float)$row['points_revenue'], 2),
+                    'kilometers_revenue' => round((float)$row['kilometers_revenue'], 2),
+                    'revenue_total' => round((float)$row['revenue_total'], 2),
+                ];
+            })
+            ->values();
+
+        $byBranchRows = collect(array_values($byBranchAggregate))
+            ->sortByDesc('revenue_total')
+            ->values()
+            ->map(function ($row) {
+                return [
+                    'branch_id' => $row['branch_id'],
+                    'branch_name' => (string)$row['branch_name'],
+                    'points_revenue' => round((float)$row['points_revenue'], 2),
+                    'kilometers_revenue' => round((float)$row['kilometers_revenue'], 2),
+                    'revenue_total' => round((float)$row['revenue_total'], 2),
+                ];
+            })
+            ->values();
+
+        $insuranceCompanies = collect(array_values($insuranceCompaniesSet))
+            ->sortBy('insurance_company_name')
+            ->values();
+
+        $byUserInsuranceRows = collect(array_values($byUserInsuranceAggregate))
+            ->sortByDesc('revenue_total')
+            ->values()
+            ->map(function ($row) {
+                $insuranceRows = collect(array_values($row['insurances']))
+                    ->sortBy('insurance_company_name')
+                    ->values()
+                    ->map(function ($insuranceRow) {
+                        return [
+                            'insurance_company_id' => (int)$insuranceRow['insurance_company_id'],
+                            'insurance_company_name' => (string)$insuranceRow['insurance_company_name'],
+                            'points_revenue' => round((float)$insuranceRow['points_revenue'], 2),
+                            'kilometers_revenue' => round((float)$insuranceRow['kilometers_revenue'], 2),
+                            'revenue_total' => round((float)$insuranceRow['revenue_total'], 2),
+                        ];
+                    })
+                    ->values();
+
+                return [
+                    'user_id' => (int)$row['user_id'],
+                    'user_name' => (string)$row['user_name'],
+                    'revenue_total' => round((float)$row['revenue_total'], 2),
+                    'insurances' => $insuranceRows,
+                ];
+            })
+            ->values();
+
+        $activity = [
+            [
+                'activity_type' => 'points_batch',
+                'activity_name' => 'Výkony',
+                'documents_count' => $activityDocCounts['points_batch'],
+                'revenue' => round($activityDocRevenue['points_batch'], 2),
+            ],
+            [
+                'activity_type' => 'kilometers_batch',
+                'activity_name' => 'Doprava',
+                'documents_count' => $activityDocCounts['kilometers_batch'],
+                'revenue' => round($activityDocRevenue['kilometers_batch'], 2),
+            ],
+        ];
+
+        $activityPointsRevenue = round($activityDocRevenue['points_batch'], 2);
+        $activityKilometersRevenue = round($activityDocRevenue['kilometers_batch'], 2);
+
+        return response()->json([
+            'message' => 'Financial statistics retrieved',
+            'data' => [
+                'range' => [
+                    'date_from' => $from->toDateString(),
+                    'date_to' => $to->toDateString(),
+                    'months' => $monthKeys,
+                ],
+                'kpis' => [
+                    'invoices_count' => (int)($invoiceAgg->invoices_count ?? 0),
+                    'credit_notes_count' => (int)($invoiceAgg->credit_notes_count ?? 0),
+                    'debit_notes_count' => (int)($invoiceAgg->debit_notes_count ?? 0),
+                    'invoice_revenue' => $invoiceRevenue,
+                    'credit_notes_total' => $creditNotesTotal,
+                    'debit_notes_total' => $debitNotesTotal,
+                    'notes_net' => $notesNet,
+                    'notes_absolute' => $notesAbsolute,
+                    'error_percentage' => $errorPercentage,
+                    'net_revenue' => $netRevenue,
+                    'procedures_revenue' => $activityPointsRevenue,
+                    'transport_revenue' => $activityKilometersRevenue,
+                    'activity_total_revenue' => $activityPointsRevenue + $activityKilometersRevenue,
+                ],
+                'monthly' => array_values($monthlyMap),
+                'by_user' => $byUserRows,
+                'by_branch' => $byBranchRows,
+                'by_insurance' => $byInsurance,
+                'by_user_insurance' => [
+                    'companies' => $insuranceCompanies,
+                    'rows' => $byUserInsuranceRows,
+                ],
+                'activity' => $activity,
+            ],
+        ]);
+    }
+
+    private function readDocumentAmount(?string $path): float
+    {
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return 0.0;
+        }
+
+        $decoded = json_decode((string)Storage::disk('local')->get($path), true);
+        if (!is_array($decoded)) {
+            return 0.0;
+        }
+
+        return (float)data_get($decoded, 'meta.amount', 0);
     }
 }

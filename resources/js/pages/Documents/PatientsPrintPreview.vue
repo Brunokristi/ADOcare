@@ -609,7 +609,6 @@ onBeforeUnmount(() => {
 }
 
 .patients-table th {
-    background: #f3f4f6;
     font-weight: 700;
     text-align: left;
 }

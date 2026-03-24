@@ -60,9 +60,9 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'manager-financial-stats',
                 component: FinancialStats,
                 meta: {
-                    title: 'Finančné trendy',
+                    title: 'Podľa tržieb',
                     sidebar: showOnSidebar,
-                    link: 'trendy',
+                    link: 'podľa tržieb',
                     navbar: true,
                 },
             },
