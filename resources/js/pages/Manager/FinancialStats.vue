@@ -94,7 +94,7 @@ const uiOverlayStore = useUiOverlayStore()
 const getPreviousMonthRange = () => {
   const now = new Date()
   const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const end = new Date(now.getFullYear(), now.getMonth(), 0)
+  const end = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   return { start, end }
 }
 
@@ -135,18 +135,18 @@ const toApiDateParam = (d: Date) => {
   return `${y}-${m}-${day}`
 }
 
-const addDays = (date: Date, days: number) => {
-  const next = new Date(date)
-  next.setDate(next.getDate() + days)
-  return next
-}
+const toMonthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
+const toNextMonthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 1)
 
 const getRangeParams = () => {
   if (!startDate.value || !endDate.value) return null
 
+  const from = toMonthStart(startDate.value)
+  const toExclusive = toNextMonthStart(endDate.value)
+
   return {
-    date_from: toApiDateParam(startDate.value),
-    date_to: toApiDateParam(addDays(endDate.value, 1)),
+    date_from: toApiDateParam(from),
+    date_to: toApiDateParam(toExclusive),
   }
 }
 
@@ -408,27 +408,29 @@ onMounted(async () => {
       <div class="bg-tag3 no-print p-4 rounded-md">
         <div class="grid grid-cols-12 gap-4 w-full md:w-auto">
           <div class="col-span-6">
-            <label class="block text-normal mb-1">Dátum od</label>
+            <label class="block text-normal mb-1">Obdobie od</label>
             <DatePicker
               v-model="startDate"
-              dateFormat="dd.mm.yy"
+              view="month"
+              dateFormat="mm.yy"
               :manualInput="false"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
               fluid
             />
-            <small v-if="submitted && !startDate" class="text-danger">Dátum od je povinný.</small>
+            <small v-if="submitted && !startDate" class="text-danger">Obdobie od je povinné.</small>
           </div>
 
           <div class="col-span-6">
-            <label class="block text-normal mb-1">Dátum do</label>
+            <label class="block text-normal mb-1">Obdobie do</label>
             <DatePicker
               v-model="endDate"
-              dateFormat="dd.mm.yy"
+              view="month"
+              dateFormat="mm.yy"
               :manualInput="false"
               inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
               fluid
             />
-            <small v-if="submitted && !endDate" class="text-danger">Dátum do je povinný.</small>
+            <small v-if="submitted && !endDate" class="text-danger">Obdobie do je povinné.</small>
           </div>
         </div>
       </div>

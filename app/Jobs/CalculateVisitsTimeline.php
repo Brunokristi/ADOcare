@@ -276,25 +276,19 @@ class CalculateVisitsTimeline implements ShouldQueue
                     if ($arriveUnix <= 0) continue;
 
                     $patientId = (int)($location['patient_id'] ?? 0);
-                    if ($patientId <= 0) {
-                        Log::warning('CalculateVisitsTimeline: skipping location without patient_id', [
-                            'run_id' => $runId,
-                            'date' => $date,
-                            'arrive_unix' => $arriveUnix,
-                            'lat' => $location['lat'] ?? null,
-                            'lng' => $location['lng'] ?? null,
-                        ]);
-                        continue;
-                    }
+                    $isReturnLeg = $patientId <= 0;
 
-                    $uniqueKey = $date . '|' . $patientId . '|' . $userId . '|' . $branchId;
+                    $uniqueKey = $isReturnLeg
+                        ? $date . '|return|' . $userId . '|' . $branchId . '|' . $arriveUnix
+                        : $date . '|' . $patientId . '|' . $userId . '|' . $branchId;
                     if (isset($seenKeys[$uniqueKey])) {
                         Log::warning('CalculateVisitsTimeline: duplicate visit row prevented before insert', [
                             'run_id' => $runId,
                             'date' => $date,
-                            'patient_id' => $patientId,
+                            'patient_id' => $isReturnLeg ? null : $patientId,
                             'user_id' => $userId,
                             'branch_id' => $branchId,
+                            'return_leg' => $isReturnLeg,
                         ]);
                         continue;
                     }
@@ -303,7 +297,7 @@ class CalculateVisitsTimeline implements ShouldQueue
                     $terrainTime = Carbon::createFromTimestamp($arriveUnix, $tz);
                     $administrativeTime = null;
 
-                    if ($adminCursor) {
+                    if (!$isReturnLeg && $adminCursor) {
                         $paperSeconds = $this->paperworkSecondsForPatient($date, $patientId, $userId, $branchId);
                         $administrativeTime = $adminCursor->copy();
                         $adminCursor->addSeconds($paperSeconds);
@@ -311,7 +305,7 @@ class CalculateVisitsTimeline implements ShouldQueue
 
                     $row = [
                         'date' => $date,
-                        'patient_id' => $patientId,
+                        'patient_id' => $isReturnLeg ? null : $patientId,
                         'user_id' => $userId,
                         'branch_id' => $branchId,
                         'terrain_time' => $terrainTime->format('Y-m-d H:i:s'),

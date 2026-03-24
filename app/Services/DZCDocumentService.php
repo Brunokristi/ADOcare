@@ -100,14 +100,12 @@ class DZCDocumentService
                 'kilometers' => 0,
             ];
 
-            $lastReturnKm = null;
-            $lastReturnTime = null;
+            $lastPatient = null;
+            $lastArrival = null;
 
             foreach ($rows as $r) {
                 $arrival = $r->terrain_time ?? $r->administrative_time;
                 if ($r->patient_id === null) {
-                    $lastReturnKm = round(((int)($r->distance_to_location ?? 0)) / 1000, 2);
-                    $lastReturnTime = $arrival;
                     continue;
                 }
 
@@ -118,13 +116,41 @@ class DZCDocumentService
                     'arrival_time' => $arrival,
                     'kilometers' => round(((int)($r->distance_to_location ?? 0)) / 1000, 2),
                 ];
+                
+                // Track last patient for return leg calculation
+                $lastPatient = $r;
+                $lastArrival = $arrival;
+            }
+
+            // Calculate return leg from last patient to branch
+            $returnKm = null;
+            $returnTime = null;
+            
+            if ($lastPatient) {
+                $patLat = (float)$lastPatient->patient_lat;
+                $patLng = (float)$lastPatient->patient_lng;
+                $branchLat = (float)$branch->latitude;
+                $branchLng = (float)$branch->longitude;
+                
+                if ($patLat && $patLng && $branchLat && $branchLng) {
+                    // Haversine distance
+                    $returnKm = $this->haversineDistance($patLat, $patLng, $branchLat, $branchLng);
+                    
+                    // Estimate return time: ~60 km/h, plus 5 min variability
+                    $returnSeconds = max(180, (int)($returnKm * 60));
+                    $returnTime = date('Y-m-d H:i:s', strtotime($lastArrival) + $returnSeconds);
+                } else {
+                    // Fallback: use distance from last visit if available
+                    $returnKm = $lastPatient->distance_to_location ? round(((int)$lastPatient->distance_to_location) / 1000, 2) : 0;
+                    $returnTime = $lastArrival;
+                }
             }
 
             $day[] = [
                 'type' => 'branch_end',
                 'address' => $branchAddress,
-                'arrival_time' => $lastReturnTime,
-                'kilometers' => $lastReturnKm,
+                'arrival_time' => $returnTime,
+                'kilometers' => $returnKm,
             ];
 
             $patientAddresses[$date] = $day;
@@ -139,7 +165,7 @@ class DZCDocumentService
             ->orderBy('visits.date')
             ->selectRaw('
                 visits.date,
-                COUNT(*) as stops,
+                COUNT(CASE WHEN visits.patient_id IS NOT NULL THEN 1 END) as stops,
                 COALESCE(SUM(visits.time_to_location), 0) as travel_seconds,
                 COALESCE(SUM(visits.distance_to_location), 0) as distance_m,
                 MAX(branches.terrain_start_time) as terrain_start_time,
@@ -175,7 +201,7 @@ class DZCDocumentService
             ->where('branch_id', $branch->id)
             ->whereBetween('date', [$startDate, $endDate])
             ->selectRaw('
-                COUNT(*) as stops,
+                COUNT(CASE WHEN patient_id IS NOT NULL THEN 1 END) as stops,
                 COALESCE(SUM(time_to_location), 0) as travel_seconds,
                 COALESCE(SUM(distance_to_location), 0) as distance_m,
                 MIN(date) as from_date,
@@ -301,5 +327,25 @@ class DZCDocumentService
             ]);
             return null;
         }
+    }
+
+    /**
+     * Calculate distance between two points using Haversine formula (in km).
+     */
+    private function haversineDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371; // km
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $distance = $earthRadius * $c;
+
+        return round($distance, 2);
     }
 }
