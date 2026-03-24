@@ -6,17 +6,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
-use \App\Http\Controllers\Controller;
+use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
-
 class PointsExportController extends Controller
 {
-
-
     public function preview(Request $request)
     {
         $data = $request->validate([
@@ -41,6 +38,7 @@ class PointsExportController extends Controller
         $to = Carbon::parse($data['period'][1])
             ->setTimezone('Europe/Bratislava')
             ->toDateString();
+
         $userId = (int) $data['user']['id'];
         $branchId = (int) $data['branch']['id'];
         $companyId = (int) $data['company']['id'];
@@ -49,8 +47,8 @@ class PointsExportController extends Controller
 
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')
-            ->map(fn($id) => (int) $id)
-            ->filter(fn($id) => $id > 0)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
             ->values()
             ->all();
 
@@ -59,7 +57,6 @@ class PointsExportController extends Controller
             'patientIds' => $patientIds,
         ]);
 
-        // Fetch rows for amount calculation with deduplication
         $pointsData = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('procedure_company_prices as pcp', function ($join) {
@@ -70,9 +67,9 @@ class PointsExportController extends Controller
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->when(in_array($batchTypeCode, ['N', 'O']), fn($q) => $q->where('p.country_id', 207))
-            ->when(in_array($batchTypeCode, ['E', 'F']), fn($q) => $q->where('p.country_id', '!=', 207))
+            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(in_array($batchTypeCode, ['N', 'O'], true), fn ($q) => $q->where('p.country_id', 207))
+            ->when(in_array($batchTypeCode, ['E', 'F'], true), fn ($q) => $q->where('p.country_id', '!=', 207))
             ->select([
                 'pp.date',
                 'pp.procedure_code',
@@ -81,33 +78,16 @@ class PointsExportController extends Controller
                 'p.latitude',
                 'p.longitude',
             ])
+            ->orderBy('pp.date')
             ->get();
 
-        // Deduplicate same-address visits for procedures 3439 and 3440
-        $seenAddresses = [];
-        $filteredPointsData = [];
+        $filteredPointsData = $this->deduplicateNearbyProcedureRows($pointsData, 50);
 
-        foreach ($pointsData as $row) {
-            $procedureCode = $row->procedure_code ?? '';
-            
-            if (in_array($procedureCode, ['3439', '3440'])) {
-                $addressKey = $row->date . '|' . $row->latitude . '|' . $row->longitude;
-                
-                if (isset($seenAddresses[$addressKey])) {
-                    continue;
-                }
-                
-                $seenAddresses[$addressKey] = true;
-            }
-            
-            $filteredPointsData[] = $row;
-        }
-
-        // Calculate amount from filtered data
         $amount = collect($filteredPointsData)
-            ->sum(fn($row) => $row->quantity * $row->price);
+            ->sum(fn ($row) => $row->quantity * $row->price);
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
+
         $branchName = DB::table('branches')
             ->where('id', $branchId)
             ->selectRaw("TRIM(CONCAT(COALESCE(city,''), ', ', COALESCE(address,''))) as name")
@@ -160,8 +140,13 @@ class PointsExportController extends Controller
             'patients.*.id' => 'integer',
         ]);
 
-        $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $from = Carbon::parse($data['period'][0])
+            ->setTimezone('Europe/Bratislava')
+            ->toDateString();
+
+        $to = Carbon::parse($data['period'][1])
+            ->setTimezone('Europe/Bratislava')
+            ->toDateString();
 
         $type = $data['batchType']['code'];
         $batchNumber = (int) $data['batchNumber'];
@@ -172,7 +157,8 @@ class PointsExportController extends Controller
 
         $patientIds = collect($data['patients'] ?? [])
             ->pluck('id')
-            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
             ->values()
             ->all();
 
@@ -182,7 +168,6 @@ class PointsExportController extends Controller
             'batchType' => $type,
         ]);
 
-        // Header data
         $company = DB::table('company')
             ->where('id', $companyId)
             ->select('id', 'ico', 'name')
@@ -212,12 +197,10 @@ class PointsExportController extends Controller
         $termYYYYMM = Carbon::parse($from)->format('Ym');
         $generatedYmd = now()->setTimezone('Europe/Bratislava')->format('Ymd');
 
-        // Rows
         $rows = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('doctors as d', 'd.id', '=', 'p.doctor_id')
             ->join('countries as c', 'c.id', '=', 'p.country_id')
-            // replaced pivot join with direct patient fields (nurse_id, branch_id)
             ->whereColumn('p.nurse_id', 'pp.user_id')
             ->whereColumn('p.branch_id', 'pp.branch_id')
             ->join('procedure_company_prices as pcp', function ($join) {
@@ -228,9 +211,9 @@ class PointsExportController extends Controller
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->when(in_array($type, ['N', 'O']), fn($q) => $q->where('p.country_id', 207))
-            ->when(in_array($type, ['E', 'F']), fn($q) => $q->where('p.country_id', '!=', 207))
+            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(in_array($type, ['N', 'O'], true), fn ($q) => $q->where('p.country_id', 207))
+            ->when(in_array($type, ['E', 'F'], true), fn ($q) => $q->where('p.country_id', '!=', 207))
             ->orderBy('pp.date')
             ->select([
                 'pp.date',
@@ -249,32 +232,9 @@ class PointsExportController extends Controller
             ])
             ->get();
 
-        // Deduplicate same-address visits for procedures 3439 and 3440
-        $seenAddresses = [];
-        $filteredRows = [];
-
-        foreach ($rows as $r) {
-            $procedureCode = $r->procedure_code ?? '';
-            
-            // If procedure is 3439 or 3440, check if we've already seen this address on this date
-            if (in_array($procedureCode, ['3439', '3440'])) {
-                $addressKey = $r->date . '|' . $r->latitude . '|' . $r->longitude;
-                
-                if (isset($seenAddresses[$addressKey])) {
-                    // Skip this record, we already have one for this address/date
-                    continue;
-                }
-                
-                $seenAddresses[$addressKey] = true;
-            }
-            
-            $filteredRows[] = $r;
-        }
-
-        $rows = collect($filteredRows);
+        $rows = collect($this->deduplicateNearbyProcedureRows($rows, 50));
         $rowCount = $rows->count();
 
-        // Line 1 (with trailing |)
         $line1 = implode('|', [
             $this->toAsciiString($type),
             '753b',
@@ -285,10 +245,9 @@ class PointsExportController extends Controller
             '1',
             '1',
             $this->toAsciiString($insuranceBranchCode ?? ''),
-            ''
+            '',
         ]);
 
-        // Line 2 (with trailing | and the empty field before EUR)
         $line2 = implode('|', [
             $this->toAsciiString($branch->identificator ?? ''),
             $this->toAsciiString($branch->code ?? ''),
@@ -298,10 +257,9 @@ class PointsExportController extends Controller
             '850',
             $batchNumber,
             'EUR',
-            ''
+            '',
         ]);
 
-        // Data lines
         $dataLines = [];
         $i = 1;
 
@@ -309,12 +267,14 @@ class PointsExportController extends Controller
             $dayDD = Carbon::parse($r->date)->format('d');
             $dateYmd = Carbon::parse($r->date)->format('Ymd');
 
-            $patientName = $this->toAsciiString(trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? '')));
+            $patientName = $this->toAsciiString(
+                trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? ''))
+            );
 
             $fields = [
                 $i,
                 $dayDD,
-                in_array($type, ['E', 'F']) ? '' : $this->toAsciiString($r->personal_number ?? ''),
+                in_array($type, ['E', 'F'], true) ? '' : $this->toAsciiString($r->personal_number ?? ''),
                 $patientName,
                 $this->toAsciiString($r->diagnosis_code ?? ''),
                 $this->toAsciiString($r->procedure_code ?? ''),
@@ -331,9 +291,9 @@ class PointsExportController extends Controller
                 'O',
                 $this->toAsciiString($r->doctor_pzs ?? ''),
                 $this->toAsciiString($r->doctor_zpr ?? ''),
-                in_array($type, ['E', 'F']) ? $this->toAsciiString($r->country_code ?? '') : '',
-                in_array($type, ['E', 'F']) ? $this->toAsciiString($r->personal_number ?? '') : '',
-                in_array($type, ['E', 'F']) ? $this->toAsciiString($r->sex ?? '') : '',
+                in_array($type, ['E', 'F'], true) ? $this->toAsciiString($r->country_code ?? '') : '',
+                in_array($type, ['E', 'F'], true) ? $this->toAsciiString($r->personal_number ?? '') : '',
+                in_array($type, ['E', 'F'], true) ? $this->toAsciiString($r->sex ?? '') : '',
                 $dateYmd,
                 '',
                 '',
@@ -381,8 +341,13 @@ class PointsExportController extends Controller
             'patients.*.id' => 'integer',
         ]);
 
-        $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $from = Carbon::parse($data['period'][0])
+            ->setTimezone('Europe/Bratislava')
+            ->toDateString();
+
+        $to = Carbon::parse($data['period'][1])
+            ->setTimezone('Europe/Bratislava')
+            ->toDateString();
 
         $userId = (int) $data['user']['id'];
         $branchId = (int) $data['branch']['id'];
@@ -391,9 +356,12 @@ class PointsExportController extends Controller
         $pdfBatchType = $data['batchType']['code'];
 
         $patientIds = collect($data['patients'] ?? [])
-            ->pluck('id')->filter()->values()->all();
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
 
-        // Fetch rows for amount calculation with deduplication
         $pointsData = DB::table('patient_points as pp')
             ->join('patients as p', 'p.id', '=', 'pp.patient_id')
             ->join('procedure_company_prices as pcp', function ($join) {
@@ -404,9 +372,9 @@ class PointsExportController extends Controller
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
             ->whereBetween('pp.date', [$from, $to])
-            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->when(in_array($pdfBatchType, ['N', 'O']), fn($q) => $q->where('p.country_id', 207))
-            ->when(in_array($pdfBatchType, ['E', 'F']), fn($q) => $q->where('p.country_id', '!=', 207))
+            ->when(!empty($patientIds), fn ($q) => $q->whereIn('pp.patient_id', $patientIds))
+            ->when(in_array($pdfBatchType, ['N', 'O'], true), fn ($q) => $q->where('p.country_id', 207))
+            ->when(in_array($pdfBatchType, ['E', 'F'], true), fn ($q) => $q->where('p.country_id', '!=', 207))
             ->select([
                 'pp.date',
                 'pp.procedure_code',
@@ -415,33 +383,16 @@ class PointsExportController extends Controller
                 'p.latitude',
                 'p.longitude',
             ])
+            ->orderBy('pp.date')
             ->get();
 
-        // Deduplicate same-address visits for procedures 3439 and 3440
-        $seenAddresses = [];
-        $filteredPointsData = [];
+        $filteredPointsData = $this->deduplicateNearbyProcedureRows($pointsData, 50);
 
-        foreach ($pointsData as $row) {
-            $procedureCode = $row->procedure_code ?? '';
-            
-            if (in_array($procedureCode, ['3439', '3440'])) {
-                $addressKey = $row->date . '|' . $row->latitude . '|' . $row->longitude;
-                
-                if (isset($seenAddresses[$addressKey])) {
-                    continue;
-                }
-                
-                $seenAddresses[$addressKey] = true;
-            }
-            
-            $filteredPointsData[] = $row;
-        }
-
-        // Calculate amount from filtered data
         $amount = collect($filteredPointsData)
-            ->sum(fn($row) => $row->quantity * $row->price);
+            ->sum(fn ($row) => $row->quantity * $row->price);
 
         $companyName = DB::table('company')->where('id', $companyId)->value('name');
+
         $branchName = DB::table('branches')
             ->where('id', $branchId)
             ->selectRaw("TRIM(CONCAT(COALESCE(city,''), ', ', COALESCE(address,''))) as name")
@@ -467,7 +418,7 @@ class PointsExportController extends Controller
             'companyName' => $companyName,
             'branchName' => $branchName,
             'insuranceName' => $insuranceName,
-            'fileType' => "vykázané body",
+            'fileType' => 'vykázané body',
         ];
 
         $pdf = Pdf::loadView('pdf.statement', ['sheet' => $sheet])
@@ -476,6 +427,88 @@ class PointsExportController extends Controller
         $pdfName = "sprievodny_list_{$sheet['batchNumber']}.pdf";
 
         return $pdf->download($pdfName);
+    }
+
+    private function deduplicateNearbyProcedureRows(iterable $rows, int $radiusMeters = 50): array
+    {
+        $seenAddresses = [];
+        $filteredRows = [];
+
+        foreach ($rows as $row) {
+            $procedureCode = (string) ($row->procedure_code ?? '');
+
+            $shouldDeduplicate =
+                in_array($procedureCode, ['3439', '3440'], true) &&
+                $row->latitude !== null &&
+                $row->longitude !== null;
+
+            if (! $shouldDeduplicate) {
+                $filteredRows[] = $row;
+                continue;
+            }
+
+            $bucketKey = (string) $row->date . '|' . $procedureCode;
+
+            if (!isset($seenAddresses[$bucketKey])) {
+                $seenAddresses[$bucketKey] = [];
+            }
+
+            $currentLatitude = (float) $row->latitude;
+            $currentLongitude = (float) $row->longitude;
+
+            $isNearby = false;
+
+            foreach ($seenAddresses[$bucketKey] as $seenPoint) {
+                $distanceMeters = $this->distanceInMeters(
+                    $currentLatitude,
+                    $currentLongitude,
+                    $seenPoint['latitude'],
+                    $seenPoint['longitude']
+                );
+
+                if ($distanceMeters <= $radiusMeters) {
+                    $isNearby = true;
+                    break;
+                }
+            }
+
+            if ($isNearby) {
+                continue;
+            }
+
+            $seenAddresses[$bucketKey][] = [
+                'latitude' => $currentLatitude,
+                'longitude' => $currentLongitude,
+            ];
+
+            $filteredRows[] = $row;
+        }
+
+        return $filteredRows;
+    }
+
+    private function distanceInMeters(
+        float $latitude1,
+        float $longitude1,
+        float $latitude2,
+        float $longitude2
+    ): float {
+        $earthRadius = 6371000;
+
+        $latFrom = deg2rad($latitude1);
+        $lonFrom = deg2rad($longitude1);
+        $latTo = deg2rad($latitude2);
+        $lonTo = deg2rad($longitude2);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(
+            pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)
+        ));
+
+        return $earthRadius * $angle;
     }
 
     private function toAsciiString(?string $value, ?int $limit = null): string
@@ -491,5 +524,4 @@ class PointsExportController extends Controller
 
         return $normalized;
     }
-
 }
