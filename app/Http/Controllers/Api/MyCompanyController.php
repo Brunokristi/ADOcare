@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
+use App\Http\Requests\UpdateCompanyRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\CarCollection;
 use App\Http\Resources\DoctorCollection;
@@ -12,6 +13,8 @@ use App\Models\Car;
 use App\Models\Doctor;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use \App\Http\Controllers\Controller;
 
 class MyCompanyController extends Controller
@@ -30,6 +33,35 @@ class MyCompanyController extends Controller
         }
 
         return $this->success($company->load(['representative']), 'My company retrieved');
+    }
+
+    /**
+     * Update current user's company.
+     */
+    public function update(UpdateCompanyRequest $request)
+    {
+        $user = $request->user();
+        $company = $user?->company;
+
+        if (!$company) {
+            return $this->notFound('No company associated with current user');
+        }
+
+        $data = $request->validated();
+
+        if ($request->hasFile('stamp')) {
+            if ($company->stamp_path) {
+                Storage::disk('local')->delete($company->stamp_path);
+            }
+
+            $path = $request->file('stamp')->store('signatures', 'local');
+            $data['stamp_path'] = $path;
+        }
+
+        unset($data['stamp']);
+        $company->update($data);
+
+        return $this->success($company, 'Updated', Response::HTTP_OK);
     }
 
     /**

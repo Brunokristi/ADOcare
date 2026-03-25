@@ -15,13 +15,13 @@
     </style>
 </head>
 <body>
-    <div class="title">CESTOVNY PRIKAZ</div>
+    <div class="title">CESTOVNÝ PRÍKAZ</div>
 
     <table>
         <tbody>
             <tr>
                 <td colspan="2">
-                    Cestovny prikaz:
+                    Cestovný príkaz:
                     <strong>
                         {{ str_pad((string) ($cpData['user_id'] ?? ''), 3, '0', STR_PAD_LEFT) }}{{ $cpData['month'] ?? '' }}{{ $cpData['year'] ?? '' }}
                     </strong>
@@ -29,25 +29,25 @@
             </tr>
             <tr>
                 <td style="width: 50%;">
-                    <strong>Zamestnavatel:</strong><br>
-                    Nazov: {{ $cpData['company_name'] ?? '' }}<br>
-                    ICO: {{ $cpData['ico'] ?? '' }}
+                    <strong>Zamestnávateľ:</strong><br>
+                    Názov: {{ $cpData['company_name'] ?? '' }}<br>
+                    IČO: {{ $cpData['ico'] ?? '' }}
                 </td>
                 <td style="width: 50%;">
                     <strong>Zamestnanec:</strong><br>
                     Meno: {{ $cpData['user_name'] ?? '' }}<br>
-                    Funkcia: Terenna zdravotna sestra
+                    Funkcia: Terénna zdravotná sestra
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
-                    <strong>Ucel pracovnych ciest:</strong><br>
-                    Zdravotna starostlivost o pacientov v domacom prostredi
+                    <strong>ÚČel pracovných ciest:</strong><br>
+                    Zdravotná starostlivosť o pacientov v domácom prostredí
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
-                    <strong>Miesto vykonu prace:</strong><br>
+                    <strong>Miesto výkonu práce:</strong><br>
                     {{ $cpData['city'] ?? '' }} a okolie
                 </td>
             </tr>
@@ -58,15 +58,15 @@
                     do {{ !empty($cpData['end_date']) ? \Carbon\Carbon::parse($cpData['end_date'])->format('d.m.Y') : '' }}
                 </td>
                 <td>
-                    <strong>Dopravny prostriedok:</strong><br>
+                    <strong>Dopravný prostriedok:</strong><br>
                     {{ $cpData['car_model'] ?? '' }}<br>
                     SPZ: {{ $cpData['car_license_plate'] ?? '' }}
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
-                    <strong>Predpokladane naklady:</strong><br>
-                    Podla skutocneho vykonu
+                    <strong>Predpokladané náklady:</strong><br>
+                    Podľa skutočného výkonu
                 </td>
             </tr>
         </tbody>
@@ -76,11 +76,11 @@
         <tbody>
             <tr>
                 <td style="width: 50%;">
-                    Datum:<br>
+                    Dátum:<br>
                     <strong>{{ !empty($cpData['lastday_previous_month']) ? \Carbon\Carbon::parse($cpData['lastday_previous_month'])->format('d.m.Y') : '' }}</strong>
                 </td>
                 <td style="width: 50%;">
-                    Schvalil:<br>
+                    Schválil:<br>
                     <strong>{{ $cpData['representative_name'] ?? '' }}</strong>
                 </td>
             </tr>
@@ -94,7 +94,7 @@
             @endif
         </div>
         <div class="line"></div>
-        podpis schvalujuceho
+        podpis schvalujúceho
     </div>
 </body>
 </html>

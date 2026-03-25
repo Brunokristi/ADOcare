@@ -49,7 +49,7 @@ class BranchPatientController extends Controller
             $request,
             $query,
             searchable: ['first_name', 'last_name', 'personal_number'],
-            allowedFilters: ['sex'],
+            allowedFilters: ['sex', 'nurse_id'],
             defaults: ['sort' => 'last_name']
         );
 

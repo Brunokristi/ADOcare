@@ -7,6 +7,7 @@ import router from '@/router'
 import { useToast } from 'primevue/usetoast'
 import type { Car, User } from '@/types/models'
 import { formatUserFullName } from '@/utils/formatUtils'
+import AutoComplete from 'primevue/autocomplete'
 
 // If you have axios inside api, we can use api.get for blob.
 // If not, replace download with your preferred client.
@@ -35,6 +36,8 @@ const authStore = useAuthStore()
 const car = ref<Car>({} as Car)
 const users = ref<User[]>([])
 const submitted = ref(false)
+const companyName = ref('')
+const ownerSuggestions = ref<string[]>([])
 
 const documents = ref<CarDocument[]>([])
 const documentBlobUrls = ref<{ [key: number]: string }>({})
@@ -93,9 +96,35 @@ const formatDate = (date: string | Date | null | undefined): string => {
     return d.toLocaleDateString('sk-SK', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
+const getOwnerCandidateValues = (): string[] => {
+    const candidates = [
+        companyName.value,
+        ...users.value.map((user) => formatUserFullName(user)),
+    ]
+
+    return Array.from(
+        new Set(
+            candidates
+                .map((value) => (value ?? '').trim())
+                .filter((value) => value.length > 0),
+        ),
+    )
+}
+
+const searchOwnerSuggestions = (event: { query?: string }) => {
+    const query = (event.query ?? '').trim().toLowerCase()
+    const candidates = getOwnerCandidateValues()
+
+    ownerSuggestions.value = query.length
+        ? candidates.filter((value) => value.toLowerCase().includes(query))
+        : candidates
+}
+
 onMounted(async () => {
     // ensure defaults
     car.value.company_id = authStore.user?.company_id ?? null
+
+    await loadCarOwnerName()
 
     // users list
     try {
@@ -110,6 +139,8 @@ onMounted(async () => {
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať používateľov', life: 5000 })
     }
 
+    ownerSuggestions.value = getOwnerCandidateValues()
+
     // editing existing car
     if (props.carId) {
         try {
@@ -119,8 +150,35 @@ onMounted(async () => {
             console.error('Failed to fetch car', e)
             toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa načítať auto', life: 5000 })
         }
+    } else if (!car.value.owner_name && companyName.value) {
+        car.value.owner_name = companyName.value
     }
 })
+
+const loadCarOwnerName = async () => {
+    if (!authStore.isSuperadmin && authStore.user?.company?.name) {
+        companyName.value = authStore.user.company.name
+        return
+    }
+
+    const routeCompanyId = authStore.isSuperadmin && router.currentRoute.value.params.companyId
+        ? Number(router.currentRoute.value.params.companyId)
+        : null
+
+    const companyId = routeCompanyId ?? car.value.company_id ?? authStore.user?.company_id ?? null
+    if (!companyId || Number.isNaN(Number(companyId))) {
+        return
+    }
+
+    try {
+        const company = await api.fetchEntity<any>(`v1/companies/${companyId}`)
+        companyName.value = company?.name ?? ''
+    } catch (e) {
+        console.error('Failed to fetch company name', e)
+        companyName.value = ''
+        return
+    }
+}
 
 onBeforeUnmount(() => {
     // Cleanup blob URLs
@@ -432,6 +490,19 @@ const getDocumentPreviewUrl = (doc: CarDocument) => {
                     <label class="block text-sm mb-1">EVČ</label>
                     <InputText v-model="car.evc" class="w-full" />
                     <small v-if="submitted && !car.evc" class="text-danger">Povinné pole</small>
+                </div>
+
+                <div class="w-full">
+                    <label class="block text-sm mb-1">Majiteľ vozidla</label>
+                    <AutoComplete
+                        v-model="car.owner_name"
+                        :suggestions="ownerSuggestions"
+                        @complete="searchOwnerSuggestions"
+                        dropdown
+                        class="w-full"
+                        inputClass="!w-full"
+                        fluid
+                    />
                 </div>
 
                 <div>

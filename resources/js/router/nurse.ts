@@ -24,6 +24,7 @@ import DocumentRecord from '@/pages/Documents/Record.vue'
 import DocumentNalez from '@/pages/Documents/Nalez.vue'
 import DocumentKilometersShow from '@/pages/Documents/KilometersShow.vue'
 import DocumentPointsShow from '@/pages/Documents/PointsShow.vue'
+import DocumentInvoiceShow from '@/pages/Documents/InvoiceShow.vue'
 import PatientAgreement from '@/pages/Patients/Agreement/PatientAgreementPage.vue'
 import PatientRecord from '@/pages/Patients/Record/PatientRecordPage.vue'
 import PatientDekurz from '@/pages/Patients/Dekurz/PatientDekurzPage.vue'
@@ -227,6 +228,16 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     title: 'Body',
                     sidebar: false,
                     navbar: false
+                },
+            },
+            {
+                path: 'invoices/:documentId',
+                name: 'documents-invoice-show',
+                component: DocumentInvoiceShow,
+                meta: {
+                    title: 'Faktúra',
+                    sidebar: false,
+                    navbar: false,
                 },
             },
         ]

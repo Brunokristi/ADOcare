@@ -1,11 +1,57 @@
 <template>
-    <UniversalDataTable v-if="endpointUrl" :key="tableKey" :options="options" ref="tableEl" />
+    <div class="h-full flex flex-col min-h-0 max-h-full overflow-auto">
+        <UniversalDataTable
+            v-if="endpointUrl"
+            :key="tableKey"
+            :options="options"
+            ref="tableEl"
+        >
+            <template #toolbar-extra>
+                <div
+                    v-if="authStore.isManager && !showDeleted && !showDead"
+                    class="flex items-center gap-2"
+                >
+                    <Select
+                        v-model="selectedNurseId"
+                        :options="availableNurses"
+                        option-value="id"
+                        option-label="display_name"
+                        :placeholder="availableNurses.length === 0 ? 'Načítavam sestry...' : 'Všetky sestry'"
+                        :disabled="availableNurses.length === 0"
+                        class="w-64"
+                        dropdown-icon="bi bi-chevron-down"
+                        :show-clear="true"
+                        clear-icon="bi bi-x-lg"
+                    >
+                        <template #option="slotProps">
+                            <span v-if="slotProps.option">
+                                {{ formatUserFullName(slotProps.option) }}
+                            </span>
+                        </template>
+
+                        <template #value="slotProps">
+                            <span v-if="slotProps.value !== null && slotProps.value !== undefined">
+                                {{
+                                    availableNurses.find((n) => n.id === slotProps.value)
+                                        ? formatUserFullName(
+                                            availableNurses.find((n) => n.id === slotProps.value)!
+                                        )
+                                        : ''
+                                }}
+                            </span>
+                            <span v-else class="text-gray-400">Všetky sestry</span>
+                        </template>
+                    </Select>
+                </div>
+            </template>
+        </UniversalDataTable>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { computed, markRaw, ref } from 'vue'
+import { computed, markRaw, ref, watch } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
-import type { Doctor, Patient } from '@/types/models'
+import type { Doctor, Patient, User } from '@/types/models'
 import { useAuthStore } from '@/stores/auth'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { usePatientStore } from '@/stores/patientStore'
@@ -16,8 +62,8 @@ import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import useModal from '@/composables/useModal'
 import { openPatientDocumentsModal, openPatientEditModal } from '@/helpers/modalHelpers'
 import { formatBranchFullName, formatUserFullName } from '@/utils/formatUtils'
-import api from '@/services/api' // <- changed
-
+import api from '@/services/api'
+import Select from 'primevue/select'
 
 interface Props {
     endpointUrl: string
@@ -32,6 +78,8 @@ const authStore = useAuthStore()
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
+const selectedNurseId = ref<number | null>(null)
+
 type PatientViewMode = 'active' | 'deleted' | 'dead'
 const viewMode = ref<PatientViewMode>('active')
 
@@ -39,6 +87,75 @@ const tableKey = computed(() => `patients-${branchId.value ?? 'none'}-${viewMode
 
 const showDeleted = computed(() => viewMode.value === 'deleted')
 const showDead = computed(() => viewMode.value === 'dead')
+
+const availableNurses = computed(() => {
+    if (!authStore.isManager) {
+        return []
+    }
+
+    const remoteItems = actionRemote.value?.items as any
+    const items = Array.isArray(remoteItems) ? remoteItems : remoteItems?.value
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return []
+    }
+
+    const uniqueNurses = new Map<number, User & { display_name?: string }>()
+
+    items.forEach((patient: any) => {
+        if (patient?.nurse?.id) {
+            uniqueNurses.set(patient.nurse.id, {
+                ...patient.nurse,
+                display_name: formatUserFullName(patient.nurse),
+            })
+        }
+    })
+
+    return Array.from(uniqueNurses.values()).sort((a, b) =>
+        (a.display_name || '').localeCompare(b.display_name || '')
+    )
+})
+
+watch(selectedNurseId, async (newValue) => {
+    if (!authStore.isManager || !actionRemote.value) {
+        return
+    }
+
+    if (actionRemote.value.setExtraParam) {
+        if (newValue !== null && newValue !== undefined) {
+            actionRemote.value.setExtraParam('filter[nurse_id]', newValue)
+        } else {
+            actionRemote.value.setExtraParam('filter[nurse_id]', undefined)
+        }
+    }
+
+    await actionRemote.value.loadPage?.(1)
+})
+
+watch(viewMode, () => {
+    selectedNurseId.value = null
+})
+
+interface PatientsPrintPayload {
+    mode: 'selected' | 'filtered'
+    selectedPatients?: Patient[]
+    endpointUrl?: string
+    params?: Record<string, any>
+}
+
+function openPatientsPrintPreview(payload: PatientsPrintPayload) {
+    sessionStorage.setItem('patients-print-payload', JSON.stringify(payload))
+    void router.push({ name: 'manager-overview-patients-print' })
+}
+
+function printSelectedPatients(patients: Patient[]) {
+    if (!patients.length) return
+
+    openPatientsPrintPreview({
+        mode: 'selected',
+        selectedPatients: patients,
+    })
+}
 
 function openPatientDocuments(patientId: number) {
     void openPatientDocumentsModal(patientId)
@@ -53,7 +170,7 @@ async function restorePatients(rows: Patient[], remote?: RemoteTableReturn) {
     const ids = rows.filter((row) => row.deleted_at).map((row) => row.id)
     if (!ids.length) return
 
-    await api.post('/v1/patients/restore', { ids }) // <- changed
+    await api.post('/v1/patients/restore', { ids })
     remote?.reload?.()
 }
 
@@ -79,10 +196,8 @@ const options = computed<DataTableOptions<Patient>>(() => {
             sortable: true,
             render: (v, row) => {
                 if (!row) return v
-
                 if (row.deleted_at) return `<s>${v}</s>`
                 if (row.death_date) return `${v} †`
-
                 return v
             },
         },
@@ -92,9 +207,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
             sortable: true,
             render: (v, row) => {
                 if (!row) return v
-
                 if (row.deleted_at) return `<s>${v}</s>`
-
                 return v
             },
         },
@@ -147,11 +260,14 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     return address.length > 50 ? address.substring(0, 40) + '...' : address
                 },
             },
-            { field: 'city', header: 'Mesto', sortable: true },
+            {
+                field: 'city',
+                header: 'Mesto',
+                sortable: true,
+            },
         )
     }
 
-    // documents = always visible
     baseColumns.push({
         field: 'documents',
         header: '',
@@ -160,7 +276,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
         componentOptions: [
             {
                 icon: 'bi bi-folder',
-                color: 'info',
+                color: 'darkgrey',
                 tooltip: 'Zobraziť dokumenty',
                 action: (row: Patient) => {
                     openPatientDocuments(row.id)
@@ -169,7 +285,6 @@ const options = computed<DataTableOptions<Patient>>(() => {
         ],
     })
 
-    // pin = visible on active + dead, hidden on deleted
     if (!showDeleted.value) {
         baseColumns.push({
             field: 'pin',
@@ -180,7 +295,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 {
                     icon: (row: Patient) =>
                         patientStore.current?.id === row.id ? 'bi bi-pin-fill' : 'bi bi-pin',
-                    color: 'info',
+                    color: 'darkgrey',
                     tooltip: 'Pripnúť pacienta',
                     action: (row: Patient) => {
                         patientStore.setPatient(row)
@@ -191,7 +306,6 @@ const options = computed<DataTableOptions<Patient>>(() => {
         })
     }
 
-    // edit = only visible on active
     if (!showDeleted.value && !showDead.value) {
         baseColumns.push({
             field: 'edit',
@@ -201,7 +315,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
             componentOptions: [
                 {
                     icon: 'bi bi-pencil',
-                    color: 'info',
+                    color: 'darkgrey',
                     tooltip: 'Editovať pacienta',
                     action: (row: Patient) => {
                         openEditPatient(row.id)
@@ -219,11 +333,18 @@ const options = computed<DataTableOptions<Patient>>(() => {
         selectable: true,
         afterInit: ({ remote }) => {
             actionRemote.value = remote
+
+            if (authStore.isManager && selectedNurseId.value !== null && remote.setExtraParam) {
+                remote.setExtraParam('filter[nurse_id]', selectedNurseId.value)
+            }
         },
         extraParams: {
-            ...(authStore.isManager ? { with: 'nurse,branch,doctor' } : {}),
+            ...(authStore.isManager ? { with: 'nurse,doctor,branch' } : { with: 'doctor' }),
             ...(showDeleted.value ? { only_deleted: 1 } : {}),
             ...(showDead.value ? { only_dead: 1 } : {}),
+            ...(authStore.isManager && selectedNurseId.value !== null
+                ? { 'filter[nurse_id]': selectedNurseId.value }
+                : {}),
         },
         columns: baseColumns,
         actions: [
@@ -292,6 +413,15 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 class: 'bg-danger!',
                 handler: async ({ selectedRows, remote }) => {
                     await deletePatients(selectedRows as Patient[], remote)
+                },
+            },
+            {
+                key: 'print',
+                icon: 'bi bi-printer',
+                class: 'bg-accent!',
+                disabled: ({ selectedRows }) => !selectedRows.length,
+                handler: ({ selectedRows }) => {
+                    printSelectedPatients(selectedRows as Patient[])
                 },
             },
         )

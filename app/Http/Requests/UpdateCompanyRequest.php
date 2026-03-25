@@ -26,6 +26,7 @@ class UpdateCompanyRequest extends FormRequest
             'psc' => 'nullable|string',
             'phone' => 'nullable|string',
             'email' => 'nullable|email',
+            'invoice_number' => 'nullable|integer|min:0',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'representative_id' => 'nullable|integer|exists:users,id',

@@ -129,12 +129,13 @@ export default {
         `
             }),
             dropdown: { class: `${baseNoOutline} border-0! bg-transparent! px-1!` },
-            dropDownIcon: { class: 'text-sm!' },
+            dropDownIcon: { class: 'text-sm! text-darkgrey!' },
             label: { class: 'text-normal! text-darkgrey! truncate!' },
             overlay: { class: 'rounded-md! border-0!' },
             header: { class: 'p-2!' },
             listContainer: { class: 'p-2! gap-2!' },
             option: { class: 'rounded-md! hover:bg-almostwhite! text-normal! p-2! bg-white!' },
+            clearIcon: { class: 'text-sm! text-darkgrey!' },
         },
 
 

@@ -8,13 +8,15 @@ import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
-import MonthStats from "@/pages/Manager/MonthStats.vue";
-import QuarterStats from "@/pages/Manager/QuarterStats.vue";
 import Manager from "@/pages/Manager.vue";
 import Documents from "@/pages/Manager/Documents.vue";
 import DataDocuments from "@/pages/Manager/DataDocuments.vue";
+import Invoices from "@/pages/Manager/Invoices.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import useAuthStore from "@/stores/auth";
+import PatientsPrintPreview from "@/pages/Documents/PatientsPrintPreview.vue";
+import PatientStats from "@/pages/Manager/PatientStats.vue";
+import FinancialStats from "@/pages/Manager/FinancialStats.vue";
 
 
 function showOnSidebar() {
@@ -38,29 +40,29 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         name: 'manager-reports',
         component: Manager,
         meta: {
-            title: 'Reporty',
+            title: 'Výkonnosť',
             sidebar: showOnSidebar,
         },
         children: [
             {
-                path: 'monthly',
-                name: 'manager-month-stats',
-                component: MonthStats,
+                path: 'patients-stats',
+                name: 'manager-patients-statistics',
+                component: PatientStats,
                 meta: {
-                    title: 'Výkonnosť za mesiac',
+                    title: 'Podľa pacientov',
                     sidebar: showOnSidebar,
-                    link: 'výkonnosť za mesiac',
+                    link: 'podľa pacientov',
                     navbar: true,
                 },
             },
             {
-                path: 'trends',
-                name: 'manager-trends',
-                component: QuarterStats,
+                path: 'financial-stats',
+                name: 'manager-financial-stats',
+                component: FinancialStats,
                 meta: {
-                    title: 'Trendy',
+                    title: 'Podľa tržieb',
                     sidebar: showOnSidebar,
-                    link: 'trendy',
+                    link: 'podľa tržieb',
                     navbar: true,
                 },
             },
@@ -87,6 +89,23 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: Doctors,
                 meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
             },
+        ],
+    },
+    {
+        path: '/manager/documents',
+        name: 'manager-documents',
+        component: Settings,
+        meta: {
+            title: 'Dokumenty',
+            sidebar: showOnSidebar,
+        },
+        children: [
+            {
+                path: 'data',
+                name: 'manager-overview-data',
+                component: DataDocuments,
+                meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
+            },
             {
                 path: 'documents',
                 name: 'manager-overview-documents',
@@ -94,12 +113,22 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: { title: 'Cestovné Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'cestovné dokumenty' },
             },
             {
-                path: 'data',
-                name: 'manager-overview-data',
-                component: DataDocuments,
-                meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
+                path: 'invoices',
+                name: 'manager-overview-invoices',
+                component: Invoices,
+                meta: { title: 'Faktúry', sidebar: showOnSidebar, navbar: true, link: 'faktúry' },
             },
         ],
+    },
+    {
+        path: '/manager/overview/patients/print-preview',
+        name: 'manager-overview-patients-print',
+        component: PatientsPrintPreview,
+        meta: {
+            title: 'Náhľad tlače pacientov',
+            sidebar: false,
+            navbar: false,
+        },
     },
     {
         path: '/manager/settings',
@@ -109,6 +138,37 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
         meta: {
             title: 'Nastavenia',
             sectionRoot: 'manager-settings',
+            sidebar: showOnSidebar,
+        },
+        children: [
+
+            {
+                path: 'plans',
+                name: 'manager-settings-plans',
+                component: PlansPage,
+                meta: { title: 'Plány ošetrovateľskej starostlivosti', link: 'plány ošetrovateľskej starostlivosti', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'procedures',
+                name: 'manager-settings-procedures',
+                component: Procedures,
+                meta: {
+                    title: 'Výkony',
+                    link: 'výkony',
+                    sidebar: showOnSidebar,
+                    navbar: true,
+                },
+            },
+        ],
+    },
+    {
+        path: '/manager/company',
+        name: 'manager-company',
+        component: Settings,
+        redirect: { name: 'manager-settings-company' },
+        meta: {
+            title: 'Spoločnosť',
+            sectionRoot: 'manager-company',
             sidebar: showOnSidebar,
         },
         children: [
@@ -136,25 +196,9 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: Cars,
                 meta: { title: 'Autá', link: 'autá', sidebar: showOnSidebar, navbar: true, },
             },
-            {
-                path: 'plans',
-                name: 'manager-settings-plans',
-                component: PlansPage,
-                meta: { title: 'Plány starostlivosti', link: 'plány starostlivosti', sidebar: showOnSidebar, navbar: true, },
-            },
-            {
-                path: 'procedures',
-                name: 'manager-settings-procedures',
-                component: Procedures,
-                meta: {
-                    title: 'Výkony',
-                    link: 'výkony',
-                    sidebar: showOnSidebar,
-                    navbar: true,
-                },
-            },
         ],
     },
+
 ];
 
 managerRoutes.forEach(route => {

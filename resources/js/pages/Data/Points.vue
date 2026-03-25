@@ -15,6 +15,7 @@ const authStore = useAuthStore();
 const uiOverlayStore = useUiOverlayStore();
 const toast = useToast();
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
+const TIMELINE_CALC_TOAST_GROUP = 'timeline-calculation-toast';
 
 
 type BatchType = {
@@ -48,7 +49,6 @@ const selectedPatients = ref<Patient[]>([]);
 const submitted = ref(false);
 const loading = ref(false);
 const patientsLoading = ref(false);
-let calculationToastId: string | undefined;
 
 watchEffect(() => {
     uiOverlayStore.setContentLoading(loading.value);
@@ -202,9 +202,7 @@ async function pollCalculationStatus(periodFrom: Date) {
 
       if (status === 'completed') {
         clearInterval(interval);
-        if (calculationToastId) {
-          toast.removeGroup(calculationToastId);
-        }
+        toast.removeGroup(TIMELINE_CALC_TOAST_GROUP);
         toast.add({
           severity: 'success',
           summary: 'Výpočet dokončený',
@@ -213,9 +211,7 @@ async function pollCalculationStatus(periodFrom: Date) {
         });
       } else if (status === 'failed') {
         clearInterval(interval);
-        if (calculationToastId) {
-          toast.removeGroup(calculationToastId);
-        }
+        toast.removeGroup(TIMELINE_CALC_TOAST_GROUP);
         const errorMsg = res.data?.data?.error_message || 'Neznáma chyba';
         toast.add({
           severity: 'error',
@@ -225,10 +221,7 @@ async function pollCalculationStatus(periodFrom: Date) {
         });
       } else if (attempts >= maxAttempts) {
         clearInterval(interval);
-        // Dismiss the info toast
-        if (calculationToastId) {
-          toast.removeGroup(calculationToastId);
-        }
+        toast.removeGroup(TIMELINE_CALC_TOAST_GROUP);
         toast.add({
           severity: 'warn',
           summary: 'Časový limit',
@@ -240,10 +233,7 @@ async function pollCalculationStatus(periodFrom: Date) {
       console.error('Failed to check calculation status:', error);
       if (attempts >= maxAttempts) {
         clearInterval(interval);
-        // Dismiss the info toast on error
-        if (calculationToastId) {
-          toast.removeGroup(calculationToastId);
-        }
+        toast.removeGroup(TIMELINE_CALC_TOAST_GROUP);
       }
     }
   }, 5000); // Check every 5 seconds
@@ -303,19 +293,21 @@ async function onSubmit() {
             persist: true,
         })
             .then(() => {
-                calculationToastId = 'calculation-in-progress';
+            toast.removeGroup(TIMELINE_CALC_TOAST_GROUP);
                 toast.add({
-                    group: calculationToastId,
+              group: TIMELINE_CALC_TOAST_GROUP,
                     severity: 'info',
-                    summary: 'Výpočet v progrese',
-                    detail: 'Časová os návštev sa počíta na pozadí.',
+              summary: 'Prebieha výpočet časovej osi.',
+                    detail: 'Generovanie dopravných dávok a dekurzov pacientov je počas výpočtu nedostupné, keďže závisí od jeho výsledku.',
                     life: 0,
+              closable: false,
                 });
 
                 pollCalculationStatus(periodFrom);
             })
             .catch(error => {
                 console.error('Background calculation failed:', error);
+            toast.removeGroup(TIMELINE_CALC_TOAST_GROUP);
                 toast.add({
                     severity: 'warn',
                     summary: 'Upozornenie',

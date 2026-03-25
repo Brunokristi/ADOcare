@@ -97,7 +97,7 @@ class VisitsService
             ->where('branch_id', $branchId)
             ->where('date', $date)
             ->selectRaw('
-                COUNT(*) as stops,
+                COUNT(CASE WHEN patient_id IS NOT NULL THEN 1 END) as stops,
                 COALESCE(SUM(time_to_location), 0) as travel_seconds,
                 COALESCE(SUM(distance_to_location), 0) as distance_m,
                 COALESCE(SUM(time_on_location), 0) as on_location_seconds,
@@ -148,7 +148,7 @@ class VisitsService
             ->where('branch_id', $branchId)
             ->whereBetween('date', [$from, $to])
             ->selectRaw('
-                COUNT(*) as stops,
+                COUNT(CASE WHEN patient_id IS NOT NULL THEN 1 END) as stops,
                 COALESCE(SUM(time_to_location), 0) as travel_seconds,
                 COALESCE(SUM(distance_to_location), 0) as distance_m,
                 COALESCE(SUM(time_on_location), 0) as on_location_seconds,

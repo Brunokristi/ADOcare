@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <div class="title">DENNY ZAZNAM CIEST</div>
+    <div class="title">DENNÝ ZÁZNAM CIEST</div>
 
     @php
         $month = $dzcData['month'] ?? '';
@@ -50,7 +50,7 @@
                     <strong>{{ $month }}/{{ $year }}</strong>
                 </td>
                 <td style="width: 66%;" colspan="2">
-                    Pracovnik:<br>
+                    Pracovník:<br>
                     <strong>{{ $dzcData['user_name'] ?? '' }}</strong>
                     @if(!empty($signatureDataUri))
                         <img src="{{ $signatureDataUri }}" alt="Podpis" class="sig">
@@ -59,11 +59,11 @@
             </tr>
             <tr>
                 <td>
-                    Celkovy pocet km:<br>
+                    Celkový počet km:<br>
                     <strong>{{ $monthTotalKm }}</strong>
                 </td>
                 <td>
-                    Dopravny prostriedok:<br>
+                    Dopravný prostriedok:<br>
                     <strong>{{ $dzcData['car_model'] ?? '' }} - {{ $dzcData['car_license_plate'] ?? '' }}</strong>
                 </td>
                 <td>
@@ -92,15 +92,15 @@
                 <tbody>
                     <tr>
                         <td style="width: 25%;">
-                            <strong>Datum</strong><br>
+                            <strong>Dátum</strong><br>
                             {{ !empty($date) ? \Carbon\Carbon::parse($date)->format('d.m.Y') : '' }}
                         </td>
                         <td style="width: 25%;">
-                            <strong>Ucel cesty</strong><br>
+                            <strong>Účel cesty</strong><br>
                             Navsteva pacienta
                         </td>
                         <td style="width: 25%;">
-                            <strong>Pocet km</strong><br>
+                            <strong>Počet km</strong><br>
                             {{ $distanceKm }}
                         </td>
                         <td style="width: 25%;">
@@ -113,9 +113,9 @@
                             <table class="route-table small">
                                 <thead>
                                     <tr>
-                                        <th style="width: 18%;" class="center">Poradove cislo</th>
+                                        <th style="width: 18%;" class="center">Poradové číslo</th>
                                         <th style="width: 52%;">Adresa</th>
-                                        <th style="width: 15%;" class="center">Prichod</th>
+                                        <th style="width: 15%;" class="center">Príchod</th>
                                         <th style="width: 15%;" class="right">KM</th>
                                     </tr>
                                 </thead>
