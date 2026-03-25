@@ -208,7 +208,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware('role:superadmin');
     Route::delete('diagnoses', [DiagnosisController::class, 'destroyMany'])
         ->middleware('role:superadmin');
-    Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class, 'role:manager,superadmin');
+    Route::apiResourceComplete('nurse-diagnoses', NurseDiagnosisController::class, 'role:manager,superadmin', 'role:any');
     Route::apiResourceComplete('macros', MacroController::class);
     Route::get('/invoices/{invoice}/file', [InvoiceController::class, 'file'])
         ->middleware('role:manager,superadmin');
