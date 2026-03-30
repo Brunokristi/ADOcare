@@ -30,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })->withSchedule(function (Schedule $schedule): void {
         $schedule->command(SoftDeleteInactivePatients::class)->monthlyOn(1, '2:00');
 
+        $schedule->command('backup:run --only-db')->dailyAt('01:00')->withoutOverlapping();
+        $schedule->command('backup:clean')->dailyAt('01:30')->withoutOverlapping();
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
