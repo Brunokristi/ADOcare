@@ -162,9 +162,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/branches/{branch}/favourite-doctors', [BranchDoctorController::class, 'doctors'])
         ->middleware('role:any');
     Route::post('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'attach'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::delete('/branches/{branch}/favourite-doctors/{doctor}', [BranchDoctorController::class, 'detach'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
 
     Route::get('/my-company', [MyCompanyController::class, 'show']);
     Route::patch('/my-company', [MyCompanyController::class, 'update'])
