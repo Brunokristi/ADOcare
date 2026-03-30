@@ -10,6 +10,7 @@ import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import TercialNavbar from './components/TercialNavbar.vue'
+import MobileBlocker from './components/MobileBlocker.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 import AccessError from '@/pages/AccessError.vue'
 import { navigationAccessError } from '@/router'
@@ -56,7 +57,7 @@ function markDeathCheckedToday(patientId: number) {
         const map = raw ? (JSON.parse(raw) as Record<string, string>) : {}
         map[String(patientId)] = todayIso()
         localStorage.setItem(DEATH_CHECK_STORAGE_KEY, JSON.stringify(map))
-    } catch {}
+    } catch { }
 }
 
 
@@ -158,31 +159,23 @@ function goToRoutesFromToast() {
 </script>
 
 <template>
+
     <div class="h-screen flex flex-col bg-darkgrey">
-        <Navbar
-            v-if="showNavbar"
-            class="flex-none"
-            :isSidebarOpen="isSidebarOpen"
-            @toggle-sidebar="handleToggleSidebar"
-        />
+        <Navbar v-if="showNavbar" class="flex-none" :isSidebarOpen="isSidebarOpen"
+            @toggle-sidebar="handleToggleSidebar" />
 
         <TercialNavbar v-if="isLoggedIn && showNavbar" class="flex-none" />
 
         <div class="flex flex-1 overflow-hidden">
-            <div
-                class="flex-1 bg-white p-8 relative"
-                :class="contentLoading ? 'overflow-hidden' : 'overflow-auto'"
-            >
+            <div class="flex-1 bg-white p-8 relative" :class="contentLoading ? 'overflow-hidden' : 'overflow-auto'">
                 <LoadingOverlay :show="contentLoading" text="" />
 
                 <AccessError v-if="navigationAccessError" />
                 <router-view v-else />
             </div>
 
-            <Sidebar
-                v-if="isSidebarOpen && isLoggedIn"
-                class="flex-none bg-darkgrey text-white border-l border-lightgrey"
-            />
+            <Sidebar v-if="isSidebarOpen && isLoggedIn"
+                class="flex-none bg-darkgrey text-white border-l border-lightgrey" />
         </div>
 
         <Footer class="flex-none" />
@@ -194,12 +187,9 @@ function goToRoutesFromToast() {
                 <div class="flex flex-col gap-2 w-full">
                     <div class="font-semibold">{{ slotProps.message.summary }}</div>
                     <div class="text-sm">{{ slotProps.message.detail }}</div>
-                    <Button
-                        label="Skontrolovať"
-                        size="small"
+                    <Button label="Skontrolovať" size="small"
                         class="!bg-white !border-0 !text-success hover:!bg-darkgrey !px-2 !w-auto self-start"
-                        @click="goToRoutesFromToast"
-                    />
+                        @click="goToRoutesFromToast" />
                 </div>
             </template>
         </Toast>
@@ -212,7 +202,8 @@ function goToRoutesFromToast() {
                         <p class="text-white text-mini">{{ slotProps.message.detail }}</p>
                     </div>
 
-                    <svg width="50" height="50" viewBox="0 0 237 100" xmlns="http://www.w3.org/2000/svg" class="logo-spinner">
+                    <svg width="50" height="50" viewBox="0 0 237 100" xmlns="http://www.w3.org/2000/svg"
+                        class="logo-spinner">
                         <g class="orbit-left-spinner">
                             <path
                                 d="M50 0C77.6142 0 100 22.3858 100 50C100 77.6142 77.6142 100 50 100C22.3858 100 0 77.6142 0 50C0 22.3858 22.3858 0 50 0ZM40.9062 36.0781V62H45.5312V57.6094L48.0469 55.3594L54.9062 62H61.8438L51.5938 52.1875L61.2344 43.5625H54.1562L45.5312 51.3906V36.0781H40.9062Z"
@@ -232,6 +223,9 @@ function goToRoutesFromToast() {
         </Toast>
 
         <ModalProvider />
+
+        <MobileBlocker />
+
         <router-view name="modal" />
     </div>
 </template>

@@ -151,6 +151,22 @@ body {
     --z-tooltip: 3000;
 }
 
+.mobile-blocker {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    body:not(.mobile-allowed) .mobile-blocker {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body.mobile-allowed .mobile-blocker {
+        display: none !important;
+    }
+}
+
 .p-component {
     --p-checkbox-background: transparent;
     --p-checkbox-checked-background: var(--c-dark-grey);
