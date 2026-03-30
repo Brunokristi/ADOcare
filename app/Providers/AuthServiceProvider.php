@@ -37,6 +37,14 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        Gate::before(function (User $user) {
+            if ($user->hasGlobalRole('superadmin')) {
+                return true;
+            }
+
+            return null;
+        });
+
         // Example gates for convenience
         Gate::define('manage-company', function (User $user, $companyId) {
             return $user->hasGlobalRole('superadmin') || ($user->hasGlobalRole('manager') && $user->isInCompany($companyId));

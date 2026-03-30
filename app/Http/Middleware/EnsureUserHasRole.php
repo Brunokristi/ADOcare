@@ -19,6 +19,10 @@ class EnsureUserHasRole
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
+        if ($user->hasGlobalRole('superadmin')) {
+            return $next($request);
+        }
+
         $globalRole = $user->role?->position ?? 'nurse';
         $hasGlobalRole = is_string($globalRole) && trim($globalRole) !== '';
 
