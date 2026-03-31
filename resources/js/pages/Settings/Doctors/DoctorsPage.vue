@@ -19,7 +19,7 @@ async function openCreate() {
     try {
         response = await openModal(markRaw(DoctorForm), { doctor: null }, { header: 'Lekár', style: { width: '640px' }, closable: true })
     } finally {
-        response && await actionRemote.value?.loadPage(1)
+        if (response) await actionRemote.value?.loadPage(1)
     }
 }
 
@@ -28,7 +28,7 @@ async function openEdit(row: Doctor) {
     try {
         response = await openModal(markRaw(DoctorForm), { doctor: row }, { header: 'Lekár', style: { width: '640px' }, closable: true })
     } finally {
-        response && await actionRemote.value?.loadPage(1)
+        if (response) await actionRemote.value?.loadPage(1)
     }
 }
 

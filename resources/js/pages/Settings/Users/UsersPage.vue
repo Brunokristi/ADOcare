@@ -2,7 +2,7 @@
 import { computed, markRaw, ref } from 'vue'
 import router from '@/router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
-import type { Role, User } from '@/types/models'
+import type { User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
@@ -17,16 +17,7 @@ const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
 const { openModal } = useModal()
 
-const roleNameMap: Record<string, string> = {
-    'manager': 'Manažér',
-    'nurse': 'Sestra',
-    'branch_manager': 'Manažér pobočky'
-}
-
-const getRoleName = (role: Role | undefined): string => {
-    if (!role) return ''
-    return roleNameMap[role.position || ''] || role.position || role.name || ''
-}
+// role name helper removed (unused) to satisfy linter
 
 const tableKey = computed(() => `users-${auth.currentBranch?.id ?? 'global'}`)
 
