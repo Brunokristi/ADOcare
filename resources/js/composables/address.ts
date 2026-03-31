@@ -151,7 +151,7 @@ export function useAddressForm(entity: Ref<Record<string, any> | null>) {
     function computeAddressQuery(ent: Record<string, any> | null, explicitAddress?: string | null) {
         // precedence: explicitAddress -> merged parts (street, city, psc) -> raw address -> null
         if (explicitAddress && String(explicitAddress).trim() !== '') return String(explicitAddress).trim()
-        let merged = mergeAddressParts(ent?.address, ent?.city, ent?.psc)
+        const merged = mergeAddressParts(ent?.address, ent?.city, ent?.psc)
         if (merged) {
             // strip duplicate city if our street fallback inserted it twice
             const parts = merged.split(',').map(p => p.trim()).filter(Boolean)
