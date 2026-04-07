@@ -31,11 +31,13 @@ class Company extends Model
         'stamp_path',
         'send_notifications',
         'notification_settings',
+        'visit_locations',
     ];
 
     protected $casts = [
         'send_notifications' => 'boolean',
         'notification_settings' => 'array',
+        'visit_locations' => 'array',
     ];
 
     public function branches()

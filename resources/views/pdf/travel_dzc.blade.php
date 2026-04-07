@@ -97,7 +97,7 @@
                         </td>
                         <td style="width: 25%;">
                             <strong>Účel cesty</strong><br>
-                            Navsteva pacienta
+                            {{ $dzcData['trip_purpose'] ?? 'Návšteva pacienta' }}
                         </td>
                         <td style="width: 25%;">
                             <strong>Počet km</strong><br>

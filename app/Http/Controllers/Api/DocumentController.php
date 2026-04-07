@@ -7,6 +7,7 @@ use App\Http\Filters\ApiQuery;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
+use App\Models\Branch;
 use App\Services\CPDocumentService;
 use App\Services\DZCDocumentService;
 use Illuminate\Http\Request;
@@ -18,6 +19,55 @@ use Carbon\Carbon;
 
 class DocumentController extends Controller
 {
+    public function createCompanyTravelDocument(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => ['required', 'string', 'in:cp,dzc'],
+            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'period' => ['required', 'date_format:Y-m'],
+        ]);
+
+        $user = $request->user();
+        $branch = Branch::findOrFail((int) $validated['branch_id']);
+
+        if ($user->company_id && (int) $user->company_id !== (int) $branch->company_id) {
+            abort(403, 'Pobočka nepatrí do vašej spoločnosti.');
+        }
+
+        $period = Carbon::createFromFormat('Y-m', $validated['period']);
+        $start = $period->copy()->startOfMonth()->toDateString();
+        $end = $period->copy()->endOfMonth()->toDateString();
+
+        if ($validated['type'] === 'cp') {
+            [$document] = app(CPDocumentService::class)->createCp([
+                'start' => $start,
+                'end' => $end,
+                'branch_id' => $branch->id,
+                'job_title' => 'Manažér',
+                'trip_purpose' => 'Pracovné stretnutia',
+            ], $user);
+
+            return $this->success([
+                'document_id' => $document->id,
+                'type' => 'cp',
+            ], 'Cestovný príkaz bol úspešne vytvorený', 201);
+        }
+
+        try {
+            [$document] = app(DZCDocumentService::class)->createManagerDzcFromVisitLocations([
+                'period' => $period->format('Y-m'),
+                'branch_id' => $branch->id,
+            ], $user);
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success([
+            'document_id' => $document->id,
+            'type' => 'dzc',
+        ], 'Denný záznam ciest bol úspešne vytvorený', 201);
+    }
+
     public function indexTravelDocuments(Request $request)
     {
         $perPage = (int) $request->input('per_page', 25);

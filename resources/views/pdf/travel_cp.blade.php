@@ -36,13 +36,13 @@
                 <td style="width: 50%;">
                     <strong>Zamestnanec:</strong><br>
                     Meno: {{ $cpData['user_name'] ?? '' }}<br>
-                    Funkcia: Terénna zdravotná sestra
+                    Funkcia: {{ $cpData['job_title'] ?? 'Terénna zdravotná sestra' }}
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
                     <strong>ÚČel pracovných ciest:</strong><br>
-                    Zdravotná starostlivosť o pacientov v domácom prostredí
+                    {{ $cpData['trip_purpose'] ?? 'Zdravotná starostlivosť o pacientov v domácom prostredí' }}
                 </td>
             </tr>
             <tr>

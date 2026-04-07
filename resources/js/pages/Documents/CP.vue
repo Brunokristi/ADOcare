@@ -10,8 +10,10 @@ interface CPData {
     ico: string;
     city: string;
     user_name: string;
+  job_title?: string;
     start_date: string;
     end_date: string;
+  trip_purpose?: string;
     month: string;
     year: string;
     car_model: string;
@@ -32,8 +34,10 @@ const cpData = ref<CPData>({
     ico: '',
     city: '',
     user_name: '',
+    job_title: 'Terénna zdravotná sestra',
     start_date: '',
     end_date: '',
+    trip_purpose: 'Zdravotná starostlivosť o pacientov v domácom prostredí',
     month: '',
     year: '',
     car_model: '',
@@ -64,8 +68,10 @@ async function loadCP(documentId: string) {
         user_id: cp.user_id ?? '',
         city: cp.city ?? '',
         user_name: cp.user_name ?? '',
+        job_title: cp.job_title ?? 'Terénna zdravotná sestra',
         start_date: cp.start_date ?? '',
         end_date: cp.end_date ?? '',
+        trip_purpose: cp.trip_purpose ?? 'Zdravotná starostlivosť o pacientov v domácom prostredí',
         month: cp.month ?? '',
         year: cp.year ?? '',
         car_model: cp.car_model ?? '',
@@ -159,13 +165,13 @@ async function loadSignatureImage() {
                 <td class="border border-black p-2 w-1/2">
                     <strong>Zamestnanec:</strong><br />
                     Meno: {{ cpData.user_name }}<br />
-                    Funkcia: Terénna zdravotná sestra
+                  Funkcia: {{ cpData.job_title || 'Terénna zdravotná sestra' }}
                 </td>
             </tr>
             <tr>
               <td class="border border-black p-2 w-full" colspan="2">
                 <strong>Účel pracovných ciest:</strong><br />
-                Zdravotná starostlivost o pacientov v domácom prostredí
+                {{ cpData.trip_purpose || 'Zdravotná starostlivosť o pacientov v domácom prostredí' }}
               </td>
             </tr>
              <tr>

@@ -100,6 +100,12 @@ class CompanyController extends Controller
                 ? json_decode($rawSettings, true)
                 : $rawSettings;
         }
+        if ($request->has('visit_locations')) {
+            $rawLocations = $request->input('visit_locations');
+            $data['visit_locations'] = is_string($rawLocations)
+                ? json_decode($rawLocations, true)
+                : $rawLocations;
+        }
 
         if ($request->hasFile('stamp')) {
             if ($company->stamp_path) {

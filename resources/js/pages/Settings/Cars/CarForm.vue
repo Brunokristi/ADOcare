@@ -606,13 +606,13 @@ const getDocumentPreviewUrl = (doc: CarDocument) => {
                         {{ formatDate(data.date) }}
                     </template>
                 </Column>
-                <Column header="">
+                <Column header="" style="width: 3rem">
                     <template #body="{ data }">
                         <Button icon="bi bi-pencil" class="text-darkgrey! text-normal! bg-transparent! border-none!"
                             @click="editService(data)" />
                     </template>
                 </Column>
-                <Column header="">
+                <Column header="" style="width: 3rem">
                     <template #body="{ data }">
                         <Button icon="bi bi-eraser" class="text-danger! text-normal! bg-transparent! border-none!"
                             @click="deleteService(data)" />

@@ -16,6 +16,7 @@ class StoreCompanyRequest extends FormRequest
         return [
             'send_notifications' => 'nullable|boolean',
             'notification_settings' => 'nullable|json',
+            'visit_locations' => 'nullable|json',
         ];
     }
 }

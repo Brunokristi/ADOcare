@@ -71,12 +71,6 @@ export default {
 
         inputtext: {
             root: {
-                class: `${baseField} bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! [&.p-disabled]:!opacity-50 [&.p-disabled]:!cursor-not-allowed [&.p-disabled]:!bg-lightgrey! min-w-0!`
-            },
-        },
-
-        inputnumber: {
-            root: {
                 class: `${baseField} bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! [&.p-disabled]:!opacity-50 [&.p-disabled]:!cursor-not-allowed [&.p-disabled]:!bg-lightgrey!`
             },
         },
@@ -191,12 +185,6 @@ export default {
                     'text-normal! text-darkgrey! ' +
                     'outline-none! ring-0! shadow-none! ' +
                     'focus:outline-none! focus:ring-0! focus:shadow-none!',
-
-            },
-            pcInputText: {
-                root: {
-                    class: 'w-full! h-full!',
-                },
             },
             panel: { class: 'rounded-md! text-normal! text-darkgrey! border-0!' },
             selectMonth: { class: 'bg-darkgrey! text-normal! text-white! hover:bg-accent! rounded-md!' },
@@ -282,38 +270,39 @@ export default {
 
         tabs: {
             root: {
-                class: '!border-0 !p-0'
-            },
-
-            navContainer: {
-                class: '!border-0'
-            },
-
-            nav: {
-                class: '!border-0 !gap-1 !p-0'
-            },
-
-            navItem: {
-                class: '!m-0'
-            },
-
-            navLink: {
-                class: '!rounded-md !text-darkgrey !px-0 !py-0 !bg-transparent !border-0'
-            },
-
-            navLinkActive: {
-                class: '!bg-accent !text-white'
-            },
-
-            panels: {
-                class: '!border-0 !px-0 !py-2'
+                class: 'flex flex-col'
             }
         },
 
-        TabPanels: {
+        tablist: {
             root: {
-                class: '!border-0 !px-0 !py-2'
+                class: 'flex flex-row list-none m-0 !p-0 text-sm!'
             }
         },
+
+        tab: {
+            root: ({ context }: any) => ({
+                class: [
+                    'relative flex items-center cursor-pointer select-none no-underline py-2 px-4 transition-all duration-200 font-medium',
+                    'border-b-2 mb-[-1px] bg-transparent! rounded-t-md',
+                    context.active
+                        ? 'border-accent! text-accent!'
+                        : 'border-transparent text-darkgrey/60! hover:text-darkgrey!'
+                ].join(' ')
+            })
+        },
+
+        tabpanels: {
+            root: {
+                class: 'p-0! border-0! rounded-b-md! bg-transparent!'
+            }
+        },
+
+        tabpanel: {
+            root: {
+                class: 'px-0! bg-transparent text-darkgrey!'
+            }
+        }
     }
+
 } as PrimeVueConfiguration;
