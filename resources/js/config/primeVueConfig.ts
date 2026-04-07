@@ -276,25 +276,31 @@ export default {
 
         tablist: {
             root: {
-                class: 'flex flex-row list-none m-0 !p-0 text-sm!'
-            }
+                class: 'flex flex-row border-0!'
+            },
+            tabList: {
+                class: 'flex flex-row !gap-4 justify-end! border-0!'
+            },
+            activeBar: {
+                class: 'hidden!'
+            },
         },
 
         tab: {
             root: ({ context }: any) => ({
                 class: [
-                    'relative flex items-center cursor-pointer select-none no-underline py-2 px-4 transition-all duration-200 font-medium',
-                    'border-b-2 mb-[-1px] bg-transparent! rounded-t-md',
+                    'relative flex items-center cursor-pointer select-none no-underline transition-all duration-200 text-mini! text-darkgrey! p-0! lowercase! underline!',
+                    'bg-transparent! rounded-t-md border-0!',
                     context.active
-                        ? 'border-accent! text-accent!'
-                        : 'border-transparent text-darkgrey/60! hover:text-darkgrey!'
+                        ? 'text-accent!'
+                        : 'text-darkgrey! hover:text-accent!'
                 ].join(' ')
             })
         },
 
         tabpanels: {
             root: {
-                class: 'p-0! border-0! rounded-b-md! bg-transparent!'
+                class: 'p-0! py-4! border-0! rounded-b-md! bg-transparent!'
             }
         },
 
@@ -302,7 +308,41 @@ export default {
             root: {
                 class: 'px-0! bg-transparent text-darkgrey!'
             }
-        }
-    }
+        },
+
+        chips: {
+            root: {
+                class: 'flex flex-wrap items-center gap-2 w-full! bg-white!'
+            },
+
+            input: {
+                class:
+                    'flex-1! min-w-[8rem]! bg-transparent! ' +
+                    'border-darkgrey! rounded-md! outline-none! shadow-none! ' +
+                    'text-normal! text-darkgrey! ' +
+                    'focus:outline-none! focus:ring-0! focus:shadow-none!'
+            },
+        },
+
+        chip: {
+            root: { class: 'rounded-md! bg-darkgrey! text-white! px-2! flex items-center gap-1! h-7! text-normal!' },
+            removeIcon: { class: 'text-white! text-sm!' }
+        },
+
+        toggleswitch: {
+            root: {
+                class: `!shadow-none hover:!shadow-none ${baseNoOutline}`,
+            },
+            handle: {
+                class: '!bg-accent',
+            },
+            slider: {
+                class: '!bg-tag3 !rounded-md!',
+            }
+
+        },
+
+
+    },
 
 } as PrimeVueConfiguration;

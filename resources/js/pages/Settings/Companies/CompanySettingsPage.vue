@@ -16,6 +16,7 @@ import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
+import Chip from 'primevue/chip'
 
 type NotificationSetting = {
     key: string
@@ -294,7 +295,7 @@ async function save() {
         )
         formData.append(
             'visit_locations',
-            JSON.stringify(visitLocations.value.map((location: VisitLocation) => normalizeVisitLocation(location)))
+            JSON.stringify(visitLocations.value.map((location) => normalizeVisitLocation(location)))
         )
 
         if (selectedStampFile.value) {
@@ -426,12 +427,12 @@ async function handleStampSelected(event: Event) {
             <div class="card">
                 <Tabs v-model:value="activeTab">
                     <TabList>
-                        <Tab value="firma">Firma</Tab>
+                        <Tab value="firma">Základné údaje</Tab>
                         <Tab value="fakturacia">Fakturácia</Tab>
                         <Tab value="kontakt">Kontakt</Tab>
-                        <Tab value="lokality-navstev">Lokality návštev</Tab>
                         <Tab value="upozornenia">Upozornenia</Tab>
-                        <Tab value="peciatka">Pečiatka</Tab>
+                        <Tab value="peciatka">Zdroje</Tab>
+                        <Tab value="lokality-navstev">Adresár</Tab>
                     </TabList>
 
                     <TabPanels>
@@ -439,8 +440,7 @@ async function handleStampSelected(event: Event) {
                             <div class="flex flex-col gap-5">
                                 <section class="bg-tag3 p-5 rounded-md">
                                     <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Základné údaje</h3>
-                                        <p class="text-sm text-gray-500">
+                                        <p class="text-sm text-accent">
                                             Hlavné identifikačné údaje spoločnosti.
                                         </p>
                                     </div>
@@ -502,9 +502,9 @@ async function handleStampSelected(event: Event) {
 
                                 <section class="bg-tag3 p-5 rounded-md">
                                     <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Zodpovedná osoba</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Osoba, ktorá je naviazaná na spoločnosť v systéme.
+                                        <h3 class="text-sm text-accent">Zodpovedná osoba</h3>
+                                        <p class="text-sm text-tag2">
+                                            Osoba sa zobrazuje na vybraných dokumentoch. Môže to byť napríklad majiteľ firmy alebo iný zodpovedný pracovník.
                                         </p>
                                     </div>
 
@@ -539,32 +539,7 @@ async function handleStampSelected(event: Event) {
                             <div class="flex flex-col gap-5">
                                 <section class="bg-tag3 p-5 rounded-md">
                                     <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Číslovanie faktúr</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Nastavenie aktuálneho čísla pre ďalšiu faktúru.
-                                        </p>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">Aktuálne číslo faktúry</label>
-                                            <InputNumber
-                                                v-model="company.invoice_number"
-                                                :min="0"
-                                                :useGrouping="false"
-                                                class="w-full"
-                                                inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Bankové údaje</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Údaje používané pri vystavovaní dokladov a platbách.
-                                        </p>
+                                        <h3 class="text-sm text-accent">Bankové údaje</h3>
                                     </div>
 
                                     <div class="grid grid-cols-12 gap-4">
@@ -585,6 +560,27 @@ async function handleStampSelected(event: Event) {
                                         </div>
                                     </div>
                                 </section>
+
+                                <section class="bg-tag3 p-5 rounded-md">
+                                    <div class="mb-4">
+                                        <h3 class="text-sm text-accent">Číslovanie faktúr</h3>
+                                    </div>
+
+                                    <div class="grid grid-cols-12 gap-4">
+                                        <div class="col-span-12">
+                                            <label class="block text-normal mb-1">Aktuálne číslo faktúry</label>
+                                            <InputNumber
+                                                v-model="company.invoice_number"
+                                                :min="0"
+                                                :useGrouping="false"
+                                                class="w-full"
+                                                inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
+                                            />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                
                             </div>
                         </TabPanel>
 
@@ -592,10 +588,7 @@ async function handleStampSelected(event: Event) {
                             <div class="flex flex-col gap-5">
                                 <section class="bg-tag3 p-5 rounded-md">
                                     <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Kontaktné údaje</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Základné kontaktné údaje spoločnosti.
-                                        </p>
+                                        <h3 class="text-sm text-accent">Kontaktné údaje</h3>
                                     </div>
 
                                     <div class="grid grid-cols-12 gap-4">
@@ -619,27 +612,20 @@ async function handleStampSelected(event: Event) {
 
                                 <section class="bg-tag3 p-5 rounded-md">
                                     <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Adresa spoločnosti</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Vyhľadajte a uložte adresu spoločnosti.
-                                        </p>
+                                        <h3 class="text-sm text-accent">Adresa spoločnosti</h3>
                                     </div>
 
-                                    <div>
-                                        <label class="block text-normal mb-1">Adresa (ulica, mesto, PSČ)</label>
-                                        <AddressAutocomplete v-model="addressQuery" @selected="onAutocompleteSelected" />
+                                    <div class="mb-4">
+                                        <label class="block text-normal mb-1">Adresa</label>
+                                        <AddressAutocomplete
+                                            v-model="addressQuery"
+                                            @selected="onAutocompleteSelected"
+                                            class="w-full border-0!"
+                                            inputClass="border-0! shadow-none! outline-none! focus:ring-0! focus:shadow-none!"
+                                        />
                                         <small v-if="submitted && !addressQuery" class="text-danger">
                                             Adresa je povinná.
                                         </small>
-                                    </div>
-                                </section>
-
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Poloha na mape</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Presnú polohu nastavíte kliknutím do mapy.
-                                        </p>
                                     </div>
 
                                     <MapSelector
@@ -647,134 +633,6 @@ async function handleStampSelected(event: Event) {
                                         :longitude="company.longitude"
                                         @update="onMapClick"
                                     />
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="lokality-navstev">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Miesta na návštevu</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Vyhľadajte adresu cez Google a pridajte ju ako lokalitu v chip zozname.
-                                        </p>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12 md:col-span-8">
-                                            <label class="block text-normal mb-1">Pridať lokalitu</label>
-                                            <AddressAutocomplete
-                                                v-model="visitLocationQuery"
-                                                class="w-full"
-                                                @selected="addVisitLocation"
-                                            />
-                                            <small class="text-gray-500 block mt-1">
-                                                Lokalita sa pridá po výbere z návrhov adresy.
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-5">
-                                        <div v-if="visitLocations.length" class="flex flex-wrap gap-2">
-                                            <div
-                                                v-for="(location, index) in visitLocations"
-                                                :key="`${location.address}-${location.latitude ?? 'na'}-${location.longitude ?? 'na'}-${index}`"
-                                                class="inline-flex max-w-full items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 shadow-sm"
-                                            >
-                                                <span class="max-w-[20rem] truncate text-sm text-darkgrey">
-                                                    {{ formatVisitLocation(location) }}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    class="inline-flex h-6 w-6 items-center justify-center rounded-full text-danger transition hover:bg-red-50"
-                                                    aria-label="Odstrániť lokalitu"
-                                                    @click="removeVisitLocation(index)"
-                                                >
-                                                    <i class="bi bi-x text-sm"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div v-else class="rounded-md border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
-                                            Zatiaľ nie sú pridané žiadne lokality.
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="upozornenia">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Nastavenie upozornení</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Každý typ upozornenia nastavujete samostatne.
-                                        </p>
-                                    </div>
-
-                                    <div class="flex flex-col gap-4">
-                                        <div
-                                            v-for="(setting, index) in notificationSettings"
-                                            :key="setting.key || index"
-                                            class="rounded-md bg-white p-4 flex flex-col gap-4"
-                                        >
-                                            <div class="grid grid-cols-12 gap-4">
-                                                <div class="col-span-12 md:col-span-4">
-                                                    <label class="block text-normal mb-1">Typ notifikácie</label>
-                                                    <InputText
-                                                        v-model="setting.label"
-                                                        class="w-full"
-                                                        :readonly="index === 0"
-                                                        :placeholder="index === 0 ? 'Údržba áut' : 'Napr. Nové faktúry'"
-                                                    />
-                                                    <small v-if="index === 0" class="text-gray-500 block mt-1">
-                                                        Prvá notifikácia je pevne viazaná na údržbu áut.
-                                                    </small>
-                                                </div>
-
-                                                <div class="col-span-12 md:col-span-6">
-                                                    <label class="block text-normal mb-1">E-maily príjemcov</label>
-                                                    <div
-                                                        v-if="company.email"
-                                                        class="mb-2 inline-flex items-center rounded-full bg-tag3 px-3 py-1 text-sm text-darkgrey"
-                                                    >
-                                                        {{ company.email }}
-                                                    </div>
-                                                    <Chips
-                                                        v-model="setting.emails"
-                                                        separator=","
-                                                        addOnBlur
-                                                        class="w-full"
-                                                        inputClass="w-full!"
-                                                    />
-                                                    <small class="text-gray-500 block mt-1">
-                                                        Email potvrďte Enterom alebo čiarkou. Firemný email je vždy pevne priradený.
-                                                    </small>
-                                                </div>
-
-                                                <div class="col-span-12 md:col-span-2 flex md:justify-end md:items-start">
-                                                    <div class="flex flex-col gap-2 w-full md:w-auto">
-                                                        <label class="inline-flex items-center gap-2 text-sm text-darkgrey">
-                                                            <InputSwitch v-model="setting.enabled" />
-                                                            {{ setting.enabled ? 'Zapnuté' : 'Vypnuté' }}
-                                                        </label>
-
-                                                        <Button
-                                                            v-if="index > 0"
-                                                            type="button"
-                                                            label="Odstrániť"
-                                                            text
-                                                            severity="danger"
-                                                            class="justify-start md:justify-center"
-                                                            @click="removeNotificationSetting(index)"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </section>
                             </div>
                         </TabPanel>
@@ -825,6 +683,113 @@ async function handleStampSelected(event: Event) {
                                                 severity="danger"
                                                 @click="clearSelectedStamp"
                                             />
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </TabPanel>
+
+                        <TabPanel value="upozornenia">
+                            <div class="flex flex-col gap-5">
+                                <section class="bg-tag3 p-5 rounded-md">
+                                    <div class="mb-4">
+                                        <h3 class="text-sm text-accent">Nastavenie upozornení</h3>
+                                        <p class="text-sm text-tag2">
+                                            Dostávajte upozorenia na dôležité udalosti. Aktivujte iba upozornenia, ktoré sú pre vás dôležité.
+                                        </p>
+                                    </div>
+
+                                    <div class="flex flex-col gap-4">
+                                        <div
+                                            v-for="(setting, index) in notificationSettings"
+                                            :key="setting.key || index"
+                                            class="rounded-md bg-white p-4 flex flex-col gap-4"
+                                        >
+                                            <div class="grid grid-cols-12 gap-4">
+                                                <div class="col-span-12 md:col-span-10">
+                                                    <h2 class="block text-heading mb-1">{{ setting.label }}</h2>
+                                                </div>
+
+                                                <div class="col-span-12 md:col-span-2 flex md:justify-end md:items-start">
+                                                    <div class="flex flex-col gap-2 w-full md:w-auto">
+                                                        <label class="inline-flex items-center gap-2 text-sm text-darkgrey">
+                                                            <ToggleSwitch v-model="setting.enabled" />
+                                                            {{ setting.enabled ? 'Zapnuté' : 'Vypnuté' }}
+                                                        </label>
+
+                                                        <Button
+                                                            v-if="index > 0"
+                                                            type="button"
+                                                            label="Odstrániť"
+                                                            text
+                                                            severity="danger"
+                                                            class="justify-start md:justify-center"
+                                                            @click="removeNotificationSetting(index)"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-span-12 md:col-span-6">
+                                                <label class="block text-normal mb-1">E-maily príjemcov</label>
+                                                <div v-if="company.email" class="mb-2 flex flex-wrap gap-2">
+                                                    <Chip
+                                                        :label="company.email"
+                                                    />
+                                                </div>
+                                                <Chips
+                                                    v-model="setting.emails"
+                                                    separator=","
+                                                    addOnBlur
+                                                    class="w-full"
+                                                    inputClass="w-full! border-0! outline-none! shadow-none! focus:ring-0! focus:shadow-none!"
+                                                />
+                                                <small class="text-mini text-tag2 block mt-1">
+                                                    Email potvrďte stlačením tlačidla enterom alebo čiarkou.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </TabPanel>
+
+                        <TabPanel value="lokality-navstev">
+                            <div class="flex flex-col gap-5">
+                                <section class="bg-tag3 p-5 rounded-md">
+                                    <div class="mb-4">
+                                        <h3 class="text-sm text-accent">Často navštivované lokality</h3>
+                                        <p class="text-mini text-tag2">
+                                            Pridajte lokality, ktoré manažér často navštevuje. Tieto lokality budú slúžiť k vytvoreniu denného záznamu ciest manažéra.
+                                        </p>
+                                    </div>
+
+                                    <div class="grid grid-cols-12 gap-4">
+                                        <div class="col-span-12">
+                                            <label class="block text-normal mb-1">Vyhľadajte lokalitu</label>
+                                            <AddressAutocomplete
+                                                v-model="visitLocationQuery"
+                                                class="w-full"
+                                                inputClass="border-0! outline-none! shadow-none! focus:ring-0! focus:shadow-none!"
+                                                @selected="addVisitLocation"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-5">
+                                        <div v-if="visitLocations.length" class="flex flex-wrap gap-2">
+                                            <Chip
+                                                v-for="(location, index) in visitLocations"
+                                                :key="`${location.address}-${location.latitude ?? 'na'}-${location.longitude ?? 'na'}-${index}`"
+                                                removable
+                                                :label="formatVisitLocation(location)"
+                                                class="max-w-full"
+                                                @remove="removeVisitLocation(index)"
+                                            />
+                                        </div>
+
+                                        <div v-else class="rounded-md border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
+                                            Zatiaľ nie sú pridané žiadne lokality.
                                         </div>
                                     </div>
                                 </section>
