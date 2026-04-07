@@ -58,7 +58,7 @@ onMounted(async () => {
 
     <!-- Greeting -->
     <div class="text-heading-accent">
-      Dobrý deň {{ fullName }} 😊,<br />
+      Dobrý deň {{ fullName }},<br />
       všetko je pre Vás pripravené.
     </div>
 

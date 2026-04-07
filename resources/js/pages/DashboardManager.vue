@@ -55,7 +55,7 @@ onMounted(async () => {
 <template>
   <div class="space-y-10 p-4">
     <div class="text-heading-accent">
-      Dobrý deň {{ fullName }} 😊,<br />
+      Dobrý deň {{ fullName }},<br />
       všetko je pre Vás pripravené.
     </div>
 

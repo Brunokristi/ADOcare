@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\SoftDeleteInactivePatients;
+use App\Console\Commands\SendCarMaintenanceNotifications;
 use App\Http\Responses\ApiResponseClass;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })->withSchedule(function (Schedule $schedule): void {
         $schedule->command(SoftDeleteInactivePatients::class)->monthlyOn(1, '2:00');
+        $schedule->command(SendCarMaintenanceNotifications::class)->dailyAt('6:00');
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -267,5 +267,41 @@ export default {
             root: { class: '!rounded-md !bg-darkgrey !text-white !text-mini !p-1' },
             text: { class: '!text-white !text-mini' },
         },
+
+        tabs: {
+            root: {
+                class: '!border-0 !p-0'
+            },
+
+            navContainer: {
+                class: '!border-0'
+            },
+
+            nav: {
+                class: '!border-0 !gap-1 !p-0'
+            },
+
+            navItem: {
+                class: '!m-0'
+            },
+
+            navLink: {
+                class: '!rounded-md !text-darkgrey !px-0 !py-0 !bg-transparent !border-0'
+            },
+
+            navLinkActive: {
+                class: '!bg-accent !text-white'
+            },
+
+            panels: {
+                class: '!border-0 !px-0 !py-2'
+            }
+        },
+
+        TabPanels: {
+            root: {
+                class: '!border-0 !px-0 !py-2'
+            }
+        },
     }
 } as PrimeVueConfiguration;

@@ -168,7 +168,7 @@ watch(
         </template>
     </Menubar>
 
-    <Dialog v-model:visible="showIncompleteModal" modal header="😞 Ajaj" :style="{ width: '420px', maxWidth: '95vw' }">
+    <Dialog v-model:visible="showIncompleteModal" modal header="Ajaj" :style="{ width: '420px', maxWidth: '95vw' }">
         <div class="flex flex-col gap-4">
             <p class="text-normal">
                 Zdá sa, že informácie o tomto pacientovi nie sú kompletné alebo správne.

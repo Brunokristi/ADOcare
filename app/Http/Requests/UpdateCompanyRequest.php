@@ -27,6 +27,8 @@ class UpdateCompanyRequest extends FormRequest
             'phone' => 'nullable|string',
             'email' => 'nullable|email',
             'invoice_number' => 'nullable|integer|min:0',
+            'send_notifications' => 'nullable|boolean',
+            'notification_settings' => 'nullable|json',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'representative_id' => 'nullable|integer|exists:users,id',

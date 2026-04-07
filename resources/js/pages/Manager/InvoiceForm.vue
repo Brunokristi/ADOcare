@@ -50,6 +50,7 @@ const local = ref<InvoicePayload>({
 })
 
 const isNoteType = computed(() => local.value.type === 'credit_note' || local.value.type === 'debit_note')
+const isDebitNote = computed(() => local.value.type === 'debit_note')
 const selectedRelatedInvoice = computed(() => {
   if (!local.value.related_invoice_id) return null
   return relatedInvoices.value.find((item) => item.id === local.value.related_invoice_id) ?? null
@@ -110,6 +111,7 @@ async function loadRelatedInvoices() {
 
     relatedInvoices.value = items
       .filter((item) => item?.id && !['credit_note', 'debit_note'].includes(item?.type))
+      .sort((a, b) => Number(b.id) - Number(a.id))
       .map((item) => ({
         id: Number(item.id),
         invoice_number: item.invoice_number ?? `#${item.id}`,
@@ -133,6 +135,17 @@ watch(
     local.value.period = related.period ? parsePeriod(related.period) : null
     if (related.insurance_company_id) {
       local.value.insurance_company_id = related.insurance_company_id
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [local.value.type, local.value.amount],
+  () => {
+    // For debit notes, keep editable value positive and render minus via prefix.
+    if (isDebitNote.value && local.value.amount != null && local.value.amount < 0) {
+      local.value.amount = Math.abs(local.value.amount)
     }
   },
   { immediate: true }
@@ -172,6 +185,11 @@ async function save() {
     return
   }
 
+  if (isDebitNote.value && (local.value.amount ?? 0) <= 0) {
+    toast.add({ severity: 'error', summary: 'Chyba', detail: 'Pri ťarchopise musí byť suma záporná.', life: 3500 })
+    return
+  }
+
   if (isNoteType.value && !local.value.related_invoice_id) {
     toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyberte súvisiacu faktúru.', life: 3500 })
     return
@@ -190,7 +208,9 @@ async function save() {
     }
 
     if (isNoteType.value) {
-      payload.amount = local.value.amount ?? 0
+      payload.amount = isDebitNote.value
+        ? -Math.abs(local.value.amount ?? 0)
+        : local.value.amount ?? 0
       payload.related_invoice_id = local.value.related_invoice_id
     }
 
@@ -262,6 +282,8 @@ async function save() {
       <InputNumber
         v-model="local.amount"
         mode="decimal"
+        :prefix="isDebitNote ? '- ' : undefined"
+        :min="isDebitNote ? 0.01 : undefined"
         :minFractionDigits="2"
         :maxFractionDigits="2"
         :useGrouping="false"
@@ -276,6 +298,8 @@ async function save() {
         :options="relatedInvoices"
         optionLabel="invoice_number"
         optionValue="id"
+        filter
+        filterPlaceholder="Hľadať faktúru"
         fluid
         dropdownIcon="bi bi-chevron-down"
       />

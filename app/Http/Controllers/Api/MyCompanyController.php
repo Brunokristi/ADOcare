@@ -49,6 +49,17 @@ class MyCompanyController extends Controller
 
         $data = $request->validated();
 
+        if ($request->has('send_notifications')) {
+            $data['send_notifications'] = $request->boolean('send_notifications');
+        }
+
+        if ($request->has('notification_settings')) {
+            $rawSettings = $request->input('notification_settings');
+            $data['notification_settings'] = is_string($rawSettings)
+                ? json_decode($rawSettings, true)
+                : $rawSettings;
+        }
+
         if ($request->hasFile('stamp')) {
             if ($company->stamp_path) {
                 Storage::disk('local')->delete($company->stamp_path);

@@ -291,6 +291,8 @@ export interface Company {
   representative_id: number | null
   stamp_path: string | null
   invoice_number: number
+  send_notifications: boolean
+  notification_settings: Array<unknown> | null
   // relations
   branches: Branch[]
   cars: Car[]

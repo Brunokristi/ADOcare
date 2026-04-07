@@ -29,6 +29,13 @@ class Company extends Model
         'longitude',
         'representative_id',
         'stamp_path',
+        'send_notifications',
+        'notification_settings',
+    ];
+
+    protected $casts = [
+        'send_notifications' => 'boolean',
+        'notification_settings' => 'array',
     ];
 
     public function branches()

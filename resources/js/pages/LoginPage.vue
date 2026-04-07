@@ -74,7 +74,7 @@ async function submit() {
     <div class="h-full flex items-center justify-center">
         <div class="w-full max-w-md min-w-100 bg-white">
             <h1 class="text-heading-accent text-center mb-15">
-                Vitajte 👋<br>Prihláste sa do svojho účtu.
+                Vitajte<br>Prihláste sa do svojho účtu.
             </h1>
 
             <form @submit.prevent="submit" class="flex flex-col gap-6">
