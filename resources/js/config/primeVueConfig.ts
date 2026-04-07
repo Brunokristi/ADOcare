@@ -71,6 +71,12 @@ export default {
 
         inputtext: {
             root: {
+                class: `${baseField} bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! [&.p-disabled]:!opacity-50 [&.p-disabled]:!cursor-not-allowed [&.p-disabled]:!bg-lightgrey! min-w-0!`
+            },
+        },
+
+        inputnumber: {
+            root: {
                 class: `${baseField} bg-white! rounded-md! h-7! border-darkgrey! text-normal! text-darkgrey! [&.p-disabled]:!opacity-50 [&.p-disabled]:!cursor-not-allowed [&.p-disabled]:!bg-lightgrey!`
             },
         },
@@ -185,6 +191,12 @@ export default {
                     'text-normal! text-darkgrey! ' +
                     'outline-none! ring-0! shadow-none! ' +
                     'focus:outline-none! focus:ring-0! focus:shadow-none!',
+
+            },
+            pcInputText: {
+                root: {
+                    class: 'w-full! h-full!',
+                },
             },
             panel: { class: 'rounded-md! text-normal! text-darkgrey! border-0!' },
             selectMonth: { class: 'bg-darkgrey! text-normal! text-white! hover:bg-accent! rounded-md!' },

@@ -212,7 +212,11 @@ watch(
                 dropdownIcon="bi bi-chevron-down text-white!"
                 class="w-60 h-7! flex items-center border-none! bg-tag2! text-normal text-white!">
                 <template #value>
-                    <span class="text-normal text-white">Vyberte pacienta</span>
+                    <span v-if="patientStore.current" class="flex items-center gap-2 text-normal text-white whitespace-nowrap">
+                        <span class="truncate max-w-[220px]">{{ (patientStore.current.title ?? '') + ' ' + (patientStore.current.first_name ?? '') + ' ' + (patientStore.current.last_name ?? '') }}</span>
+                        <span class="bg-darkgrey rounded-md text-mini text-white px-2">{{ patientStore.current.personal_number }}</span>
+                    </span>
+                    <span v-else class="text-normal text-white">Vyberte pacienta</span>
                 </template>
 
                 <template #header>

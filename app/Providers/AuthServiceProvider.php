@@ -7,11 +7,13 @@ use App\Models\Company;
 use App\Models\Document;
 use App\Models\InsuranceCompany;
 use App\Models\Patient;
+use App\Models\PatientPoint;
 use App\Models\User;
 use App\Policies\BranchPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\DocumentPolicy;
 use App\Policies\PatientPolicy;
+use App\Policies\PatientPointPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\InsuranceCompanyPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -26,6 +28,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Patient::class => PatientPolicy::class,
+        PatientPoint::class => PatientPointPolicy::class,
         Branch::class => BranchPolicy::class,
         Company::class => CompanyPolicy::class,
         User::class => UserPolicy::class,
@@ -36,6 +39,14 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerPolicies();
+
+        Gate::before(function (User $user) {
+            if ($user->hasGlobalRole('superadmin')) {
+                return true;
+            }
+
+            return null;
+        });
 
         // Example gates for convenience
         Gate::define('manage-company', function (User $user, $companyId) {

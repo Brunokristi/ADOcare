@@ -171,7 +171,8 @@ watchEffect(() => {
 <template>
     <div class="flex flex-col gap-4 invoice-page">
         <div class="flex flex-col gap-4">
-            <Toolbar class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
+            <Toolbar
+                class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print">
                 <template #start>
                     <span class="text-heading-accent">
                         Faktúra
@@ -179,12 +180,9 @@ watchEffect(() => {
                 </template>
 
                 <template #end>
-                    <Button
-                        icon="bi bi-printer"
+                    <Button icon="bi bi-printer"
                         class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-                        :disabled="loading || !invoice"
-                        @click="printPage"
-                    />
+                        :disabled="loading || !invoice" @click="printPage" />
                 </template>
             </Toolbar>
 
@@ -206,7 +204,8 @@ watchEffect(() => {
                         <div class="flex justify-between items-start mb-8">
                             <div>
                                 <div class="text-2xl font-bold uppercase mb-2">
-                                    {{ invoice.type === 'credit_note' ? 'Dobropis' : (invoice.type === 'debit_note' ? 'Ťarchopis' : 'Faktúra') }}
+                                    {{ invoice.type === 'credit_note' ? 'Dobropis' : (invoice.type === 'debit_note' ?
+                                    'Ťarchopis' : 'Faktúra') }}
                                 </div>
                                 <div class=" mb-1">
                                     Faktúra číslo: <strong>{{ invoice.invoice_number || '' }}</strong>
@@ -228,26 +227,28 @@ watchEffect(() => {
                                 <div class="font-bold mb-2">Dodávateľ</div>
 
                                 <table class="w-full text-sm">
-                                    <tr>
-                                        <!-- LEFT -->
-                                        <td class="align-top pr-4 w-1/2">
-                                            <div><strong>{{ invoice.company_name }}</strong></div>
-                                            <div>{{ invoice.company_address }}</div>
-                                            <div>{{ invoice.company_zip }}, {{ invoice.company_city }}</div>
-                                        </td>
+                                    <tbody>
+                                        <tr>
+                                            <!-- LEFT -->
+                                            <td class="align-top pr-4 w-1/2">
+                                                <div><strong>{{ invoice.company_name }}</strong></div>
+                                                <div>{{ invoice.company_address }}</div>
+                                                <div>{{ invoice.company_zip }}, {{ invoice.company_city }}</div>
+                                            </td>
 
-                                        <!-- RIGHT -->
-                                        <td class="align-top w-1/2">
-                                            <div>IČO: {{ invoice.company_ico || '' }}</div>
-                                            <div>DIČ: {{ invoice.company_dic || '' }}</div>
-                                            <div>IČ DPH: {{ invoice.company_ic_dph || '' }}</div>
-                                            <div>IBAN: {{ invoice.company_iban || '' }}</div>
-                                            <div>BIC: {{ invoice.company_bic || '' }}</div>
-                                            <div v-if="invoice.company_register" class="mt-2 text-xs">
-                                                {{ invoice.company_register }}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            <!-- RIGHT -->
+                                            <td class="align-top w-1/2">
+                                                <div>IČO: {{ invoice.company_ico || '' }}</div>
+                                                <div>DIČ: {{ invoice.company_dic || '' }}</div>
+                                                <div>IČ DPH: {{ invoice.company_ic_dph || '' }}</div>
+                                                <div>IBAN: {{ invoice.company_iban || '' }}</div>
+                                                <div>BIC: {{ invoice.company_bic || '' }}</div>
+                                                <div v-if="invoice.company_register" class="mt-2 text-xs">
+                                                    {{ invoice.company_register }}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
 
@@ -256,24 +257,27 @@ watchEffect(() => {
                                 <div class="font-bold mb-2">Odberateľ</div>
 
                                 <table class="w-full text-sm">
-                                    <tr>
-                                        <!-- LEFT -->
-                                        <td class="align-top pr-4 w-1/2">
-                                            <div><strong>{{ invoice.insurance_company_name }}</strong></div>
-                                            <div>{{ invoice.insurance_company_address }}</div>
-                                            <div>{{ invoice.insurance_company_zip }} {{ invoice.insurance_company_city }}</div>
-                                        </td>
+                                    <tbody>
+                                        <tr>
+                                            <!-- LEFT -->
+                                            <td class="align-top pr-4 w-1/2">
+                                                <div><strong>{{ invoice.insurance_company_name }}</strong></div>
+                                                <div>{{ invoice.insurance_company_address }}</div>
+                                                <div>{{ invoice.insurance_company_zip }} {{
+                                                    invoice.insurance_company_city }}</div>
+                                            </td>
 
-                                        <!-- RIGHT -->
-                                        <td class="align-top w-1/2">
-                                            <div>IČO: {{ invoice.insurance_company_ico || '' }}</div>
-                                            <div>DIČ: {{ invoice.insurance_company_dic || '' }}</div>
-                                            <div>IČ DPH: {{ invoice.insurance_company_ic_dph || '' }}</div>
-                                            <div v-if="invoice.insurance_company_register" class="mt-2 text-xs">
-                                                {{ invoice.insurance_company_register }}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            <!-- RIGHT -->
+                                            <td class="align-top w-1/2">
+                                                <div>IČO: {{ invoice.insurance_company_ico || '' }}</div>
+                                                <div>DIČ: {{ invoice.insurance_company_dic || '' }}</div>
+                                                <div>IČ DPH: {{ invoice.insurance_company_ic_dph || '' }}</div>
+                                                <div v-if="invoice.insurance_company_register" class="mt-2 text-xs">
+                                                    {{ invoice.insurance_company_register }}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -289,7 +293,8 @@ watchEffect(() => {
                                         <strong>Dátum odoslania</strong><br />
                                         {{ sentDate || '' }}
                                     </td>
-                                    <td class="border border-black p-3 w-1/3" v-if="invoice.type === 'transport' || invoice.type === 'procedures'">
+                                    <td class="border border-black p-3 w-1/3"
+                                        v-if="invoice.type === 'transport' || invoice.type === 'procedures'">
                                         <strong>Dátum dodania služby</strong><br />
                                         {{ deliveryDate || '' }}
                                     </td>
@@ -315,7 +320,8 @@ watchEffect(() => {
                                 <tr v-for="(doc, index) in nonZeroDocuments" :key="index">
                                     <td class="border border-black p-3">{{ index + 1 }}</td>
                                     <td class="border border-black p-3">{{ doc.branch_code || '' }}</td>
-                                    <td class="border border-black p-3">{{ doc.user_code || '' }}  {{ doc.user_initials || '' }}</td>
+                                    <td class="border border-black p-3">{{ doc.user_code || '' }} {{ doc.user_initials
+                                        || '' }}</td>
                                     <td class="border border-black p-3 text-right">{{ formatCurrency(doc.amount) }}</td>
                                 </tr>
 
@@ -331,7 +337,8 @@ watchEffect(() => {
                         </table>
 
                         <div class="mt-10 text-sm" v-if="invoice.type === 'transport' || invoice.type === 'procedures'">
-                            <div><strong>Prílohy:</strong><br />{{ nonZeroDocuments.length }} {{ attachmentsText }}</div>
+                            <div><strong>Prílohy:</strong><br />{{ nonZeroDocuments.length }} {{ attachmentsText }}
+                            </div>
                         </div>
                     </template>
                 </div>

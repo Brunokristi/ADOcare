@@ -63,7 +63,7 @@ export function useApi() {
         if (companyId && branchId) {
             // Branch scope is more specific than company scope, so ignore companyId when branchId is provided.
             // This should only happen during refactors; log it so it can be cleaned up.
-            // eslint-disable-next-line no-console
+             
             console.warn(
                 'useApi.scopedUrl: received both companyId and branchId; using branch scope (ignored companyId)',
             )

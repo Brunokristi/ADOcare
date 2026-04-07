@@ -33,4 +33,14 @@ class PatientPoint extends Model
         'date' => 'date',
         'reference_date' => 'date',
     ];
+
+    /**
+     * Patient relation.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class, 'patient_id');
+    }
 }

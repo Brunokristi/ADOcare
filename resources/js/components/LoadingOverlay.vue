@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType } from 'vue'
 
-const props = defineProps({
+const { show, text } = defineProps({
     show: { type: Boolean as PropType<boolean>, required: true },
     text: { type: String as PropType<string>, default: '' },
 })
@@ -27,6 +27,7 @@ const props = defineProps({
                     fill="#5C9EAD" />
             </g>
         </svg>
+        <div v-if="text" class="text-mini text-accent">{{ text }}</div>
     </div>
 </template>
 
@@ -64,6 +65,7 @@ const props = defineProps({
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -73,6 +75,7 @@ const props = defineProps({
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(-360deg);
     }
@@ -82,6 +85,7 @@ const props = defineProps({
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(-360deg);
     }

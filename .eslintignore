@@ -1,0 +1,7 @@
+data-db/
+.vite/
+public/build/
+node_modules/
+vendor/
+storage/
+dist/

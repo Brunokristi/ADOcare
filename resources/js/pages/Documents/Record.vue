@@ -734,8 +734,8 @@ async function recalcPagination() {
         return
     }
 
-    let lastIdx = newPages.length - 1
-    let lastPage = newPages[lastIdx]
+    const lastIdx = newPages.length - 1
+    const lastPage = newPages[lastIdx]
     let remaining = 0
 
     if (lastPage) {

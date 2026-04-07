@@ -1,11 +1,11 @@
+version: "3.8"
+
 services:
   postgres:
     image: postgres:16.6
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: adocare
+    env_file:
+      - ./env/postgres.env
     volumes:
       - ./data-db:/var/lib/postgresql/data
     ports:
@@ -45,13 +45,10 @@ services:
     restart: unless-stopped
     cpus: "0.50"
     mem_limit: 512m
-
     ports:
       - "127.0.0.1:1515:1515"
-
     networks:
       - ors-net
-
     depends_on:
       - ors
 
@@ -69,10 +66,36 @@ services:
       PORT: 8000
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/gcp.json
 
+  # php:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/laravel/Dockerfile
+  #   container_name: php-fpm
+  #   restart: unless-stopped
+  #   working_dir: /var/www/html
+  #   volumes:
+  #     - ./:/var/www/html:cached
+  #     - ./storage:/var/www/html/storage:cached
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - postgres
+
+  # nginx:
+  #   image: nginx:stable-alpine
+  #   container_name: nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:8000:80"
+  #   volumes:
+  #     - ./:/var/www/html:ro
+  #     - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+  #   depends_on:
+  #     - php
+
 volumes:
   data-db:
   data-ors:
-
 
 networks:
   ors-net:

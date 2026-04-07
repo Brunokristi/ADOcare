@@ -138,6 +138,10 @@ class User extends Authenticatable
      */
     public function isInCompany(int $companyId): bool
     {
+        if ($this->hasGlobalRole('superadmin')) {
+            return true;
+        }
+
         return $this->company_id !== null && (int) $this->company_id === $companyId;
     }
 
@@ -146,6 +150,10 @@ class User extends Authenticatable
      */
     public function isInBranch(int $branchId): bool
     {
+        if ($this->hasGlobalRole('superadmin')) {
+            return true;
+        }
+
         return $this->branches()->where('branch_id', $branchId)->exists();
     }
 
@@ -171,13 +179,26 @@ class User extends Authenticatable
      */
     public function hasGlobalRole(string $rolePosition): bool
     {
+        $normalize = static fn(string $role): string => strtolower(str_replace('-', '', trim($role)));
+        $requestedRole = $normalize($rolePosition);
+
         // we prefer to use the loaded relationship if available, but
         // fall back to a simple comparison otherwise.
-        if ($this->relationLoaded('role')) {
-            return $this->role?->position === $rolePosition;
+        $currentRole = $this->relationLoaded('role')
+            ? $this->role?->position
+            : ($this->role_id !== null ? optional(Role::find($this->role_id))->position : null);
+
+        if (!is_string($currentRole) || trim($currentRole) === '') {
+            return false;
         }
-        return $this->role_id !== null &&
-            optional(Role::find($this->role_id))->position === $rolePosition;
+
+        $currentRole = $normalize($currentRole);
+
+        if ($currentRole === 'superadmin') {
+            return in_array($requestedRole, ['superadmin', 'manager', 'admin'], true);
+        }
+
+        return $currentRole === $requestedRole;
     }
 
     /**
