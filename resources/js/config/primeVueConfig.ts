@@ -75,6 +75,13 @@ export default {
             },
         },
 
+        incrementButton: {
+            class: 'bg-transparent! border-0! text-darkgrey! hover:bg-transparent! hover:text-accent! focus:bg-transparent! rounded-md! bg-transparent!',
+        },
+        decrementButton: {
+            class: 'bg-transparent! border-0! text-darkgrey! hover:bg-transparent! hover:text-accent! focus:bg-transparent! rounded-md! bg-transparent!',
+        },
+
         textarea: {
             root: { class: 'bg-white! rounded-md! border-darkgrey! text-normal! text-darkgrey! outline-none! ring-0! shadow-none! focus:outline-none! focus:ring-0! focus:shadow-none!' },
         },
