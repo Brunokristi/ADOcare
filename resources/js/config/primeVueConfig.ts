@@ -283,10 +283,10 @@ export default {
 
         tablist: {
             root: {
-                class: 'flex flex-row border-0!'
+                class: 'flex flex-row'
             },
             tabList: {
-                class: 'flex flex-row !gap-4 justify-end! border-0!'
+                class: 'flex flex-row !gap-1 border-0! bg-darkgrey! rounded-lg! p-2!'
             },
             activeBar: {
                 class: 'hidden!'
@@ -294,15 +294,9 @@ export default {
         },
 
         tab: {
-            root: ({ context }: any) => ({
-                class: [
-                    'relative flex items-center cursor-pointer select-none no-underline transition-all duration-200 text-mini! text-darkgrey! p-0! lowercase! underline!',
-                    'bg-transparent! rounded-t-md border-0!',
-                    context.active
-                        ? 'text-accent!'
-                        : 'text-darkgrey! hover:text-accent!'
-                ].join(' ')
-            })
+            root: {
+                class: 'relative flex items-center cursor-pointer select-none transition-all duration-200 text-mini! text-white! p-0! lowercase! rounded-md border-0! px-2! py-1! bg-transparent! hover:bg-tag2! data-[p-active=true]:bg-tag2!'
+            }
         },
 
         tabpanels: {
@@ -313,7 +307,7 @@ export default {
 
         tabpanel: {
             root: {
-                class: 'px-0! bg-transparent text-darkgrey!'
+                class: 'px-0! bg-transparent! text-darkgrey!'
             }
         },
 

@@ -792,7 +792,7 @@ watch(
           <label class="block text-normal mb-2">Makrá</label>
 
           <div v-if="!macrosLoading && !snippets.length" class="text-accent py-4 text-normal">
-            Nemáte žiadne makrá. Vytvorte si makrá pre rýchle vkladanie často používaných textov v <a href="/macros"
+            Nemáte žiadne makrá. Vytvorte si makrá pre rýchle vkladanie často používaných textov v <a href="/settings/macros"
               target="_blank" class="underline">nastaveniach</a>.
           </div>
 

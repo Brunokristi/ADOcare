@@ -89,25 +89,24 @@ async function searchProcedures(event: { query: string }) {
 
 <template>
     <div v-if="editPoint" class="flex flex-col gap-6">
-        <!-- Left column: both dates stacked -->
-        <div class="flex flex-auto flex-row gap-2">
-            <div class="w-100">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div class="w-full">
                 <label class="block text-normal mb-1">Dátum</label>
-                <DatePicker v-model="editPoint.date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full" />
+                <DatePicker v-model="editPoint.date" dateFormat="dd.mm.yy" :showIcon="false" class="w-full" fluid />
                 <small v-if="editSubmitted && !editPoint.date" class="text-danger">Dátum je povinný.</small>
             </div>
 
-            <div class="w-100">
+            <div class="w-full">
                 <label class="block text-normal mb-1">Dátum odporučenia</label>
-                <DatePicker v-model="editPoint.referralDate" dateFormat="dd.mm.yy" :showIcon="false" class="w-full" />
+                <DatePicker v-model="editPoint.referralDate" dateFormat="dd.mm.yy" :showIcon="false" class="w-full" fluid />
                 <small v-if="editSubmitted && !editPoint.referralDate" class="text-danger">Dátum odporučenia je
                     povinný.</small>
             </div>
         </div>
 
-        <!-- Right column: other fields stacked -->
-        <div class="flex flex-row gap-2">
-            <div class="flex-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+
+            <div class="w-full">
                 <label class="block text-normal mb-1">Diagnóza</label>
                 <AutoComplete v-model="diagnosis" :suggestions="filteredDiagnoses" @complete="searchDiagnoses"
                     :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown dropdownMode="blank"
@@ -123,7 +122,7 @@ async function searchProcedures(event: { query: string }) {
                 <small v-if="editSubmitted && !diagnosis" class="text-danger">Diagnóza je povinná.</small>
             </div>
 
-            <div class="flex-auto">
+            <div class="w-full">
                 <label class="block text-normal mb-1">Výkon</label>
                 <AutoComplete v-model="procedure" :suggestions="filteredProcedures" @complete="searchProcedures"
                     :virtualScrollerOptions="{ itemSize: 38 }" optionLabel="code" dropdown dropdownMode="blank"
@@ -139,19 +138,20 @@ async function searchProcedures(event: { query: string }) {
                 <small v-if="editSubmitted && !procedure" class="text-danger">Výkon je povinný.</small>
             </div>
 
-            <div class="flex-0">
+            <div class="w-full">
                 <label class="block text-normal mb-1">Počet</label>
                 <InputNumber :modelValue="editPoint.quantity"
-                    @update:modelValue="editPoint.quantity = $event ? Number($event) : null" class="w-32" />
+                    @update:modelValue="editPoint.quantity = $event ? Number($event) : null" class="w-full" />
                 <small v-if="editSubmitted && (!editPoint.quantity || editPoint.quantity <= 0)" class="text-danger">
                     Počet je povinný.
                 </small>
             </div>
         </div>
         <div class="flex justify-end gap-2">
+            <Button label="Zrušiť" class="bg-white! border-0! text-accent!" @click="props.modalResolve?.(false)" />
+
             <Button label="Uložiť" class="bg-accent! border-0! px-md! text-white! hover:bg-darkgrey!"
                 @click="savePoint" />
-            <Button label="Zrušiť" class="btn" @click="props.modalResolve?.(false)" />
         </div>
     </div>
 </template>

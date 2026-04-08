@@ -20,8 +20,8 @@ class PatientPointPolicy extends BasePolicy
             return true;
         }
 
-        // Nurse may create only for patients assigned to them
-        return $this->isNurseAssigned($user, $patient);
+        // Allow any user assigned to the patient's branch to create points.
+        return $user->isInBranch((int) $patient->branch_id);
     }
 
     public function view(User $user, PatientPoint $point): bool
@@ -31,9 +31,9 @@ class PatientPointPolicy extends BasePolicy
             return true;
         }
 
-        // Nurse can view if assigned to the patient
+        // Allow branch-assigned users to view points in their branch.
         $patient = \App\Models\Patient::find($point->patient_id);
-        return $patient ? $this->isNurseAssigned($user, $patient) : false;
+        return $patient ? $user->isInBranch((int) $patient->branch_id) : false;
     }
 
     public function update(User $user, PatientPoint $point): bool
@@ -43,20 +43,20 @@ class PatientPointPolicy extends BasePolicy
             return true;
         }
 
-        // Nurse can update points for their patients
+        // Allow branch-assigned users to update points in their branch.
         $patient = \App\Models\Patient::find($point->patient_id);
-        return $patient ? $this->isNurseAssigned($user, $patient) : false;
+        return $patient ? $user->isInBranch((int) $patient->branch_id) : false;
     }
 
     public function delete(User $user, PatientPoint $point): bool
     {
-        // Only managers (company) or nurses assigned to the patient may delete
+        // Only managers (company) or branch-assigned users may delete
         if ($this->isManager($user) && $user->isInCompany($point->branch_id)) {
             return true;
         }
 
         $patient = \App\Models\Patient::find($point->patient_id);
-        return $patient ? $this->isNurseAssigned($user, $patient) : false;
+        return $patient ? $user->isInBranch((int) $patient->branch_id) : false;
     }
 
     /**
