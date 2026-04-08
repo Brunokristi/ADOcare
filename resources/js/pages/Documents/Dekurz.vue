@@ -119,6 +119,7 @@ async function loadDekurz(documentId: string) {
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
         await recalcPagination()
+        await persistNextDekurzNumber()
     }
 }
 async function waitForImageLoad(src: string) {
@@ -245,6 +246,8 @@ const lastDekurzNumber = computed(() => {
     return baseDekurzNumber.value + (pages - 1)
 })
 
+const nextReservedDekurzNumber = computed(() => lastDekurzNumber.value + 1)
+
 async function prepareMeasurement() {
     await nextTick()
     await waitForFonts()
@@ -308,13 +311,13 @@ async function recalcPagination() {
     pagedRows.value = pages.length ? pages : [[]]
 }
 
-async function persistLastDekurzNumber() {
+async function persistNextDekurzNumber() {
     const patientId = dekurz.value.patient_id
     if (!patientId) return
 
     try {
         await api.put(`/v1/patients/${patientId}`, {
-            dekurz_number: String(lastDekurzNumber.value),
+            dekurz_number: String(nextReservedDekurzNumber.value),
         })
         await patientStore.fetchPatient(patientId)
     } catch (e) {
@@ -341,7 +344,6 @@ async function printPage() {
     isPrinting.value = true
 
     await recalcPagination()
-    await persistLastDekurzNumber()
 
     const src = document.getElementById('print-root')
     if (!src) {

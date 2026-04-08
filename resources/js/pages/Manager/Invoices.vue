@@ -5,6 +5,7 @@ import api from '@/services/api'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import InvoiceForm from './InvoiceForm.vue'
+import InvoiceBulkCreateForm from './InvoiceBulkCreateForm.vue'
 import useModal from '@/composables/useModal'
 import type { DataTableOptions } from '@/types/datatable'
 
@@ -86,6 +87,20 @@ const formatInvoiceType = (type?: string) => {
 async function openCreate() {
   try {
     await openModal(markRaw(InvoiceForm), { invoice: null }, { header: 'Nová faktúra', style: { width: '720px' }, closable: true })
+  } finally {
+    if (actionRemote.value?.loadPage) {
+      await actionRemote.value.loadPage(1)
+    }
+  }
+}
+
+async function openCreateBulk() {
+  try {
+    await openModal(
+      markRaw(InvoiceBulkCreateForm),
+      { initialPeriod: dates.value },
+      { header: 'Hromadné vytvorenie faktúr', style: { width: '560px' }, closable: true }
+    )
   } finally {
     if (actionRemote.value?.loadPage) {
       await actionRemote.value.loadPage(1)
@@ -175,6 +190,16 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
       class: 'bg-accent!',
       handler: async () => {
         await openCreate()
+      },
+    },
+    {
+      key: 'add-bulk',
+      label: '',
+      tooltip: 'Vytvoriť faktúry pre všetky poisťovne',
+      icon: 'bi bi-repeat',
+      class: 'bg-accent!',
+      handler: async () => {
+        await openCreateBulk()
       },
     },
     {

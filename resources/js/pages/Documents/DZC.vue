@@ -55,6 +55,7 @@ interface CPData {
     user_name: string
     start_date: string
     end_date: string
+    trip_purpose?: string
     month: string
     year: string
     car_model: string
@@ -82,6 +83,7 @@ const cpData = ref<CPData>({
     user_name: '',
     start_date: '',
     end_date: '',
+    trip_purpose: 'Návšteva pacienta',
     month: '',
     year: '',
     car_model: '',
@@ -137,6 +139,7 @@ async function loadCP(documentId: string) {
             user_name: cp.user_name ?? '',
             start_date: cp.start_date ?? '',
             end_date: cp.end_date ?? '',
+            trip_purpose: cp.trip_purpose ?? 'Návšteva pacienta',
             month: String(cp.month ?? ''),
             year: String(cp.year ?? ''),
             car_model: cp.car_model ?? '',
@@ -630,7 +633,7 @@ watchEffect(() => {
                                         </td>
                                         <td class="border border-black p-2 text-left w-1/4">
                                             <strong>Účel cesty</strong><br />
-                                            Návšteva pacienta
+                                            {{ cpData.trip_purpose || 'Návšteva pacienta' }}
                                         </td>
                                         <td class="border border-black p-2 text-left w-1/4">
                                             <strong>Počet km</strong><br />
@@ -747,7 +750,7 @@ watchEffect(() => {
                                             </td>
                                             <td class="border border-black p-2 text-left w-1/4">
                                                 <strong>Účel cesty</strong><br />
-                                                Návšteva pacienta
+                                                {{ cpData.trip_purpose || 'Návšteva pacienta' }}
                                             </td>
                                             <td class="border border-black p-2 text-left w-1/4">
                                                 <strong>Počet km</strong><br />

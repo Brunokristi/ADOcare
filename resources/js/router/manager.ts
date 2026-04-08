@@ -176,7 +176,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 path: 'company',
                 name: 'manager-settings-company',
                 component: CompanySettings,
-                meta: { title: 'Spoločnosť', link: 'spoločnosť', sidebar: showOnSidebar, navbar: true, overflow: true },
+                meta: { title: 'Nastavenia', link: 'nastavenia', sidebar: showOnSidebar, navbar: true, overflow: true },
             },
             {
                 path: 'branches',

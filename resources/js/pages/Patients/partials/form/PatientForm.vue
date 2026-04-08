@@ -397,6 +397,7 @@ watch(
             <div class="col-span-12">
                 <MapSelector :latitude="localPatient.latitude" :longitude="localPatient.longitude"
                     :disabled="authStore.currentRole === 'manager'" @update="addressOnMapClick" />
+                <small v-if="submitted && errors.coordinates" class="text-danger">{{ errors.coordinates }}</small>
             </div>
         </div>
 

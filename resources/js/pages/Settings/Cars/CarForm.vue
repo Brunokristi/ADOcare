@@ -28,6 +28,8 @@ type CarService = {
     interval_days: number
 }
 
+type ServiceIntervalUnit = 'days' | 'weeks' | 'months' | 'years'
+
 const props = defineProps<IModalContentProps & { carId?: number }>()
 
 const toast = useToast()
@@ -68,8 +70,12 @@ const newService = ref<{
     name?: string
     date?: Date | null
     interval_days: number
+    interval_amount: number
+    interval_unit: ServiceIntervalUnit
 }>({
     interval_days: 365,
+    interval_amount: 1,
+    interval_unit: 'years',
     date: null,
 })
 
@@ -86,6 +92,53 @@ const getFrequencyLabel = (days: number): string => {
         180: 'Každých 6 mesiacov',
     }
     return frequencyMap[days] || String(days)
+}
+
+const intervalUnitOptions: Array<{ label: string; value: ServiceIntervalUnit }> = [
+    { label: 'Dni', value: 'days' },
+    { label: 'Týždne', value: 'weeks' },
+    { label: 'Mesiace', value: 'months' },
+    { label: 'Roky', value: 'years' },
+]
+
+const normalizeIntervalForm = (days: number) => {
+    if (days % 365 === 0) {
+        return { interval_amount: days / 365, interval_unit: 'years' as const }
+    }
+
+    if (days % 30 === 0) {
+        return { interval_amount: days / 30, interval_unit: 'months' as const }
+    }
+
+    if (days % 7 === 0) {
+        return { interval_amount: days / 7, interval_unit: 'weeks' as const }
+    }
+
+    return { interval_amount: days, interval_unit: 'days' as const }
+}
+
+const intervalToDays = (amount: number, unit: ServiceIntervalUnit): number => {
+    const safeAmount = Math.max(1, Math.round(Number(amount) || 0))
+
+    switch (unit) {
+        case 'years':
+            return safeAmount * 365
+        case 'months':
+            return safeAmount * 30
+        case 'weeks':
+            return safeAmount * 7
+        default:
+            return safeAmount
+    }
+}
+
+const resetServiceForm = () => {
+    newService.value = {
+        interval_days: 365,
+        interval_amount: 1,
+        interval_unit: 'years',
+        date: null,
+    }
 }
 
 // Helper to format date for display
@@ -293,6 +346,7 @@ const saveService = async () => {
 
     const name = newService.value.name?.trim()
     const date = toYmd(newService.value.date ?? null)
+    const interval_days = intervalToDays(newService.value.interval_amount, newService.value.interval_unit)
 
     if (!name || !date) {
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyplňte povinné údaje', life: 5000 })
@@ -302,7 +356,7 @@ const saveService = async () => {
     try {
         const payload = {
             name,
-            interval_days: newService.value.interval_days,
+            interval_days,
             date,
         }
 
@@ -327,7 +381,7 @@ const saveService = async () => {
         }
 
         showServiceDialog.value = false
-        newService.value = { interval_days: 365, date: null }
+        resetServiceForm()
         editingServiceId.value = null
     } catch (err) {
         console.error('Failed to save service', err)
@@ -337,10 +391,13 @@ const saveService = async () => {
 
 const editService = (service: CarService) => {
     editingServiceId.value = service.id
+    const normalizedInterval = normalizeIntervalForm(service.interval_days)
     newService.value = {
         name: service.name,
         date: service.date ? new Date(String(service.date)) : null,
         interval_days: service.interval_days,
+        interval_amount: normalizedInterval.interval_amount,
+        interval_unit: normalizedInterval.interval_unit,
     }
     showServiceDialog.value = true
 }
@@ -606,13 +663,13 @@ const getDocumentPreviewUrl = (doc: CarDocument) => {
                         {{ formatDate(data.date) }}
                     </template>
                 </Column>
-                <Column header="">
+                <Column header="" style="width: 3rem">
                     <template #body="{ data }">
                         <Button icon="bi bi-pencil" class="text-darkgrey! text-normal! bg-transparent! border-none!"
                             @click="editService(data)" />
                     </template>
                 </Column>
-                <Column header="">
+                <Column header="" style="width: 3rem">
                     <template #body="{ data }">
                         <Button icon="bi bi-eraser" class="text-danger! text-normal! bg-transparent! border-none!"
                             @click="deleteService(data)" />
@@ -622,7 +679,7 @@ const getDocumentPreviewUrl = (doc: CarDocument) => {
 
             <div class="flex justify-start items-center gap-2 mt-4">
                 <Button icon="bi bi-plus-lg"
-                    @click="() => { editingServiceId = null; newService = { interval_days: 365, date: null }; showServiceDialog = true }"
+                    @click="() => { editingServiceId = null; resetServiceForm(); showServiceDialog = true }"
                     class="bg-accent! border-none! hover:bg-darkgrey! h-7!" />
             </div>
 
@@ -652,13 +709,30 @@ const getDocumentPreviewUrl = (doc: CarDocument) => {
                 </div>
 
                 <div>
-                    <label class="block text-sm mb-1">Frekvencia</label>
-                    <Select :modelValue="newService.interval_days"
-                        @update:modelValue="(val) => newService.interval_days = val" :options="[
-                            { label: 'Ročne', value: 365 },
-                            { label: 'Každé 2 roky', value: 730 },
-                            { label: 'Každých 6 mesiacov', value: 180 }
-                        ]" optionLabel="label" optionValue="value" class="w-full" />
+                    <label class="block text-sm mb-1">Opakovať každých</label>
+                    <div class="grid grid-cols-5 gap-2">
+                        <InputNumber
+                            v-model="newService.interval_amount"
+                            inputId="horizontal-buttons"
+                            showButtons
+                            buttonLayout="horizontal"
+                            :step="1"
+                            fluid
+                            :min="1"
+                            :minFractionDigits="0"
+                            :maxFractionDigits="0"
+                            class="col-span-2 w-full"
+                        >
+                            <template #incrementbuttonicon>
+                                <span class="bi bi-plus" />
+                            </template>
+                            <template #decrementbuttonicon>
+                                <span class="bi bi-dash" />
+                            </template>
+                        </InputNumber>
+                        <Select v-model="newService.interval_unit" :options="intervalUnitOptions"
+                            optionLabel="label" optionValue="value" class="w-full col-span-3" />
+                    </div>
                 </div>
 
                 <div class="flex gap-2 mt-4 justify-end">

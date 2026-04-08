@@ -13,6 +13,10 @@ class StoreCompanyRequest extends FormRequest
 
     public function rules(): array
     {
-        return [];
+        return [
+            'send_notifications' => 'nullable|boolean',
+            'notification_settings' => 'nullable|json',
+            'visit_locations' => 'nullable|json',
+        ];
     }
 }

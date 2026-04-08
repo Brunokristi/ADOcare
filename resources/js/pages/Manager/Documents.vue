@@ -23,6 +23,8 @@ type Document = {
 type Branch = {
   id: number
   name: string
+  address?: string | null
+  city?: string | null
 }
 
 const toast = useToast()
@@ -34,6 +36,12 @@ const showEmailDialog = ref(false)
 const sendingEmail = ref(false)
 const recipientEmail = ref('')
 const selectedDocumentsForEmail = ref<Document[]>([])
+const showCreateDialog = ref(false)
+const creatingDocument = ref(false)
+const createType = ref<'cp' | 'dzc'>('dzc')
+const createPeriod = ref<Date | null>(new Date(now.getFullYear(), now.getMonth() - 1, 1))
+const createBranchId = ref<number | null>(null)
+const tableRemote = ref<any>(null)
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -119,10 +127,98 @@ const openEmailDialog = (selectedRows: Document[]) => {
   showEmailDialog.value = true
 }
 
+const openCreateDialog = (remote?: any) => {
+  tableRemote.value = remote ?? null
+  createType.value = 'dzc'
+  createPeriod.value = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  createBranchId.value = branches.value[0]?.id ?? null
+  showCreateDialog.value = true
+}
+
+const closeCreateDialog = () => {
+  showCreateDialog.value = false
+}
+
 const closeEmailDialog = () => {
   showEmailDialog.value = false
   recipientEmail.value = ''
   selectedDocumentsForEmail.value = []
+}
+
+const formatYearMonth = (date: Date | null) => {
+  if (!date) return null
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+const formatBranchLabel = (branch?: Branch | null) => {
+  if (!branch) return ''
+
+  const address = (branch.address || '').trim()
+  const city = (branch.city || '').trim()
+  const composed = [address, city].filter(Boolean).join(', ')
+
+  if (composed) return composed
+  return (branch.name || '').trim() || 'Neznáma pobočka'
+}
+
+const createTravelDocument = async () => {
+  if (!createBranchId.value || !createPeriod.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: 'Vyberte pobočku a obdobie',
+      life: 3000,
+    })
+    return
+  }
+
+  const period = formatYearMonth(createPeriod.value)
+  if (!period) {
+    return
+  }
+
+  creatingDocument.value = true
+
+  try {
+    const res = await api.post('v1/documents/travel/company/create', {
+      type: createType.value,
+      branch_id: createBranchId.value,
+      period,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Úspech',
+      detail: createType.value === 'cp'
+        ? 'Cestovný príkaz bol vytvorený'
+        : 'Denný záznam ciest bol vytvorený',
+      life: 3000,
+    })
+
+    const docId = Number(res.data?.data?.document_id ?? res.data?.document_id ?? 0)
+    if (docId > 0) {
+      const url = createType.value === 'cp' ? `/documents/cp/${docId}` : `/documents/dzc/${docId}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+
+    closeCreateDialog()
+
+    if (tableRemote.value) {
+      await tableRemote.value.loadPage(tableRemote.value.page)
+    }
+  } catch (err: any) {
+    console.error('Error creating manager travel document:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Chyba',
+      detail: err?.response?.data?.message || 'Nepodarilo sa vytvoriť dokument',
+      life: 4000,
+    })
+  } finally {
+    creatingDocument.value = false
+  }
 }
 
 const sendSelectedDocumentsByEmail = async () => {
@@ -245,6 +341,15 @@ const options = computed<DataTableOptions<Document>>(() => ({
 
   actions: [
     {
+      key: 'create',
+      icon: 'bi bi-plus',
+      class: 'bg-accent!',
+      tooltip: 'Vytvoriť cestovný dokument',
+      handler: ({ remote }: { remote: any }) => {
+        openCreateDialog(remote)
+      },
+    },
+    {
       key: 'email',
       disabled: ({ selectedRows }: { selectedRows: Document[] }) => selectedRows.length === 0,
       icon: 'bi bi-send',
@@ -302,6 +407,79 @@ const options = computed<DataTableOptions<Document>>(() => ({
       <div v-else class="flex items-center justify-center p-8">
         <span>Načítavam dokumenty...</span>
       </div>
+
+      <Dialog
+        v-model:visible="showCreateDialog"
+        header="Vytvoriť cestovný dokument"
+        :modal="true"
+        :style="{ width: '34rem' }"
+      >
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="block text-sm mb-2">Typ dokumentu</label>
+            <Select
+              v-model="createType"
+              class="w-full"
+              :options="[
+                { label: 'Denný záznam ciest', value: 'dzc' },
+                { label: 'Cestovný príkaz', value: 'cp' },
+              ]"
+              optionLabel="label"
+              optionValue="value"
+              :disabled="creatingDocument"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2">Východzia pobočka</label>
+            <Select
+              v-model="createBranchId"
+              class="w-full"
+              :options="branches"
+              optionValue="id"
+              :disabled="creatingDocument"
+              placeholder="Vyberte pobočku"
+            >
+              <template #option="{ option }">
+                <span>{{ formatBranchLabel(option) }}</span>
+              </template>
+              <template #value="{ value }">
+                <span v-if="value">{{ formatBranchLabel(branches.find((b) => b.id === value) || null) }}</span>
+                <span v-else class="text-gray-400">Vyberte pobočku</span>
+              </template>
+            </Select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-2">Obdobie</label>
+            <DatePicker
+              v-model="createPeriod"
+              view="month"
+              dateFormat="mm/yy"
+              class="w-full!"
+              inputClass="w-full!"
+              :disabled="creatingDocument"
+            />
+          </div>
+
+          <div class="flex justify-end gap-2 mt-2">
+            <Button
+              label="Zrušiť"
+              text
+              :disabled="creatingDocument"
+              @click="closeCreateDialog"
+              class="text-accent!"
+            />
+            <Button
+              label="Vytvoriť"
+              :loading="creatingDocument"
+              :disabled="creatingDocument || !createBranchId || !createPeriod"
+              class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! !px-2"
+              @click="createTravelDocument"
+            />
+          </div>
+        </div>
+      </Dialog>
 
       <Dialog
         v-model:visible="showEmailDialog"

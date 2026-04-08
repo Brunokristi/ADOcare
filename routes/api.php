@@ -357,6 +357,8 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::post('/documents/generate-pdf', [DocumentController::class, 'generatePdf']);
     Route::post('/documents/check-exists', [DocumentController::class, 'checkExists']);
     Route::post('/documents/travel/company/email', [DocumentController::class, 'emailTravelDocuments']);
+    Route::post('/documents/travel/company/create', [DocumentController::class, 'createCompanyTravelDocument'])
+        ->middleware('role:manager,superadmin');
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])
         ->middleware(['role:any', 'can:delete,document']);
     Route::delete('/documents', [DocumentController::class, 'destroyMany']);
