@@ -218,7 +218,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('procedures', ProcedureController::class, 'role:superadmin', 'role:any');
     Route::apiResourceComplete('patient-points', PatientPointController::class, 'role:any');
     Route::apiResourceComplete('report-months', ReportMonthController::class, 'role:any');
-    Route::group(['prefix' => 'roles', 'middleware' => 'role:superadmin'], function () {
+    Route::group(['prefix' => 'roles', 'middleware' => 'role:any'], function () {
         Route::get('/branch', [RoleController::class, 'branchRoles']);
         Route::get('/company', [RoleController::class, 'companyRoles']);
         Route::get('/system', [RoleController::class, 'systemRoles']);

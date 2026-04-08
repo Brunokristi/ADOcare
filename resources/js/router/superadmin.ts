@@ -42,6 +42,18 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
             sidebar: false,
         },
     },
+
+    {
+        path: '/companies/create',
+        name: 'superadmin-company-create',
+        component: CompanySettingsPage,
+        meta: {
+            title: 'Vytvoriť spoločnosť',
+            sidebar: false,
+            navbar: true,
+            link: 'vytvoriť spoločnosť',
+        },
+    },
     {
         // company overview (accessed by clicking company name)
         path: '/companies/:companyId',

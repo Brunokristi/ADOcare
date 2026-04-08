@@ -8,25 +8,19 @@ import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
 import CompanyForm from './CompanyForm.vue'
 import api from '@/services/api'
+import router from '@/router'
 
 const toast = useToast()
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 const { openModal } = useModal()
 
 async function openEditCompany(companyId: number) {
-    const result = await openModal(markRaw(CompanyForm), { companyId }, { header: 'Upraviť spoločnosť', style: { width: '90%' } })
-    if (result) {
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená', life: 3000 })
-        actionRemote.value?.reload()
-    }
+    router.push({ name: 'superadmin-company-edit', params: { companyId } })
 }
 
 async function openCreateCompany() {
-    const result = await openModal(markRaw(CompanyForm), {}, { header: 'Pridať spoločnosť', style: { width: '90%' } })
-    if (result) {
-        toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Spoločnosť bola vytvorená', life: 3000 })
-        actionRemote.value?.reload()
-    }
+    router.push({ name: 'superadmin-company-create' })
+
 }
 
 const options = computed<DataTableOptions<Company>>(() => ({
