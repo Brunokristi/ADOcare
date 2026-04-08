@@ -56,12 +56,17 @@ watchEffect(() => {
   uiOverlayStore.setContentLoading(loading.value);
 });
 
+function unwrapApiData(payload: any) {
+  return payload?.data?.data ?? payload?.data ?? payload ?? {};
+}
+
 async function loadNursingDocument(documentId: string) {
   loading.value = true;
 
   try {
     const res = await api.get(`/v1/leave-documents/${documentId}`);
-    const leave = res.data?.leave_data ?? {};
+    const response = unwrapApiData(res);
+    const leave = response?.leave_data ?? {};
 
     documentData.value = {
       patientName: leave.patient_name ?? '',

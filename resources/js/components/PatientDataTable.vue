@@ -75,6 +75,7 @@ const endpointUrl = computed(() => props.endpointUrl)
 const patientStore = usePatientStore()
 const { openModal } = useModal()
 const authStore = useAuthStore()
+const canDeletePatients = computed(() => !!authStore.currentRole)
 const branchId = computed(() => authStore.currentBranch?.id ?? null)
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
@@ -394,7 +395,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
     }
 
     if (!showDeleted.value && !showDead.value) {
-        tableOptions.actions?.push(
+        const activeActions: NonNullable<typeof tableOptions.actions> = [
             {
                 key: 'add',
                 icon: 'bi bi-plus-lg',
@@ -408,14 +409,6 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 },
             },
             {
-                key: 'delete',
-                icon: 'bi bi-eraser',
-                class: 'bg-danger!',
-                handler: async ({ selectedRows, remote }) => {
-                    await deletePatients(selectedRows as Patient[], remote)
-                },
-            },
-            {
                 key: 'print',
                 icon: 'bi bi-printer',
                 class: 'bg-accent!',
@@ -424,7 +417,20 @@ const options = computed<DataTableOptions<Patient>>(() => {
                     printSelectedPatients(selectedRows as Patient[])
                 },
             },
-        )
+        ]
+
+        if (canDeletePatients.value) {
+            activeActions.splice(1, 0, {
+                key: 'delete',
+                icon: 'bi bi-eraser',
+                class: 'bg-danger!',
+                handler: async ({ selectedRows, remote }) => {
+                    await deletePatients(selectedRows as Patient[], remote)
+                },
+            })
+        }
+
+        tableOptions.actions?.push(...activeActions)
     }
 
     if (showDeleted.value) {
@@ -444,7 +450,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
 
     if (authStore.isManager) {
         tableOptions.actions = tableOptions.actions?.filter(
-            (action) => !['add', 'delete', 'restore'].includes(action.key),
+            (action) => !['add'].includes(action.key),
         )
 
         tableOptions.columns = tableOptions.columns?.filter(

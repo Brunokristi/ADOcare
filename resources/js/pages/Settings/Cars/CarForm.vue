@@ -84,14 +84,35 @@ const editingServiceId = ref<number | null>(null)
 // Template refs
 const galleryInputRef = ref<HTMLInputElement | null>(null)
 
-// Helper to get frequency label from days
+// Helper to get frequency label from flexible day interval
 const getFrequencyLabel = (days: number): string => {
-    const frequencyMap: { [key: number]: string } = {
-        365: 'Ročne',
-        730: 'Každé 2 roky',
-        180: 'Každých 6 mesiacov',
-    }
-    return frequencyMap[days] || String(days)
+    const normalizedDays = Math.max(1, Math.round(Number(days) || 0))
+    const { interval_amount, interval_unit } = normalizeIntervalForm(normalizedDays)
+
+    const amount = Math.max(1, Math.round(Number(interval_amount) || 1))
+
+    const unitLabel = (() => {
+        switch (interval_unit) {
+            case 'years':
+                if (amount === 1) return 'rok'
+                if (amount >= 2 && amount <= 4) return 'roky'
+                return 'rokov'
+            case 'months':
+                if (amount === 1) return 'mesiac'
+                if (amount >= 2 && amount <= 4) return 'mesiace'
+                return 'mesiacov'
+            case 'weeks':
+                if (amount === 1) return 'týždeň'
+                if (amount >= 2 && amount <= 4) return 'týždne'
+                return 'týždňov'
+            default:
+                if (amount === 1) return 'deň'
+                if (amount >= 2 && amount <= 4) return 'dni'
+                return 'dní'
+        }
+    })()
+
+    return `Každých ${amount} ${unitLabel}`
 }
 
 const intervalUnitOptions: Array<{ label: string; value: ServiceIntervalUnit }> = [
