@@ -61,6 +61,9 @@ class PatientPointController extends Controller
     {
         // Authorization for create is handled in the FormRequest::authorize()
         $validated = $request->validated();
+        if (empty($validated['user_id']) && $request->user()) {
+            $validated['user_id'] = $request->user()->id;
+        }
 
         $point = PatientPoint::create($validated);
 

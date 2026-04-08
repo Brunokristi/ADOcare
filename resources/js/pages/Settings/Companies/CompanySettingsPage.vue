@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue'
+import { ref, onMounted, watch, watchEffect } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 import api from '@/services/api'
@@ -30,13 +30,7 @@ const defaultNotificationSettings = (): NotificationSetting[] => ([
 ])
 
 function normalizeEmailList(emails: string[]) {
-    return Array.from(
-        new Set(
-            emails
-                .map((email) => email.trim())
-                .filter((email) => email.length > 0)
-        )
-    )
+    return sanitizeEmailList(emails)
 }
 
 function stripCompanyEmail(emails: string[], companyEmail: string) {
@@ -110,6 +104,23 @@ function normalizeVisitLocations(raw: unknown): VisitLocation[] {
 
 function formatVisitLocation(location: VisitLocation) {
     return location.address || [location.street, location.city, location.zip].filter(Boolean).join(', ')
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isValidEmail(email: string) {
+    return EMAIL_REGEX.test(email.trim())
+}
+
+function sanitizeEmailList(emails: string[]) {
+    return Array.from(
+        new Set(
+            emails
+                .map((email) => email.trim().toLowerCase())
+                .filter((email) => email.length > 0)
+                .filter((email) => isValidEmail(email))
+        )
+    )
 }
 
 const toast = useToast()
@@ -419,6 +430,38 @@ async function handleStampSelected(event: Event) {
         clearSelectedStamp()
     }
 }
+
+watch(
+    notificationSettings,
+    (settings) => {
+        settings.forEach((setting) => {
+            const original = [...setting.emails]
+            const cleaned = stripCompanyEmail(
+                sanitizeEmailList(setting.emails),
+                company.value.email ?? ''
+            )
+
+            const removedCount = original.length - cleaned.length
+            const changed =
+                cleaned.length !== original.length ||
+                cleaned.some((email, index) => email !== original[index])
+
+            if (changed) {
+                setting.emails = cleaned
+
+                if (removedCount > 0) {
+                    toast.add({
+                        severity: 'warn',
+                        summary: 'Neplatný email',
+                        detail: 'Neplatná emailová adresa bola odstránená.',
+                        life: 3000,
+                    })
+                }
+            }
+        })
+    },
+    { deep: true }
+)
 </script>
 
 <template>
@@ -431,7 +474,7 @@ async function handleStampSelected(event: Event) {
                         <Tab value="fakturacia">Fakturácia</Tab>
                         <Tab value="kontakt">Kontakt</Tab>
                         <Tab value="upozornenia">Upozornenia</Tab>
-                        <Tab value="peciatka">Zdroje</Tab>
+                        <Tab value="peciatka">Vizuálne prvky</Tab>
                         <Tab value="lokality-navstev">Adresár</Tab>
                     </TabList>
 
@@ -639,50 +682,60 @@ async function handleStampSelected(event: Event) {
 
                         <TabPanel value="peciatka">
                             <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
+                                <section class="bg-tag3 rounded-md p-5">
                                     <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Súbor pečiatky</h3>
-                                        <p class="text-sm text-gray-500">
-                                            Povolený je iba PNG s transparentným pozadím, max. 300 x 100 px.
+                                        <h3 class="text-normal font-medium">Vizuálne prvky spoločnosti</h3>
+                                        <p class="text-sm text-tag2">
+                                            Grafické prvky spoločnosti, ktoré sa zobrazujú na dokumentoch.
                                         </p>
                                     </div>
 
-                                    <input
-                                        ref="stampInputRef"
-                                        type="file"
-                                        accept="image/png"
-                                        class="hidden"
-                                        @change="handleStampSelected"
-                                    />
+                                    <div class="flex flex-col gap-4">
+                                        <div class="flex flex-col gap-4 rounded-md bg-white p-4">
+                                            <div>
+                                                <h2 class="block text-heading">Pečiatka spoločnosti</h2>
+                                                <p class="text-sm text-tag2">
+                                                    Nahrajte obrázok pečiatky vo formáte PNG. Maximálne rozmery sú 300x100 px.
+                                                </p>
+                                            </div>
 
-                                    <div v-if="!stampPreviewUrl" class="flex items-center gap-3">
-                                        <Button
-                                            label="Nahrať"
-                                            type="button"
-                                            class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
-                                            @click="stampInputRef?.click()"
-                                        />
-                                    </div>
-
-                                    <div v-if="stampPreviewUrl" class="mt-3 flex flex-col gap-4">
-                                        <div class="border rounded-md p-3 inline-block bg-white self-start">
-                                            <img :src="stampPreviewUrl" alt="Preview pečiatky" class="max-h-32 object-contain" />
-                                        </div>
-
-                                        <div class="flex gap-3">
-                                            <Button
-                                                label="Nahrať novú"
-                                                type="button"
-                                                outlined
-                                                @click="stampInputRef?.click()"
+                                            <input
+                                                ref="stampInputRef"
+                                                type="file"
+                                                accept="image/png"
+                                                class="hidden"
+                                                @change="handleStampSelected"
                                             />
-                                            <Button
-                                                label="Odstrániť"
-                                                type="button"
-                                                text
-                                                severity="danger"
-                                                @click="clearSelectedStamp"
-                                            />
+
+                                            <div v-if="!stampPreviewUrl" class="flex items-center gap-3">
+                                                <Button
+                                                    label="Nahrať"
+                                                    type="button"
+                                                    class="bg-accent! border-accent! px-2! text-white! hover:bg-darkgrey! hover:border-darkgrey!"
+                                                    @click="stampInputRef?.click()"
+                                                />
+                                            </div>
+
+                                            <div v-else class="mt-3">
+                                                <div
+                                                    class="relative inline-block overflow-visible rounded-md border bg-white p-3 group"
+                                                >
+                                                    <img
+                                                        :src="stampPreviewUrl"
+                                                        alt="Preview pečiatky"
+                                                        class="block max-h-32 object-contain"
+                                                    />
+
+                                                    <button
+                                                        type="button"
+                                                        class="absolute z-20 flex h-7 w-7 items-center justify-center rounded-md bg-danger text-white cursor-pointer opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                                                        style="top: 0.2rem; right: 0.2rem;"
+                                                        @click="clearSelectedStamp"
+                                                    >
+                                                        <i class="bi bi-eraser"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </section>
@@ -745,7 +798,7 @@ async function handleStampSelected(event: Event) {
                                                     inputClass="w-full! border-0! outline-none! shadow-none! focus:ring-0! focus:shadow-none!"
                                                 />
                                                 <small class="text-mini text-tag2 block mt-1">
-                                                    Email potvrďte stlačením tlačidla enterom alebo čiarkou.
+                                                    Email potvrďte stlačením tlačidla enter alebo čiarkou.
                                                 </small>
                                             </div>
                                         </div>
@@ -758,8 +811,8 @@ async function handleStampSelected(event: Event) {
                             <div class="flex flex-col gap-5">
                                 <section class="bg-tag3 p-5 rounded-md">
                                     <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Často navštivované lokality</h3>
-                                        <p class="text-mini text-tag2">
+                                        <h3 class="text-sm text-accent">Často navštevované lokality</h3>
+                                        <p class="text-sm text-tag2">
                                             Pridajte lokality, ktoré manažér často navštevuje. Tieto lokality budú slúžiť k vytvoreniu denného záznamu ciest manažéra.
                                         </p>
                                     </div>
@@ -788,7 +841,7 @@ async function handleStampSelected(event: Event) {
                                             />
                                         </div>
 
-                                        <div v-else class="rounded-md border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
+                                        <div v-else class="text-sm text-tag2">
                                             Zatiaľ nie sú pridané žiadne lokality.
                                         </div>
                                     </div>

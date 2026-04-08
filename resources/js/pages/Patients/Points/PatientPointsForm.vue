@@ -17,7 +17,8 @@ const toast = useToast()
 
 const dates = ref<Date[]>([])
 const referralDate = ref<Date | null>(null)
-const viewDate = ref<Date>(new Date())
+const panelDate = ref<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+const datesPickerRef = ref<any>(null)
 
 const diagnosis = ref<Option | null>(null)
 const filteredDiagnoses = ref<Option[]>([])
@@ -63,25 +64,53 @@ function normalizeSelectedDates(input: unknown): Date[] {
 }
 
 async function setDatesAndKeepView(selected: Date[]) {
-    const keep = new Date(viewDate.value.getFullYear(), viewDate.value.getMonth(), 1)
+    const { year, month } = getActivePanelYearMonth()
+    const keep = new Date(year, month, 1)
     dates.value = normalizeSelectedDates(selected)
     await nextTick()
-    viewDate.value = keep
-    requestAnimationFrame(() => {
-        viewDate.value = keep
-    })
+    panelDate.value = keep
+
+    // Keep DatePicker panel pinned to currently visible month after model update.
+    const picker = datesPickerRef.value
+    if (picker) {
+        picker.currentMonth = month
+        picker.currentYear = year
+    }
+}
+
+function getActivePanelYearMonth(): { year: number; month: number } {
+    const picker = datesPickerRef.value
+    const pickerYear = Number(picker?.currentYear)
+    const pickerMonth = Number(picker?.currentMonth)
+
+    if (Number.isFinite(pickerYear) && Number.isFinite(pickerMonth)) {
+        return { year: pickerYear, month: pickerMonth }
+    }
+
+    return {
+        year: panelDate.value.getFullYear(),
+        month: panelDate.value.getMonth(),
+    }
 }
 
 function buildDaysForCurrentView(mode: string): Date[] {
-    const y = viewDate.value.getFullYear()
-    const m = viewDate.value.getMonth()
+    const { year: y, month: m } = getActivePanelYearMonth()
     return buildDaysForMonth(y, m, mode)
+}
+
+function onMonthChange(event: any) {
+    const year = Number(event?.year)
+    const month = Number(event?.month)
+    if (!Number.isFinite(year) || !Number.isFinite(month)) return
+
+    // PrimeVue emits month in 1-12 for month-change/year-change.
+    const next = new Date(year, month - 1, 1)
+    panelDate.value = next
 }
 
 async function selectHolidays() { await setDatesAndKeepView(buildDaysForCurrentView('holidays')) }
 
-// `viewDate` is two-way bound to the DatePicker via `v-model:viewDate`.
-// No need to access DatePicker internals via a component ref.
+// We control DatePicker month via `:viewDate="panelDate"` and month/year events.
 
 async function selectWorkingDays() { await selectPreset('workdays') }
 async function selectAllDays() { await selectPreset('all') }
@@ -144,27 +173,42 @@ function buildPatientPointPayloadForDate(dateOverride: Date) {
 
 async function onSubmit() {
     submitted.value = true
-    dates.value = normalizeSelectedDates(dates.value as any)
+    const normalizedDates = normalizeSelectedDates(dates.value as any)
+    dates.value = normalizedDates
     const parsedReferral = parseDateInput(referralDate.value as any)
     if (!parsedReferral) return toast.add({ severity: 'warn', summary: 'Neplatné dátum', detail: 'Referenčný dátum je neplatný', life: 3000 })
     if (!procedure.value || !diagnosis.value) return toast.add({ severity: 'warn', summary: 'Chýba kód', detail: 'Zadajte diagnózu a procedúru', life: 3000 })
 
-    try {
-        const payloads = dates.value.map((d) => buildPatientPointPayloadForDate(d))
+    const referralDateStr = toApiDate(parsedReferral)
+    const hasDateBeforeReferral = normalizedDates.some((d) => {
+        const selectedDateStr = toApiDate(d)
+        return !!selectedDateStr && !!referralDateStr && selectedDateStr < referralDateStr
+    })
 
-        // Try bulk endpoint first, fall back to individual posts on failure
-        try {
-            await api.post('v1/patient-points/bulk', { items: payloads })
-        } catch (err: any) {
-            console.error('Bulk insert failed, falling back to single inserts', err)
-            // fallback: post one-by-one
-            for (const p of payloads) await api.post('v1/patient-points', p)
-        }
+    if (hasDateBeforeReferral) {
+        return toast.add({
+            severity: 'warn',
+            summary: 'Neplatné dátumy',
+            detail: 'Dátum odporučenia musí byť rovnaký alebo starší ako všetky vybrané dátumy.',
+            life: 3500,
+        })
+    }
+
+    try {
+        const payloads = normalizedDates.map((d) => buildPatientPointPayloadForDate(d))
+
+        // Backend has only single-create endpoint for patient points.
+        for (const p of payloads) await api.post('v1/patient-points', p)
 
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Body boli pridané', life: 3000 })
         emitted('created')
     } catch (e: any) {
-        toast.add({ severity: 'error', summary: 'Chyba', detail: e?.message || 'Chyba servera', life: 4000 })
+        const status = e?.response?.status
+        const detail =
+            status === 403
+                ? 'Nemáte oprávnenie vytvoriť body pre tohto pacienta. Skontrolujte priradenie sestry k pacientovi.'
+                : e?.response?.data?.message || e?.message || 'Chyba servera'
+        toast.add({ severity: 'error', summary: 'Chyba', detail, life: 4000 })
     }
 }
 </script>
@@ -178,7 +222,8 @@ async function onSubmit() {
                     <div class="col-span-12 md:col-span-3">
                         <label class="block text-normal mb-1">Dátum</label>
 
-                        <DatePicker v-model="dates" v-model:viewDate="viewDate" selectionMode="multiple"
+                        <DatePicker ref="datesPickerRef" v-model="dates" :viewDate="panelDate" selectionMode="multiple"
+                            @month-change="onMonthChange" @year-change="onMonthChange"
                             dateFormat="dd.mm.yy" :showIcon="false" showButtonBar class="w-full" :manualInput="false"
                             :maxDate="maxSelectableDate"
                             inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">

@@ -47,6 +47,10 @@ abstract class BasePolicy
         }
 
         // and the patient must be assigned to this nurse explicitly
-        return $patient->nurse_id === $user->id;
+        if ($patient->nurse_id === null || $user->id === null) {
+            return false;
+        }
+
+        return (int) $patient->nurse_id === (int) $user->id;
     }
 }
