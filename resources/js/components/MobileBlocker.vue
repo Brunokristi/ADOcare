@@ -30,11 +30,13 @@ onBeforeUnmount(() => {
 
 <template>
     <div v-if="mobileBlocked"
-        class="mobile-blocker fixed inset-0 z-[99999] bg-white/95 text-darkgrey p-8 text-center font-bold text-lg">
-        <div class="w-full mx-auto bg-white p-6 rounded-lg shadow-lg border border-gray-300">
-            <p class="text-xl font-bold mb-2">Mobilné zobrazenie nie je podporované</p>
-            <p class="text-sm text-gray-600 mb-4">Aplikácia funguje iba na väčších obrazovkách. Prosím, používajte
-                laptop alebo desktop.</p>
+        class="mobile-blocker fixed inset-0 z-[99999] bg-white text-darkgrey p-8 text-center font-bold text-lg">
+        <div class="w-full mx-auto">
+            <p class="text-heading text-accent mb-2">Mobilné zobrazenie zatiaľ nie je podporované</p>
+            <p class="text-normal text-darkgrey">Aplikácia funguje iba na väčších obrazovkách. Prosím, používajte
+                laptop alebo počítač.</p>
+
+            <img src="/logo.svg" alt="Logo" class="mx-auto mt-6 w-15 h-15 object-contain">
         </div>
     </div>
 </template>
