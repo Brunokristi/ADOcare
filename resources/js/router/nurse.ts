@@ -447,6 +447,7 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
                     requiresAuth: false,
                     title: 'Lekársky nález',
                     shownavbar: false,
+                    allowMobile: true,
                 }
             },
         ],
