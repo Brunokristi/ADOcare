@@ -8,7 +8,17 @@ import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
 import MapSelector from '@/components/Address/MapSelector.vue'
 import { useUiOverlayStore } from '@/stores/uiOverlay'
 import { useAddressForm } from '@/composables/address'
-import type { Company, User, VisitLocation } from '@/types/models'
+import type { Company, User } from '@/types/models'
+
+type VisitLocation = {
+    address: string
+    street: string
+    city: string
+    zip: string
+    latitude: number | null
+    longitude: number | null
+    place_id?: string
+}
 import { mergeAddressParts } from '@/utils/formatUtils'
 
 import Tabs from 'primevue/tabs'

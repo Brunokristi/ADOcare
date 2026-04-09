@@ -41,6 +41,10 @@ const problemOptions = [
   { label: 'iné zistenia', value: 'other_findings' }
 ]
 
+function unwrapApiData(payload: any) {
+  return payload?.data?.data ?? payload?.data ?? payload ?? {}
+}
+
 function toIsoDateTime(d: Date) {
   const yyyy = d.getFullYear()
   const mm = String(d.getMonth() + 1).padStart(2, '0')
@@ -74,8 +78,9 @@ async function checkDocumentExists() {
       date: toLocalYMD(date.value),
       patient_id: patientId.value,
     })
-    documentExists.value = res.data.exists ?? false
-    documentId.value = res.data.document_id ?? null
+    const response = unwrapApiData(res)
+    documentExists.value = response.exists ?? false
+    documentId.value = response.document_id ?? null
     if (documentExists.value) {
       dialogVisible.value = true
     }
@@ -179,6 +184,7 @@ async function generateDocument() {
 
 
     const res = await api.post('/v1/leave-documents', payload)
+    const response = unwrapApiData(res)
 
     toast.add({
       severity: 'success',
@@ -188,7 +194,7 @@ async function generateDocument() {
     })
 
     // If API returns a document id, navigate
-    const documentId = res.data?.document_id ?? res.data?.id ?? null
+    const documentId = response?.document_id ?? response?.id ?? response?.document?.id ?? null
     if (documentId) {
       router.push({ name: 'documents-leave', params: { documentId } })
     }

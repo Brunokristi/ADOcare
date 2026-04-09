@@ -125,9 +125,9 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->except(['index', 'store'])
         ->middleware('role:any');
     Route::delete('patients', [PatientController::class, 'destroyMany'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::post('patients/restore', [PatientController::class, 'restoreMany'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
 
     Route::get('patients/{patient}/death-check', [PatientDeathCheckController::class, 'show'])
         ->middleware(['role:any', 'can:view,patient']);
