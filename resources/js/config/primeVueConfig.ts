@@ -286,7 +286,7 @@ export default {
                 class: 'flex flex-row'
             },
             tabList: {
-                class: 'flex flex-row !gap-1 border-0! bg-darkgrey! rounded-lg! p-2!'
+                class: 'flex flex-row !gap-1 border-0! -mb-6!'
             },
             activeBar: {
                 class: 'hidden!'
@@ -295,19 +295,19 @@ export default {
 
         tab: {
             root: {
-                class: 'relative flex items-center cursor-pointer select-none transition-all duration-200 text-mini! text-white! p-0! lowercase! rounded-md border-0! px-2! py-1! bg-transparent! hover:bg-tag2! data-[p-active=true]:bg-tag2!'
+                class: 'relative z-0 flex items-center cursor-pointer select-none transition-all duration-200 text-mini! text-darkgrey! pt-2! px-3! pb-10! lowercase! rounded-t-md border-0! bg-transparent! hover:bg-tag3! hover:text-accent! hover:no-underline! data-[p-active=true]:bg-tag3! data-[p-active=true]:text-accent! data-[p-active=true]:no-underline!'
             }
         },
 
         tabpanels: {
             root: {
-                class: 'p-0! py-4! border-0! rounded-b-md! bg-transparent!'
+                class: 'relative z-10 -mt-2 p-0! border-0! bg-transparent! rounded-md!'
             }
         },
 
         tabpanel: {
             root: {
-                class: 'px-0! bg-transparent! text-darkgrey!'
+                class: 'relative px-0! bg-transparent! text-darkgrey! rounded-md!'
             }
         },
 
