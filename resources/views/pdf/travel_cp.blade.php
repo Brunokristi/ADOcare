@@ -1,19 +1,63 @@
 <!doctype html>
 <html lang="sk">
+
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 14mm; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #000; }
-        .title { text-align: center; font-weight: 700; font-size: 16px; margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        td { border: 1px solid #000; padding: 6px; vertical-align: top; }
-        .sign-wrap { margin-top: 48px; width: 45%; margin-left: 55%; text-align: center; }
-        .signature-box { height: 70px; position: relative; margin-bottom: 6px; }
-        .signature { max-width: 170px; max-height: 64px; }
-        .line { border-top: 1px solid #000; margin-top: 4px; }
+        @page {
+            margin: 14mm;
+        }
+
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 12px;
+            color: #000;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        td {
+            border: 1px solid #000;
+            padding: 6px;
+            vertical-align: top;
+        }
+
+        .sign-wrap {
+            margin-top: 48px;
+            width: 45%;
+            margin-left: 55%;
+            text-align: center;
+        }
+
+        .signature-box {
+            height: 70px;
+            position: relative;
+            margin-bottom: 6px;
+        }
+
+        .signature {
+            max-width: 170px;
+            max-height: 64px;
+        }
+
+        .line {
+            border-top: 1px solid #000;
+            margin-top: 4px;
+        }
     </style>
 </head>
+
 <body>
     <div class="title">CESTOVNÝ PRÍKAZ</div>
 
@@ -41,7 +85,7 @@
             </tr>
             <tr>
                 <td colspan="2">
-                    <strong>ÚČel pracovných ciest:</strong><br>
+                    <strong>Účel pracovných ciest:</strong><br>
                     {{ $cpData['trip_purpose'] ?? 'Zdravotná starostlivosť o pacientov v domácom prostredí' }}
                 </td>
             </tr>
@@ -60,7 +104,7 @@
                 <td>
                     <strong>Dopravný prostriedok:</strong><br>
                     {{ $cpData['car_model'] ?? '' }}<br>
-                    SPZ: {{ $cpData['car_license_plate'] ?? '' }}
+                    ŠPZ: {{ $cpData['car_license_plate'] ?? '' }}
                 </td>
             </tr>
             <tr>
@@ -89,7 +133,7 @@
 
     <div class="sign-wrap">
         <div class="signature-box">
-            @if(!empty($signatureDataUri))
+            @if (!empty($signatureDataUri))
                 <img src="{{ $signatureDataUri }}" alt="Podpis" class="signature">
             @endif
         </div>
@@ -97,4 +141,5 @@
         podpis schvalujúceho
     </div>
 </body>
+
 </html>

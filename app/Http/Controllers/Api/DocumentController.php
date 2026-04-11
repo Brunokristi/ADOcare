@@ -7,18 +7,17 @@ use App\Http\Filters\ApiQuery;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
-use App\Models\Branch;
-use App\Services\CPDocumentService;
-use App\Services\DZCDocumentService;
+use App\Services\DocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 
 class DocumentController extends Controller
 {
+    public function __construct(private DocumentService $service)
+    {
+    }
+
     public function createCompanyTravelDocument(Request $request)
     {
         $validated = $request->validate([
@@ -27,70 +26,37 @@ class DocumentController extends Controller
             'period' => ['required', 'date_format:Y-m'],
         ]);
 
-        $user = $request->user();
-        $branch = Branch::findOrFail((int) $validated['branch_id']);
-
-        if ($user->company_id && (int) $user->company_id !== (int) $branch->company_id) {
-            abort(403, 'Pobočka nepatrí do vašej spoločnosti.');
-        }
-
-        $period = Carbon::createFromFormat('Y-m', $validated['period']);
-        $start = $period->copy()->startOfMonth()->toDateString();
-        $end = $period->copy()->endOfMonth()->toDateString();
-
-        if ($validated['type'] === 'cp') {
-            [$document] = app(CPDocumentService::class)->createCp([
-                'start' => $start,
-                'end' => $end,
-                'branch_id' => $branch->id,
-                'job_title' => 'Manažér',
-                'trip_purpose' => 'Pracovné stretnutia',
-            ], $user);
-
-            return $this->success([
-                'document_id' => $document->id,
-                'type' => 'cp',
-            ], 'Cestovný príkaz bol úspešne vytvorený', 201);
-        }
-
         try {
-            [$document] = app(DZCDocumentService::class)->createManagerDzcFromVisitLocations([
-                'period' => $period->format('Y-m'),
-                'branch_id' => $branch->id,
-            ], $user);
+            $result = $this->service->createCompanyTravelDocument($validated, $request->user());
         } catch (\InvalidArgumentException $e) {
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->success([
-            'document_id' => $document->id,
-            'type' => 'dzc',
-        ], 'Denný záznam ciest bol úspešne vytvorený', 201);
+        return $this->success(
+            [
+                'document_id' => $result['document']->id,
+                'type' => $result['type'],
+            ],
+            $result['type'] === 'cp'
+            ? 'Cestovný príkaz bol úspešne vytvorený'
+            : 'Denný záznam ciest bol úspešne vytvorený',
+            201
+        );
     }
 
     public function indexTravelDocuments(Request $request)
     {
         $perPage = (int) $request->input('per_page', 25);
-
         $branchId = $request->input('branch_id');
         $branchId = is_numeric($branchId) ? (int) $branchId : null;
         $period = $request->input('period');
 
-        $query = Document::query()
-            ->whereIn('type', ['cp', 'dzc'])
-            ->where('user_id', Auth::id());
-
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
-        }
-
-        if ($period) {
-            $query->where('period', Carbon::parse($period)->format('Y-m'));
-        }
-
-        $documents = $query
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        $documents = $this->service->getTravelDocuments(
+            Auth::id(),
+            $branchId,
+            $period,
+            $perPage
+        );
 
         return response()->json($documents);
     }
@@ -110,52 +76,7 @@ class DocumentController extends Controller
             }
         }
 
-        $query = Document::query()
-            ->with([
-                'user:id,title,first_name,last_name',
-                'branch:id,address',
-            ])
-            ->whereIn('type', ['cp', 'dzc']);
-
-        if (!empty($branchIdArray)) {
-            $query->whereIn('branch_id', $branchIdArray);
-        }
-
-        if ($period) {
-            $query->where('period', Carbon::parse($period)->format('Y-m'));
-        }
-
-        $documents = $query
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
-
-        $documents->getCollection()->transform(function ($doc) {
-            $representative = $doc->user;
-            $branch = $doc->branch;
-
-            $userName = trim(implode(' ', array_filter([
-                $representative?->title,
-                $representative?->first_name,
-                $representative?->last_name,
-            ])));
-
-            $branchAddress = $branch?->address; // or format it further if it's an object/array
-
-            return [
-                'id' => $doc->id,
-                'name' => $doc->name,
-                'type' => $doc->type,
-                'mime_type' => $doc->mime_type,
-                'path' => $doc->path,
-                'created_at' => $doc->created_at?->toDateTimeString(),
-                'updated_at' => $doc->updated_at?->toDateTimeString(),
-                'period' => $doc->period,
-
-                // what your frontend expects:
-                'created_by_user' => $userName ?: null,
-                'created_by_branch' => $branchAddress ?: null,
-            ];
-        });
+        $documents = $this->service->getTravelDocumentsForCompany($branchIdArray, $period, $perPage);
 
         return response()->json($documents);
     }
@@ -226,12 +147,36 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        return Storage::disk('local')->download($document->path, $document->name);
+        $filePath = Storage::disk('local')->path($document->path);
+
+        return response()->download($filePath, $document->name);
     }
 
     /**
-     * Update the specified document.
+     * Public, signed access to a document.
      */
+    public function publicDocument(Request $request, Document $document)
+    {
+        if (!Storage::disk('local')->exists($document->path)) {
+            abort(404, 'Dokument nebol nájdený');
+        }
+
+        $pdfPath = $this->service->getTravelDocumentPdfPath($document);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            abort(500, 'Chyba pri generovaní PDF dokumentu');
+        }
+
+        $filePath = Storage::disk('local')->path($pdfPath);
+        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+        if ($request->query('download') === '1') {
+            return response()->download($filePath, $downloadName);
+        }
+
+        return response()->file($filePath, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
     public function update(Request $request, Document $document)
     {
         $this->authorize('update', $document);
@@ -252,31 +197,23 @@ class DocumentController extends Controller
     public function destroy(Document $document)
     {
         $this->authorize('delete', $document);
-        
-        $this->deleteScanAssetsIfAny($document);
 
-        if (Storage::disk('local')->exists($document->path)) {
-            $deleted = Storage::disk('local')->delete($document->path);
-            if (!$deleted) {
-                \Log::error('Failed to delete document file', [
-                    'document_id' => $document->id,
-                    'path' => $document->path,
-                ]);
-                return response()->json([
-                    'error' => 'Failed to delete file from disk',
-                    'path' => $document->path,
-                ], 500);
-            }
-        } else {
-            \Log::warning('Document file not found on disk', [
+        $deleted = $this->service->deleteDocumentWithAssets($document);
+        if (!$deleted) {
+            \Log::error('Failed to delete document file', [
                 'document_id' => $document->id,
-                'expected_path' => $document->path,
+                'path' => $document->path,
             ]);
+
+            return response()->json([
+                'error' => 'Nepodarilo sa odstrániť súbor z disku',
+                'path' => $document->path,
+            ], 500);
         }
 
         $document->delete();
 
-        return response()->json(['message' => 'Document deleted successfully']);
+        return response()->json(['message' => 'Dokument bol úspešne odstránený']);
     }
 
     /**
@@ -285,36 +222,14 @@ class DocumentController extends Controller
     public function destroyMany(Request $request)
     {
         $ids = $request->input('ids', []);
-        
+
         if (empty($ids)) {
-            return response()->json(['message' => 'No IDs provided'], 400);
+            return response()->json(['message' => 'Neboli poskytnuté žiadne ID'], 400);
         }
-        
-        $documents = Document::whereIn('id', $ids)->get();
-        
-        foreach ($documents as $document) {
 
-            $this->deleteScanAssetsIfAny($document);
+        $this->service->deleteManyDocumentsWithAssets($ids);
 
-            if (Storage::disk('local')->exists($document->path)) {
-                $deleted = Storage::disk('local')->delete($document->path);
-                if (!$deleted) {
-                    \Log::error('Failed to delete document file (batch)', [
-                        'document_id' => $document->id,
-                        'path' => $document->path,
-                    ]);
-                }
-            } else {
-                \Log::warning('Document file not found on disk (batch)', [
-                    'document_id' => $document->id,
-                    'expected_path' => $document->path,
-                ]);
-            }
-        }
-        
-        Document::whereIn('id', $ids)->delete();
-        
-        return response()->json(['message' => 'Documents deleted successfully']);
+        return response()->json(['message' => 'Dokumenty boli úspešne odstránené']);
     }
 
     public function emailTravelDocuments(Request $request)
@@ -327,227 +242,29 @@ class DocumentController extends Controller
 
         $user = Auth::user();
         $userName = trim(implode(' ', array_filter([$user->title, $user->first_name, $user->last_name])));
+        $companyName = $user->company?->name;
 
+        $documents = $this->service->buildTravelDocumentLinks($validated['ids'], $user);
 
-        $companyId = Auth::user()?->company_id;
-        $compnayName = $user->company?->name;
-
-        $documentsQuery = Document::query()
-            ->whereIn('id', $validated['ids'])
-            ->whereIn('type', ['cp', 'dzc']);
-
-        if ($companyId) {
-            $documentsQuery->whereHas('user', fn ($q) => $q->where('company_id', $companyId));
-        }
-
-        $documents = $documentsQuery->get();
-
-        if ($documents->isEmpty()) {
-            return response()->json(['message' => 'No valid documents found'], 404);
-        }
-
-        $attachments = [];
-        foreach ($documents as $document) {
-            $pdfAttachment = $this->buildTravelPdfAttachment($document);
-            if ($pdfAttachment) {
-                $attachments[] = $pdfAttachment;
-            }
-        }
-
-        if (empty($attachments)) {
-            return response()->json(['message' => 'No readable document files found for attachments'], 422);
+        if (empty($documents)) {
+            return response()->json(['message' => 'Neboli nájdené žiadne dokumenty, ku ktorým máte prístup'], 404);
         }
 
         $to = $validated['email'];
-        $subject = 'Cestovné dokumenty - ' . ($compnayName ?: 'ADOcare');
-        $body = "Dobrý deň,\n\nV prílohe posielame cestovné dokumenty.\n\nS pozdravom,\n$userName";
+        $subject = 'Cestovné dokumenty - ' . ($companyName ?: 'ADOcare');
+        $viewData = [
+            'recipientName' => $to,
+            'senderName' => $userName,
+            'companyName' => $companyName,
+            'documents' => $documents,
+        ];
 
-        Mail::raw($body, function ($message) use ($to, $subject, $attachments) {
-            $message->to($to)->subject($subject);
-
-            foreach ($attachments as $attachment) {
-                $message->attachData($attachment['data'], $attachment['name'], [
-                    'as' => $attachment['name'],
-                    'mime' => $attachment['mime'],
-                ]);
-            }
-        });
+        $this->service->sendEmail($to, $subject, 'emails.document_links', $viewData);
 
         return response()->json([
-            'message' => 'Email sent successfully',
-            'attachments_count' => count($attachments),
+            'message' => 'Email bol úspešne odoslaný',
+            'documents_count' => count($documents),
         ]);
-    }
-
-    private function deleteScanAssetsIfAny(Document $document): void
-    {
-        if ($document->type !== 'scan') {
-            return;
-        }
-
-        $sessionId = null;
-
-        if (!$sessionId && Storage::disk('local')->exists($document->path)) {
-            try {
-                $raw = Storage::disk('local')->get($document->path);
-                $json = json_decode($raw, true);
-                $sessionId = (int) ($json['scan_session_id'] ?? 0);
-            } catch (\Throwable $e) {
-                \Log::warning('Failed to parse scan document JSON for cleanup', [
-                    'document_id' => $document->id,
-                    'path' => $document->path,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        if (!$sessionId) return;
-
-        $scanDir = "scans/{$sessionId}";
-
-        if (Storage::disk('local')->exists($scanDir)) {
-            Storage::disk('local')->deleteDirectory($scanDir);
-        }
-    }
-
-    private function buildAttachmentFilename(Document $document): string
-    {
-        $rawName = trim((string) ($document->name ?: ('document_' . $document->id)));
-        $base = pathinfo($rawName, PATHINFO_FILENAME);
-        $base = $base !== '' ? $base : ('document_' . $document->id);
-
-        $ext = pathinfo($rawName, PATHINFO_EXTENSION);
-        if ($ext === '' && $document->path) {
-            $ext = pathinfo((string) $document->path, PATHINFO_EXTENSION);
-        }
-
-        if ($ext === '') {
-            $ext = match ($document->mime_type) {
-                'application/pdf' => 'pdf',
-                'application/json' => 'json',
-                default => 'bin',
-            };
-        }
-
-        return $base . '.' . $ext;
-    }
-
-    private function buildTravelPdfAttachment(Document $document): ?array
-    {
-        if ($document->type === 'cp') {
-            $payload = app(CPDocumentService::class)->getCpPayload($document);
-            if (!$payload) {
-                return null;
-            }
-
-            $representativeId = isset($payload['representative_id']) ? (int) $payload['representative_id'] : null;
-            $signatureDataUri = $this->loadUserSignatureDataUri($representativeId);
-
-            $pdf = Pdf::loadView('pdf.travel_cp', [
-                'cpData' => $payload,
-                'signatureDataUri' => $signatureDataUri,
-            ])->setPaper('a4', 'portrait');
-
-            $filename = $this->buildTravelPdfFilename('CP', $payload, $document);
-
-            return [
-                'data' => $pdf->output(),
-                'name' => $filename,
-                'mime' => 'application/pdf',
-            ];
-        }
-
-        if ($document->type === 'dzc') {
-            $payload = app(DZCDocumentService::class)->getDzcPayload($document);
-            if (!$payload) {
-                return null;
-            }
-
-            $userId = isset($payload['user_id']) ? (int) $payload['user_id'] : null;
-            $signatureDataUri = $this->loadUserSignatureDataUri($userId);
-
-            $pdf = Pdf::loadView('pdf.travel_dzc', [
-                'dzcData' => $payload,
-                'signatureDataUri' => $signatureDataUri,
-            ])->setPaper('a4', 'portrait');
-
-            $filename = $this->buildTravelPdfFilename('DZP', $payload, $document);
-
-            return [
-                'data' => $pdf->output(),
-                'name' => $filename,
-                'mime' => 'application/pdf',
-            ];
-        }
-
-        return null;
-    }
-
-    private function loadUserSignatureDataUri(?int $userId): ?string
-    {
-        if (!$userId) {
-            return null;
-        }
-
-        $user = User::find($userId);
-        $signaturePath = $user?->signature_path;
-
-        if (!$signaturePath || !Storage::disk('local')->exists($signaturePath)) {
-            return null;
-        }
-
-        $binary = Storage::disk('local')->get($signaturePath);
-        if ($binary === null || $binary === '') {
-            return null;
-        }
-
-        return 'data:image/png;base64,' . base64_encode($binary);
-    }
-
-    private function buildTravelPdfFilename(string $prefix, array $payload, Document $document): string
-    {
-        $period = (string) ($payload['period'] ?? $document->period ?? 'unknown-period');
-
-        if ($period === 'unknown-period') {
-            $month = (string) ($payload['month'] ?? '');
-            $year = (string) ($payload['year'] ?? '');
-            if ($month !== '' && $year !== '') {
-                $period = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
-            }
-        }
-
-        $rawUserName = trim(implode(' ', array_filter([
-            $document->user->last_name ?? null,
-        ])));
-
-        if ($rawUserName === '') {
-            $rawUserName = 'unknown-user';
-        }
-
-        $normalizedUserName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $rawUserName);
-
-        if ($normalizedUserName === false || trim($normalizedUserName) === '') {
-            $normalizedUserName = $rawUserName;
-        }
-
-        $safePrefix = $this->sanitizeFilenamePart($prefix);
-        $safePeriod = $this->sanitizeFilenamePart($period);
-        $safeUserName = $this->sanitizeFilenamePart($normalizedUserName);
-
-        return $safePrefix . '_' . $safePeriod . '_' . $safeUserName . '.pdf';
-    }
-
-    private function sanitizeFilenamePart(string $value): string
-    {
-        $value = trim($value);
-        $value = preg_replace('/\s+/', '_', $value) ?? $value;
-        $value = preg_replace('/[^A-Za-z0-9_\-.]/', '', $value) ?? $value;
-
-        if ($value === '') {
-            return 'unknown';
-        }
-
-        return $value;
     }
 
     public function getByType($patientId, $type)
@@ -579,46 +296,13 @@ class DocumentController extends Controller
                 'branch_id' => 'nullable|numeric',
             ]);
 
-            // Extract period (Y-m format) from provided date
-            $date = new \DateTime($validated['date']);
-            $period = $date->format('Y-m');
-
-            $type = $validated['type'];
-            $userId = Auth::id();
-
-            $document = null;
-            $patientId = $validated['patient_id'] ?? null;
-            $branchId = $validated['branch_id'] ?? null;
-
-            if ($patientId) {
-                // Patient document: check patient_id, user_id, type, and period
-                $document = Document::where('patient_id', $patientId)
-                    ->where('user_id', $userId)
-                    ->where('type', $type)
-                    ->where('period', $period)
-                    ->first();
-            } else {
-                // User document: check user_id, type, branch_id, and period
-                $query = Document::where('user_id', $userId)
-                    ->where('type', $type)
-                    ->where('period', $period);
-
-                if ($branchId) {
-                    $query->where('branch_id', $branchId);
-                }
-
-                $document = $query->first();
-            }
-
-            return response()->json([
-                'exists' => $document !== null,
-                'document_id' => $document?->id,
-            ]);
+            return response()->json($this->service->documentExists($validated, Auth::id()));
         } catch (\Exception $e) {
             \Log::error('Document checkExists error: ' . $e->getMessage(), [
                 'request' => $request->all(),
                 'exception' => $e,
             ]);
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
