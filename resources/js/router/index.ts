@@ -3,17 +3,15 @@ import { useAuthStore } from '@/stores/auth'
 import nures from './nurse';
 import managerRoutes from './manager';
 import superadminRoutes from './superadmin';
+import generalRoutes from './general';
 import { computed } from 'vue';
-
-// include a generic access-error route accessible by anyone
-import AccessError from '@/pages/AccessError.vue';
 
 // flag used by App.vue to show the error page without changing the URL
 import { ref } from 'vue'
 export const navigationAccessError = ref(false)
 
 const routes = [
-    { path: '/access-error', name: 'access-error', component: AccessError, meta: { title: 'Prístup zamietnutý', sidebar: false } },
+    ...generalRoutes,
     ...nures,
     ...managerRoutes,
     ...superadminRoutes,
