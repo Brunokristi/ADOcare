@@ -1,18 +1,13 @@
 <script setup lang="ts">
-import { computed, markRaw, ref } from 'vue'
+import { computed, ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import type { Company } from '@/types/models'
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
-import { useToast } from 'primevue/usetoast'
-import useModal from '@/composables/useModal'
-import CompanyForm from './CompanyForm.vue'
 import api from '@/services/api'
 import router from '@/router'
 
-const toast = useToast()
 const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
-const { openModal } = useModal()
 
 async function openEditCompany(companyId: number) {
     router.push({ name: 'superadmin-company-edit', params: { companyId } })
