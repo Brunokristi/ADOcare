@@ -169,6 +169,11 @@ This guide is meant for both humans and automated agents that modify the codebas
 ## Frontend / Vue guidelines
 
  - **Keep `App.vue` thin.** The main application component should only contain the absolute minimum (router outlet, global providers, layout scaffolding). Any real logic, data fetching, or UI elements should be moved into child components or composables.  If you find yourself adding watchers, stores, or service calls directly in `App.vue`, the code should be abstracted into a dedicated component or utility instead. This prevents the root component from becoming a catch‑all and keeps the global structure easy to reason about.
+- **Template limit:** If a component's `<template>` contains more than 200 lines, split it into smaller child components (e.g., presentational subcomponents or logical sections). Large templates are hard to read and test.
+- **Script/logic limit:** Keep the `<script>` section (component logic) under 200 lines. If logic grows beyond this, extract reusable pieces into composables, services, or helper modules. Prefer splitting responsibilities across multiple smaller components and composables.
+- **Reuse & helpers:** Always abstract reusable functions, types, and complex logic into separate files (e.g., `composables/`, `services/`, or `utils/`). Do not duplicate logic across components—create a single reusable module instead.
+- **Aim for small/medium components:** Prefer small components; medium-sized components are acceptable but keep them focused. If a component mixes several concerns (data fetching, heavy logic, and many UI variations), refactor it into multiple focused components and shared helpers.
+- **Exceptions & justification:** If you must exceed these limits for valid reasons (performance, single-file complexity that would harm UX if split), document the rationale in a short comment or the PR description.
 
 
 ---
