@@ -91,6 +91,9 @@
         {{ $companyEmail ?? '' }}
     </a><br>
 
-    <span style="color:#575252;">{{ $companyPhone ?? '' }}</span>
+    <a href="tel:{{ $companyPhone }}"
+       style="color:#575252 !important; text-decoration:none !important;">
+        {{ $companyPhone ?? '' }}
+    </a>
 </p>
 @endsection
