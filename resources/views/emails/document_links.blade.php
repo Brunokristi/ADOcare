@@ -79,13 +79,18 @@
 
     <p>S pozdravom,<br>{{ $senderName ?? '' }}</p>
 
-    <p style="color:#575252; margin-top:20px;">
-        {{ $companyName ?? '' }}<br>
-        {{ collect([$companyAddress ?? null, $companyCity ?? null])->filter()->implode(', ') }}<br>
-        <a href="mailto:{{ $companyEmail }}"
-        style="color:#575252; text-decoration:none;">
-            {{ $companyEmail ?? '' }}
-        </a><br>
-        {{ $companyPhone ?? '' }}
-    </p>
+    <p style="color:#575252; margin-top:20px; font-size:12px; line-height:1.5;">
+    <span style="color:#575252;">{{ $companyName ?? '' }}</span><br>
+
+    <span style="color:#575252;">
+        {{ collect([$companyAddress ?? null, $companyCity ?? null])->filter()->implode(', ') }}
+    </span><br>
+
+    <a href="mailto:{{ $companyEmail }}"
+       style="color:#575252 !important; text-decoration:none !important;">
+        {{ $companyEmail ?? '' }}
+    </a><br>
+
+    <span style="color:#575252;">{{ $companyPhone ?? '' }}</span>
+</p>
 @endsection

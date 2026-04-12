@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use Carbon\Carbon;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Company;
@@ -72,6 +74,56 @@ class DZCDocumentTest extends TestCase
             ->get("/api/v1/dzcs/{$documentId}/csv")
             ->assertStatus(200)
             ->assertSee('DENNÝ ZÁZNAM CIEST');
+    }
+
+    public function test_manager_dzc_calculates_non_zero_day_duration()
+    {
+        Storage::fake('local');
+        Config::set('services.route_service.base_url', '');
+
+        $company = Company::factory()->create([
+            'visit_locations' => [
+                [
+                    'address' => 'Prvá 1',
+                    'street' => 'Prvá',
+                    'city' => 'Bratislava',
+                    'zip' => '821 01',
+                    'latitude' => 48.1486,
+                    'longitude' => 17.1077,
+                ],
+                [
+                    'address' => 'Druhá 2',
+                    'street' => 'Druhá',
+                    'city' => 'Bratislava',
+                    'zip' => '821 02',
+                    'latitude' => 48.1505,
+                    'longitude' => 17.1143,
+                ],
+            ],
+        ]);
+
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $branch = Branch::factory()->create([
+            'company_id' => $company->id,
+            'terrain_start_time' => '08:00:00',
+            'address' => 'Hlavná 10',
+            'city' => 'Bratislava',
+            'latitude' => 48.1490,
+            'longitude' => 17.1080,
+        ]);
+
+        $service = app(DZCDocumentService::class);
+        [$document, $payload] = $service->createManagerDzcFromVisitLocations([
+            'period' => Carbon::parse('2026-04-01')->format('Y-m'),
+            'branch_id' => $branch->id,
+        ], $user);
+
+        $this->assertDatabaseHas('documents', ['id' => $document->id, 'type' => 'dzc']);
+
+        $dayTotals = $payload['day_totals'] ?? [];
+        $this->assertNotEmpty($dayTotals);
+        $firstDay = array_key_first($dayTotals);
+        $this->assertNotSame('00:00:00', $dayTotals[$firstDay]['total_time'] ?? null);
     }
 
     public function test_store_forbidden_for_user_outside_branch()

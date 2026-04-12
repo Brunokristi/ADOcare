@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 
@@ -18,11 +18,30 @@ const createType = ref<'cp' | 'dzc'>('dzc')
 const createBranchId = ref<number | null>(props.branches?.[0]?.id ?? null)
 const createPeriod = ref<Date | null>(props.initialPeriod ?? null)
 
+watch(() => props.branches, (newBranches) => {
+    if (newBranches && newBranches.length > 0 && !createBranchId.value) {
+        createBranchId.value = newBranches[0]?.id ?? null
+    }
+}, { immediate: true })
+
 function toApiMonth(date: Date | null): string | null {
     if (!date) return null
     const year = date.getFullYear()
     const month = `${date.getMonth() + 1}`.padStart(2, '0')
     return `${year}-${month}`
+}
+
+function formatBranchLabel(branch?: Branch | null): string {
+    if (!branch) return ''
+
+    const address = branch.address?.trim() || ''
+    const city = branch.city?.trim() || ''
+    const location = [address, city].filter(Boolean).join(', ')
+
+    if (location) return location
+    if (branch.name?.trim()) return branch.name.trim()
+
+    return `Pobočka #${branch.id}`
 }
 
 function close(result?: any) {
@@ -85,12 +104,10 @@ async function submit() {
             <Select v-model="createBranchId" class="w-full" :options="props.branches ?? []" optionValue="id"
                 :disabled="creatingDocument" placeholder="Vyberte pobočku">
                 <template #option="{ option }">
-                    <span>{{ (option?.address || '') + (option?.city ? ', ' + option.city : '') || option?.name
-                        }}</span>
+                    <span>{{ formatBranchLabel(option) }}</span>
                 </template>
                 <template #value="{ value }">
-                    <span v-if="value">{{(props.branches || []).find((b) => b.id === value)?.name || 'Neznáma pobočka'
-                        }}</span>
+                    <span v-if="value">{{ formatBranchLabel((props.branches || []).find((b) => b.id === Number(value))) || 'Neznáma pobočka' }}</span>
                     <span v-else class="text-gray-400">Vyberte pobočku</span>
                 </template>
             </Select>
