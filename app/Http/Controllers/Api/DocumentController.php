@@ -241,8 +241,17 @@ class DocumentController extends Controller
         ]);
 
         $user = Auth::user();
-        $userName = trim(implode(' ', array_filter([$user->title, $user->first_name, $user->last_name])));
-        $companyName = $user->company?->name;
+        $user->loadMissing('company', 'branches.company');
+
+        $senderName = trim(implode(' ', array_filter([
+            $user->title,
+            $user->first_name,
+            $user->last_name,
+        ])));
+
+        // Primary source is user's company relation, fallback to company from first assigned branch.
+        $company = $user->company ?? $user->branches->first()?->company;
+        $companyName = $company?->name;
 
         $documents = $this->service->buildTravelDocumentLinks($validated['ids'], $user);
 
@@ -254,8 +263,12 @@ class DocumentController extends Controller
         $subject = 'Cestovné dokumenty - ' . ($companyName ?: 'ADOcare');
         $viewData = [
             'recipientName' => $to,
-            'senderName' => $userName,
+            'senderName' => $senderName ?: ($user->email ?? ''),
             'companyName' => $companyName,
+            'companyAddress' => $company?->address,
+            'companyCity' => $company?->city,
+            'companyEmail' => $company?->email,
+            'companyPhone' => $company?->phone,
             'documents' => $documents,
         ];
 

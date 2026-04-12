@@ -464,10 +464,10 @@ class DZCDocumentService
                     }
                     $patientAddresses[$date] = $day;
 
-                    $totalSeconds = max(0, $timeCursor->diffInSeconds($dayStart));
-                    $hours = intdiv($totalSeconds, 3600);
-                    $minutes = intdiv($totalSeconds % 3600, 60);
-                    $seconds = $totalSeconds % 60;
+                    $totalSeconds = max(0, $dayStart->diffInSeconds($timeCursor, true));
+                    $hours = intval($totalSeconds / 3600);
+                    $minutes = intval(($totalSeconds % 3600) / 60);
+                    $seconds = intval($totalSeconds % 60);
 
                     $dayTotals[$date] = [
                         'date' => $date,

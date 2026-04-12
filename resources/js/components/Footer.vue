@@ -24,6 +24,10 @@
                 pomoc
             </a>
 
+            <a href="https://adocare.sk/privacy" class="text-mini hover:underline text-accent" target="_blank">
+                ochrana osobných údajov
+            </a>
+
             <a href="https://adocare.sk/" class="flex items-center group" target="_blank">
                 <img
                 src="/logo.svg"

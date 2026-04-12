@@ -2,7 +2,7 @@
 import { computed, markRaw, ref } from 'vue'
 import router from '@/router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
-import type { User } from '@/types/models'
+import type { Role, User } from '@/types/models'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import { useToast } from 'primevue/usetoast'
 import useModal from '@/composables/useModal'
@@ -17,7 +17,19 @@ const actionRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
 const { openModal } = useModal()
 
-// role name helper removed (unused) to satisfy linter
+const roleNameMap: Record<string, string> = {
+    manager: 'Manažér',
+    nurse: 'Sestra',
+    branch_manager: 'Manažér pobočky',
+    admin: 'Administrátor',
+    superadmin: 'Superadministrátor',
+    'super-admin': 'Superadministrátor'
+}
+
+const getRoleName = (role: Role | undefined): string => {
+    if (!role) return ''
+    return roleNameMap[role.position || ''] || role.name || role.position || ''
+}
 
 const tableKey = computed(() => `users-${auth.currentBranch?.id ?? 'global'}`)
 
@@ -54,8 +66,7 @@ const options = computed<DataTableOptions<User>>(() => ({
         { field: 'last_name', header: 'Priezvisko', sortable: true },
         { field: 'title', header: 'Titul', sortable: false },
         { field: 'code', header: 'Kód', sortable: true },
-        { field: 'phone_number', header: 'Telefón', sortable: false },
-        { field: 'email', header: 'Email', sortable: false },
+        { field: 'role', header: 'Rola', sortable: false, render: (_value, row) => getRoleName(row.role) },
         {
             field: 'edit', header: '', width: '3rem', component: markRaw(ActionButtons), componentOptions: [
                 { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť', action: (row: User) => openEditUser(row.id) }
