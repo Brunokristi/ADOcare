@@ -62,5 +62,10 @@ return [
         'url' => env('OCR_SERVICE_URL', 'http://127.0.0.1:8081'),
     ],
 
+    'gemini' => [
+        'api_key' => env('GOOGLE_GEMINI_API_KEY'),
+        'model' => env('GOOGLE_GEMINI_MODEL', 'gemini-2.0-flash'),
+    ],
+
 
 ];

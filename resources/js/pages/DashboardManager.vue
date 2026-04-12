@@ -84,7 +84,7 @@ onMounted(async () => {
             <p class="text-sm text-darkgrey text-right mb-2">Dokončené? Nezabudnite upraviť termín údržby.</p>
             <Button
               class="bg-danger! border-0! text-white rounded-md flex justify-between! items-center px-4! hover:bg-darkgrey! text-normal"
-              @click="() => router.push('/manager/settings/cars')">
+              @click="() => router.push('/manager/company/cars')">
               <span>Prejsť do správy áut</span>
               <i class="bi bi-arrow-right text-lg"></i>
             </Button>

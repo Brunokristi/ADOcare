@@ -286,6 +286,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware(['role:any', 'can:view,patient']);
     Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient'])
         ->middleware(['role:any', 'can:view,patient']);
+    Route::get('/patients/{patient}/proposals/ocr-prefill/availability', [ProposalDocumentController::class, 'ocrPrefillAvailability'])
+        ->middleware(['role:any', 'can:view,patient']);
+    Route::post('/patients/{patient}/proposals/ocr-prefill', [ProposalDocumentController::class, 'prefillFromLatestScan'])
+        ->middleware(['role:any', 'can:view,patient']);
 
     Route::post('/agreements', [AgreementDocumentController::class, 'store'])
         ->middleware('role:any');
