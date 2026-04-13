@@ -101,7 +101,7 @@ class BuildProposalTrainingDataset extends Command
 
             $cleanedOutput = $this->cleanProposalForTraining($bestProposal);
 
-            $rejectReason = $this->shouldRejectTrainingRow($cleanedOutput);
+            $rejectReason = $this->shouldRejectTrainingRow($cleanedOutput, $ocrDoc);
             if ($rejectReason !== null) {
                 $skipped[] = [
                     'type' => 'pair',
@@ -303,11 +303,16 @@ class BuildProposalTrainingDataset extends Command
 
     protected function buildInputText(array $ocrDoc): string
     {
+        $compactInput = [
+            'patient_name' => $this->normalizeString(data_get($ocrDoc, 'patient_name')),
+            'patient_birth_number' => $this->normalizeBirthNumber(data_get($ocrDoc, 'patient_birth_number')),
+            'extracted_text' => $this->normalizeExtractedText(data_get($ocrDoc, 'extracted_text')),
+        ];
+
         return implode("\n", [
             'You are given OCR output from a healthcare document.',
             'Suggest likely values for the target nursing form fields based on the OCR text and patterns commonly seen in historical completed forms.',
             'The output is only a draft suggestion for a nurse to review and edit.',
-            'Plausible suggestions are allowed even if not all information is explicitly present in the OCR.',
             'Return JSON only.',
             '',
             'TARGET FIELDS:',
@@ -320,7 +325,7 @@ class BuildProposalTrainingDataset extends Command
             '- procedures',
             '',
             'OCR JSON:',
-            json_encode($ocrDoc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            json_encode($compactInput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
     }
 
@@ -331,13 +336,13 @@ class BuildProposalTrainingDataset extends Command
             'nurse_diagnosis' => $this->normalizeStringArray(data_get($proposal, 'nurse_diagnosis')),
             'epicrisis' => $this->normalizeString(data_get($proposal, 'epicrisis')),
             'care_plan' => $this->normalizeString(data_get($proposal, 'care_plan')),
-            'mobility' => $this->normalizeStringArray(data_get($proposal, 'mobility')),
-            'expected_duration' => $this->normalizeString(data_get($proposal, 'expected_duration')),
+            'mobility' => $this->normalizeMobility(data_get($proposal, 'mobility')),
+            'expected_duration' => $this->normalizeExpectedDuration(data_get($proposal, 'expected_duration')),
             'procedures' => $this->normalizeProcedures(data_get($proposal, 'procedures')),
         ];
     }
 
-    protected function shouldRejectTrainingRow(array $cleanedOutput): ?string
+    protected function shouldRejectTrainingRow(array $cleanedOutput, array $ocrDoc): ?string
     {
         if (
             empty($cleanedOutput['diagnosis']) &&
@@ -351,23 +356,49 @@ class BuildProposalTrainingDataset extends Command
             return 'all_target_fields_empty';
         }
 
-        $badTexts = ['HVHK', 'JHJ', 'dwdwwddw'];
+        $ocrText = $this->normalizeExtractedText(data_get($ocrDoc, 'extracted_text'));
 
-        if (in_array($cleanedOutput['epicrisis'], $badTexts, true)) {
+        if (mb_strlen($ocrText) < 80) {
+            return 'ocr_text_too_short';
+        }
+
+        if ($this->looksLikeGarbage($cleanedOutput['epicrisis'])) {
             return 'invalid_epicrisis';
         }
 
-        if (in_array($cleanedOutput['care_plan'], $badTexts, true)) {
+        if ($this->looksLikeGarbage($cleanedOutput['care_plan'])) {
             return 'invalid_care_plan';
         }
 
         foreach ($cleanedOutput['diagnosis'] as $diagnosis) {
-            if (stripos($diagnosis, 'cholera') !== false) {
+            if ($this->looksLikeSuspiciousDiagnosis($diagnosis)) {
                 return 'suspicious_diagnosis';
             }
         }
 
+        foreach ($cleanedOutput['procedures'] as $procedure) {
+            if (
+                data_get($procedure, 'code') === '0000' ||
+                data_get($procedure, 'frequency') === ''
+            ) {
+                return 'invalid_procedure';
+            }
+        }
+
         return null;
+    }
+
+    protected function normalizeExtractedText(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $value = preg_replace('/\R+/u', "\n", $value) ?? $value;
+        $value = preg_replace("/[ \t]+/u", ' ', $value) ?? $value;
+        $value = preg_replace("/\n{3,}/u", "\n\n", $value) ?? $value;
+
+        return trim($value);
     }
 
     protected function normalizeString(mixed $value): string
@@ -376,7 +407,7 @@ class BuildProposalTrainingDataset extends Command
             return '';
         }
 
-        return trim(preg_replace('/\s+/', ' ', $value) ?? $value);
+        return trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
     }
 
     protected function normalizeStringArray(mixed $value): array
@@ -396,7 +427,7 @@ class BuildProposalTrainingDataset extends Command
                 continue;
             }
 
-            $item = trim(preg_replace('/\s+/', ' ', $item) ?? $item);
+            $item = trim(preg_replace('/\s+/u', ' ', $item) ?? $item);
 
             if ($item !== '') {
                 $result[] = $item;
@@ -406,6 +437,32 @@ class BuildProposalTrainingDataset extends Command
         return array_values(array_unique($result));
     }
 
+    protected function normalizeMobility(mixed $value): array
+    {
+        $allowed = ['H', 'I'];
+
+        $items = $this->normalizeStringArray($value);
+
+        $items = array_values(array_filter($items, function (string $item) use ($allowed) {
+            return in_array($item, $allowed, true);
+        }));
+
+        return array_values(array_unique($items));
+    }
+
+    protected function normalizeExpectedDuration(mixed $value): string
+    {
+        $value = $this->normalizeString($value);
+
+        $allowed = [
+            'one_month',
+            'three_months',
+            'six_months',
+        ];
+
+        return in_array($value, $allowed, true) ? $value : '';
+    }
+
     protected function normalizeProcedures(mixed $value): array
     {
         if (!is_array($value)) {
@@ -413,6 +470,7 @@ class BuildProposalTrainingDataset extends Command
         }
 
         $result = [];
+        $seen = [];
 
         foreach ($value as $item) {
             if (!is_array($item)) {
@@ -426,6 +484,14 @@ class BuildProposalTrainingDataset extends Command
                 continue;
             }
 
+            $key = $code . '|' . $frequency;
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+
             $result[] = [
                 'code' => $code,
                 'frequency' => $frequency,
@@ -433,6 +499,51 @@ class BuildProposalTrainingDataset extends Command
         }
 
         return array_values($result);
+    }
+
+    protected function looksLikeGarbage(string $value): bool
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return false;
+        }
+
+        $badTexts = [
+            'HVHK',
+            'JHJ',
+            'dwdwwddw',
+            'xxx',
+            'test',
+        ];
+
+        if (in_array(mb_strtolower($value), array_map('mb_strtolower', $badTexts), true)) {
+            return true;
+        }
+
+        if (mb_strlen($value) < 4) {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function looksLikeSuspiciousDiagnosis(string $diagnosis): bool
+    {
+        $diagnosisLower = mb_strtolower($diagnosis);
+
+        $badNeedles = [
+            'cholera',
+            'vibrio cholerae',
+        ];
+
+        foreach ($badNeedles as $needle) {
+            if (str_contains($diagnosisLower, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function normalizeBirthNumber(?string $value): string
@@ -451,7 +562,7 @@ class BuildProposalTrainingDataset extends Command
             $value = $transliterated;
         }
 
-        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
 
         return trim($value);
     }
