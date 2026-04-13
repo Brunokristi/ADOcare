@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 class BuildProposalTrainingDataset extends Command
 {
@@ -15,7 +14,7 @@ class BuildProposalTrainingDataset extends Command
                             {--output=storage/app/private/ai-dataset : Output directory}
                             {--min-score=11 : Minimum match score to accept pair}';
 
-    protected $description = 'Build OCR -> proposal training dataset from JSON files';
+    protected $description = 'Build OCR -> nurse suggestion training dataset from JSON files';
 
     public function handle(): int
     {
@@ -24,12 +23,12 @@ class BuildProposalTrainingDataset extends Command
         $outputDir = base_path($this->option('output'));
         $minScore = (float) $this->option('min-score');
 
-        if (! File::isDirectory($documentsDir)) {
+        if (!File::isDirectory($documentsDir)) {
             $this->error("Documents directory not found: {$documentsDir}");
             return self::FAILURE;
         }
 
-        if (! File::isDirectory($proposalsDir)) {
+        if (!File::isDirectory($proposalsDir)) {
             $this->error("Proposals directory not found: {$proposalsDir}");
             return self::FAILURE;
         }
@@ -88,7 +87,7 @@ class BuildProposalTrainingDataset extends Command
 
             [$bestProposal, $matchMeta] = $this->pickBestProposal($ocrDoc, $candidates, $minScore);
 
-            if (! $bestProposal) {
+            if (!$bestProposal) {
                 $skipped[] = [
                     'type' => 'pair',
                     'ocr_path' => data_get($ocrDoc, '__path'),
@@ -101,6 +100,19 @@ class BuildProposalTrainingDataset extends Command
             }
 
             $cleanedOutput = $this->cleanProposalForTraining($bestProposal);
+
+            $rejectReason = $this->shouldRejectTrainingRow($cleanedOutput);
+            if ($rejectReason !== null) {
+                $skipped[] = [
+                    'type' => 'pair',
+                    'ocr_path' => data_get($ocrDoc, '__path'),
+                    'proposal_path' => data_get($bestProposal, '__path'),
+                    'patient_name' => data_get($ocrDoc, 'patient_name'),
+                    'patient_birth_number' => data_get($ocrDoc, 'patient_birth_number'),
+                    'reason' => $rejectReason,
+                ];
+                continue;
+            }
 
             $trainRows[] = [
                 'input_text' => $this->buildInputText($ocrDoc),
@@ -129,10 +141,12 @@ class BuildProposalTrainingDataset extends Command
         $skippedReportPath = $outputDir . DIRECTORY_SEPARATOR . 'skipped_report.json';
 
         $this->writeJsonl($trainPath, $trainRows);
+
         File::put(
             $pairedReportPath,
             json_encode($pairedReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
         );
+
         File::put(
             $skippedReportPath,
             json_encode($skipped, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
@@ -163,7 +177,7 @@ class BuildProposalTrainingDataset extends Command
             try {
                 $decoded = json_decode(File::get($file->getPathname()), true, 512, JSON_THROW_ON_ERROR);
 
-                if (! is_array($decoded)) {
+                if (!is_array($decoded)) {
                     $skipped[] = [
                         'type' => $type,
                         'path' => $file->getPathname(),
@@ -290,11 +304,20 @@ class BuildProposalTrainingDataset extends Command
     protected function buildInputText(array $ocrDoc): string
     {
         return implode("\n", [
-            'You are given OCR output from a medical referral, examination, or related healthcare document.',
-            'Convert the OCR JSON into the target proposal JSON structure.',
-            'Use the OCR text as the main source of truth.',
-            'Do not invent values.',
+            'You are given OCR output from a healthcare document.',
+            'Suggest likely values for the target nursing form fields based on the OCR text and patterns commonly seen in historical completed forms.',
+            'The output is only a draft suggestion for a nurse to review and edit.',
+            'Plausible suggestions are allowed even if not all information is explicitly present in the OCR.',
             'Return JSON only.',
+            '',
+            'TARGET FIELDS:',
+            '- diagnosis',
+            '- nurse_diagnosis',
+            '- epicrisis',
+            '- care_plan',
+            '- mobility',
+            '- expected_duration',
+            '- procedures',
             '',
             'OCR JSON:',
             json_encode($ocrDoc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -303,14 +326,113 @@ class BuildProposalTrainingDataset extends Command
 
     protected function cleanProposalForTraining(array $proposal): array
     {
-        unset(
-            $proposal['document_id'],
-            $proposal['created_at'],
-            $proposal['updated_at'],
-            $proposal['__path']
-        );
+        return [
+            'diagnosis' => $this->normalizeStringArray(data_get($proposal, 'diagnosis')),
+            'nurse_diagnosis' => $this->normalizeStringArray(data_get($proposal, 'nurse_diagnosis')),
+            'epicrisis' => $this->normalizeString(data_get($proposal, 'epicrisis')),
+            'care_plan' => $this->normalizeString(data_get($proposal, 'care_plan')),
+            'mobility' => $this->normalizeStringArray(data_get($proposal, 'mobility')),
+            'expected_duration' => $this->normalizeString(data_get($proposal, 'expected_duration')),
+            'procedures' => $this->normalizeProcedures(data_get($proposal, 'procedures')),
+        ];
+    }
 
-        return $proposal;
+    protected function shouldRejectTrainingRow(array $cleanedOutput): ?string
+    {
+        if (
+            empty($cleanedOutput['diagnosis']) &&
+            empty($cleanedOutput['nurse_diagnosis']) &&
+            $cleanedOutput['epicrisis'] === '' &&
+            $cleanedOutput['care_plan'] === '' &&
+            empty($cleanedOutput['mobility']) &&
+            $cleanedOutput['expected_duration'] === '' &&
+            empty($cleanedOutput['procedures'])
+        ) {
+            return 'all_target_fields_empty';
+        }
+
+        $badTexts = ['HVHK', 'JHJ', 'dwdwwddw'];
+
+        if (in_array($cleanedOutput['epicrisis'], $badTexts, true)) {
+            return 'invalid_epicrisis';
+        }
+
+        if (in_array($cleanedOutput['care_plan'], $badTexts, true)) {
+            return 'invalid_care_plan';
+        }
+
+        foreach ($cleanedOutput['diagnosis'] as $diagnosis) {
+            if (stripos($diagnosis, 'cholera') !== false) {
+                return 'suspicious_diagnosis';
+            }
+        }
+
+        return null;
+    }
+
+    protected function normalizeString(mixed $value): string
+    {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        return trim(preg_replace('/\s+/', ' ', $value) ?? $value);
+    }
+
+    protected function normalizeStringArray(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($value as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+
+            $item = trim(preg_replace('/\s+/', ' ', $item) ?? $item);
+
+            if ($item !== '') {
+                $result[] = $item;
+            }
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    protected function normalizeProcedures(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($value as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $code = trim((string) data_get($item, 'code', ''));
+            $frequency = trim((string) data_get($item, 'frequency', ''));
+
+            if ($code === '' || $frequency === '') {
+                continue;
+            }
+
+            $result[] = [
+                'code' => $code,
+                'frequency' => $frequency,
+            ];
+        }
+
+        return array_values($result);
     }
 
     protected function normalizeBirthNumber(?string $value): string
@@ -377,7 +499,7 @@ class BuildProposalTrainingDataset extends Command
 
     protected function parseDateTime(?string $value): ?Carbon
     {
-        if (! $value || ! is_string($value)) {
+        if (!$value || !is_string($value)) {
             return null;
         }
 
