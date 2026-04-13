@@ -85,7 +85,14 @@ class BuildDekurzTrainingDataset extends Command
 
     protected function bn($doc)
     {
-        return preg_replace('/[^0-9]/', '', $doc['patient_birth_number'] ?? '');
+        $value =
+            $doc['patient_birth_number'] ??
+            $doc['patient_personal_number'] ??
+            null;
+
+        if (!$value) return null;
+
+        return preg_replace('/[^0-9]/', '', $value);
     }
 
     protected function cleanProposal($p)
