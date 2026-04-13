@@ -6,6 +6,7 @@ import Dialog from 'primevue/dialog'
 import api from '@/services/api'
 import { useUiOverlayStore } from '@/stores/uiOverlay'
 import { useToast } from 'primevue/usetoast';
+import AdonisButton from '@/components/AdonisButton.vue'
 const toast = useToast();
 
 type ScanImage = { url: string; name?: string }
@@ -404,9 +405,7 @@ async function printPage() {
               <tr>
                 <td colspan="2" class="border border-black p-2">
                   <div v-if="extractedText" class="text-end mb-2">
-                    <Button
-                      label="Extrahovať text"
-                      icon="bi bi-magic"
+                    <AdonisButton
                       @click="openTextDialog(idx)"
                       class="text-normal! text-white bg-accent! border-0! hover:bg-darkgrey! px-4! h-7!"
                     />

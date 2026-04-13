@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" class="bi bi-robot-thinking" aria-labelledby="title desc" role="img">
+    <title id="title">Thinking robot logo</title>
+    <desc id="desc">A robot icon with calm closed eyes and a gently vibrating antenna to suggest thinking.</desc>
+
+    <style>
+        .shell {
+            fill: #fff;
+            transform-origin: 8px 8px;
+            animation: bob 3.0s ease-in-out infinite;
+        }
+
+        .eye-line {
+            fill: white;
+            opacity: 0.98;
+        }
+
+        .mouth {
+            fill: none;
+            stroke: #fff;
+            stroke-width: 0.9;
+            stroke-linecap: round;
+            opacity: 0.9;
+        }
+
+        @keyframes bob {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-0.22px); }
+        }
+    </style>
+
+    <g class="antenna">
+        <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="-11 8 3.2; 11 8 3.2; -9 8 3.2; 9 8 3.2; -11 8 3.2"
+            dur="0.34s"
+            repeatCount="indefinite" />
+        <path d="M8 3.15V1.95" stroke="#fff" stroke-width="0.7" stroke-linecap="round" />
+        <circle cx="8" cy="1.45" r="0.9" fill="#fff" />
+    </g>
+
+    <path class="shell" d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2zM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5" />
+
+    <g class="eyes">
+        <rect class="eye-line" x="3.7" y="6.95" width="2.9" height="0.62" rx="0.31" transform="rotate(-8 5.15 7.26)" />
+        <rect class="eye-line" x="9.4" y="6.95" width="2.9" height="0.62" rx="0.31" transform="rotate(8 10.85 7.26)" />
+    </g>
+
+    <path class="mouth" d="M6.35 11.85c.5.35 1.05.52 1.65.52s1.15-.17 1.65-.52" />
+</svg>

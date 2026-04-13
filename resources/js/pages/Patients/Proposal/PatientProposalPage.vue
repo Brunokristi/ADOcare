@@ -5,6 +5,7 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 import DocumentAlert from '@/components/DocumentAlert.vue'
+import AdonisButton from '@/components/AdonisButton.vue'
 
 interface Diagnosis {
   id: number
@@ -552,13 +553,12 @@ async function generateDocument() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6" >
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
         <div>
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
-
             <AutoComplete v-model="medicalDiagnoses" :suggestions="filteredDiagnoses" multiple :minLength="1" dropdown
               completeOnFocus optionLabel="code" @complete="searchDiagnoses" class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!">
@@ -618,25 +618,7 @@ async function generateDocument() {
               :invalid="submitted && !!errors.date" />
             <small v-if="submitted && errors.date" class="text-danger">{{ errors.date }}</small>
           </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-3">
-            <Button type="button" icon="bi bi-stars"
-              :label="loadingOcrPrefill ? 'AI spracováva OCR...' : 'Vyplniť z OCR dokumentu (Gemini AI)'"
-              class="bg-darkgrey! text-white! border-0! hover:bg-accent!"
-              :disabled="!canUseOcrPrefill || loadingOcrPrefill"
-              :loading="loadingOcrPrefill"
-              @click="prefillFromLatestScanWithAi" />
-          </div>
-
-          <small v-if="!hasScanDocument" class="opacity-70">
-            Tlačidlo sa aktivuje, keď bude mať pacient aspoň jeden naskenovaný dokument.
-          </small>
-          <small v-else-if="!canUseOcrPrefill" class="opacity-70">
-            Posledný scan ešte nemá OCR text. Skúste to znova o chvíľu.
-          </small>
-        </div>
+        </div>    
 
         <div>
           <label class="block text-normal mb-2">Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej
@@ -753,12 +735,19 @@ async function generateDocument() {
       <DocumentAlert :visible="dialogVisible" :documentId="documentId" document-url="/documents/proposal/{id}"
         @update:visible="dialogVisible = $event" @close="closeDialog" @deleted="checkDocumentExists" />
 
-      <div class="flex justify-end">
-        <Button type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
-          Generovať dokument
-          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
-        </Button>
+      <div class="sticky bottom-0 z-20 flex justify-end">
+        <div class="flex items-center gap-3">
+          <div v-if="hasScanDocument" class="flex items-center">
+            <AdonisButton
+              :loading="loadingOcrPrefill"
+              @click="prefillFromLatestScanWithAi"
+            />
+          </div>
+          <Button type="submit"
+            class="bg-accent! border-0! hover:bg-darkgrey! px-4! rounded-md! text-white! text-normal! h-7!">
+            Generovať dokument
+          </Button>
+        </div>
       </div>
     </form>
   </div>

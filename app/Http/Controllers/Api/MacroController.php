@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
-use App\Http\Requests\DestroyManyRequest;
+use App\Http\Requests\DestroyManyMacroRequest;
 use App\Http\Requests\MacroRequest;
 use App\Http\Resources\MacroCollection;
 use App\Http\Resources\MacroResource;
@@ -120,7 +120,7 @@ class MacroController extends Controller
     /**
      * Delete multiple macros accessible to the authenticated user.
      */
-    public function destroyMany(DestroyManyRequest $request)
+    public function destroyMany(DestroyManyMacroRequest $request)
     {
         $user = $request->user();
         if (!$user instanceof User) {
