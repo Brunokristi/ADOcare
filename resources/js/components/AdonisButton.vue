@@ -87,10 +87,6 @@ onBeforeUnmount(() => {
         class="group relative inline-flex h-7 items-center overflow-hidden rounded-md border-0 bg-darkgrey! px-3 text-white transition-all duration-300 ease-out cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 hover:shadow-[0_0_10px_rgba(92,158,173)]"        
         :class="expanded ? 'gap-2 pr-4' : 'w-11 justify-center px-0'"
     >
-        <span
-            class="pointer-events-none absolute inset-0 rounded-md opacity-80 blur-md transition-all duration-300"
-            :class="loading ? 'bg-accent/40 animate-pulse' : 'bg-accent/25'"
-        ></span>
 
         <span class="relative z-10 flex items-center">
             <img
@@ -107,8 +103,8 @@ onBeforeUnmount(() => {
                 alt="Adonis"
                 class="h-4 w-4 object-contain"
             />
-            <i v-if="!loading && !iconIsImage" :class="props.icon" class="text-base"></i>
-            <i v-if="loading && !loadingIconIsImage" :class="props.loadingIcon" class="text-base"></i>
+            <i v-if="!loading && !iconIsImage" :class="props.icon" class="text-normal"></i>
+            <i v-if="loading && !loadingIconIsImage" :class="props.loadingIcon" class="text-normal"></i>
         </span>
 
         <span

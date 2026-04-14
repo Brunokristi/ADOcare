@@ -261,12 +261,13 @@ async function generateDocument() {
         </div>
       </section>
 
-      <div class="flex justify-end">
-        <Button type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
-          Generovať dokument
-          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
-        </Button>
+      <div class="sticky bottom-0 z-20 flex justify-end">
+        <div class="flex items-center gap-2">
+          <Button type="submit"
+            class="bg-accent! border-0! hover:bg-darkgrey! px-4! rounded-md! text-white! text-normal! h-7!">
+            Generovať dokument
+          </Button>
+        </div>
       </div>
     </form>
   </div>

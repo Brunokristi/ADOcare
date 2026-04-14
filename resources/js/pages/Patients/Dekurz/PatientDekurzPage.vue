@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 import { useAuthStore } from '@/stores/auth'
 import DocumentAlert from '@/components/DocumentAlert.vue'
+import AdonisButton from '@/components/AdonisButton.vue'
 
 type DekurzSnippet = {
   key: string
@@ -17,6 +18,12 @@ type DekurzSection = {
   id: string
   text: string
   dates: Date[]
+}
+
+type AiFeedbackPayload = {
+  source: string
+  proposal_document_id: number | null
+  suggested_sections: Array<{ text: string }>
 }
 
 const router = useRouter()
@@ -42,6 +49,10 @@ const sections = ref<DekurzSection[]>([{ id: makeId(), text: '', dates: [] }])
 const draftLoaded = ref(false)
 const submitted = ref(false)
 const loading = ref(false)
+const loadingAiPrefill = ref(false)
+const improvingSectionById = ref<Record<string, boolean>>({})
+const previousSectionTextById = ref<Record<string, string>>({})
+const aiFeedbackPayload = ref<AiFeedbackPayload | null>(null)
 const errors = ref<Record<string, string>>({})
 const macroScrollRefs = ref<Record<string, HTMLElement | null>>({})
 const timelineCalculated = ref(false)
@@ -237,6 +248,10 @@ function removeSection(id: string) {
   }
   macroScrollRefs.value = nextRefs
 
+  const nextPrevious = { ...previousSectionTextById.value }
+  delete nextPrevious[id]
+  previousSectionTextById.value = nextPrevious
+
   // cleanup errors
   const next: Record<string, string> = {}
   for (const [k, v] of Object.entries(errors.value)) {
@@ -362,6 +377,7 @@ async function generateDekurz() {
         dates: (s.dates || []).map(isoDate).sort(),
       })),
       branch_id: auth.currentBranch?.id ?? null,
+      ...(aiFeedbackPayload.value ? { ai_feedback: aiFeedbackPayload.value } : {}),
     }
 
     const res = await api.post('/v1/dekurz', payload)
@@ -420,6 +436,155 @@ async function loadLastDekurzDraft() {
   } catch (err) {
     console.error('Failed to load last dekurz draft', err)
   }
+}
+
+async function prefillFromLatestProposalWithAi() {
+  if (!patientId.value) return
+
+  loadingAiPrefill.value = true
+  try {
+    const runPrefillRequest = () => api.post(`/v1/patients/${patientId.value}/dekurz/ai-prefill`)
+
+    let res
+    try {
+      res = await runPrefillRequest()
+    } catch (firstErr: unknown) {
+      const status = (firstErr as { response?: { status?: number } })?.response?.status
+      const shouldRetry = status === 422 || (status !== undefined && status >= 500) || status === undefined
+
+      if (!shouldRetry) {
+        throw firstErr
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 700))
+      res = await runPrefillRequest()
+    }
+
+    const aiSections = res.data?.data?.sections
+
+    if (!Array.isArray(aiSections) || aiSections.length === 0) {
+      toast.add({ severity: 'warn', summary: 'Bez výsledku', detail: 'AI nevrátila použiteľné texty.', life: 3000 })
+      return
+    }
+
+    const generatedTexts = aiSections
+      .map((section: { text?: string }) => String(section?.text ?? '').trim())
+      .filter((text: string) => text !== '')
+
+    if (!generatedTexts.length) {
+      toast.add({ severity: 'warn', summary: 'Bez výsledku', detail: 'AI nevrátila použiteľné texty.', life: 3000 })
+      return
+    }
+
+    const fallbackDates = sections.value.find((s) => (s.dates ?? []).length > 0)?.dates ?? []
+
+    const nextSections: DekurzSection[] = generatedTexts.map((text: string, idx: number) => ({
+      id: sections.value[idx]?.id ?? makeId(),
+      text,
+      dates: (sections.value[idx]?.dates?.length ? sections.value[idx].dates : fallbackDates) ?? [],
+    }))
+
+    aiFeedbackPayload.value = {
+      source: 'proposal_ai_prefill',
+      proposal_document_id: Number(res.data?.data?.proposal_document_id ?? 0) || null,
+      suggested_sections: generatedTexts.map((text: string) => ({ text })),
+    }
+
+    sections.value = nextSections
+
+    if (sections.value.some((s) => (s.dates ?? []).length === 0)) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Doplňte dátumy',
+        detail: 'Niektoré sekcie nemajú dátumy. Pred generovaním ich doplňte.',
+        life: 3200,
+      })
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Hotovo',
+      detail: 'Texty dekurzu boli predvyplnené z posledného návrhu pomocou AI.',
+      life: 3000,
+    })
+  } catch (err: unknown) {
+    console.error('Failed to prefill dekurz from latest proposal using AI:', err)
+    const message =
+      (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+      (err as { message?: string })?.message ||
+      'Nepodarilo sa načítať AI návrh textov dekurzu.'
+
+    toast.add({ severity: 'error', summary: 'Chyba AI', detail: message, life: 3500 })
+  } finally {
+    loadingAiPrefill.value = false
+  }
+}
+
+async function improveSectionTextWithAi(sectionId: string) {
+  if (!patientId.value) return
+
+  const section = sections.value.find((s) => s.id === sectionId)
+  if (!section) return
+
+  const originalText = String(section.text ?? '').trim()
+  if (!originalText) {
+    toast.add({ severity: 'warn', summary: 'Prázdny text', detail: 'Najprv napíšte text, ktorý chcete vylepšiť.', life: 2500 })
+    return
+  }
+
+  improvingSectionById.value = {
+    ...improvingSectionById.value,
+    [sectionId]: true,
+  }
+
+  previousSectionTextById.value = {
+    ...previousSectionTextById.value,
+    [sectionId]: section.text,
+  }
+
+  try {
+    const res = await api.post(`/v1/patients/${patientId.value}/dekurz/ai-improve-text`, {
+      text: section.text,
+    })
+
+    const improved = String(res.data?.data?.improved_text ?? '').trim()
+    if (!improved) {
+      toast.add({ severity: 'warn', summary: 'Bez výsledku', detail: 'AI nevrátila vylepšený text.', life: 3000 })
+      return
+    }
+
+    section.text = improved
+    toast.add({ severity: 'success', summary: 'Hotovo', detail: 'Text bol vylepšený pomocou AI.', life: 2500 })
+  } catch (err: unknown) {
+    console.error('Failed to improve dekurz section text using AI:', err)
+    const message =
+      (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+      (err as { message?: string })?.message ||
+      'Nepodarilo sa vylepšiť text pomocou AI.'
+
+    toast.add({ severity: 'error', summary: 'Chyba AI', detail: message, life: 3500 })
+  } finally {
+    improvingSectionById.value = {
+      ...improvingSectionById.value,
+      [sectionId]: false,
+    }
+  }
+}
+
+function restoreSectionText(sectionId: string) {
+  const section = sections.value.find((s) => s.id === sectionId)
+  if (!section) return
+
+  const original = previousSectionTextById.value[sectionId]
+  if (original === undefined) return
+
+  section.text = original
+
+  const nextPrevious = { ...previousSectionTextById.value }
+  delete nextPrevious[sectionId]
+  previousSectionTextById.value = nextPrevious
+
+  toast.add({ severity: 'info', summary: 'Obnovené', detail: 'Pôvodný text bol obnovený.', life: 2200 })
 }
 
 async function checkTimelineCalculated() {
@@ -615,6 +780,7 @@ watch(
     if (!val) return
     suspendSessionDatesPersist.value = true
     try {
+      aiFeedbackPayload.value = null
       draftLoaded.value = false
       await fetchMacros()
 
@@ -772,10 +938,28 @@ watch(
             <div class="font-medium text-lg">Text dekurzu</div>
           </template>
 
-          <template #end>
-            <Button icon="bi bi-eraser" class="bg-danger! border-danger! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-              @click.prevent="removeSection(section.id)" />
-          </template>
+          <template #end class="">
+            <div class="flex items-center gap-2">
+              <AdonisButton
+                :loading="!!improvingSectionById[section.id]"
+                :disabled="!section.text.trim()"
+                label="Vylepšiť text"
+                loadingLabel="Adonis vylepšuje…"
+                @click="improveSectionTextWithAi(section.id)"
+              />
+
+              <Button
+                v-if="previousSectionTextById[section.id] !== undefined"
+                type="button"
+                icon="bi bi-arrow-counterclockwise"
+                class="bg-accent! border-accent! text-white! hover:bg-grey! h-7!"
+                @click.prevent="restoreSectionText(section.id)"
+              />
+
+              <Button icon="bi bi-eraser" class="bg-danger! border-danger! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                @click.prevent="removeSection(section.id)" />
+              </div>
+            </template>
         </Toolbar>
 
         <div>
@@ -847,12 +1031,17 @@ watch(
         </Button>
       </div>
 
-      <div class="flex justify-end">
-        <Button type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
-          Generovať dokument
-          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
-        </Button>
+      <div class="sticky bottom-0 z-20 flex justify-end">
+        <div class="flex items-center gap-2">
+            <AdonisButton
+            :loading="loadingAiPrefill"
+            @click="prefillFromLatestProposalWithAi"
+          />
+          <Button type="submit"
+            class="bg-accent! border-0! hover:bg-darkgrey! px-4! rounded-md! text-white! text-normal! h-7!">
+            Generovať dokument
+          </Button>
+        </div>
       </div>
     </form>
   </div>

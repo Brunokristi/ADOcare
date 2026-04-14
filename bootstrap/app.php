@@ -2,6 +2,8 @@
 
 use App\Console\Commands\SoftDeleteInactivePatients;
 use App\Console\Commands\SendCarMaintenanceNotifications;
+use App\Console\Commands\AutoTrainDekurzVertexModel;
+use App\Console\Commands\SyncDekurzEndpointAfterTraining;
 use App\Http\Responses\ApiResponseClass;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -34,6 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $schedule->command('backup:run --only-db')->dailyAt('01:00')->withoutOverlapping();
         $schedule->command('backup:clean')->dailyAt('01:30')->withoutOverlapping();
+        $schedule->command(AutoTrainDekurzVertexModel::class)->dailyAt('02:30')->withoutOverlapping();
+        $schedule->command(SyncDekurzEndpointAfterTraining::class)->hourly()->withoutOverlapping();
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {

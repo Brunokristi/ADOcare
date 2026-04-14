@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DekurzAiFeedback;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Models\Branch;
@@ -69,6 +70,8 @@ class DekurzDocumentService
 
         Storage::disk('local')->put('dekurz/' . now()->timestamp . '.json', json_encode($dekurzData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
+        $this->storeAiFeedback($document, $patient, $user, $data, $sections);
+
         // Reserve the next dekurz number once. The printed document page will later
         // persist the last page number after pagination is known.
         DB::table('patients')
@@ -80,6 +83,71 @@ class DekurzDocumentService
         $document->next_dekurz_number = (int) $patient->fresh()->dekurz_number;
 
         return $document;
+    }
+
+    private function storeAiFeedback(Document $document, Patient $patient, $user, array $data, array $finalSections): void
+    {
+        $feedback = $data['ai_feedback'] ?? null;
+        if (!is_array($feedback)) {
+            return;
+        }
+
+        $suggestedSections = collect($feedback['suggested_sections'] ?? [])
+            ->map(function ($section) {
+                return [
+                    'text' => trim((string) ($section['text'] ?? '')),
+                ];
+            })
+            ->filter(fn(array $section) => $section['text'] !== '')
+            ->values()
+            ->all();
+
+        if (!count($suggestedSections)) {
+            return;
+        }
+
+        $cleanFinalSections = collect($finalSections)
+            ->map(function ($section) {
+                return [
+                    'text' => trim((string) ($section['text'] ?? '')),
+                ];
+            })
+            ->filter(fn(array $section) => $section['text'] !== '')
+            ->values()
+            ->all();
+
+        $suggestedText = $this->joinSectionTexts($suggestedSections);
+        $finalText = $this->joinSectionTexts($cleanFinalSections);
+
+        DekurzAiFeedback::create([
+            'document_id' => $document->id,
+            'patient_id' => $patient->id,
+            'user_id' => $user->id,
+            'branch_id' => $data['branch_id'] ?? null,
+            'proposal_document_id' => $feedback['proposal_document_id'] ?? null,
+            'source' => (string) ($feedback['source'] ?? 'proposal_ai_prefill'),
+            'suggested_sections' => $suggestedSections,
+            'final_sections' => $cleanFinalSections,
+            'has_user_edits' => $this->normalizeForCompare($suggestedText) !== $this->normalizeForCompare($finalText),
+            'suggestion_char_count' => mb_strlen($suggestedText),
+            'final_char_count' => mb_strlen($finalText),
+        ]);
+    }
+
+    private function joinSectionTexts(array $sections): string
+    {
+        return collect($sections)
+            ->map(fn(array $section) => trim((string) ($section['text'] ?? '')))
+            ->filter(fn(string $text) => $text !== '')
+            ->values()
+            ->implode("\n\n");
+    }
+
+    private function normalizeForCompare(string $text): string
+    {
+        $normalized = mb_strtolower(trim($text));
+
+        return preg_replace('/\s+/u', ' ', $normalized) ?? $normalized;
     }
 
     public function normalizeSections(array $sections): array

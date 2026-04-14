@@ -736,7 +736,7 @@ async function generateDocument() {
         @update:visible="dialogVisible = $event" @close="closeDialog" @deleted="checkDocumentExists" />
 
       <div class="sticky bottom-0 z-20 flex justify-end">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           <div v-if="hasScanDocument" class="flex items-center">
             <AdonisButton
               :loading="loadingOcrPrefill"

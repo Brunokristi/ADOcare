@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\PatientPoint;
 use App\Http\Requests\StoreDekurzRequest;
+use App\Services\DekurzAiPrefillService;
 use App\Services\DekurzDocumentService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,10 @@ use Illuminate\Support\Facades\DB;
 
 class DekurzDocumentController extends Controller
 {
+    public function __construct(private DekurzAiPrefillService $aiPrefillService)
+    {
+    }
+
     public function store(StoreDekurzRequest $request, DekurzDocumentService $service)
     {
         $document = $service->create($request->validated(), Auth::user());
@@ -78,6 +83,38 @@ class DekurzDocumentController extends Controller
         $result = $service->getAvailableDates((int) $data['patient_id'], $data['month']);
 
         return response()->json(['success' => true, 'message' => 'Available dates retrieved', 'data' => $result]);
+    }
+
+    public function prefillFromLatestProposal(Patient $patient)
+    {
+        try {
+            $data = $this->aiPrefillService->buildFromLatestProposal($patient);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->error('Nepodarilo sa vygenerovať návrh textov dekurzu pomocou AI.', 500);
+        }
+
+        return $this->success($data, 'Návrh textov dekurzu bol úspešne vygenerovaný.');
+    }
+
+    public function improveText(Patient $patient, Request $request)
+    {
+        $request->validate([
+            'text' => ['required', 'string', 'max:12000'],
+        ]);
+
+        try {
+            $improved = $this->aiPrefillService->improveText((string) $request->input('text'));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->error('Nepodarilo sa vylepšiť text pomocou AI.', 500);
+        }
+
+        return $this->success(['improved_text' => $improved], 'Text bol úspešne vylepšený pomocou AI.');
     }
 
 }
