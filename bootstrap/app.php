@@ -36,7 +36,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $schedule->command('backup:run --only-db')->dailyAt('01:00')->withoutOverlapping();
         $schedule->command('backup:clean')->dailyAt('01:30')->withoutOverlapping();
-        $schedule->command(AutoTrainDekurzVertexModel::class)->dailyAt('02:30')->withoutOverlapping();
+
+        $autoTrainSchedule = (string) config('services.vertex_ai.auto_train.schedule', 'daily');
+        $autoTrainWeekday = (int) config('services.vertex_ai.auto_train.weekday', 1);
+        $autoTrainTime = (string) config('services.vertex_ai.auto_train.time', '02:30');
+
+        $autoTrainEvent = $schedule->command(AutoTrainDekurzVertexModel::class)->withoutOverlapping();
+
+        if ($autoTrainSchedule === 'weekly') {
+            $autoTrainEvent->weeklyOn($autoTrainWeekday, $autoTrainTime);
+        } elseif ($autoTrainSchedule === 'biweekly') {
+            $autoTrainEvent
+                ->weeklyOn($autoTrainWeekday, $autoTrainTime)
+                ->when(fn() => ((int) now()->isoWeek()) % 2 === 0);
+        } else {
+            $autoTrainEvent->dailyAt($autoTrainTime);
+        }
+
         $schedule->command(SyncDekurzEndpointAfterTraining::class)->hourly()->withoutOverlapping();
 
     })

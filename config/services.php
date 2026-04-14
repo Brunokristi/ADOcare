@@ -77,6 +77,9 @@ return [
         'general_models' => env('VERTEX_GENERAL_MODELS', ''),
         'auto_train' => [
             'enabled' => env('VERTEX_AUTOTRAIN_ENABLED', false),
+            'schedule' => env('VERTEX_AUTOTRAIN_SCHEDULE', 'daily'),
+            'weekday' => (int) env('VERTEX_AUTOTRAIN_WEEKDAY', 1),
+            'time' => env('VERTEX_AUTOTRAIN_TIME', '02:30'),
             'min_new_feedback' => (int) env('VERTEX_AUTOTRAIN_MIN_NEW_FEEDBACK', 25),
             'source' => env('VERTEX_AUTOTRAIN_SOURCE', 'proposal_ai_prefill'),
             'dataset_disk' => env('VERTEX_AUTOTRAIN_DATASET_DISK', 'gcs'),

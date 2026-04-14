@@ -14,7 +14,83 @@ class BuildProposalTrainingDataset extends Command
                             {--output=storage/app/private/ai-dataset : Output directory}
                             {--min-score=11 : Minimum match score to accept pair}';
 
-    protected $description = 'Build OCR -> nurse suggestion training dataset from JSON files';
+    protected $description = 'Build OCR -> proposal Gemini SFT training dataset from JSON files';
+
+    private const SYSTEM_INSTRUCTION = 'You are a nursing documentation assistant. '
+        . 'Suggest likely values for the target nursing form fields based on the OCR text and patterns commonly seen in historical completed forms. '
+        . 'The output is only a draft suggestion for a nurse to review and edit. '
+        . 'Use only valid codes and enum values for diagnosis, nurse_diagnosis, mobility, expected_duration, procedure codes, and procedure frequencies. '
+        . 'Return JSON only.';
+
+    private const ALLOWED_DIAGNOSIS_CODES = [
+        'L97',
+        'L89.15',
+        'I70',
+        'L89.25',
+        'L02.8',
+        'L02.2',
+        'L02.4',
+        'L08.8',
+        'M54.4',
+        'M54',
+        'M54.0',
+        'R26.3',
+        'M54.05',
+        'R63',
+        'L89.17',
+        'L89.27',
+        'L89.14',
+        'L89.16',
+    ];
+
+    private const ALLOWED_NURSE_DIAGNOSIS_CODES = [
+        'K110',
+        'D101',
+        'D102',
+        'A110',
+    ];
+
+    private const ALLOWED_MOBILITY = [
+        'H',
+        'I',
+        'F',
+    ];
+
+    private const ALLOWED_EXPECTED_DURATION = [
+        'one_month',
+        'three_months',
+        'six_months',
+        'over_six_months',
+    ];
+
+    private const ALLOWED_PROCEDURE_CODES = [
+        '3439',
+        '3440',
+        '3413',
+        '3423A',
+        '3423B',
+        '3422A',
+        '3422B',
+        '3422C',
+        '3416',
+        '3419',
+        '3393',
+        '3390',
+        '3424',
+    ];
+
+    private const ALLOWED_FREQUENCIES = [
+        'weekdays',
+        'weekends',
+        'daily',
+        'every_other_day',
+        'three_times_weekly',
+        'twice_weekly',
+        'once_weekly',
+        'twice_monthly',
+        'once_monthly',
+        'as_needed',
+    ];
 
     public function handle(): int
     {
@@ -114,13 +190,7 @@ class BuildProposalTrainingDataset extends Command
                 continue;
             }
 
-            $trainRows[] = [
-                'input_text' => $this->buildInputText($ocrDoc),
-                'output_text' => json_encode(
-                    $cleanedOutput,
-                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-                ),
-            ];
+            $trainRows[] = $this->buildGeminiSftRow($ocrDoc, $cleanedOutput);
 
             $pairedReport[] = [
                 'ocr_path' => data_get($ocrDoc, '__path'),
@@ -301,28 +371,73 @@ class BuildProposalTrainingDataset extends Command
         ]];
     }
 
+    protected function buildGeminiSftRow(array $ocrDoc, array $cleanedOutput): array
+    {
+        $inputText = $this->buildInputText($ocrDoc);
+        $outputText = json_encode($cleanedOutput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return [
+            'systemInstruction' => [
+                'parts' => [
+                    [
+                        'text' => self::SYSTEM_INSTRUCTION,
+                    ],
+                ],
+            ],
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [
+                        [
+                            'text' => $inputText,
+                        ],
+                    ],
+                ],
+                [
+                    'role' => 'model',
+                    'parts' => [
+                        [
+                            'text' => $outputText,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     protected function buildInputText(array $ocrDoc): string
     {
         $compactInput = [
             'patient_name' => $this->normalizeString(data_get($ocrDoc, 'patient_name')),
             'patient_birth_number' => $this->normalizeBirthNumber(data_get($ocrDoc, 'patient_birth_number')),
             'extracted_text' => $this->normalizeExtractedText(data_get($ocrDoc, 'extracted_text')),
+            'allowed_values' => [
+                'diagnosis_codes' => array_values(self::ALLOWED_DIAGNOSIS_CODES),
+                'nurse_diagnosis_codes' => array_values(self::ALLOWED_NURSE_DIAGNOSIS_CODES),
+                'mobility' => array_values(self::ALLOWED_MOBILITY),
+                'expected_duration' => array_values(self::ALLOWED_EXPECTED_DURATION),
+                'procedure_codes' => array_values(self::ALLOWED_PROCEDURE_CODES),
+                'procedure_frequency' => array_values(self::ALLOWED_FREQUENCIES),
+                'fixed_frequency_rules' => [
+                    '3439' => 'weekdays',
+                    '3440' => 'weekends',
+                ],
+            ],
         ];
 
         return implode("\n", [
-            'You are given OCR output from a healthcare document.',
-            'Suggest likely values for the target nursing form fields based on the OCR text and patterns commonly seen in historical completed forms.',
-            'The output is only a draft suggestion for a nurse to review and edit.',
-            'Return JSON only.',
-            '',
-            'TARGET FIELDS:',
-            '- diagnosis',
-            '- nurse_diagnosis',
-            '- epicrisis',
-            '- care_plan',
-            '- mobility',
-            '- expected_duration',
-            '- procedures',
+            'Suggest likely values for the target nursing form fields based on the OCR text and historical patterns.',
+            'Use only allowed codes and enum values.',
+            'Return JSON only with this shape:',
+            '{',
+            '  "diagnosis": ["CODE"],',
+            '  "nurse_diagnosis": ["CODE"],',
+            '  "epicrisis": "TEXT",',
+            '  "care_plan": "TEXT",',
+            '  "mobility": ["H|I|F"],',
+            '  "expected_duration": "one_month|three_months|six_months|over_six_months",',
+            '  "procedures": [{"code":"CODE","frequency":"ENUM"}]',
+            '}',
             '',
             'OCR JSON:',
             json_encode($compactInput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -332,8 +447,8 @@ class BuildProposalTrainingDataset extends Command
     protected function cleanProposalForTraining(array $proposal): array
     {
         return [
-            'diagnosis' => $this->normalizeStringArray(data_get($proposal, 'diagnosis')),
-            'nurse_diagnosis' => $this->normalizeStringArray(data_get($proposal, 'nurse_diagnosis')),
+            'diagnosis' => $this->normalizeDiagnosisCodes(data_get($proposal, 'diagnosis')),
+            'nurse_diagnosis' => $this->normalizeNurseDiagnosisCodes(data_get($proposal, 'nurse_diagnosis')),
             'epicrisis' => $this->normalizeString(data_get($proposal, 'epicrisis')),
             'care_plan' => $this->normalizeString(data_get($proposal, 'care_plan')),
             'mobility' => $this->normalizeMobility(data_get($proposal, 'mobility')),
@@ -370,18 +485,66 @@ class BuildProposalTrainingDataset extends Command
             return 'invalid_care_plan';
         }
 
-        foreach ($cleanedOutput['diagnosis'] as $diagnosis) {
-            if ($this->looksLikeSuspiciousDiagnosis($diagnosis)) {
-                return 'suspicious_diagnosis';
+        if (empty($cleanedOutput['diagnosis'])) {
+            return 'missing_diagnosis';
+        }
+
+        if (empty($cleanedOutput['nurse_diagnosis'])) {
+            return 'missing_nurse_diagnosis';
+        }
+
+        if (empty($cleanedOutput['mobility'])) {
+            return 'missing_mobility';
+        }
+
+        if ($cleanedOutput['expected_duration'] === '') {
+            return 'missing_expected_duration';
+        }
+
+        if (empty($cleanedOutput['procedures'])) {
+            return 'missing_procedures';
+        }
+
+        foreach ($cleanedOutput['diagnosis'] as $diagnosisCode) {
+            if (!in_array($diagnosisCode, self::ALLOWED_DIAGNOSIS_CODES, true)) {
+                return 'invalid_diagnosis_code';
             }
         }
 
+        foreach ($cleanedOutput['nurse_diagnosis'] as $nurseDiagnosisCode) {
+            if (!in_array($nurseDiagnosisCode, self::ALLOWED_NURSE_DIAGNOSIS_CODES, true)) {
+                return 'invalid_nurse_diagnosis_code';
+            }
+        }
+
+        foreach ($cleanedOutput['mobility'] as $mobility) {
+            if (!in_array($mobility, self::ALLOWED_MOBILITY, true)) {
+                return 'invalid_mobility';
+            }
+        }
+
+        if (!in_array($cleanedOutput['expected_duration'], self::ALLOWED_EXPECTED_DURATION, true)) {
+            return 'invalid_expected_duration';
+        }
+
         foreach ($cleanedOutput['procedures'] as $procedure) {
-            if (
-                data_get($procedure, 'code') === '0000' ||
-                data_get($procedure, 'frequency') === ''
-            ) {
-                return 'invalid_procedure';
+            $code = data_get($procedure, 'code');
+            $frequency = data_get($procedure, 'frequency');
+
+            if (!in_array($code, self::ALLOWED_PROCEDURE_CODES, true)) {
+                return 'invalid_procedure_code';
+            }
+
+            if (!in_array($frequency, self::ALLOWED_FREQUENCIES, true)) {
+                return 'invalid_procedure_frequency';
+            }
+
+            if ($code === '3439' && $frequency !== 'weekdays') {
+                return 'invalid_fixed_frequency_3439';
+            }
+
+            if ($code === '3440' && $frequency !== 'weekends') {
+                return 'invalid_fixed_frequency_3440';
             }
         }
 
@@ -395,8 +558,8 @@ class BuildProposalTrainingDataset extends Command
         }
 
         $value = preg_replace('/\R+/u', "\n", $value) ?? $value;
-        $value = preg_replace("/[ \t]+/u", ' ', $value) ?? $value;
-        $value = preg_replace("/\n{3,}/u", "\n\n", $value) ?? $value;
+        $value = preg_replace('/[ \t]+/u', ' ', $value) ?? $value;
+        $value = preg_replace('/\n{3,}/u', "\n\n", $value) ?? $value;
 
         return trim($value);
     }
@@ -437,14 +600,59 @@ class BuildProposalTrainingDataset extends Command
         return array_values(array_unique($result));
     }
 
+    protected function normalizeDiagnosisCodes(mixed $value): array
+    {
+        $items = $this->normalizeStringArray($value);
+        $result = [];
+
+        foreach ($items as $item) {
+            $code = $this->extractLeadingCode($item);
+
+            if ($code !== '' && in_array($code, self::ALLOWED_DIAGNOSIS_CODES, true)) {
+                $result[] = $code;
+            }
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    protected function normalizeNurseDiagnosisCodes(mixed $value): array
+    {
+        $items = $this->normalizeStringArray($value);
+        $result = [];
+
+        foreach ($items as $item) {
+            $code = $this->extractLeadingCode($item);
+
+            if ($code !== '' && in_array($code, self::ALLOWED_NURSE_DIAGNOSIS_CODES, true)) {
+                $result[] = $code;
+            }
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    protected function extractLeadingCode(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('/^([A-Za-z0-9\.]+)/u', $value, $matches)) {
+            return strtoupper(trim($matches[1]));
+        }
+
+        return '';
+    }
+
     protected function normalizeMobility(mixed $value): array
     {
-        $allowed = ['H', 'I'];
-
         $items = $this->normalizeStringArray($value);
 
-        $items = array_values(array_filter($items, function (string $item) use ($allowed) {
-            return in_array($item, $allowed, true);
+        $items = array_values(array_filter($items, function (string $item) {
+            return in_array($item, self::ALLOWED_MOBILITY, true);
         }));
 
         return array_values(array_unique($items));
@@ -454,13 +662,7 @@ class BuildProposalTrainingDataset extends Command
     {
         $value = $this->normalizeString($value);
 
-        $allowed = [
-            'one_month',
-            'three_months',
-            'six_months',
-        ];
-
-        return in_array($value, $allowed, true) ? $value : '';
+        return in_array($value, self::ALLOWED_EXPECTED_DURATION, true) ? $value : '';
     }
 
     protected function normalizeProcedures(mixed $value): array
@@ -477,11 +679,27 @@ class BuildProposalTrainingDataset extends Command
                 continue;
             }
 
-            $code = trim((string) data_get($item, 'code', ''));
+            $code = strtoupper(trim((string) data_get($item, 'code', '')));
             $frequency = trim((string) data_get($item, 'frequency', ''));
 
             if ($code === '' || $frequency === '') {
                 continue;
+            }
+
+            if (!in_array($code, self::ALLOWED_PROCEDURE_CODES, true)) {
+                continue;
+            }
+
+            if (!in_array($frequency, self::ALLOWED_FREQUENCIES, true)) {
+                continue;
+            }
+
+            if ($code === '3439') {
+                $frequency = 'weekdays';
+            }
+
+            if ($code === '3440') {
+                $frequency = 'weekends';
             }
 
             $key = $code . '|' . $frequency;
@@ -523,24 +741,6 @@ class BuildProposalTrainingDataset extends Command
 
         if (mb_strlen($value) < 4) {
             return true;
-        }
-
-        return false;
-    }
-
-    protected function looksLikeSuspiciousDiagnosis(string $diagnosis): bool
-    {
-        $diagnosisLower = mb_strtolower($diagnosis);
-
-        $badNeedles = [
-            'cholera',
-            'vibrio cholerae',
-        ];
-
-        foreach ($badNeedles as $needle) {
-            if (str_contains($diagnosisLower, $needle)) {
-                return true;
-            }
         }
 
         return false;
