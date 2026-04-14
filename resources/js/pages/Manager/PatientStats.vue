@@ -772,12 +772,11 @@ onMounted(async () => {
             </div>
 
             <div class="flex justify-end">
-            <Button
-              @click="onSubmitFilters"
-              class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
-              Načítať
-              <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
-            </Button>
+                <Button 
+                    @click="onSubmitFilters"
+                    class="bg-accent! border-0! hover:bg-darkgrey! px-4! rounded-md! text-white! text-normal! h-7!">
+                    Načítať dáta
+                </Button>
           </div>
         </div>
 

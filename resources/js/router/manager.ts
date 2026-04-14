@@ -17,6 +17,7 @@ import useAuthStore from "@/stores/auth";
 import PatientsPrintPreview from "@/pages/Documents/PatientsPrintPreview.vue";
 import PatientStats from "@/pages/Manager/PatientStats.vue";
 import FinancialStats from "@/pages/Manager/FinancialStats.vue";
+import Wizard from "@/pages/Manager/EndOfMonth.vue";
 
 
 function showOnSidebar() {
@@ -89,6 +90,30 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: Doctors,
                 meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
             },
+        ],
+    },
+    {
+        path: '/manager/wizards',
+        name: 'manager-wizards',
+        component: Settings,
+        redirect: { name: 'manager-wizards-wizard' },
+        meta: {
+            title: 'Pomocník',
+            sectionRoot: 'manager-wizards',
+            sidebar: showOnSidebar,
+        },
+        children: [
+            {
+                path: 'wizard',
+                name: 'wizard',
+                component: Wizard,
+                meta: {
+                    title: 'Uzávierka',
+                    sidebar: showOnSidebar,
+                    link: 'uzávierka',
+                    navbar: true,
+                },
+            }
         ],
     },
     {
