@@ -17,7 +17,8 @@ class ExportDekurzFeedbackDataset extends Command
         {--output=storage/app/private/ai-dataset-dekurz-feedback/train.jsonl}
         {--from=}
         {--to=}
-        {--source=proposal_ai_prefill}';
+        {--source=proposal_ai_prefill}
+        {--format=gemini}';
 
     protected $description = 'Export dekurz continuous-learning dataset from AI feedback records';
 
@@ -30,6 +31,7 @@ class ExportDekurzFeedbackDataset extends Command
         File::ensureDirectoryExists(dirname($outputPath));
 
         $source = trim((string) $this->option('source'));
+        $format = trim((string) $this->option('format'));
         $from = $this->option('from');
         $to = $this->option('to');
 
@@ -51,7 +53,7 @@ class ExportDekurzFeedbackDataset extends Command
             $query->whereDate('created_at', '<=', $to);
         }
 
-        $query->chunkById(200, function ($feedbackItems) use (&$rows) {
+        $query->chunkById(200, function ($feedbackItems) use (&$rows, $format) {
             foreach ($feedbackItems as $feedback) {
                 $proposalPayload = $this->loadProposalPayload((int) $feedback->proposal_document_id);
                 if ($proposalPayload === null) {
@@ -73,8 +75,11 @@ class ExportDekurzFeedbackDataset extends Command
                 }
 
                 $rows[] = [
-                    'input_text' => $this->buildInput($proposalPayload),
-                    'output_text' => json_encode(['sections' => $finalSections], JSON_UNESCAPED_UNICODE),
+                    ...$this->buildTrainingRow(
+                        $this->buildInput($proposalPayload),
+                        json_encode(['sections' => $finalSections], JSON_UNESCAPED_UNICODE),
+                        $format
+                    ),
                 ];
             }
         });
@@ -90,6 +95,38 @@ class ExportDekurzFeedbackDataset extends Command
         $this->info('Output: ' . $outputPath);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Build one dataset row in selected output format.
+     *
+     * @return array<string, mixed>
+     */
+    protected function buildTrainingRow(string $inputText, string $outputText, string $format): array
+    {
+        if ($format === 'legacy') {
+            return [
+                'input_text' => $inputText,
+                'output_text' => $outputText,
+            ];
+        }
+
+        return [
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [
+                        ['text' => $inputText],
+                    ],
+                ],
+                [
+                    'role' => 'model',
+                    'parts' => [
+                        ['text' => $outputText],
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**

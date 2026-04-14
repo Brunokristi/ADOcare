@@ -85,6 +85,7 @@ return [
             'state_path' => env('VERTEX_AUTOTRAIN_STATE_PATH', 'ai/dekurz-autotrain/state.json'),
             'training_endpoint' => env('VERTEX_AUTOTRAIN_TRAINING_ENDPOINT', 'tuningJobs'),
             'base_model' => env('VERTEX_AUTOTRAIN_BASE_MODEL', 'gemini-2.0-flash-001'),
+            'base_models' => env('VERTEX_AUTOTRAIN_BASE_MODELS', 'gemini-1.5-pro-002,gemini-1.5-flash-002'),
         ],
     ],
 

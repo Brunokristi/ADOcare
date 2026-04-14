@@ -119,7 +119,7 @@ class AutoTrainDekurzVertexModel extends Command
             return self::SUCCESS;
         }
 
-        [$jobName, $rawResponse] = $this->startVertexTrainingJob($datasetUri);
+        [$jobName, $rawResponse, $usedBaseModel] = $this->startVertexTrainingJob($datasetUri);
 
         $this->writeState($statePath, [
             ...$state,
@@ -128,19 +128,21 @@ class AutoTrainDekurzVertexModel extends Command
             'pending_job_started_at' => now()->toIso8601String(),
             'last_job_name' => $jobName,
             'last_job_response' => $rawResponse,
+            'last_job_base_model' => $usedBaseModel,
             'last_dataset_uri' => $datasetUri,
             'last_trained_at' => now()->toIso8601String(),
         ]);
 
         $this->info('Vertex training job started: ' . $jobName);
+        $this->line('Base model: ' . $usedBaseModel);
 
         return self::SUCCESS;
     }
 
     /**
-     * Start Vertex AI tuning job and return [jobName, responseBody].
+      * Start Vertex AI tuning job and return [jobName, responseBody, usedBaseModel].
      *
-     * @return array{0: string, 1: array<string, mixed>}
+      * @return array{0: string, 1: array<string, mixed>, 2: string}
      */
     private function startVertexTrainingJob(string $datasetUri): array
     {
@@ -148,6 +150,7 @@ class AutoTrainDekurzVertexModel extends Command
         $location = (string) config('services.vertex_ai.location', 'europe-west1');
         $credentialsPath = (string) config('services.vertex_ai.credentials_path');
         $baseModel = (string) config('services.vertex_ai.auto_train.base_model', 'gemini-2.0-flash-001');
+          $configuredFallbackModels = (string) config('services.vertex_ai.auto_train.base_models', '');
         $endpoint = (string) config('services.vertex_ai.auto_train.training_endpoint', 'tuningJobs');
 
         if ($projectId === '' || $location === '' || $credentialsPath === '') {
@@ -156,13 +159,13 @@ class AutoTrainDekurzVertexModel extends Command
 
         $displayName = 'dekurz-autotrain-' . now()->format('Ymd-His');
 
-        $payload = [
-            'baseModel' => $baseModel,
-            'supervisedTuningSpec' => [
-                'trainingDatasetUri' => $datasetUri,
-            ],
-            'tunedModelDisplayName' => $displayName,
-        ];
+        $fallbackModels = array_filter(array_map('trim', explode(',', $configuredFallbackModels)));
+        $models = array_values(array_unique(array_filter([
+            $baseModel,
+            ...$fallbackModels,
+            'gemini-1.5-pro-002',
+            'gemini-1.5-flash-002',
+        ])));
 
         $accessToken = $this->getVertexAccessToken($credentialsPath);
 
@@ -174,29 +177,49 @@ class AutoTrainDekurzVertexModel extends Command
             ltrim($endpoint, '/')
         );
 
-        $response = Http::timeout(90)
-            ->retry(2, 1000)
-            ->withToken($accessToken)
-            ->post($url, $payload);
+        $lastError = null;
 
-        if (! $response->successful()) {
-            $message = 'Failed to start Vertex training job. HTTP ' . $response->status();
-            $body = trim((string) $response->body());
-            if ($body !== '') {
-                $message .= ' ' . mb_substr($body, 0, 400);
+        foreach ($models as $candidateModel) {
+            $payload = [
+                'baseModel' => $candidateModel,
+                'supervisedTuningSpec' => [
+                    'trainingDatasetUri' => $datasetUri,
+                ],
+                'tunedModelDisplayName' => $displayName,
+            ];
+
+            $response = Http::timeout(90)
+                ->retry(2, 1000, throw: false)
+                ->withToken($accessToken)
+                ->post($url, $payload);
+
+            if (! $response->successful()) {
+                $body = trim((string) $response->body());
+
+                if ($response->status() === 400 && str_contains(mb_strtolower($body), 'not supported')) {
+                    $lastError = 'Base model ' . $candidateModel . ' is not supported.';
+                    continue;
+                }
+
+                $message = 'Failed to start Vertex training job. HTTP ' . $response->status();
+                if ($body !== '') {
+                    $message .= ' ' . mb_substr($body, 0, 400);
+                }
+
+                throw new \RuntimeException($message);
             }
 
-            throw new \RuntimeException($message);
+            $decoded = $response->json();
+            if (! is_array($decoded)) {
+                throw new \RuntimeException('Vertex training response is invalid.');
+            }
+
+            $jobName = (string) ($decoded['name'] ?? 'unknown-job');
+
+            return [$jobName, $decoded, $candidateModel];
         }
 
-        $decoded = $response->json();
-        if (! is_array($decoded)) {
-            throw new \RuntimeException('Vertex training response is invalid.');
-        }
-
-        $jobName = (string) ($decoded['name'] ?? 'unknown-job');
-
-        return [$jobName, $decoded];
+        throw new \RuntimeException($lastError ?? 'No supported base model available for Vertex tuning job.');
     }
 
     /**
