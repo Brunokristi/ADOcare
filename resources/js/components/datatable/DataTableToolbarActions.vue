@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { unref } from 'vue'
 import Button from 'primevue/button'
+import AdonisButton from '@/components/AdonisButton.vue'
 import type { ActionDef, RemoteTableReturn } from '@/types/datatable'
 
 type IBaseModel = any
@@ -39,17 +40,40 @@ function isDisabled(action: ActionDef<IBaseModel>): boolean {
 
 function getClass(action: ActionDef<IBaseModel>): string[] {
     return [
-        action.bordered ? 'hover:bg-darkgrey! h-7!' : 'border-none! hover:bg-darkgrey! h-7!',
+        action.adonis ? '' : (action.bordered ? 'hover:bg-darkgrey! h-7!' : 'border-none! hover:bg-darkgrey! h-7!'),
         typeof action.class === 'function'
             ? action.class({ rows: props.rows, selectedRows: props.selectedRows, remote: props.remote })
             : (unref(action.class) ?? ''),
     ]
 }
+
+function getLabel(action: ActionDef<IBaseModel>): string | undefined {
+    return action.label?.trim() || getTooltip(action) || action.key
+}
 </script>
 
 <template>
     <template v-if="actions?.length">
-        <Button v-for="a in actions" :key="a.key ?? a.icon ?? a.label" :icon="getIcon(a)" :label="a.label"
-            :title="getTooltip(a)" :disabled="isDisabled(a)" :class="getClass(a)" @click="emits('action', a)" />
+        <template v-for="a in actions" :key="a.key ?? a.icon ?? a.label">
+            <AdonisButton
+                v-if="a.adonis"
+                :icon="getIcon(a) ?? undefined"
+                :label="getLabel(a)"
+                :disabled="isDisabled(a)"
+                :title="getTooltip(a)"
+                :class="getClass(a)"
+                @click="emits('action', a)"
+            />
+
+            <Button
+                v-else
+                :icon="getIcon(a)"
+                :label="a.label"
+                :title="getTooltip(a)"
+                :disabled="isDisabled(a)"
+                :class="getClass(a)"
+                @click="emits('action', a)"
+            />
+        </template>
     </template>
 </template>

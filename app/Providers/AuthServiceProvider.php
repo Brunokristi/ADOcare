@@ -6,14 +6,20 @@ use App\Models\Branch;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\InsuranceCompany;
+use App\Models\Invoice;
+use App\Models\Macro;
 use App\Models\Patient;
 use App\Models\PatientPoint;
+use App\Models\Procedure;
 use App\Models\User;
 use App\Policies\BranchPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\DocumentPolicy;
+use App\Policies\InvoicePolicy;
+use App\Policies\MacroPolicy;
 use App\Policies\PatientPolicy;
 use App\Policies\PatientPointPolicy;
+use App\Policies\ProcedurePolicy;
 use App\Policies\UserPolicy;
 use App\Policies\InsuranceCompanyPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -34,6 +40,9 @@ class AuthServiceProvider extends ServiceProvider
         User::class => UserPolicy::class,
         Document::class => DocumentPolicy::class,
         InsuranceCompany::class => InsuranceCompanyPolicy::class,
+        Invoice::class => InvoicePolicy::class,
+        Procedure::class => ProcedurePolicy::class,
+        Macro::class => MacroPolicy::class,
     ];
 
     public function boot(): void

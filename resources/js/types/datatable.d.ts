@@ -35,6 +35,7 @@ interface ActionDef<T = any> {
     label?: string;
     position?: 'start' | 'end';
     bordered?: boolean;
+    adonis?: boolean;
     class?: string | Ref<string> | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => string);
     tooltip?: string | Ref<string> | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => string);
     disabled?: boolean | ((params: { rows: T[]; selectedRows: T[]; remote: RemoteTableReturn }) => boolean);

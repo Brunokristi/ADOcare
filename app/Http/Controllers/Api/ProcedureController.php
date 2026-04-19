@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
-use App\Http\Requests\DestroyManyRequest;
+use App\Http\Requests\DestroyManyProcedureRequest;
 use App\Http\Requests\ProcedureDeleteManyRequest;
 use App\Http\Requests\ProcedureStoreRequest;
 use App\Http\Requests\ProcedureUpdateRequest;
@@ -127,7 +127,7 @@ class ProcedureController extends Controller
      * @bodyParam ids array required Array of procedure IDs to delete. Example: [1,2,3]
      * @response 200 {"success":true}
      */
-    public function destroyMany(DestroyManyRequest $request)
+    public function destroyMany(DestroyManyProcedureRequest $request)
     {
         $ids = $request->validated()['ids'];
 

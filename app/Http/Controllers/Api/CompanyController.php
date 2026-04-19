@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Filters\ApiQuery;
-use App\Http\Requests\DestroyManyRequest;
+use App\Http\Requests\DestroyManyCompanyRequest;
 use App\Http\Resources\BaseCollection;
 use App\Http\Resources\UserCollection;
 use App\Http\Responses\ApiResponse;
@@ -252,7 +252,7 @@ class CompanyController extends Controller
      * @bodyParam ids array required Array of company IDs to delete. Example: [1,2,3]
      * @response 204 {}
      */
-    public function destroyMany(DestroyManyRequest $request)
+    public function destroyMany(DestroyManyCompanyRequest $request)
     {
         $ids = $request->input('ids', []);
         Company::whereIn('id', $ids)->delete();

@@ -286,6 +286,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware(['role:any', 'can:view,patient']);
     Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient'])
         ->middleware(['role:any', 'can:view,patient']);
+    Route::get('/patients/{patient}/proposals/ocr-prefill/availability', [ProposalDocumentController::class, 'ocrPrefillAvailability'])
+        ->middleware(['role:any', 'can:view,patient']);
+    Route::post('/patients/{patient}/proposals/ocr-prefill', [ProposalDocumentController::class, 'prefillFromLatestScan'])
+        ->middleware(['role:any', 'can:view,patient']);
 
     Route::post('/agreements', [AgreementDocumentController::class, 'store'])
         ->middleware('role:any');
@@ -314,6 +318,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware('role:any');
     Route::get('/dekurz/last', [DekurzDocumentController::class, 'last'])
         ->middleware('role:any');
+    Route::post('/patients/{patient}/dekurz/ai-prefill', [DekurzDocumentController::class, 'prefillFromLatestProposal'])
+        ->middleware(['role:any', 'can:view,patient']);
+    Route::post('/patients/{patient}/dekurz/ai-improve-text', [DekurzDocumentController::class, 'improveText'])
+        ->middleware(['role:any', 'can:view,patient']);
     Route::get('/dekurz/{document}', [DekurzDocumentController::class, 'show'])
         ->middleware(['role:any', 'can:view,document']);
 

@@ -8,13 +8,16 @@ use App\Http\Resources\BaseCollection;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Services\ProposalDocumentService;
+use App\Services\ProposalOcrPrefillService;
 use App\Http\Requests\StoreProposalRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ProposalDocumentController extends Controller
 {
-    public function __construct(private ProposalDocumentService $service)
+    public function __construct(
+        private ProposalDocumentService $service,
+        private ProposalOcrPrefillService $ocrPrefillService,
+    )
     {
     }
 
@@ -84,5 +87,38 @@ class ProposalDocumentController extends Controller
         }
 
         return $this->success(['document_id' => $document->id, 'proposal_data' => $payload]);
+    }
+
+    /**
+     * Return availability of OCR prefill from the latest scan for patient.
+     *
+     * @group Documents
+     * @urlParam patient int required Patient ID. Example: 1
+     */
+    public function ocrPrefillAvailability(Patient $patient)
+    {
+        $availability = $this->ocrPrefillService->getLatestScanAvailability($patient);
+
+        return $this->success($availability, 'Dostupnosť OCR prefillu bola načítaná.');
+    }
+
+    /**
+     * Build proposal prefill from latest patient scan OCR via Gemini.
+     *
+     * @group Documents
+     * @urlParam patient int required Patient ID. Example: 1
+     */
+    public function prefillFromLatestScan(Patient $patient)
+    {
+        try {
+            $data = $this->ocrPrefillService->buildPrefillFromLatestScan($patient);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->error('Nepodarilo sa spracovať OCR dokument pomocou AI.', 500);
+        }
+
+        return $this->success($data, 'Prefill bol úspešne vygenerovaný z OCR dokumentu.');
     }
 }

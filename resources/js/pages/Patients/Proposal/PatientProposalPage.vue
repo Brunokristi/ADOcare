@@ -5,6 +5,7 @@ import api from '@/services/api'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 import DocumentAlert from '@/components/DocumentAlert.vue'
+import AdonisButton from '@/components/AdonisButton.vue'
 
 interface Diagnosis {
   id: number
@@ -35,6 +36,29 @@ interface Plan {
   text: string
 }
 
+interface OcrPrefillProcedure {
+  code: string
+  frequency: string
+}
+
+interface OcrPrefill {
+  medical_diagnosis_codes: string[]
+  nurse_diagnosis_codes: string[]
+  epicrisis_description: string
+  care_plan: string
+  patient_mobility: string[]
+  expected_duration: string
+  procedures: OcrPrefillProcedure[]
+}
+
+interface OcrPrefillAvailability {
+  has_scan_document: boolean
+  has_extracted_text: boolean
+  can_prefill: boolean
+  latest_scan_document_id: number | null
+  scanned_at: string | null
+}
+
 const router = useRouter()
 const toast = useToast()
 const patientStore = usePatientStore()
@@ -63,8 +87,10 @@ const filteredNurseDiagnoses = ref<NurseDiagnosis[]>([])
 const errors = ref<Record<string, string>>({})
 const submitted = ref(false)
 const loadingPrefill = ref(false)
+const loadingOcrPrefill = ref(false)
 const documentId = ref<number | null>(null)
 const dialogVisible = ref(false)
+const ocrPrefillAvailability = ref<OcrPrefillAvailability | null>(null)
 
 const date = ref<Date>(new Date())
 const epicrisisDescription = ref('')
@@ -226,6 +252,92 @@ async function preloadFromLatestProposal() {
   }
 }
 
+async function loadOcrPrefillAvailability() {
+  if (!patientId.value) {
+    ocrPrefillAvailability.value = null
+    return
+  }
+
+  try {
+    const res = await api.get(`/v1/patients/${patientId.value}/proposals/ocr-prefill/availability`)
+    ocrPrefillAvailability.value = (res.data?.data ?? null) as OcrPrefillAvailability | null
+  } catch (e) {
+    console.error('Failed to load OCR prefill availability', e)
+    ocrPrefillAvailability.value = null
+  }
+}
+
+const canUseOcrPrefill = computed(() => !!ocrPrefillAvailability.value?.can_prefill)
+const hasScanDocument = computed(() => !!ocrPrefillAvailability.value?.has_scan_document)
+
+async function prefillFromLatestScanWithAi() {
+  if (!patientId.value || !canUseOcrPrefill.value) return
+
+  loadingOcrPrefill.value = true
+  try {
+    const res = await api.post(`/v1/patients/${patientId.value}/proposals/ocr-prefill`)
+    const prefill = (res.data?.data?.prefill ?? null) as OcrPrefill | null
+    if (!prefill) {
+      toast.add({ severity: 'warn', summary: 'Bez výsledku', detail: 'AI nevrátila použiteľné dáta.', life: 3000 })
+      return
+    }
+
+    if (Array.isArray(prefill.medical_diagnosis_codes) && prefill.medical_diagnosis_codes.length) {
+      const diagnosisResults = await Promise.all(
+        prefill.medical_diagnosis_codes.map((code: string) => fetchDiagnosisByCode(parseCodeFromText(code)))
+      )
+      medicalDiagnoses.value = diagnosisResults.filter((d): d is Diagnosis => d !== null)
+    }
+
+    if (Array.isArray(prefill.nurse_diagnosis_codes) && prefill.nurse_diagnosis_codes.length) {
+      const nurseResults = await Promise.all(
+        prefill.nurse_diagnosis_codes.map((code: string) => fetchNurseDiagnosisByCode(parseCodeFromText(code)))
+      )
+      nurseDiagnoses.value = nurseResults.filter((d): d is NurseDiagnosis => d !== null)
+    }
+
+    if (Array.isArray(prefill.procedures) && prefill.procedures.length) {
+      const mapped: SelectedProcedure[] = []
+      for (const item of prefill.procedures) {
+        const procCode = String(item?.code ?? '').trim()
+        const proc = await fetchProcedureByCode(procCode)
+        if (!proc) continue
+
+        mapped.push({
+          procedure: proc,
+          frequency: normalizeFrequencyToEnum(String(item?.frequency ?? ''))
+        })
+      }
+      procedures.value = mapped.length ? mapped : [{ procedure: null, frequency: '' }]
+    }
+
+    if (Array.isArray(prefill.patient_mobility)) {
+      const allowed = new Set(['H', 'I', 'F'])
+      patientMobility.value = prefill.patient_mobility.filter(v => allowed.has(v))
+    }
+
+    if (typeof prefill.expected_duration === 'string') {
+      expectedDuration.value = prefill.expected_duration
+    }
+
+    if (typeof prefill.epicrisis_description === 'string' && prefill.epicrisis_description.trim()) {
+      epicrisisDescription.value = prefill.epicrisis_description.trim()
+    }
+
+    if (typeof prefill.care_plan === 'string' && prefill.care_plan.trim()) {
+      carePlan.value = prefill.care_plan.trim()
+    }
+
+    toast.add({ severity: 'success', summary: 'Hotovo', detail: 'Údaje boli predvyplnené z posledného OCR dokumentu.', life: 3000 })
+  } catch (err: any) {
+    console.error('Failed to prefill from OCR using AI:', err)
+    const message = err?.response?.data?.message || err?.message || 'Nepodarilo sa načítať dáta z OCR dokumentu.'
+    toast.add({ severity: 'error', summary: 'Chyba AI', detail: message, life: 3500 })
+  } finally {
+    loadingOcrPrefill.value = false
+  }
+}
+
 // ✅ remote search for diagnoses / nurse diagnoses / procedures
 async function searchDiagnoses(event: { query: string }) {
   try {
@@ -266,7 +378,15 @@ async function searchProcedures(event: { query: string }) {
 watch(
   () => patientId.value,
   async (id: number) => {
-    if (id) await preloadFromLatestProposal()
+    if (!id) {
+      ocrPrefillAvailability.value = null
+      return
+    }
+
+    await Promise.all([
+      preloadFromLatestProposal(),
+      loadOcrPrefillAvailability()
+    ])
   },
   { immediate: true }
 )
@@ -433,13 +553,12 @@ async function generateDocument() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6" >
     <form @submit.prevent="generateDocument" class="flex flex-col gap-4">
       <section class="bg-tag3 p-6 rounded-md flex flex-col gap-6">
         <div>
           <div>
             <label class="block text-normal mb-2">Lekárska diagnóza</label>
-
             <AutoComplete v-model="medicalDiagnoses" :suggestions="filteredDiagnoses" multiple :minLength="1" dropdown
               completeOnFocus optionLabel="code" @complete="searchDiagnoses" class="w-full"
               inputClass="w-full! shadow-none! bg-white! focus:ring-0! focus:shadow-none! border-0!">
@@ -499,7 +618,7 @@ async function generateDocument() {
               :invalid="submitted && !!errors.date" />
             <small v-if="submitted && errors.date" class="text-danger">{{ errors.date }}</small>
           </div>
-        </div>
+        </div>    
 
         <div>
           <label class="block text-normal mb-2">Epizóka a zdôvodnenie pre poskytovanie ošetrovateľskej
@@ -616,12 +735,19 @@ async function generateDocument() {
       <DocumentAlert :visible="dialogVisible" :documentId="documentId" document-url="/documents/proposal/{id}"
         @update:visible="dialogVisible = $event" @close="closeDialog" @deleted="checkDocumentExists" />
 
-      <div class="flex justify-end">
-        <Button type="submit"
-          class="relative flex justify-center items-center bg-accent! border-0! hover:bg-darkgrey! px-4 py-2 rounded-md text-white w-100">
-          Generovať dokument
-          <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
-        </Button>
+      <div class="sticky bottom-0 z-20 flex justify-end">
+        <div class="flex items-center gap-2">
+          <div v-if="hasScanDocument" class="flex items-center">
+            <AdonisButton
+              :loading="loadingOcrPrefill"
+              @click="prefillFromLatestScanWithAi"
+            />
+          </div>
+          <Button type="submit"
+            class="bg-accent! border-0! hover:bg-darkgrey! px-4! rounded-md! text-white! text-normal! h-7!">
+            Generovať dokument
+          </Button>
+        </div>
       </div>
     </form>
   </div>

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
 use App\Http\Requests\BranchPatientStoreRequest;
-use App\Http\Requests\DestroyManyRequest;
 use App\Http\Requests\BranchPatientUpdateRequest;
 use App\Http\Resources\PatientCollection;
 use App\Http\Resources\PatientResource;

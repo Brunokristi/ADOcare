@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
-use App\Http\Requests\DestroyManyRequest;
+use App\Http\Requests\DestroyManyInvoiceRequest;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Company;
@@ -207,7 +207,7 @@ class InvoiceController extends Controller
         return $this->success(null, 'Faktúra bola odstránená');
     }
 
-    public function destroyMany(DestroyManyRequest $request)
+    public function destroyMany(DestroyManyInvoiceRequest $request)
     {
         $actor = $request->user();
         if (!$actor instanceof User || !$actor->company_id) {

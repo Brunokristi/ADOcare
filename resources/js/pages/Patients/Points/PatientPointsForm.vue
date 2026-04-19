@@ -314,9 +314,8 @@ async function onSubmit() {
 
             <div class="flex justify-end">
                 <Button type="submit"
-                    class="relative flex justify-center items-center !bg-accent !border-0 hover:!bg-darkgrey px-4 py-2 rounded-md text-white w-100">
-                    Pridať
-                    <i class="bi bi-arrow-right absolute right-2 bg-white px-2 rounded-md text-accent" />
+                    class="bg-accent! border-0! hover:bg-darkgrey! px-4! rounded-md! text-white! text-normal! h-7!">
+                    Pridať výkony
                 </Button>
             </div>
         </form>

@@ -60,7 +60,7 @@ services:
       - "127.0.0.1:8081:8000"
     volumes:
       - ./storage/app/private:/data:rw
-      - ../AI/velvety-rarity-456212-b0-ce115e0647b9.json:/secrets/gcp.json:ro
+      - ./storage/app/private/secrets/adocare-217a8243e93e.json:/secrets/gcp.json:ro
     environment:
       OCR_ROOT: /data
       PORT: 8000

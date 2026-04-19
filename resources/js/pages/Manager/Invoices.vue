@@ -183,6 +183,15 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
   ],
   actions: [
     {
+      key: 'add-bulk',
+      label: 'Hej, Adonis!',
+      tooltip: 'Vytvor všetky faktúry za obdobie',
+      adonis: true,
+      handler: async () => {
+        await openCreateBulk()
+      },
+    },
+    {
       key: 'add',
       label: '',
       tooltip: 'Pridať faktúru',
@@ -190,16 +199,6 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
       class: 'bg-accent!',
       handler: async () => {
         await openCreate()
-      },
-    },
-    {
-      key: 'add-bulk',
-      label: '',
-      tooltip: 'Vytvoriť faktúry pre všetky poisťovne',
-      icon: 'bi bi-repeat',
-      class: 'bg-accent!',
-      handler: async () => {
-        await openCreateBulk()
       },
     },
     {
