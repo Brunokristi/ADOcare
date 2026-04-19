@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Services\DZCDocumentService;
+use App\Services\DocumentService;
 use App\Http\Requests\StoreDZCRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,6 +100,49 @@ class DZCDocumentController extends Controller
         return response($csv)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+
+    /**
+     * Preview DZC document as HTML via Blade template.
+     *
+     * @group Documents
+     */
+    public function preview(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $payload = $this->service->getDzcPayload($document);
+        if (! $payload) {
+            return $this->error('Denný záznam ciest data not found', 404);
+        }
+
+        $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($payload['user_id'] ?? 0));
+
+        return response()->view('pdf.travel_dzc', [
+            'dzcData' => $payload,
+            'signatureDataUri' => $signatureDataUri,
+        ]);
+    }
+
+    /**
+     * Download DZC PDF generated from Blade template.
+     *
+     * @group Documents
+     */
+    public function download(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
+        if (! $pdfPath || ! Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('Denný záznam ciest PDF not found', 500);
+        }
+
+        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+        return response()->download(Storage::disk('local')->path($pdfPath), $downloadName, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     private function generateDZCCsv(array $dzcFile): string

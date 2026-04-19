@@ -300,6 +300,12 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware('role:any');
     Route::post('/cps', [CPDocumentController::class, 'store'])
         ->middleware('role:any');
+    Route::get('/cps/{document}/preview', [CPDocumentController::class, 'preview'])
+        ->middleware(['role:any', 'can:view,document']);
+    Route::get('/cps/{document}/preview-url', [CPDocumentController::class, 'previewUrl'])
+        ->middleware(['role:any', 'can:view,document']);
+    Route::get('/cps/{document}/download', [CPDocumentController::class, 'download'])
+        ->middleware(['role:any', 'can:view,document']);
     Route::get('/cps/{document}', [CPDocumentController::class, 'show'])
         ->middleware(['role:any', 'can:view,document']);
 
@@ -307,6 +313,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
         ->middleware('role:any');
     Route::post('/dzcs', [DZCDocumentController::class, 'store'])
         ->middleware('role:any');
+    Route::get('/dzcs/{document}/preview', [DZCDocumentController::class, 'preview'])
+        ->middleware(['role:any', 'can:view,document']);
+    Route::get('/dzcs/{document}/download', [DZCDocumentController::class, 'download'])
+        ->middleware(['role:any', 'can:view,document']);
     Route::get('/dzcs/{document}', [DZCDocumentController::class, 'show'])
         ->middleware(['role:any', 'can:view,document']);
     Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv'])
