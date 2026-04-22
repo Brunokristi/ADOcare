@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import type { PlaceData } from '@/composables/address'
 import { searchAutocomplete, fetchPlaceDetails, parsePlaceDetailsToData } from '@/composables/address'
 import type { AutoCompleteCompleteEvent, AutoCompleteOptionSelectEvent } from 'primevue/autocomplete'
@@ -7,11 +7,14 @@ import type { AutoCompleteCompleteEvent, AutoCompleteOptionSelectEvent } from 'p
 const props = defineProps<{ modelValue: string | null }>()
 const emit = defineEmits<{ (e: 'update:modelValue', v: string | null): void; (e: 'selected', v: PlaceData): void }>();
 
-const query = ref(props.modelValue ?? '')
 const suggestions = ref<any[]>([])
 
-watch(() => props.modelValue, (v) => {
-    query.value = v ?? ''
+const model = computed<string>({
+    get: () => props.modelValue ?? '',
+    set: (value) => {
+        const normalized = typeof value === 'string' ? value : String(value ?? '')
+        emit('update:modelValue', normalized || null)
+    },
 })
 
 async function onComplete(e: AutoCompleteCompleteEvent) {
@@ -32,31 +35,9 @@ async function onSelect(e: AutoCompleteOptionSelectEvent) {
         console.error('Address select failed', err)
     }
 }
-
-function onInput(v: any) {
-    // PrimeVue AutoComplete may call @input with an InputEvent rather than the current value.
-    if (typeof v === 'string') {
-        emit('update:modelValue', v || null)
-        return
-    }
-
-    // Try to extract value from common event shapes
-    const possible = v?.target?.value ?? v?.target?.textContent ?? undefined
-    if (typeof possible === 'string') {
-        emit('update:modelValue', possible || null)
-        return
-    }
-
-    // Fallback: stringify
-    try {
-        emit('update:modelValue', String(v ?? '') || null)
-    } catch {
-        emit('update:modelValue', null)
-    }
-}
 </script>
 
 <template>
-    <AutoComplete v-model="query" :suggestions="suggestions" optionLabel="label" @complete="onComplete"
-        @item-select="onSelect" @input="onInput" class="w-full" />
+    <AutoComplete :key="props.modelValue ?? ''" v-model="model" :suggestions="suggestions" optionLabel="label" @complete="onComplete"
+        @item-select="onSelect" class="w-full" />
 </template>

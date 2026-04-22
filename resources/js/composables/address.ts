@@ -141,7 +141,15 @@ export async function reverseGeocode(lat: number, lon: number): Promise<PlaceDat
     const placeData = place?.data.data ?? null
     if (!placeData) return null
     const { address, street, city, zip, latitude, longitude, place_id } = placeData
-    return { address, street, city, zip, latitude, longitude, place_id }
+    return {
+        address,
+        street,
+        city,
+        zip,
+        latitude: latitude ?? lat,
+        longitude: longitude ?? lon,
+        place_id,
+    }
 }
 
 
@@ -174,7 +182,7 @@ export function useAddressForm(entity: Ref<Record<string, any> | null>) {
         entity.value = {
             ...entity.value,
             city: city || entity.value?.city,
-            address: street || entity.value?.address,
+            address: street || address || entity.value?.address,
             psc: zip || entity.value?.psc,
             latitude: latitude ?? entity.value?.latitude,
             longitude: longitude ?? entity.value?.longitude,
@@ -198,8 +206,10 @@ export function useAddressForm(entity: Ref<Record<string, any> | null>) {
         entity.value = {
             ...entity.value,
             city: city || entity.value?.city,
-            address: street || entity.value?.address,
+            address: street || address || entity.value?.address,
             psc: zip || entity.value?.psc,
+            latitude: place.latitude ?? geo.lat,
+            longitude: place.longitude ?? geo.lon,
         }
         addressQuery.value = computeAddressQuery(entity.value, address)
         return place

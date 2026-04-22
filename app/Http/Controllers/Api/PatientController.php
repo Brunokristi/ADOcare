@@ -138,13 +138,16 @@ class PatientController extends Controller
      *
      * @group Patients
      * @bodyParam ids array required Array of patient IDs to delete. Example: [1,2,3]
+     * @bodyParam delete_patient_points boolean optional Also delete patient points. Example: true
+     * @bodyParam delete_patient_documents boolean optional Also delete patient documents. Example: true
      * @response 200 {"success":true}
      */
     public function destroyMany(PatientDeleteManyRequest $request)
     {
         $this->service->deleteManyByIds(
             $request->input('ids'),
-            $request->boolean('delete_patient_points', false)
+            $request->boolean('delete_patient_points', false),
+            $request->boolean('delete_patient_documents', false),
         );
 
         return $this->success(null, 'Deleted');

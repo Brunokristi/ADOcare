@@ -129,26 +129,24 @@ async function openEmailDialog(selectedRows: Document[], remote?: any) {
     } catch (err) {
         console.error('Failed to open email modal', err)
     } finally {
-        if (remote?.loadPage) {
-            await remote.loadPage(remote.page)
+        if (remote?.reload) {
+            await remote.reload()
+        } else if (remote?.loadPage) {
+            await remote.loadPage(1)
         }
     }
 }
 
 async function openCreate(remote?: any) {
     try {
-        const res = await openModal(markRaw(DocumentCreateForm), { branches: branches.value, initialPeriod: dates.value }, { header: 'Vytvoriť cestovný dokument', style: { width: '34rem' }, closable: true })
-        const docId = Number(res?.document_id ?? res?.id ?? 0)
-        const type = res?.type
-        if (docId > 0) {
-            const url = type === 'cp' ? `/documents/cp/${docId}` : `/documents/dzc/${docId}`
-            window.open(url, '_blank', 'noopener,noreferrer')
-        }
+        await openModal(markRaw(DocumentCreateForm), { branches: branches.value, initialPeriod: dates.value }, { header: 'Vytvoriť cestovný dokument', style: { width: '34rem' }, closable: true })
     } catch (err) {
         console.error('Open create modal failed', err)
     } finally {
-        if (remote?.loadPage) {
-            await remote.loadPage(remote.page)
+        if (remote?.reload) {
+            await remote.reload()
+        } else if (remote?.loadPage) {
+            await remote.loadPage(1)
         }
     }
 }
@@ -253,7 +251,11 @@ const options = computed<DataTableOptions<Document>>(() => ({
                             ids: selectedRows.map((r) => r.id),
                         },
                     })
-                    await remote.loadPage(remote.page)
+                    if (remote?.reload) {
+                        await remote.reload()
+                    } else if (remote?.loadPage) {
+                        await remote.loadPage(1)
+                    }
                     toast.add({
                         severity: 'success',
                         summary: 'Úspech',

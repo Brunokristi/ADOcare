@@ -13,6 +13,7 @@ const props = defineProps<IModalContentProps & {
 
 const toast = useToast()
 const deletePatientPointsData = ref(false)
+const deletePatientDocumentation = ref(false)
 const isLoading = ref(false)
 
 const confirmDelete = async () => {
@@ -22,6 +23,7 @@ const confirmDelete = async () => {
             data: {
                 ids: props.selectedRows.map((r) => r.id),
                 delete_patient_points: deletePatientPointsData.value,
+                delete_patient_documents: deletePatientDocumentation.value,
             },
         })
         await props.remote.loadPage(props.remote.page.value)
@@ -42,16 +44,20 @@ const cancel = () => {
 
 <template>
     <div class="flex flex-col gap-6">
-        <div>
-            <p class="text-danger">
-                Naozaj vymazať vybraných pacientov?
-            </p>
-        </div>
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-2 bg-tag3 rounded-md p-4">
+                <Checkbox inputId="deletePatientPoints" v-model="deletePatientPointsData" :binary="true" />
+                <label for="deletePatientPoints" class="text-normal cursor-pointer">
+                        Vymazať pacientom aj všetky body. Po zvolení tejto možnosti sa odstráni celá história bodovania a pacienti už nebudú zahrnutí v žiadnych dávkach pre poisťovňu.
+                </label>
+            </div>
 
-        <div class="flex items-center gap-2">
-            <Checkbox inputId="deletePatientPoints" v-model="deletePatientPointsData" :binary="true" />
-            <label for="deletePatientPoints" class="text-normal cursor-pointer">Odstrániť týmto pacientom všetky
-                body</label>
+            <div class="flex items-center gap-2 bg-tag3 rounded-md p-4">
+                <Checkbox inputId="deletePatientDocumentation" v-model="deletePatientDocumentation" :binary="true" />
+                <label for="deletePatientDocumentation" class="text-normal cursor-pointer">
+                    Vymazať pacientom aj všetky dokumenty. Po zvolení tejto možnosti sa odstráni celá história dokumentov.
+                </label>
+            </div>
         </div>
 
         <div class="col-span-12 mt-4 flex items-center justify-end gap-2">

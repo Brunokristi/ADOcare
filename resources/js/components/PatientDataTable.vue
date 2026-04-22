@@ -179,7 +179,7 @@ async function deletePatients(rows: Patient[], remote?: RemoteTableReturn) {
     await openModal(
         markRaw(DeleteConfirmationForm),
         {
-            title: 'Vymazať',
+            title: 'Vymazať pacientov',
             selectedRows: rows,
             remote,
         },

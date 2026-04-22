@@ -246,7 +246,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('companies/{company}/branches', [CompanyController::class, 'branches'])
         ->middleware('role:manager,superadmin');
     Route::get('companies/{company}/stamp', [CompanyController::class, 'stamp'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::delete('companies/{company}/stamp', [CompanyController::class, 'deleteStamp'])
         ->middleware('role:manager,superadmin');
 
