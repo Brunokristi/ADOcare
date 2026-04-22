@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
@@ -133,6 +133,64 @@ function extractArray(raw: any): any[] {
     for (const c of candidates) if (Array.isArray(c)) return c
     return []
 }
+
+function getNewestReferenceDate(rows: any[]): Date | null {
+    let newestDate: Date | null = null
+    let newestDateStr: string | null = null
+
+    for (const row of rows) {
+        const parsed = parseDateInput(row?.reference_date as any)
+        if (!parsed) continue
+
+        const normalized = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+        const normalizedStr = toApiDate(normalized)
+        if (!normalizedStr) continue
+
+        if (!newestDateStr || normalizedStr > newestDateStr) {
+            newestDate = normalized
+            newestDateStr = normalizedStr
+        }
+    }
+
+    return newestDate
+}
+
+let referralDateLoadSeq = 0
+
+async function loadLatestReferralDateForPatient(patientId: number | null | undefined) {
+    const seq = ++referralDateLoadSeq
+
+    if (!patientId) {
+        referralDate.value = null
+        return
+    }
+
+    try {
+        const res = await api.get('v1/patient-points', {
+            params: {
+                filter: { patient_id: patientId },
+                per_page: 25,
+                page: 1,
+                sort: '-reference_date',
+            },
+        })
+
+        if (seq !== referralDateLoadSeq) return
+        referralDate.value = getNewestReferenceDate(extractArray(res.data))
+    } catch (e) {
+        if (seq !== referralDateLoadSeq) return
+        console.error('Failed to load latest patient point reference date', e)
+        referralDate.value = null
+    }
+}
+
+watch(
+    () => Number((currentPatient.value as any)?.id) || null,
+    (patientId) => {
+        void loadLatestReferralDateForPatient(patientId)
+    },
+    { immediate: true }
+)
 
 async function searchOptions(endpoint: string, event: { query: string }) {
     try {
