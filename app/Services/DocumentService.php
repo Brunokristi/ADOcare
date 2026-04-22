@@ -279,6 +279,11 @@ class DocumentService
         return $cachePath;
     }
 
+    public function getUserSignatureDataUri(?int $userId): ?string
+    {
+        return $this->loadUserSignatureDataUri($userId);
+    }
+
     private function getTravelDocumentPdfCachePath(Document $document): string
     {
         return sprintf('documents/pdf/%s/%d.pdf', $document->type, $document->id);

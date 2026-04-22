@@ -7,7 +7,9 @@ use App\Http\Filters\ApiQuery;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\CPDocumentService;
 use App\Services\DocumentService;
+use App\Services\DZCDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -159,6 +161,28 @@ class DocumentController extends Controller
     {
         if (!Storage::disk('local')->exists($document->path)) {
             abort(404, 'Dokument nebol nájdený');
+        }
+
+        if ($request->query('format') === 'html') {
+            if ($document->type === 'cp') {
+                $payload = app(CPDocumentService::class)->getCpPayload($document);
+                $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($payload['representative_id'] ?? 0));
+
+                return response()->view('pdf.travel_cp', [
+                    'cpData' => $payload,
+                    'signatureDataUri' => $signatureDataUri,
+                ]);
+            }
+
+            if ($document->type === 'dzc') {
+                $payload = app(DZCDocumentService::class)->getDzcPayload($document);
+                $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($payload['user_id'] ?? 0));
+
+                return response()->view('pdf.travel_dzc', [
+                    'dzcData' => $payload,
+                    'signatureDataUri' => $signatureDataUri,
+                ]);
+            }
         }
 
         $pdfPath = $this->service->getTravelDocumentPdfPath($document);
