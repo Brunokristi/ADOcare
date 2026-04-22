@@ -151,7 +151,7 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
                 component: DiagnosesPage,
                 meta: {
                     title: 'Diagnózy',
-                    link: 'diagnozy',
+                    link: 'diagnózy',
                     sidebar: showOnSidebar,
                     navbar: true,
                 },

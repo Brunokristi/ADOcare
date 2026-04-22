@@ -1,11 +1,11 @@
 <template>
     <footer class="flex justify-between items-center py-1 px-4">
         <div class="flex items-center gap-2">
-            <a href="https://studiokristian.com/" class="flex items-center bg-tag2 px-2 py-0.5 rounded-md" target="_blank">
+            <a href="https://studiokristian.com/" class="flex items-center bg-tag2 px-2 rounded-sm" target="_blank">
                 <img
                 src="/sk_logo.svg"
                 alt="Studio Kristian Logo"
-                class="h-2.5 w-auto pr-2"
+                class="h-2 w-auto pr-2"
                 />
 
                 <p
@@ -14,11 +14,11 @@
                 </p> 
             </a>
 
-            <a href="https://adocare.sk/" class="flex items-center bg-tag2 px-2 py-0.5 rounded-md" target="_blank">
+            <a href="https://adocare.sk/" class="flex items-center bg-tag2 px-2 rounded-sm" target="_blank">
                 <img
                 src="/logo.svg"
                 alt="Logo"
-                class="h-3 w-auto pr-2"
+                class="h-2.5 w-auto pr-2"
                 />
 
                 <p
@@ -28,11 +28,11 @@
                 
             </a>
 
-            <a href="https://adocare.sk/adonis" class="flex items-center bg-tag2 px-2 py-0.5 rounded-md" target="_blank">
+            <a href="https://adocare.sk/adonis" class="flex items-center bg-tag2 px-2 rounded-sm" target="_blank">
                 <img
                 src="/adonis.svg"
                 alt="Adonis Logo"
-                class="h-3.5 w-auto pr-2"
+                class="h-3 w-auto pr-2"
                 />
 
                 <p

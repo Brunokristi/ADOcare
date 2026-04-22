@@ -44,7 +44,7 @@ export type PlaceDetailResponse = {
  */
 export async function searchAutocomplete(text: string) {
     if (!text || text.length < 3) return []
-    const res = await api.get('/v1/geocode/autocomplete', { params: { text } })
+    const res = await api.get('/geocode/autocomplete', { params: { text } })
     const preds = res.data.data?.predictions ?? []
     return preds.map((p: any) => ({ label: p.description, place_id: p.place_id }))
 }
@@ -57,7 +57,7 @@ export async function searchAutocomplete(text: string) {
  */
 export async function fetchPlaceDetails(place_id: string): Promise<PlaceDetailResponse | null> {
     if (!place_id) return null
-    const res = await api.get('/v1/geocode/details', { params: { place_id } })
+    const res = await api.get('/geocode/details', { params: { place_id } })
     return res.data.data?.result ?? null
 }
 
@@ -137,7 +137,7 @@ export function parseComponents(components: PlaceDetailResponse['address_compone
  */
 export async function reverseGeocode(lat: number, lon: number): Promise<PlaceData | null> {
     if (lat == null || lon == null) return null
-    const place = await api.get('/v1/geocode/reverse', { params: { lat, lon } })
+    const place = await api.get('/geocode/reverse', { params: { lat, lon } })
     const placeData = place?.data.data ?? null
     if (!placeData) return null
     const { address, street, city, zip, latitude, longitude, place_id } = placeData
