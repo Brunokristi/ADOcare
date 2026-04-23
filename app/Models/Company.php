@@ -80,4 +80,14 @@ class Company extends Model
     {
         return $this->belongsTo(User::class, 'representative_id');
     }
+
+    public function subscriptionPayments()
+    {
+        return $this->hasMany(CompanySubscriptionPayment::class, 'company_id');
+    }
+
+    public function subscriptionPaidMonths()
+    {
+        return $this->hasMany(CompanySubscriptionPaidMonth::class, 'company_id');
+    }
 }

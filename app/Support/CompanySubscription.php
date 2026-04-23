@@ -38,11 +38,19 @@ class CompanySubscription
             return false;
         }
 
-        if ($company->subscription_ends_at && now()->startOfDay()->gt($company->subscription_ends_at->copy()->startOfDay())) {
-            return false;
+        // Trial accounts are considered active regardless of paid months.
+        if ($status === 'trial') {
+            return true;
         }
 
-        return true;
+        $now = now();
+        $year = (int) $now->year;
+        $month = (int) $now->month;
+
+        return $company->subscriptionPaidMonths()
+            ->where('year', $year)
+            ->where('month', $month)
+            ->exists();
     }
 
     public static function subscriptionExpiredMessage(?Company $company): string

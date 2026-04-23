@@ -9,6 +9,8 @@ use App\Http\Resources\UserCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Branch;
 use App\Models\Company;
+use App\Models\CompanySubscriptionPaidMonth;
+use App\Models\CompanySubscriptionPayment;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -153,14 +155,107 @@ class CompanyController extends Controller
             'subscription_price_monthly' => ['nullable', 'numeric', 'min:0'],
             'subscription_users_limit_override' => ['nullable', 'integer', 'min:1'],
             'subscription_status' => ['required', 'in:active,trial,paused,cancelled'],
-            'subscription_started_at' => ['nullable', 'date'],
-            'subscription_ends_at' => ['nullable', 'date', 'after_or_equal:subscription_started_at'],
             'subscription_notes' => ['nullable', 'string'],
+            'paid_months_year' => ['required', 'integer', 'between:2020,2100'],
+            'paid_months' => ['array'],
+            'paid_months.*' => ['integer', 'between:1,12', 'distinct'],
+            'payments' => ['array'],
+            'payments.*.received_at' => ['required', 'date'],
+            'payments.*.amount' => ['required', 'numeric', 'min:0'],
+            'payments.*.notes' => ['nullable', 'string'],
         ]);
 
-        $company->update($validated);
+        DB::transaction(function () use ($validated, $company) {
+            $company->update([
+                'subscription_tier_id' => $validated['subscription_tier_id'] ?? null,
+                'subscription_price_monthly' => $validated['subscription_price_monthly'] ?? null,
+                'subscription_users_limit_override' => $validated['subscription_users_limit_override'] ?? null,
+                'subscription_status' => $validated['subscription_status'],
+                'subscription_notes' => $validated['subscription_notes'] ?? null,
+                // Legacy fields are not used anymore in UI, keep them null to avoid conflicting logic.
+                'subscription_started_at' => null,
+                'subscription_ends_at' => null,
+            ]);
 
-        return $this->success($company->fresh()->load('subscriptionTier'), 'Subscription updated');
+            $year = (int) $validated['paid_months_year'];
+            $months = collect($validated['paid_months'] ?? [])->map(fn($m) => (int) $m)->unique()->values();
+
+            CompanySubscriptionPaidMonth::query()
+                ->where('company_id', $company->id)
+                ->where('year', $year)
+                ->delete();
+
+            if ($months->isNotEmpty()) {
+                CompanySubscriptionPaidMonth::insert(
+                    $months->map(fn($month) => [
+                        'company_id' => $company->id,
+                        'year' => $year,
+                        'month' => $month,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ])->all()
+                );
+            }
+
+            CompanySubscriptionPayment::query()->where('company_id', $company->id)->delete();
+
+            $payments = collect($validated['payments'] ?? []);
+
+            if ($payments->isNotEmpty()) {
+                CompanySubscriptionPayment::insert(
+                    $payments->map(fn($payment) => [
+                        'company_id' => $company->id,
+                        'received_at' => $payment['received_at'],
+                        'amount' => $payment['amount'],
+                        'notes' => $payment['notes'] ?? null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ])->all()
+                );
+            }
+        });
+
+        return $this->success($this->subscriptionPayload($company->fresh()), 'Subscription updated');
+    }
+
+    public function subscriptionDetails(Company $company)
+    {
+        return $this->success($this->subscriptionPayload($company), 'Company subscription details retrieved');
+    }
+
+    private function subscriptionPayload(Company $company): array
+    {
+        $company->load([
+            'subscriptionTier',
+            'subscriptionPayments' => fn($q) => $q->orderByDesc('received_at')->orderByDesc('id'),
+            'subscriptionPaidMonths' => fn($q) => $q->orderByDesc('year')->orderBy('month'),
+        ]);
+
+        return [
+            'id' => $company->id,
+            'name' => $company->name,
+            'subscription_tier_id' => $company->subscription_tier_id,
+            'subscription_price_monthly' => $company->subscription_price_monthly,
+            'subscription_users_limit_override' => $company->subscription_users_limit_override,
+            'subscription_status' => $company->subscription_status,
+            'subscription_notes' => $company->subscription_notes,
+            'subscription_tier' => $company->subscriptionTier,
+            'payments' => $company->subscriptionPayments->map(fn($payment) => [
+                'id' => $payment->id,
+                'received_at' => optional($payment->received_at)->toDateString(),
+                'amount' => $payment->amount,
+                'notes' => $payment->notes,
+            ])->values(),
+            'paid_months_by_year' => $company->subscriptionPaidMonths
+                ->groupBy('year')
+                ->map(fn($items, $year) => [
+                    'year' => (int) $year,
+                    'months' => $items->pluck('month')->map(fn($m) => (int) $m)->values(),
+                ])
+                ->values()
+                ->sortByDesc('year')
+                ->values(),
+        ];
     }
 
     /**

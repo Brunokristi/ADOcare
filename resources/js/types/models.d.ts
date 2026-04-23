@@ -91,6 +91,22 @@ export interface Diagnosis {
   updated_at: string | null
 }
 
+export interface CompanySubscriptionPayment {
+  // columns
+  id: number
+  company_id: number
+  received_at: string
+  amount: number
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  company: Company
+  // counts
+  // exists
+  company_exists: boolean
+}
+
 export interface Country {
   // columns
   id: number
@@ -348,11 +364,15 @@ export interface Company {
   patients: Patient[]
   users: User[]
   representative: User
+  subscription_payments: CompanySubscriptionPayment[]
+  subscription_paid_months: CompanySubscriptionPaidMonth[]
   // counts
   branches_count: number
   cars_count: number
   patients_count: number
   users_count: number
+  subscription_payments_count: number
+  subscription_paid_months_count: number
   // exists
   subscription_tier_exists: boolean
   branches_exists: boolean
@@ -360,6 +380,23 @@ export interface Company {
   patients_exists: boolean
   users_exists: boolean
   representative_exists: boolean
+  subscription_payments_exists: boolean
+  subscription_paid_months_exists: boolean
+}
+
+export interface CompanySubscriptionPaidMonth {
+  // columns
+  id: number
+  company_id: number
+  year: number
+  month: number
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  company: Company
+  // counts
+  // exists
+  company_exists: boolean
 }
 
 export interface Branch {

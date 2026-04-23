@@ -251,6 +251,8 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::apiResourceComplete('users', UserController::class, 'role:manager,superadmin');
     Route::get('companies/subscriptions', [CompanyController::class, 'subscriptions'])
         ->middleware('role:superadmin');
+    Route::get('companies/{company}/subscription-details', [CompanyController::class, 'subscriptionDetails'])
+        ->middleware('role:superadmin');
     Route::put('companies/{company}/subscription', [CompanyController::class, 'updateSubscription'])
         ->middleware('role:superadmin');
     Route::apiResourceComplete('companies', CompanyController::class, 'role:superadmin');

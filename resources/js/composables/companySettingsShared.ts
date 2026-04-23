@@ -20,7 +20,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export function defaultNotificationSettings(): NotificationSetting[] {
     return [
         { key: 'car_maintenance', label: 'Údržba áut', enabled: false, emails: [] },
-        { key: 'subscription', label: 'Predplatné spoločnosti', enabled: false, emails: [] },
+        { key: 'subscription', label: 'Predplatné', enabled: false, emails: [] },
     ]
 }
 

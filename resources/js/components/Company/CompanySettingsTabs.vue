@@ -360,16 +360,6 @@ async function handleTabChange(nextTab: string) {
                                                 <ToggleSwitch v-model="setting.enabled" />
                                                 {{ setting.enabled ? 'Zapnuté' : 'Vypnuté' }}
                                             </label>
-
-                                            <Button
-                                                v-if="index > 0"
-                                                type="button"
-                                                label="Odstrániť"
-                                                text
-                                                severity="danger"
-                                                class="justify-start md:justify-center"
-                                                @click="emit('remove-notification-setting', index)"
-                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -383,8 +373,18 @@ async function handleTabChange(nextTab: string) {
                                         v-model="setting.emails"
                                         multiple
                                         :typeahead="false"
-                                        class="w-full border-darkgrey!"
-                                        inputClass="w-full! !border-darkgrey"
+                                        class="w-full"
+                                        :pt="{
+                                            inputmultiple: {
+                                                class: 'w-full rounded-md! border! border-darkgrey! bg-white! px-2! py-1! flex! flex-wrap! items-center! content-center! gap-1! min-h-[2.5rem] max-h-40 overflow-y-auto text-normal! text-darkgrey! outline-none! ring-0! shadow-none! focus-within:border-darkgrey!'
+                                            },
+                                            inputchip: {
+                                                class: 'flex! items-center! min-h-7!'
+                                            },
+                                            input: {
+                                                class: 'w-full! border-0! bg-transparent! text-normal! text-darkgrey! outline-none! ring-0! shadow-none! focus:outline-none! focus:ring-0! focus:shadow-none! leading-none!'
+                                            }
+                                        }"
                                     />
                                     <small class="text-mini text-tag2 block mt-1">
                                         Email potvrďte stlačením tlačidla enter.

@@ -21,7 +21,8 @@ import type { RouteRecordRaw } from "vue-router";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 import Documents from "@/pages/Manager/Documents.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
-import SubscriptionsPage from "@/pages/Settings/Subscriptions/SubscriptionsPage.vue";
+import SubscriptionPackagesPage from "@/pages/Settings/Subscriptions/SubscriptionPackagesPage.vue";
+import CompanySubscriptionsPage from "@/pages/Settings/Subscriptions/CompanySubscriptionsPage.vue";
 import DashboardSuperadmin from "@/pages/DashboardSuperadmin.vue";
 import useAuthStore from "@/stores/auth";
 import CompanySettingsPage from "@/pages/Settings/Companies/CompanySettingsPage.vue";
@@ -133,7 +134,7 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
                 path: '/doctors',
                 name: 'superadmin-settings-doctors',
                 component: Doctors,
-                meta: { title: 'Spolupracujúci lekári', sidebar: showOnSidebar, navbar: true, link: 'spolupracujúci lekári' },
+                meta: { title: 'Lekári', sidebar: showOnSidebar, navbar: true, link: 'lekári' },
             },
             {
                 path: 'procedures',
@@ -157,17 +158,42 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
                     navbar: true,
                 },
             },
+        ],
+    },
+    {
+        path: '/superadmin/subscriptions',
+        name: 'superadmin-subscriptions',
+        component: Settings,
+        redirect: { name: 'superadmin-subscriptions-list' },
+        meta: {
+            title: 'Predplatné',
+            sectionRoot: 'superadmin-subscriptions',
+            sidebar: showOnSidebar,
+        },
+        children: [
             {
-                path: 'subscriptions',
-                name: 'superadmin-settings-subscriptions',
-                component: SubscriptionsPage,
+                path: 'list',
+                name: 'superadmin-subscriptions-list',
+                component: SubscriptionPackagesPage,
                 meta: {
-                    title: 'Predplatné',
-                    link: 'predplatné',
+                    title: 'Balíky',
+                    link: 'balíky',
                     sidebar: showOnSidebar,
                     navbar: true,
                 },
             },
+            {
+                path: 'companies',
+                name: 'superadmin-subscriptions-companies',
+                component: CompanySubscriptionsPage,
+                meta: {
+                    title: 'Spoločnosti',
+                    link: 'spoločnosti',
+                    sidebar: showOnSidebar,
+                    navbar: true,
+                },
+            },
+
         ],
     },
 ];
