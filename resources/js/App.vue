@@ -1,6 +1,6 @@
 <!-- src/App.vue -->
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
@@ -42,6 +42,7 @@ useDeathCheck({
 
 const isLoggedIn = computed(() => auth.isAuthenticated)
 const showNavbar = computed(() => route.meta.shownavbar !== false)
+const showFooter = computed(() => route.meta.showfooter !== false)
 
 const isSidebarOpen = ref(false)
 function handleToggleSidebar() {
@@ -52,6 +53,20 @@ function goToRoutesFromToast() {
     toast.removeGroup(ROUTES_TOAST_GROUP)
     router.push('/accounting/routes')
 }
+
+function handleSubscriptionExpired() {
+    if (route.name !== 'subscription-expired') {
+        router.push({ name: 'subscription-expired' })
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('subscription-expired', handleSubscriptionExpired)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('subscription-expired', handleSubscriptionExpired)
+})
 </script>
 
 <template>
@@ -74,7 +89,7 @@ function goToRoutesFromToast() {
                 class="flex-none bg-darkgrey text-white border-l border-lightgrey" />
         </div>
 
-        <Footer class="flex-none" />
+        <Footer v-if="showFooter" class="flex-none" />
 
         <Toast position="bottom-right" />
 

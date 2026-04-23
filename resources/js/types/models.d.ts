@@ -288,6 +288,26 @@ export interface CarService {
   car_exists: boolean
 }
 
+export interface SubscriptionTier {
+  // columns
+  id: number
+  name: string
+  price_monthly: number | null
+  users_limit: number | null
+  description: string | null
+  is_active: boolean
+  sort_order: number
+  created_at: string | null
+  updated_at: string | null
+  deleted_at: string | null
+  // relations
+  companies: Company[]
+  // counts
+  companies_count: number
+  // exists
+  companies_exists: boolean
+}
+
 export interface Company {
   // columns
   id: number
@@ -314,7 +334,15 @@ export interface Company {
   notification_settings: Array<unknown> | null
   visit_locations: Array<unknown> | null
   deleted_at: string | null
+  subscription_tier_id: number | null
+  subscription_price_monthly: number | null
+  subscription_users_limit_override: number | null
+  subscription_status: string
+  subscription_started_at: string | null
+  subscription_ends_at: string | null
+  subscription_notes: string | null
   // relations
+  subscription_tier: SubscriptionTier
   branches: Branch[]
   cars: Car[]
   patients: Patient[]
@@ -326,6 +354,7 @@ export interface Company {
   patients_count: number
   users_count: number
   // exists
+  subscription_tier_exists: boolean
   branches_exists: boolean
   cars_exists: boolean
   patients_exists: boolean

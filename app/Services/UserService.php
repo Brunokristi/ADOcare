@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Company;
 use App\Models\User;
+use App\Support\CompanySubscription;
+use Illuminate\Validation\ValidationException;
 
 class UserService
 {
@@ -20,7 +23,10 @@ class UserService
         if (!$companyId) {
             $currentUser = auth()->user();
             $data['company_id'] = $currentUser->company_id;
+            $companyId = $data['company_id'];
         }
+
+        $this->assertUserLimitNotExceeded((int) $companyId);
 
         $branches = $data['branches'] ?? null;
         unset($data['branches']);
@@ -55,6 +61,11 @@ class UserService
         $branches = $data['branches'] ?? null;
         unset($data['branches']);
 
+        $targetCompanyId = (int) ($data['company_id'] ?? $user->company_id);
+        if ($targetCompanyId !== (int) $user->company_id) {
+            $this->assertUserLimitNotExceeded($targetCompanyId, $user->id);
+        }
+
         $user->update($data);
 
         if ($branches && is_array($branches)) {
@@ -71,5 +82,30 @@ class UserService
         }
 
         return $user->fresh()->load(['branches', 'role']);
+    }
+
+    private function assertUserLimitNotExceeded(int $companyId, ?int $ignoreUserId = null): void
+    {
+        $company = Company::query()->with('subscriptionTier')->find($companyId);
+        $limit = CompanySubscription::effectiveUsersLimit($company);
+
+        if ($limit === null) {
+            return;
+        }
+
+        $usersQuery = User::query()->where('company_id', $companyId);
+        if ($ignoreUserId) {
+            $usersQuery->where('id', '!=', $ignoreUserId);
+        }
+
+        $currentCount = (int) $usersQuery->count();
+
+        if ($currentCount >= $limit) {
+            throw ValidationException::withMessages([
+                'company_id' => [
+                    "Spoločnosť dosiahla limit používateľov pre aktuálne predplatné ({$limit}).",
+                ],
+            ]);
+        }
     }
 }

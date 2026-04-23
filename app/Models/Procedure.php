@@ -18,17 +18,31 @@ class Procedure extends Model
     // Procedure prices based on insurance companies
     public function insuranceCompaniesPrices()
     {
-        return $this->belongsToMany(InsuranceCompany::class, 'procedure_company_prices')
-                    ->withPivot('price')
-                    ->withTimestamps();
+        $relation = $this->belongsToMany(InsuranceCompany::class, 'procedure_company_prices')
+            ->withPivot(['price', 'company_id'])
+            ->withTimestamps();
+
+        $user = auth()->user();
+        if ($user && !$user->hasGlobalRole('superadmin') && $user->company_id) {
+            $relation->wherePivot('company_id', $user->company_id);
+        }
+
+        return $relation;
     }
 
     public function insuranceCompaniesPricesMinimal()
     {
-        return $this->belongsToMany(InsuranceCompany::class, 'procedure_company_prices')
-                    ->select('insurance_companies.id')
-                    ->withPivot('price')
-                    ->withTimestamps();
+        $relation = $this->belongsToMany(InsuranceCompany::class, 'procedure_company_prices')
+            ->select('insurance_companies.id')
+            ->withPivot(['price', 'company_id'])
+            ->withTimestamps();
+
+        $user = auth()->user();
+        if ($user && !$user->hasGlobalRole('superadmin') && $user->company_id) {
+            $relation->wherePivot('company_id', $user->company_id);
+        }
+
+        return $relation;
     }
 
 }

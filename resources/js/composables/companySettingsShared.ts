@@ -18,7 +18,10 @@ export type NotificationSetting = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function defaultNotificationSettings(): NotificationSetting[] {
-    return [{ key: 'car_maintenance', label: 'Údržba áut', enabled: false, emails: [] }]
+    return [
+        { key: 'car_maintenance', label: 'Údržba áut', enabled: false, emails: [] },
+        { key: 'subscription', label: 'Predplatné spoločnosti', enabled: false, emails: [] },
+    ]
 }
 
 export function isValidEmail(email: string) {
@@ -74,6 +77,13 @@ export function normalizeNotificationSettings(raw: unknown): NotificationSetting
             emails: Array.isArray(item?.emails) ? normalizeEmailList(item.emails) : [],
         }))
         .filter((item: NotificationSetting) => item.label.length > 0 || item.emails.length > 0)
+
+    const byKey = new Map(normalized.map((item) => [item.key, item]))
+    for (const defaultItem of defaultNotificationSettings()) {
+        if (!byKey.has(defaultItem.key)) {
+            normalized.push({ ...defaultItem, emails: [...defaultItem.emails] })
+        }
+    }
 
     return normalized.length > 0 ? normalized : defaultNotificationSettings()
 }

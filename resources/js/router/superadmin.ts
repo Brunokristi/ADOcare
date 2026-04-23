@@ -21,6 +21,7 @@ import type { RouteRecordRaw } from "vue-router";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 import Documents from "@/pages/Manager/Documents.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
+import SubscriptionsPage from "@/pages/Settings/Subscriptions/SubscriptionsPage.vue";
 import DashboardSuperadmin from "@/pages/DashboardSuperadmin.vue";
 import useAuthStore from "@/stores/auth";
 import CompanySettingsPage from "@/pages/Settings/Companies/CompanySettingsPage.vue";
@@ -152,6 +153,17 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: {
                     title: 'Diagnózy',
                     link: 'diagnózy',
+                    sidebar: showOnSidebar,
+                    navbar: true,
+                },
+            },
+            {
+                path: 'subscriptions',
+                name: 'superadmin-settings-subscriptions',
+                component: SubscriptionsPage,
+                meta: {
+                    title: 'Predplatné',
+                    link: 'predplatné',
                     sidebar: showOnSidebar,
                     navbar: true,
                 },

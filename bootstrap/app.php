@@ -2,6 +2,7 @@
 
 use App\Console\Commands\SoftDeleteInactivePatients;
 use App\Console\Commands\SendCarMaintenanceNotifications;
+use App\Console\Commands\SendSubscriptionNotifications;
 use App\Console\Commands\AutoTrainDekurzVertexModel;
 use App\Console\Commands\SyncDekurzEndpointAfterTraining;
 use App\Http\Responses\ApiResponseClass;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'role' => \App\Http\Middleware\EnsureUserHasRole::class,
                 // API auth that returns JSON 401 instead of redirecting
                 'api.auth' => \App\Http\Middleware\EnsureApiAuthenticated::class,
+                'subscription.active' => \App\Http\Middleware\EnsureCompanySubscriptionActive::class,
             ]
         );
 
@@ -33,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })->withSchedule(function (Schedule $schedule): void {
         $schedule->command(SoftDeleteInactivePatients::class)->monthlyOn(1, '2:00');
         $schedule->command(SendCarMaintenanceNotifications::class)->dailyAt('6:00');
+        $schedule->command(SendSubscriptionNotifications::class)->dailyAt('6:15');
 
         $schedule->command('backup:run --only-db')->dailyAt('01:00')->withoutOverlapping();
         $schedule->command('backup:clean')->dailyAt('01:30')->withoutOverlapping();

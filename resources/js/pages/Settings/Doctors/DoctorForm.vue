@@ -60,18 +60,19 @@ async function save() {
 
 <template>
     <div class="grid grid-cols-12 gap-4 p-2">
-        <div class="col-span-6">
-            <label class="block text-normal mb-1">Meno</label>
-            <InputText v-model="local.first_name" fluid />
-        </div>
-        <div class="col-span-6">
-            <label class="block text-normal mb-1">Priezvisko</label>
-            <InputText v-model="local.last_name" fluid />
-        </div>
-        <div class="col-span-12">
+        <div class="col-span-2">
             <label class="block text-normal mb-1">Titul</label>
             <InputText v-model="local.title" fluid />
         </div>
+        <div class="col-span-5">
+            <label class="block text-normal mb-1">Meno</label>
+            <InputText v-model="local.first_name" fluid />
+        </div>
+        <div class="col-span-5">
+            <label class="block text-normal mb-1">Priezvisko</label>
+            <InputText v-model="local.last_name" fluid />
+        </div>
+        
         <div class="col-span-6">
             <label class="block text-normal mb-1">ZPR</label>
             <InputText v-model="local.zpr" fluid />

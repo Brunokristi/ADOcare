@@ -474,6 +474,10 @@ const save = async () => {
         const errors = err?.response?.data?.errors || {}
         const loginErrors = (Array.isArray(errors?.login) ? errors.login : []).map((v: any) => String(v).trim()).filter(Boolean)
         const emailErrors = (Array.isArray(errors?.email) ? errors.email : []).map((v: any) => String(v).trim()).filter(Boolean)
+        const firstValidationError = Object.values(errors)
+            .flatMap((value: any) => Array.isArray(value) ? value : [])
+            .map((value: any) => String(value).trim())
+            .find(Boolean)
 
         if (emailErrors.length > 0) {
             emailError.value = emailErrors[0]
@@ -502,6 +506,16 @@ const save = async () => {
                 severity: 'error',
                 summary: 'Chyba',
                 detail: backendMessage,
+                life: 5000,
+            })
+            return
+        }
+
+        if (firstValidationError) {
+            toast.add({
+                severity: 'error',
+                summary: 'Chyba',
+                detail: firstValidationError,
                 life: 5000,
             })
             return

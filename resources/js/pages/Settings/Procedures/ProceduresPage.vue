@@ -15,7 +15,12 @@ const actionRemote = ref<any | null>(null)
 
 async function openCreate() {
     try {
-        const res = await openModal(markRaw(ProcedureForm), { procedure: null }, { header: 'Výkon', style: { width: '760px' }, closable: true })
+        const res = await openModal(
+            markRaw(ProcedureForm),
+            { procedure: null },
+            { header: 'Výkon', style: { width: '760px' }, closable: true }
+        )
+
         if (res?.changed && actionRemote.value?.reload) {
             await actionRemote.value.reload()
         }
@@ -26,7 +31,12 @@ async function openCreate() {
 
 async function openEdit(row: Procedure) {
     try {
-        const res = await openModal(markRaw(ProcedureForm), { procedure: row }, { header: 'Výkon', style: { width: '760px' }, closable: true })
+        const res = await openModal(
+            markRaw(ProcedureForm),
+            { procedure: row },
+            { header: 'Výkon', style: { width: '760px' }, closable: true }
+        )
+
         if (res?.changed && actionRemote.value?.reload) {
             await actionRemote.value.reload()
         }
@@ -39,32 +49,38 @@ const companies = ref<InsuranceCompany[]>([])
 
 onMounted(async () => {
     try {
-        companies.value = (await api.fetchEntities<InsuranceCompany>('/v1/insurance-companies'))
+        companies.value = await api.fetchEntities<InsuranceCompany>('/v1/insurance-companies')
 
-        const companyCols = companies.value.map((c) => {
-            const ret: ColumnDef<Procedure> = {
-                field: `price_${c.id}`,
-                header: (c.name ?? c.code ?? String(c.id)).split(' ')[0],
-                width: '120px',
-                render: (_value, row) => {
-                    const existing = row.insurance_companies_prices_minimal ?? []
-                    const found: any = existing.find((p: any) => Number(p.id) === Number(c.id))
-                    const price = found ? (found.pivot?.price ?? null) : null
+        const baseColumns: ColumnDef<Procedure>[] = [
+            { field: 'code', header: 'Kód', sortable: true },
+            { field: 'description', header: 'Popis' },
+        ]
 
-                    if (price === null || price === undefined) {
-                        return '-'
+        const companyCols: ColumnDef<Procedure>[] = authStore.isSuperadmin
+            ? []
+            : companies.value.map((c) => {
+                return {
+                    field: `price_${c.id}`,
+                    header: (c.name ?? c.code ?? String(c.id)).split(' ')[0],
+                    width: '120px',
+                    render: (_value, row) => {
+                        const existing = row.insurance_companies_prices_minimal ?? []
+                        const found: any = existing.find((p: any) => Number(p.id) === Number(c.id))
+                        const price = found ? (found.pivot?.price ?? null) : null
+
+                        if (price === null || price === undefined) {
+                            return '-'
+                        }
+
+                        return `
+                            <div class="flex items-center justify-end gap-1 whitespace-nowrap">
+                                <span>${Number(price).toFixed(2)}</span>
+                                <span class="text-normal text-darkgrey">€</span>
+                            </div>
+                        `
                     }
-
-                    return `
-                        <div class="flex items-center justify-end gap-1 whitespace-nowrap">
-                            <span>${Number(price).toFixed(2)}</span>
-                            <span class="text-normal text-darkgrey">€</span>
-                        </div>
-                    `
                 }
-            }
-            return ret
-        })
+            })
 
         const editColumn: ColumnDef<Procedure> = {
             field: 'edit',
@@ -81,9 +97,8 @@ onMounted(async () => {
             ]
         }
 
-        const columns = [
-            { field: 'code', header: 'Kód', sortable: true },
-            { field: 'description', header: 'Popis' },
+        const columns: ColumnDef<Procedure>[] = [
+            ...baseColumns,
             ...companyCols,
         ]
 
@@ -107,9 +122,10 @@ const options = ref<DataTableOptions<any>>({
     columns: [
         { field: 'code', header: 'Kód', sortable: true },
         { field: 'description', header: 'Popis' },
-        { field: 'prices_summary', header: 'Ceny', width: '30%' },
     ],
-    afterInit: ({ remote }) => { actionRemote.value = remote },
+    afterInit: ({ remote }) => {
+        actionRemote.value = remote
+    },
     actions: authStore.isSuperadmin ? [
         {
             key: 'delete',
@@ -138,7 +154,7 @@ const options = ref<DataTableOptions<any>>({
             icon: 'bi bi-plus',
             class: 'bg-accent!',
             handler: async () => {
-                openCreate()
+                await openCreate()
             },
         },
     ] : [],
@@ -154,6 +170,6 @@ const options = ref<DataTableOptions<any>>({
 <style scoped>
 .text-heading {
     font-weight: 600;
-    font-size: 1.125rem
+    font-size: 1.125rem;
 }
 </style>

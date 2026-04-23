@@ -124,6 +124,46 @@ class CompanyController extends Controller
     }
 
     /**
+     * List company subscriptions for management.
+     */
+    public function subscriptions(Request $request)
+    {
+        $query = Company::query()->with(['subscriptionTier'])->withCount('users');
+
+        $results = ApiQuery::apply(
+            $request,
+            $query,
+            searchable: ['name', 'ico', 'email'],
+            allowedFilters: ['subscription_status', 'subscription_tier_id'],
+            defaults: [
+                'sort' => 'name',
+            ]
+        );
+
+        return $this->success(new BaseCollection($results), 'Company subscriptions retrieved');
+    }
+
+    /**
+     * Update subscription values for one company.
+     */
+    public function updateSubscription(Request $request, Company $company)
+    {
+        $validated = $request->validate([
+            'subscription_tier_id' => ['nullable', 'integer', 'exists:subscription_tiers,id'],
+            'subscription_price_monthly' => ['nullable', 'numeric', 'min:0'],
+            'subscription_users_limit_override' => ['nullable', 'integer', 'min:1'],
+            'subscription_status' => ['required', 'in:active,trial,paused,cancelled'],
+            'subscription_started_at' => ['nullable', 'date'],
+            'subscription_ends_at' => ['nullable', 'date', 'after_or_equal:subscription_started_at'],
+            'subscription_notes' => ['nullable', 'string'],
+        ]);
+
+        $company->update($validated);
+
+        return $this->success($company->fresh()->load('subscriptionTier'), 'Subscription updated');
+    }
+
+    /**
      * Get the stamp image for a company
      *
      * @group Companies

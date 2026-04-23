@@ -63,6 +63,7 @@ class PointsExportController extends Controller
                 $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
             })
+            ->where('pcp.company_id', $companyId)
             ->where('pp.user_id', $userId)
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
@@ -207,6 +208,7 @@ class PointsExportController extends Controller
                 $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
             })
+            ->where('pcp.company_id', $companyId)
             ->where('pp.user_id', $userId)
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
@@ -368,6 +370,7 @@ class PointsExportController extends Controller
                 $join->on('pcp.procedure_id', '=', 'pp.procedure_id')
                     ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
             })
+            ->where('pcp.company_id', $companyId)
             ->where('pp.user_id', $userId)
             ->where('pp.branch_id', $branchId)
             ->where('p.insurance_company_id', $insuranceId)
