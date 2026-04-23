@@ -2,19 +2,23 @@
 import { computed, markRaw, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import Tabs from 'primevue/tabs'
-import TabList from 'primevue/tablist'
-import Tab from 'primevue/tab'
-import TabPanels from 'primevue/tabpanels'
-import TabPanel from 'primevue/tabpanel'
-import Chip from 'primevue/chip'
 import Button from 'primevue/button'
 
-import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import CompanySettingsTabs from '@/components/Company/CompanySettingsTabs.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
-import AddressAutocomplete from '@/components/Address/AddressAutocomplete.vue'
-import MapSelector from '@/components/Address/MapSelector.vue'
 import { useAddressForm } from '@/composables/address'
+import {
+    cloneNotificationSettings,
+    defaultNotificationSettings,
+    normalizeNotificationSettings,
+    normalizeVisitLocation,
+    normalizeVisitLocations,
+    sanitizeEmailList,
+    stripCompanyEmail,
+    withCompanyEmail,
+    type NotificationSetting,
+    type VisitLocation,
+} from '@/composables/companySettingsShared'
 import { useAuthStore } from '@/stores/auth'
 import { useUiOverlayStore } from '@/stores/uiOverlay'
 import useModal from '@/composables/useModal'
@@ -24,23 +28,6 @@ import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 import { formatUserFullName, mergeAddressParts } from '@/utils/formatUtils'
 import BranchForm from '../Branches/BranchForm.vue'
 import UserForm from '../Users/UserForm.vue'
-
-type VisitLocation = {
-    address: string
-    street: string
-    city: string
-    zip: string
-    latitude: number | null
-    longitude: number | null
-    place_id?: string
-}
-
-type NotificationSetting = {
-    key: string
-    label: string
-    enabled: boolean
-    emails: string[]
-}
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -61,113 +48,16 @@ const activeTab = ref<string>('firma')
 const branchRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 const userRemote = ref<RemoteTableReturn>({} as RemoteTableReturn)
 
-const stampInputRef = ref<HTMLInputElement | null>(null)
 const selectedStampFile = ref<File | null>(null)
 const stampPreviewUrl = ref<string | null>(null)
 const stampIsFromServer = ref(false)
+const hasRepresentativeOptions = computed(() => representativeOptions.value.length > 0)
 
 const STAMP_REQUIRED_WIDTH = 300
 const STAMP_REQUIRED_HEIGHT = 100
 const STAMP_MAX_SIZE_MB = 5
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const { addressQuery, init, onAutocompleteSelected, onMapClick, resolveBeforeSave } = useAddressForm(company)
-
-function defaultNotificationSettings(): NotificationSetting[] {
-    return [{ key: 'car_maintenance', label: 'Údržba áut', enabled: false, emails: [] }]
-}
-
-function isValidEmail(email: string) {
-    return EMAIL_REGEX.test(email.trim())
-}
-
-function sanitizeEmailList(emails: string[]) {
-    return Array.from(
-        new Set(
-            emails
-                .map((email) => email.trim().toLowerCase())
-                .filter((email) => email.length > 0)
-                .filter((email) => isValidEmail(email)),
-        ),
-    )
-}
-
-function normalizeEmailList(emails: string[]) {
-    return sanitizeEmailList(emails)
-}
-
-function stripCompanyEmail(emails: string[], companyEmail: string) {
-    const requiredEmail = companyEmail.trim()
-
-    if (!requiredEmail) {
-        return normalizeEmailList(emails)
-    }
-
-    return normalizeEmailList(emails).filter((email) => email !== requiredEmail)
-}
-
-function withCompanyEmail(emails: string[], companyEmail: string) {
-    const normalized = stripCompanyEmail(emails, companyEmail)
-    const requiredEmail = companyEmail.trim()
-
-    if (requiredEmail) {
-        normalized.unshift(requiredEmail)
-    }
-
-    return normalized
-}
-
-function normalizeNotificationSettings(raw: unknown): NotificationSetting[] {
-    if (!Array.isArray(raw)) {
-        return defaultNotificationSettings()
-    }
-
-    const normalized = raw
-        .map((item: any, index: number) => ({
-            key: typeof item?.key === 'string' && item.key.trim() ? item.key.trim() : `notification_${index + 1}`,
-            label: typeof item?.label === 'string' ? item.label.trim() : '',
-            enabled: typeof item?.enabled === 'boolean' ? item.enabled : true,
-            emails: Array.isArray(item?.emails) ? normalizeEmailList(item.emails) : [],
-        }))
-        .filter((item) => item.label.length > 0 || item.emails.length > 0)
-
-    return normalized.length > 0 ? normalized : defaultNotificationSettings()
-}
-
-function cloneNotificationSettings(settings: NotificationSetting[]) {
-    return settings.map((setting) => ({
-        key: setting.key,
-        label: setting.label,
-        enabled: setting.enabled,
-        emails: [...setting.emails],
-    }))
-}
-
-function normalizeVisitLocation(raw: any): VisitLocation {
-    return {
-        address: typeof raw?.address === 'string' ? raw.address.trim() : '',
-        street: typeof raw?.street === 'string' ? raw.street.trim() : '',
-        city: typeof raw?.city === 'string' ? raw.city.trim() : '',
-        zip: typeof raw?.zip === 'string' ? raw.zip.trim() : '',
-        latitude: typeof raw?.latitude === 'number' ? raw.latitude : null,
-        longitude: typeof raw?.longitude === 'number' ? raw.longitude : null,
-        place_id: typeof raw?.place_id === 'string' ? raw.place_id.trim() : undefined,
-    }
-}
-
-function normalizeVisitLocations(raw: unknown): VisitLocation[] {
-    if (!Array.isArray(raw)) {
-        return []
-    }
-
-    return raw
-        .map((item) => normalizeVisitLocation(item))
-        .filter((item) => item.address.length > 0 || item.street.length > 0 || item.city.length > 0)
-}
-
-function formatVisitLocation(location: VisitLocation) {
-    return location.address || [location.street, location.city, location.zip].filter(Boolean).join(', ')
-}
 
 function removeNotificationSetting(index: number) {
     if (index === 0) {
@@ -231,11 +121,25 @@ async function openCreateBranch() {
     }
 }
 
+async function syncRepresentativeAfterUserChange() {
+    await loadRepresentativeOptions()
+
+    const firstRepresentative = representativeOptions.value[0]
+
+    if (!company.value.representative_id && firstRepresentative) {
+        company.value.representative_id = firstRepresentative.id
+    }
+}
+
 async function openEditUser(userId: number) {
     const result = await openModal(markRaw(UserForm), { userId, companyId }, { header: 'Upraviť používateľa', style: { width: '800px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Uložené', detail: 'Používateľ bol uložený', life: 3000 })
-        userRemote.value?.reload()
+
+        await Promise.all([
+            userRemote.value?.reload(),
+            syncRepresentativeAfterUserChange(),
+        ])
     }
 }
 
@@ -243,7 +147,11 @@ async function openCreateUser() {
     const result = await openModal(markRaw(UserForm), { companyId }, { header: 'Pridať používateľa', style: { width: '800px' } })
     if (result) {
         toast.add({ severity: 'success', summary: 'Vytvorené', detail: 'Používateľ bol vytvorený', life: 3000 })
-        userRemote.value?.reload()
+
+        await Promise.all([
+            userRemote.value?.reload(),
+            syncRepresentativeAfterUserChange(),
+        ])
     }
 }
 
@@ -313,9 +221,7 @@ async function handleStampSelected(event: Event) {
         selectedStampFile.value = file
         stampPreviewUrl.value = URL.createObjectURL(file)
 
-        if (stampInputRef.value) {
-            stampInputRef.value.value = ''
-        }
+        input.value = ''
     } catch (error) {
         console.error(error)
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa spracovať obrázok.', life: 5000 })
@@ -342,10 +248,6 @@ async function clearSelectedStamp() {
     stampIsFromServer.value = false
     selectedStampFile.value = null
     stampPreviewUrl.value = null
-
-    if (stampInputRef.value) {
-        stampInputRef.value.value = ''
-    }
 }
 
 async function loadCompany() {
@@ -390,10 +292,8 @@ async function loadRepresentativeOptions() {
     }
 }
 
-async function save() {
-    submitted.value = true
-
-    if (!company.value.id) return
+function isValidForSave(showErrors = true) {
+    const representativeRequired = hasRepresentativeOptions.value
 
     if (
         !company.value.name ||
@@ -401,10 +301,29 @@ async function save() {
         !company.value.ico ||
         !company.value.dic ||
         !addressQuery.value ||
-        !company.value.representative_id
+        (representativeRequired && !company.value.representative_id)
     ) {
-        toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyplňte povinné údaje', life: 5000 })
-        return
+        if (showErrors) {
+            toast.add({ severity: 'error', summary: 'Chyba', detail: 'Vyplňte povinné údaje', life: 5000 })
+        }
+        return false
+    }
+
+    return true
+}
+
+async function save(options?: { silentSuccess?: boolean; markSubmitted?: boolean }): Promise<boolean> {
+    const silentSuccess = options?.silentSuccess ?? false
+    const markSubmitted = options?.markSubmitted ?? true
+
+    if (markSubmitted) {
+        submitted.value = true
+    }
+
+    if (!company.value.id) return false
+
+    if (!isValidForSave(markSubmitted)) {
+        return false
     }
 
     saving.value = true
@@ -431,7 +350,7 @@ async function save() {
         formData.append('address', company.value.address ?? '')
         formData.append('city', company.value.city ?? '')
         formData.append('psc', company.value.psc ?? '')
-        formData.append('representative_id', String(company.value.representative_id ?? ''))
+        formData.append('representative_id', company.value.representative_id ? String(company.value.representative_id) : '')
         formData.append('latitude', String(company.value.latitude ?? ''))
         formData.append('longitude', String(company.value.longitude ?? ''))
         formData.append(
@@ -466,13 +385,29 @@ async function save() {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
 
-        toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená', life: 3000 })
+        if (!silentSuccess) {
+            toast.add({ severity: 'success', summary: 'Uložené', detail: 'Spoločnosť bola upravená', life: 3000 })
+        }
+
+        return true
     } catch (error) {
         console.error('Failed to save company', error)
         toast.add({ severity: 'error', summary: 'Chyba', detail: 'Nepodarilo sa uložiť spoločnosť', life: 5000 })
+        return false
     } finally {
         saving.value = false
     }
+}
+
+async function saveBeforeTabChange(currentTab: string, nextTab: string): Promise<boolean> {
+    if (currentTab === nextTab) {
+        return true
+    }
+
+    return await save({
+        silentSuccess: true,
+        markSubmitted: true,
+    })
 }
 
 const branchOptions = computed<DataTableOptions<Branch>>(() => ({
@@ -492,7 +427,11 @@ const branchOptions = computed<DataTableOptions<Branch>>(() => ({
         { field: 'representative', header: 'Obozorný zástupca', sortable: false, render: (v: User) => v ? formatUserFullName(v) : '' },
         { field: 'users_count', header: 'Počet zamestnancov', sortable: true },
         {
-            field: 'edit', header: '', width: '3rem', component: ActionButtons, componentOptions: [
+            field: 'edit',
+            header: '',
+            width: '3rem',
+            component: ActionButtons,
+            componentOptions: [
                 { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť', action: (row: Branch) => openEditBranch(row.id) }
             ]
         }
@@ -534,7 +473,11 @@ const userOptions = computed<DataTableOptions<User>>(() => ({
         { field: 'phone_number', header: 'Telefón', sortable: false },
         { field: 'email', header: 'Email', sortable: false },
         {
-            field: 'edit', header: '', width: '3rem', component: ActionButtons, componentOptions: [
+            field: 'edit',
+            header: '',
+            width: '3rem',
+            component: ActionButtons,
+            componentOptions: [
                 { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť', action: (row: User) => openEditUser(row.id) }
             ]
         }
@@ -619,403 +562,40 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <form @submit.prevent="save" class="flex flex-col gap-4">
+        <form @submit.prevent="save()" class="flex flex-col gap-4">
             <div class="card">
-                <Tabs v-model:value="activeTab">
-                    <TabList>
-                        <Tab value="branches">Pobočky</Tab>
-                        <Tab value="users">Používatelia</Tab>
-                        <Tab value="firma">Základné údaje</Tab>
-                        <Tab value="fakturacia">Fakturácia</Tab>
-                        <Tab value="kontakt">Kontakt</Tab>
-                        <Tab value="upozornenia">Upozornenia</Tab>
-                        <Tab value="peciatka">Vizuálne prvky</Tab>
-                        <Tab value="lokality-navstev">Adresár</Tab>
-                        
-                    </TabList>
-
-                    <TabPanels>
-                        <TabPanel value="branches">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <UniversalDataTable :options="branchOptions" />
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="users">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <UniversalDataTable :options="userOptions" />
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="firma">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <p class="text-sm text-accent">
-                                            Hlavné identifikačné údaje spoločnosti.
-                                        </p>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">Názov</label>
-                                            <InputText
-                                                v-model="company.name"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                            <small v-if="submitted && !company.name" class="text-danger">
-                                                Názov je povinný.
-                                            </small>
-                                        </div>
-
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">Zapísaná v registri</label>
-                                            <InputText
-                                                v-model="company.register"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                            <small v-if="submitted && !company.register" class="text-danger">
-                                                Zapísaná v registri je povinná.
-                                            </small>
-                                        </div>
-
-                                        <div class="col-span-12 md:col-span-4">
-                                            <label class="block text-normal mb-1">IČO</label>
-                                            <InputText
-                                                v-model="company.ico"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                            <small v-if="submitted && !company.ico" class="text-danger">
-                                                IČO je povinné.
-                                            </small>
-                                        </div>
-
-                                        <div class="col-span-12 md:col-span-4">
-                                            <label class="block text-normal mb-1">DIČ</label>
-                                            <InputText
-                                                v-model="company.dic"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                            <small v-if="submitted && !company.dic" class="text-danger">
-                                                DIČ je povinné.
-                                            </small>
-                                        </div>
-
-                                        <div class="col-span-12 md:col-span-4">
-                                            <label class="block text-normal mb-1">IČ DPH</label>
-                                            <InputText
-                                                v-model="company.ic_dph"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Zodpovedná osoba</h3>
-                                        <p class="text-sm text-tag2">
-                                            Osoba sa zobrazuje na vybraných dokumentoch. Môže to byť napríklad majiteľ firmy alebo iný zodpovedný pracovník.
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-normal mb-1">Zodpovedná osoba</label>
-                                        <Select
-                                            v-model="company.representative_id"
-                                            :options="representativeOptions"
-                                            optionLabel="first_name"
-                                            optionValue="id"
-                                            class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                        >
-                                            <template #option="{ option }">
-                                                <span>{{ formatUserFullName(option) }}</span>
-                                            </template>
-                                            <template #value="{ value }">
-                                                <span v-if="value">
-                                                    {{ formatUserFullName(representativeOptions.find((u) => u.id === value) as User) }}
-                                                </span>
-                                            </template>
-                                        </Select>
-                                        <small v-if="submitted && !company.representative_id" class="text-danger">
-                                            Zodpovedná osoba je povinná.
-                                        </small>
-                                    </div>
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="fakturacia">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Bankové údaje</h3>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">IBAN</label>
-                                            <InputText
-                                                v-model="company.iban"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">BIC</label>
-                                            <InputText
-                                                v-model="company.bic"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Číslovanie faktúr</h3>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12">
-                                            <label class="block text-normal mb-1">Aktuálne číslo faktúry</label>
-                                            <InputNumber
-                                                v-model="company.invoice_number"
-                                                :min="0"
-                                                :useGrouping="false"
-                                                class="w-full"
-                                                inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="kontakt">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Kontaktné údaje</h3>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">Telefón</label>
-                                            <InputText
-                                                v-model="company.phone"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-
-                                        <div class="col-span-12 md:col-span-6">
-                                            <label class="block text-normal mb-1">Email</label>
-                                            <InputText
-                                                v-model="company.email"
-                                                class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Adresa spoločnosti</h3>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label class="block text-normal mb-1">Adresa</label>
-                                        <AddressAutocomplete
-                                            v-model="addressQuery"
-                                            @selected="onAutocompleteSelected"
-                                            class="w-full border-0!"
-                                            inputClass="border-0! shadow-none! outline-none! focus:ring-0! focus:shadow-none!"
-                                        />
-                                        <small v-if="submitted && !addressQuery" class="text-danger">
-                                            Adresa je povinná.
-                                        </small>
-                                    </div>
-
-                                    <MapSelector
-                                        :latitude="company.latitude"
-                                        :longitude="company.longitude"
-                                        :disabled="authStore.currentRole === 'manager'"
-                                        @update="onMapClick"
-                                    />
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="upozornenia">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Nastavenie upozornení</h3>
-                                        <p class="text-sm text-tag2">
-                                            Dostávajte upozorenia na dôležité udalosti. Aktivujte iba upozornenia, ktoré sú pre vás dôležité.
-                                        </p>
-                                    </div>
-
-                                    <div class="flex flex-col gap-4">
-                                        <div
-                                            v-for="(setting, index) in notificationSettings"
-                                            :key="setting.key || index"
-                                            class="rounded-md bg-white p-4 flex flex-col gap-4"
-                                        >
-                                            <div class="grid grid-cols-12 gap-4">
-                                                <div class="col-span-12 md:col-span-10">
-                                                    <h2 class="block text-heading mb-1">{{ setting.label }}</h2>
-                                                </div>
-
-                                                <div class="col-span-12 md:col-span-2 flex md:justify-end md:items-start">
-                                                    <div class="flex flex-col gap-2 w-full md:w-auto">
-                                                        <label class="inline-flex items-center gap-2 text-sm text-darkgrey">
-                                                            <ToggleSwitch v-model="setting.enabled" />
-                                                            {{ setting.enabled ? 'Zapnuté' : 'Vypnuté' }}
-                                                        </label>
-
-                                                        <Button
-                                                            v-if="index > 0"
-                                                            type="button"
-                                                            label="Odstrániť"
-                                                            text
-                                                            severity="danger"
-                                                            class="justify-start md:justify-center"
-                                                            @click="removeNotificationSetting(index)"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-span-12 md:col-span-6">
-                                                <label class="block text-normal mb-1">E-maily príjemcov</label>
-                                                <div v-if="company.email" class="mb-2 flex flex-wrap gap-2">
-                                                    <Chip :label="company.email" />
-                                                </div>
-                                                <Chips
-                                                    v-model="setting.emails"
-                                                    separator="," 
-                                                    addOnBlur
-                                                    class="w-full"
-                                                    inputClass="w-full! border-0! outline-none! shadow-none! focus:ring-0! focus:shadow-none!"
-                                                />
-                                                <small class="text-mini text-tag2 block mt-1">
-                                                    Email potvrďte stlačením tlačidla enter alebo čiarkou.
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="peciatka">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 rounded-md p-5">
-                                    <div class="mb-4">
-                                        <h3 class="text-normal font-medium">Vizuálne prvky spoločnosti</h3>
-                                        <p class="text-sm text-tag2">
-                                            Grafické prvky spoločnosti, ktoré sa zobrazujú na dokumentoch.
-                                        </p>
-                                    </div>
-
-                                    <div class="flex flex-col gap-4">
-                                        <div class="flex flex-col gap-4 rounded-md bg-white p-4">
-                                            <div>
-                                                <h2 class="block text-heading">Pečiatka spoločnosti</h2>
-                                                <p class="text-sm text-tag2">
-                                                    Nahrajte obrázok pečiatky vo formáte PNG. Maximálne rozmery sú 300x100 px.
-                                                </p>
-                                            </div>
-
-                                            <input
-                                                ref="stampInputRef"
-                                                type="file"
-                                                accept="image/png"
-                                                class="hidden"
-                                                @change="handleStampSelected"
-                                            />
-
-                                            <div v-if="!stampPreviewUrl" class="flex items-center gap-3">
-                                                <Button
-                                                    label="Nahrať"
-                                                    type="button"
-                                                    class="bg-accent! border-accent! px-2! text-white! hover:bg-darkgrey! hover:border-darkgrey!"
-                                                    @click="stampInputRef?.click()"
-                                                />
-                                            </div>
-
-                                            <div v-else class="mt-3">
-                                                <div class="relative inline-block overflow-visible rounded-md border bg-white p-3 group">
-                                                    <img
-                                                        :src="stampPreviewUrl"
-                                                        alt="Preview pečiatky"
-                                                        class="block max-h-32 object-contain"
-                                                    />
-
-                                                    <button
-                                                        type="button"
-                                                        class="absolute z-20 flex h-7 w-7 items-center justify-center rounded-md bg-danger text-white cursor-pointer opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                                                        style="top: 0.2rem; right: 0.2rem;"
-                                                        @click="clearSelectedStamp"
-                                                    >
-                                                        <i class="bi bi-eraser"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        </TabPanel>
-
-                        <TabPanel value="lokality-navstev">
-                            <div class="flex flex-col gap-5">
-                                <section class="bg-tag3 p-5 rounded-md">
-                                    <div class="mb-4">
-                                        <h3 class="text-sm text-accent">Často navštevované lokality</h3>
-                                        <p class="text-sm text-tag2">
-                                            Pridajte lokality, ktoré manažér často navštevuje. Tieto lokality budú slúžiť k vytvoreniu denného záznamu ciest manažéra.
-                                        </p>
-                                    </div>
-
-                                    <div class="grid grid-cols-12 gap-4">
-                                        <div class="col-span-12">
-                                            <label class="block text-normal mb-1">Vyhľadajte lokalitu</label>
-                                            <AddressAutocomplete
-                                                v-model="visitLocationQuery"
-                                                class="w-full"
-                                                inputClass="border-0! outline-none! shadow-none! focus:ring-0! focus:shadow-none!"
-                                                @selected="addVisitLocation"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-5">
-                                        <div v-if="visitLocations.length" class="flex flex-wrap gap-2">
-                                            <Chip
-                                                v-for="(location, index) in visitLocations"
-                                                :key="`${location.address}-${location.latitude ?? 'na'}-${location.longitude ?? 'na'}-${index}`"
-                                                removable
-                                                :label="formatVisitLocation(location)"
-                                                class="max-w-full"
-                                                @remove="removeVisitLocation(index)"
-                                            />
-                                        </div>
-
-                                        <div v-else class="text-sm text-tag2">
-                                            Zatiaľ nie sú pridané žiadne lokality.
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        </TabPanel>
-                    </TabPanels>
-                </Tabs>
+                <CompanySettingsTabs
+                    :active-tab="activeTab"
+                    :company="company"
+                    :representative-options="representativeOptions"
+                    :address-query="addressQuery"
+                    :notification-settings="notificationSettings"
+                    :visit-locations="visitLocations"
+                    :visit-location-query="visitLocationQuery"
+                    :stamp-preview-url="stampPreviewUrl"
+                    :disable-map="authStore.currentRole === 'manager'"
+                    :show-users-tab="true"
+                    :show-branches-tab="true"
+                    :user-options="userOptions"
+                    :branch-options="branchOptions"
+                    :show-name-error="submitted && !company.name"
+                    :show-register-error="submitted && !company.register"
+                    :show-ico-error="submitted && !company.ico"
+                    :show-dic-error="submitted && !company.dic"
+                    :show-address-error="submitted && !addressQuery"
+                    :show-representative-error="submitted && representativeOptions.length > 0 && !company.representative_id"
+                    :before-tab-change="saveBeforeTabChange"
+                    @update:active-tab="activeTab = $event"
+                    @update:address-query="addressQuery = $event"
+                    @update:visit-location-query="visitLocationQuery = $event"
+                    @address-selected="onAutocompleteSelected"
+                    @map-update="onMapClick"
+                    @remove-notification-setting="removeNotificationSetting"
+                    @visit-location-selected="addVisitLocation"
+                    @remove-visit-location="removeVisitLocation"
+                    @stamp-selected="handleStampSelected"
+                    @clear-stamp="clearSelectedStamp"
+                />
             </div>
 
             <div class="flex justify-end">

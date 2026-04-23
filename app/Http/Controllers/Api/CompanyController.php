@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use \App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
@@ -241,7 +242,11 @@ class CompanyController extends Controller
      */
     public function destroy(Company $company)
     {
-        $company->delete();
+        DB::transaction(function () use ($company) {
+            User::where('company_id', $company->id)->delete();
+            $company->delete();
+        });
+
         return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
 
@@ -255,7 +260,12 @@ class CompanyController extends Controller
     public function destroyMany(DestroyManyCompanyRequest $request)
     {
         $ids = $request->input('ids', []);
-        Company::whereIn('id', $ids)->delete();
+
+        DB::transaction(function () use ($ids) {
+            User::whereIn('company_id', $ids)->delete();
+            Company::whereIn('id', $ids)->delete();
+        });
+
         return $this->success(null, 'Deleted', Response::HTTP_NO_CONTENT);
     }
 

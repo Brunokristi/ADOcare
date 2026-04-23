@@ -25,11 +25,6 @@ async function openCreateCompany() {
 
 const toast = useToast()
 
-function openDeleteCompanyDialog(company: Company) {
-    pendingDeleteCompany.value = company
-    deleteDialogVisible.value = true
-}
-
 function cancelDeleteCompany() {
     deleteDialogVisible.value = false
     pendingDeleteCompany.value = null
@@ -84,11 +79,6 @@ const options = computed<DataTableOptions<Company>>(() => ({
             field: 'edit', header: '', width: '3rem', component: ActionButtons, componentOptions: [
                 { icon: 'bi bi-pencil', color: 'info', tooltip: 'Upraviť', action: (row: Company) => openEditCompany(row.id) }
             ],
-        },
-        {
-            field: 'delete', header: '', width: '3rem', component: ActionButtons, componentOptions: [
-                { icon: 'bi bi-eraser', color: 'info', tooltip: 'Zmazať', action: (row: Company) => openDeleteCompanyDialog(row) }
-             ]
         }
     ],
     actions: [

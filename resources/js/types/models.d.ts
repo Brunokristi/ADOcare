@@ -196,6 +196,7 @@ export interface User {
   company_id: number | null
   role_id: number | null
   signature_path: string | null
+  deleted_at: string | null
   // overrides
   branch_roles: Array<{ branch_id: int, role_id: ?int, position: ?string }>
   // relations
@@ -312,6 +313,7 @@ export interface Company {
   send_notifications: boolean
   notification_settings: Array<unknown> | null
   visit_locations: Array<unknown> | null
+  deleted_at: string | null
   // relations
   branches: Branch[]
   cars: Car[]

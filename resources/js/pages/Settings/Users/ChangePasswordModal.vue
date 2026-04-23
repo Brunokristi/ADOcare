@@ -33,11 +33,11 @@ const save = async () => {
   saving.value = true
   try {
     await api.patch(`v1/users/${props.userId}`, { pin: password.value })
-    toast.add({ severity: 'success', summary: 'Uložené', detail: 'PIN bol zmenený', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Uložené', detail: 'Heslo bolo zmenené', life: 3000 })
     if (props.modalResolve) props.modalResolve(true)
   } catch (err: unknown) {
     console.error('Nepodarilo sa zmeniť heslo', err)
-    let detail = 'Nepodarilo sa zmeniť PIN'
+    let detail = 'Nepodarilo sa zmeniť heslo'
 
     // Check for validation errors from API
     const error = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
@@ -62,7 +62,7 @@ const close = () => {
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <label class="block text-sm mb-1">Nový PIN</label>
+      <label class="block text-sm mb-1">Nové heslo</label>
       <IconField class="flex items-center w-full">
         <InputText v-model="password" :type="showPassword ? 'text' : 'password'" class="w-full" />
         <InputIcon>
@@ -70,11 +70,11 @@ const close = () => {
             @click="showPassword = !showPassword" />
         </InputIcon>
       </IconField>
-      <small v-if="submitted && !password" class="text-danger">PIN je povinný.</small>
+      <small v-if="submitted && !password" class="text-danger">Heslo je povinné.</small>
     </div>
 
     <div>
-      <label class="block text-sm mb-1">Potvrdite PIN</label>
+      <label class="block text-sm mb-1">Potvrďte heslo</label>
       <IconField class="flex items-center w-full">
         <InputText v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" class="w-full" />
         <InputIcon>
@@ -82,15 +82,15 @@ const close = () => {
             @click="showConfirmPassword = !showConfirmPassword" />
         </InputIcon>
       </IconField>
-      <small v-if="submitted && !confirmPassword" class="text-danger">Potvrdenie PIN je povinné.</small>
+      <small v-if="submitted && !confirmPassword" class="text-danger">Potvrdenie hesla je povinné.</small>
       <small v-else-if="submitted && password && confirmPassword && !passwordsMatch()" class="text-danger">
-        PINy sa nezhodujú.
+        Heslá sa nezhodujú.
       </small>
     </div>
 
     <div class="flex justify-end gap-2 mt-4">
       <Button label="Zrušiť" text @click="close" class="text-accent! px-2!" />
-      <Button label="Zmeniť PIN" :loading="saving"
+      <Button label="Zmeniť heslo" :loading="saving"
         class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!" @click="save" />
     </div>
   </div>

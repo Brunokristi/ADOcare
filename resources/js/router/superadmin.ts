@@ -62,7 +62,7 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
             {
                 path: '',
                 name: 'superadmin-company-overview',
-                component: () => CompanyOverview,
+                component: CompanyOverview,
                 meta: { title: 'Prehľad spoločnosti', sidebar: showOnSidebar, navbar: false },
             },
 
