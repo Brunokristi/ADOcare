@@ -63,12 +63,15 @@ interface DateRangeFilterDef {
 interface DataTableOptions<T = any> {
     endpointUrl: string;
     columns: ColumnDef<T>[];
+    localItems?: T[];
     afterInit?: (args: { remote: RemoteTableReturn }) => void;
     rowKey?: string;
     selectable?: boolean;
     actions?: ActionDef<T>[];
     defaultPageSize?: number;
     pageSizeOptions?: number[];
+    hideSearch?: boolean;
+    hidePaginator?: boolean;
     // extra params appended to each request (filters, fixed scope)
     extraParams?: Record<string, any>;
     dateRangeFilter?: DateRangeFilterDef;

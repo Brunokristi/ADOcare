@@ -174,6 +174,10 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
     Route::get('/my-company/doctors', [MyCompanyController::class, 'doctors']);
+    Route::get('/my-company/subscription-details', [MyCompanyController::class, 'subscriptionDetails'])
+        ->middleware('role:manager,superadmin');
+    Route::get('/my-company/subscription-payments', [MyCompanyController::class, 'subscriptionPayments'])
+        ->middleware('role:manager,superadmin');
 
     Route::group(['prefix' => 'manager', 'middleware' => 'role:manager,superadmin'], function () {
         Route::get('/user-statistics', [ManagerController::class, 'userStatistics']);

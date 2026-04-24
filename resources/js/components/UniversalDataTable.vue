@@ -40,6 +40,7 @@ const remote = useRemoteTable<IBaseModel>(opt.value.endpointUrl, {
 })
 
 const columns = computed(() => opt.value.columns ?? [])
+const isLocalMode = computed(() => Array.isArray(opt.value.localItems))
 const dateRangeFilter = computed(() => opt.value.dateRangeFilter)
 const filterMode = computed(() => dateRangeFilter.value?.mode ?? 'range')
 const isSingleDateFilter = computed(() => filterMode.value === 'single')
@@ -123,6 +124,65 @@ function clearSelection() {
     })
 }
 
+function compareLocalValues(a: any, b: any) {
+    if (a === b) return 0
+    if (a === null || a === undefined) return -1
+    if (b === null || b === undefined) return 1
+
+    // Handle Date values explicitly for stable sorting in local mode.
+    if (a instanceof Date || b instanceof Date) {
+        const at = a instanceof Date ? a.getTime() : new Date(a).getTime()
+        const bt = b instanceof Date ? b.getTime() : new Date(b).getTime()
+        if (Number.isNaN(at) || Number.isNaN(bt)) {
+            return String(a).localeCompare(String(b), 'sk')
+        }
+        return at - bt
+    }
+
+    if (typeof a === 'number' && typeof b === 'number') {
+        return a - b
+    }
+
+    return String(a).localeCompare(String(b), 'sk', { numeric: true, sensitivity: 'base' })
+}
+
+function applyLocalRows() {
+    if (!isLocalMode.value) return
+
+    const source = [...(opt.value.localItems ?? [])]
+    const query = (remote.q.value ?? '').trim().toLowerCase()
+    const sortValue = (remote.sort.value ?? '').trim()
+    const shouldPaginate = !(opt.value.hidePaginator ?? false)
+
+    let rows = source
+
+    if (query) {
+        rows = rows.filter((row) => JSON.stringify(row)?.toLowerCase().includes(query))
+    }
+
+    if (sortValue) {
+        const isDesc = sortValue.startsWith('-')
+        const field = isDesc ? sortValue.slice(1) : sortValue
+
+        rows = [...rows].sort((left: any, right: any) => {
+            const result = compareLocalValues(left?.[field], right?.[field])
+            return isDesc ? -result : result
+        })
+    }
+
+    remote.total.value = rows.length
+
+    if (!shouldPaginate) {
+        remote.items.value = rows
+        return
+    }
+
+    const currentPage = Math.max(1, Number(remote.page.value || 1))
+    const pageSize = Math.max(1, Number(remote.per_page.value || 10))
+    const start = (currentPage - 1) * pageSize
+    remote.items.value = rows.slice(start, start + pageSize)
+}
+
 function getConfirmText(action: ActionDef): string {
     if (!action.confirm) return ''
     if (typeof action.confirm === 'string') return action.confirm
@@ -180,7 +240,25 @@ function onSort(e: any) {
     remote.setSort(
         e.sortField ? (e.sortOrder === -1 ? '-' + e.sortField : e.sortField) : undefined,
     )
+
+    if (isLocalMode.value) {
+        remote.page.value = 1
+        clearSelection()
+        applyLocalRows()
+        return
+    }
+
     remote.loadPage(1)
+}
+
+function onPage(e: any) {
+    if (isLocalMode.value) {
+        remote.page.value = e.page + 1
+        applyLocalRows()
+        return
+    }
+
+    remote.loadPage(e.page + 1)
 }
 
 function formatFilterValue(date: Date | null) {
@@ -188,6 +266,8 @@ function formatFilterValue(date: Date | null) {
 }
 
 function syncDateRangeParams() {
+    if (isLocalMode.value) return
+
     if (isSingleDateFilter.value) {
         const param = dateRangeFilter.value?.param ?? 'period'
         remote.setExtraParam(param, formatFilterValue(dateFilterValue.value))
@@ -244,15 +324,37 @@ watch([dateRangeStart, dateRangeEnd], () => {
 
 onMounted(async () => {
     syncDateRangeParams()
-    await remote.loadPage(1)
+    if (isLocalMode.value) {
+        applyLocalRows()
+    } else {
+        await remote.loadPage(1)
+    }
     syncVisibleSelectionFromGlobal()
     initialRemoteLoadDone = true
     opt.value.afterInit?.({ remote })
 })
 
 watch(
+    () => opt.value.localItems,
+    () => {
+        if (!isLocalMode.value) return
+
+        applyLocalRows()
+        syncVisibleSelectionFromGlobal()
+    },
+    { immediate: true, deep: true },
+)
+
+watch(
     () => remote.q.value,
     () => {
+        if (isLocalMode.value) {
+            remote.page.value = 1
+            clearSelection()
+            applyLocalRows()
+            return
+        }
+
         if (searchTimer) window.clearTimeout(searchTimer)
         searchTimer = window.setTimeout(() => {
             clearSelection()
@@ -264,6 +366,11 @@ watch(
 watch(
     () => remote.per_page.value,
     () => {
+        if (isLocalMode.value) {
+            remote.page.value = 1
+            applyLocalRows()
+            return
+        }
         remote.loadPage(1)
     },
 )
@@ -323,14 +430,14 @@ watch(
 
                     
 
-                    <IconField>
+                    <IconField v-if="!opt.hideSearch">
                         <InputText v-model="remote.q.value" class="w-64" />
                         <InputIcon>
                             <i class="bi bi-search text-darkgrey" />
                         </InputIcon>
                     </IconField>
 
-                    <template v-if="dateRangeFilter && isSingleDateFilter">
+                    <template v-if="!isLocalMode && dateRangeFilter && isSingleDateFilter">
                         <IconField>
                             <DatePicker
                                 v-model="dateFilterValue"
@@ -347,7 +454,7 @@ watch(
                         </IconField>
                     </template>
 
-                    <template v-else-if="dateRangeFilter">
+                    <template v-else-if="!isLocalMode && dateRangeFilter">
                         <IconField>
                             <DatePicker
                                 v-model="dateRangeStart"
@@ -429,13 +536,13 @@ watch(
         <DataTable
             ref="dt"
             :value="remote.items.value"
-            :paginator="true"
+            :paginator="!(opt.hidePaginator ?? false) && !isLocalMode"
             :rows="remote.per_page.value"
             :totalRecords="remote.total.value"
             :lazy="true"
             :loading="remote.loading.value"
             :dataKey="rowKey"
-            v-on:page="(e) => remote.loadPage(e.page + 1)"
+            v-on:page="(e) => onPage(e)"
             v-on:sort="(e) => onSort(e)"
             v-model:selection="selectedRows"
             :selectionMode="opt.selectable ? 'multiple' : undefined"

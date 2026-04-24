@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, markRaw, onMounted, ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import UniversalDataTable from '@/components/UniversalDataTable.vue'
+import type { DataTableOptions } from '@/types/datatable'
 import api from '@/services/api'
+import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 
 interface SubscriptionTier {
     id: number
@@ -22,6 +25,13 @@ interface CompanySubscription {
 }
 
 interface PaymentRow {
+    id: number
+    received_at: Date | null
+    amount: number | null
+    notes: string | null
+}
+
+interface PaymentDraft {
     received_at: Date | null
     amount: number | null
     notes: string | null
@@ -55,6 +65,14 @@ const selectedYear = ref<number>(new Date().getFullYear())
 const selectedMonths = ref<number[]>([])
 const payments = ref<PaymentRow[]>([])
 const paidMonthsByYear = ref<Array<{ year: number; months: number[] }>>([])
+const nextPaymentId = ref(1)
+const paymentDialogVisible = ref(false)
+const editingPaymentIndex = ref<number | null>(null)
+const paymentDraft = ref<PaymentDraft>({
+    received_at: new Date(),
+    amount: null,
+    notes: null,
+})
 
 function toDateOrNull(value: string | null) {
     if (!value) return null
@@ -65,6 +83,17 @@ function toDateOrNull(value: string | null) {
 function toApiDate(value: Date | null) {
     if (!value) return null
     return value.toISOString().slice(0, 10)
+}
+
+function makePaymentRow(data: { received_at: Date | null; amount: number | null; notes: string | null }): PaymentRow {
+    const row: PaymentRow = {
+        id: nextPaymentId.value++,
+        received_at: data.received_at,
+        amount: data.amount,
+        notes: data.notes,
+    }
+
+    return row
 }
 
 const statusOptions = [
@@ -161,18 +190,18 @@ onMounted(async () => {
         const selected = paidMonthsByYear.value.find((x) => Number(x.year) === Number(selectedYear.value))
         selectedMonths.value = selected ? [...selected.months] : []
 
-        payments.value = (details.payments ?? []).map((payment) => ({
+        payments.value = (details.payments ?? []).map((payment) => makePaymentRow({
             received_at: toDateOrNull(payment.received_at),
             amount: payment.amount,
             notes: payment.notes,
         }))
 
         if (payments.value.length === 0) {
-            payments.value.push({
+            payments.value.push(makePaymentRow({
                 received_at: new Date(),
                 amount: null,
                 notes: null,
-            })
+            }))
         }
     } catch (error) {
         console.error(error)
@@ -198,16 +227,142 @@ function toggleMonth(month: number) {
 }
 
 function addPaymentRow() {
-    payments.value.push({
+    editingPaymentIndex.value = null
+    paymentDraft.value = {
         received_at: new Date(),
         amount: null,
         notes: null,
-    })
+    }
+    paymentDialogVisible.value = true
 }
 
-function removePaymentRow(index: number) {
-    payments.value.splice(index, 1)
+function removeSelectedPayments(selected: PaymentRow[]) {
+    if (!selected.length) return
+
+    const selectedIds = new Set(selected.map((row) => row.id))
+    const remaining = payments.value.filter((row) => !selectedIds.has(row.id))
+
+    if (remaining.length === 0) {
+        payments.value = [makePaymentRow({
+            received_at: new Date(),
+            amount: null,
+            notes: null,
+        })]
+        return
+    }
+
+    payments.value = remaining
 }
+
+function editPaymentRowById(id: number) {
+    const index = payments.value.findIndex((item) => item.id === id)
+    const payment = payments.value[index]
+    if (!payment) return
+
+    editingPaymentIndex.value = index
+    paymentDraft.value = {
+        received_at: payment.received_at,
+        amount: payment.amount,
+        notes: payment.notes,
+    }
+    paymentDialogVisible.value = true
+}
+
+function savePaymentDraft() {
+    if (!paymentDraft.value.received_at || paymentDraft.value.amount === null) return
+
+    if (editingPaymentIndex.value === null) {
+        payments.value.push(makePaymentRow({
+            received_at: paymentDraft.value.received_at,
+            amount: paymentDraft.value.amount,
+            notes: paymentDraft.value.notes,
+        }))
+    } else {
+        const existing = payments.value[editingPaymentIndex.value]
+        if (!existing) return
+
+        payments.value.splice(editingPaymentIndex.value, 1, {
+            id: existing.id,
+            received_at: paymentDraft.value.received_at,
+            amount: paymentDraft.value.amount,
+            notes: paymentDraft.value.notes,
+        })
+    }
+
+    paymentDialogVisible.value = false
+}
+
+function closePaymentDialog() {
+    paymentDialogVisible.value = false
+}
+
+const paymentTableOptions = computed<DataTableOptions<PaymentRow>>(() => ({
+    rowKey: 'id',
+    endpointUrl: '',
+    localItems: payments.value,
+    defaultPageSize: 10,
+    pageSizeOptions: [10, 25, 50],
+    selectable: true,
+    actions: [
+        {
+            key: 'delete-payment',
+            label: '',
+            icon: 'bi bi-eraser',
+            class: 'bg-danger!',
+            tooltip: 'Odstrániť vybrané platby',
+            confirm: 'Naozaj chcete odstrániť vybrané platby?',
+            disabled: ({ selectedRows }) => selectedRows.length === 0,
+            handler: ({ selectedRows }) => removeSelectedPayments(selectedRows as PaymentRow[]),
+        },
+        {
+            key: 'add-payment',
+            label: '',
+            icon: 'bi bi-plus',
+            tooltip: 'Pridať platbu',
+            class: 'bg-accent!',
+            handler: () => addPaymentRow(),
+        },
+    ],
+    columns: [
+        {
+            field: 'received_at',
+            header: 'Dátum prijatia',
+            width: '28%',
+            sortable: true,
+            render: (value) => {
+                const date = value as Date | null
+                return date ? date.toLocaleDateString('sk-SK') : '—'
+            },
+        },
+        {
+            field: 'amount',
+            header: 'Suma (EUR)',
+            width: '22%',
+            sortable: true,
+            render: (value) => formatCurrency(value as number | null),
+        },
+        {
+            field: 'notes',
+            header: 'Poznámka',
+            width: '42%',
+            render: (value) => (value ? String(value) : '—'),
+        },
+        {
+            field: 'edit',
+            header: '',
+            width: '3rem',
+            component: markRaw(ActionButtons),
+            componentOptions: [
+                {
+                    color: 'info',
+                    icon: 'bi bi-pencil',
+                    tooltip: 'Upraviť platbu',
+                    action: (row: PaymentRow) => editPaymentRowById(row.id),
+                },
+            ],
+        },
+    ],
+}))
 
 function formatCurrency(value: number | null) {
     if (value === null || value === undefined) return '—'
@@ -383,69 +538,62 @@ async function save() {
         </section>
 
         <section class="bg-tag3 rounded-md p-5">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-sm text-accent">História platieb</h3>
-                </div>
-
-                <Button
-                    icon="bi bi-plus"
-                    class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white! h-7!"
-                    @click="addPaymentRow"
-                />
+            <div class="mb-4">
+                <h3 class="text-sm text-accent">História platieb</h3>
             </div>
 
-            <div class="hidden md:grid grid-cols-12 gap-2 mb-2 text-mini text-darkgrey tracking-wide">
-                <div class="md:col-span-3">Dátum prijatia</div>
-                <div class="md:col-span-3">Suma (€)</div>
-                <div class="md:col-span-5">Poznámka</div>
-                <div class="md:col-span-1">&nbsp;</div>
-            </div>
+            <UniversalDataTable :options="paymentTableOptions" />
 
-            <div
-                v-for="(payment, index) in payments"
-                :key="index"
-                class="grid grid-cols-12 gap-2 mb-3 rounded-md bg-white p-3 md:bg-transparent md:p-0"
+            <Dialog
+                v-model:visible="paymentDialogVisible"
+                modal
+                :draggable="false"
+                :style="{ width: 'min(640px, 92vw)' }"
+                :header="editingPaymentIndex === null ? 'Pridať platbu' : 'Upraviť platbu'"
             >
-                <div class="col-span-12 md:col-span-3">
-                    <label class="block md:hidden text-normal mb-1">Dátum prijatia</label>
-                    <DatePicker
-                        v-model="payment.received_at"
-                        fluid
-                        class="w-full border-0! shadow-none! [&_.p-inputtext]:border-0! [&_.p-inputtext]:shadow-none! [&_.p-inputtext]:bg-white! [&_.p-inputtext]:focus:ring-0! [&_.p-inputtext]:focus:shadow-none!"
-                    />
+                <div class="grid grid-cols-12 gap-4 pt-2">
+                    <div class="col-span-12 md:col-span-6">
+                        <label class="block text-normal mb-1">Dátum prijatia</label>
+                        <DatePicker
+                            v-model="paymentDraft.received_at"
+                            fluid
+                        />
+                    </div>
+
+                    <div class="col-span-12 md:col-span-6">
+                        <label class="block text-normal mb-1">Suma (EUR)</label>
+                        <InputNumber
+                            v-model="paymentDraft.amount"
+                            :min="0"
+                            :minFractionDigits="2"
+                            :maxFractionDigits="2"
+                            :useGrouping="false"
+                            locale="en-US"
+                            fluid
+                        />
+                    </div>
+
+                    <div class="col-span-12">
+                        <label class="block text-normal mb-1">Poznámka</label>
+                        <InputText
+                            v-model="paymentDraft.notes"
+                            fluid
+                        />
+                    </div>
                 </div>
 
-                <div class="col-span-12 md:col-span-3">
-                    <label class="block md:hidden text-normal mb-1">Suma (€)</label>
-                    <InputNumber
-                        v-model="payment.amount"
-                        :min="0"
-                        :minFractionDigits="2"
-                        :maxFractionDigits="2"
-                        :useGrouping="false"
-                        locale="en-US"
-                        fluid
-                        class="w-full [&_.p-inputtext]:border-0! [&_.p-inputtext]:shadow-none! [&_.p-inputtext]:ring-0! [&_.p-inputtext]:focus:border-0! [&_.p-inputtext]:focus:shadow-none! [&_.p-inputtext]:focus:ring-0!"
-                    />
-                </div>
-
-                <div class="col-span-12 md:col-span-5">
-                    <label class="block md:hidden text-normal mb-1">Poznámka</label>
-                    <InputText v-model="payment.notes" fluid placeholder="Poznámka k platbe" class="border-0!" />
-                </div>
-
-                <div class="col-span-12 md:col-span-1 flex md:justify-end">
-                    <Button
-                        icon="bi bi-eraser"
-                        severity="danger"
-                        text
-                        :disabled="payments.length <= 1"
-                        @click="removePaymentRow(index)"
-                        class="bg-danger! px-2! text-white! h-7!"
-                    />
-                </div>
-            </div>
+                <template #footer>
+                    <div class="flex justify-end gap-2">
+                        <Button label="Zrušiť" text class="text-accent! px-2!" @click="closePaymentDialog" />
+                        <Button
+                            label="Uložiť"
+                            class="bg-accent! border-accent! px-2! hover:bg-darkgrey! hover:border-darkgrey! text-white!"
+                            :disabled="!paymentDraft.received_at || paymentDraft.amount === null"
+                            @click="savePaymentDraft"
+                        />
+                    </div>
+                </template>
+            </Dialog>
         </section>
 
         <div class="col-span-12 mt-2 flex justify-end gap-2">
