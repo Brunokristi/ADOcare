@@ -1,45 +1,134 @@
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import axios from 'axios'
 import Button from 'primevue/button'
+import SplitButton from 'primevue/splitbutton'
 import api from '@/services/api'
-import ServerRenderedDocumentPreview from '@/components/ServerRenderedDocumentPreview.vue'
+
+interface DownloadOption {
+  label?: string
+  url: string
+  method?: 'get' | 'post'
+  payload?: Record<string, any>
+  filename?: string
+  contentType?: string
+  fileType?: string
+}
+
+interface FileItem {
+  title: string
+  description?: string
+  downloads: DownloadOption[]
+}
 
 interface Props {
   title: string
   subtitle?: string
   previewUrl?: string
+  previewWidth?: string
   downloadUrl?: string
   downloadMethod?: 'get' | 'post'
   downloadPayload?: Record<string, any>
   downloadFilename?: string
   downloadContentType?: string
   downloadLabel?: string
-  showPreview?: boolean
-  showDownload?: boolean
+  downloadOptions?: DownloadOption[]
+  files?: FileItem[]
   showPrintButton?: boolean
   showTitle?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  previewWidth: '210mm',
   downloadMethod: 'get',
   downloadContentType: 'application/pdf',
   downloadLabel: 'Download',
-  showPreview: true,
-  showDownload: true,
+  downloadOptions: () => [],
+  files: () => [],
   showPrintButton: true,
   showTitle: true,
 })
 
 const isDownloading = ref(false)
 const downloadError = ref<string | null>(null)
+const iframeRef = ref<HTMLIFrameElement | null>(null)
+const iframeHeight = ref('850px')
 
-const shouldFetchDownload = computed(() => {
-  if (!props.downloadUrl) return false
-  if (props.downloadMethod === 'post') return true
-  if (props.downloadPayload && Object.keys(props.downloadPayload).length > 0) return true
-  if (props.downloadFilename) return true
-  return false
+const topLevelOptions = computed<DownloadOption[]>(() => {
+  if (props.downloadOptions && props.downloadOptions.length > 0) {
+    return props.downloadOptions
+  }
+
+  if (props.downloadUrl) {
+    return [
+      {
+        url: props.downloadUrl,
+        method: props.downloadMethod,
+        payload: props.downloadPayload,
+        filename: props.downloadFilename,
+        contentType: props.downloadContentType,
+        label: props.downloadLabel,
+        fileType: props.downloadFilename
+          ? props.downloadFilename.split('.').pop()?.toUpperCase() ?? props.downloadLabel
+          : props.downloadLabel,
+      },
+    ]
+  }
+
+  return []
 })
+
+function getOptionLabel(option: DownloadOption): string {
+  if (option.label) return option.label
+  if (option.fileType) return option.fileType
+  const path = option.url.split('?')[0]
+  return path.split('/').pop() || 'Download'
+}
+
+function buttonLabelForOptions(options: DownloadOption[]): string {
+  if (!options.length) return 'Download'
+  return getOptionLabel(options[0])
+}
+
+function splitMenuItems(options: DownloadOption[]) {
+  if (options.length <= 1) return []
+
+  return options.slice(1).map((option) => ({
+    label: getOptionLabel(option),
+    command: () => download(option),
+  }))
+}
+
+function makeFilename(option: DownloadOption): string {
+  if (option.filename) return option.filename
+  const extension = option.fileType
+    ? option.fileType.replace(/\./g, '').toLowerCase()
+    : option.url.split('?')[0].split('.').pop() ?? 'bin'
+
+  return `download.${extension}`
+}
+
+function normalizeDownloadUrl(url: string): string {
+  let normalized = url.trim()
+
+  // Remove duplicate /api segments in the path
+  normalized = normalized.replace(/\/api\/api(?=\/|$)/g, '/api')
+
+  const baseUrl = api.defaults.baseURL?.toString().replace(/\/$/, '')
+  if (baseUrl && normalized.startsWith(baseUrl + '/')) {
+    normalized = normalized.slice(baseUrl.length)
+    if (!normalized.startsWith('/')) {
+      normalized = '/' + normalized
+    }
+  }
+
+  return normalized
+}
+
+function isApiUrl(url: string): boolean {
+  const normalized = normalizeDownloadUrl(url)
+  return normalized.startsWith('/api/') || normalized === '/api'
+}
 
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -50,39 +139,6 @@ function triggerDownload(blob: Blob, filename: string) {
   setTimeout(() => {
     URL.revokeObjectURL(url)
   }, 100)
-}
-
-async function downloadDocument() {
-  if (!props.downloadUrl) return
-
-  if (!shouldFetchDownload.value) {
-    window.open(props.downloadUrl, '_blank')
-    return
-  }
-
-  isDownloading.value = true
-  downloadError.value = null
-
-  try {
-    const response = props.downloadMethod === 'post'
-      ? await api.post(props.downloadUrl, props.downloadPayload ?? {}, {
-          responseType: 'blob',
-          headers: { Accept: props.downloadContentType ?? '*/*' },
-        })
-      : await api.get(props.downloadUrl, {
-          params: props.downloadPayload ?? {},
-          responseType: 'blob',
-          headers: { Accept: props.downloadContentType ?? '*/*' },
-        })
-
-    const filename = props.downloadFilename || getFilenameFromResponse(response) || 'download'
-    triggerDownload(response.data, filename)
-  } catch (error: any) {
-    downloadError.value = 'Download failed.'
-    console.error('DocumentShell download failed', error)
-  } finally {
-    isDownloading.value = false
-  }
 }
 
 function getFilenameFromResponse(response: any): string | null {
@@ -98,33 +154,171 @@ function getFilenameFromResponse(response: any): string | null {
   return decodeURIComponent(filename)
 }
 
+async function download(option: DownloadOption) {
+  if (!option.url) return
+
+  const shouldFetch =
+    option.method === 'post' ||
+    (option.payload && Object.keys(option.payload).length > 0) ||
+    option.filename ||
+    option.contentType
+
+  if (!shouldFetch) {
+    window.open(option.url, '_blank')
+    return
+  }
+
+  isDownloading.value = true
+  downloadError.value = null
+
+  try {
+    const requestUrl = normalizeDownloadUrl(option.url)
+    const response = option.method === 'post'
+      ? isApiUrl(requestUrl)
+        ? await api.post(requestUrl, option.payload ?? {}, {
+            responseType: 'blob',
+            headers: { Accept: option.contentType ?? '*/*' },
+          })
+        : await axios.post(requestUrl, option.payload ?? {}, {
+            responseType: 'blob',
+            headers: { Accept: option.contentType ?? '*/*' },
+          })
+      : await api.get(requestUrl, {
+          params: option.payload ?? {},
+          responseType: 'blob',
+          headers: { Accept: option.contentType ?? '*/*' },
+        })
+
+    const filename = option.filename || getFilenameFromResponse(response) || makeFilename(option)
+    triggerDownload(response.data, filename)
+  } catch (error: any) {
+    downloadError.value = 'Download failed.'
+    console.error('DocumentShell download failed', error)
+  } finally {
+    isDownloading.value = false
+  }
+}
+
+const previewWidthStyle = computed(() => props.previewWidth || '210mm')
+
+watch(
+  () => props.previewUrl,
+  () => {
+    iframeHeight.value = '850px'
+  }
+)
+
+function updateIframeHeight() {
+  const iframe = iframeRef.value
+  if (!iframe) return
+
+  try {
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) return
+
+    const height = Math.max(
+      doc.body.scrollHeight,
+      doc.documentElement.scrollHeight,
+      doc.body.offsetHeight,
+      doc.documentElement.offsetHeight
+    )
+
+    iframeHeight.value = `${height}px`
+  } catch (error) {
+    console.warn('DocumentShell iframe resize failed', error)
+  }
+}
+
+function onIframeLoad() {
+  nextTick(updateIframeHeight)
+}
+
+function injectIframePrintStyles(doc: Document) {
+  if (!doc || !doc.head) return
+
+  const styleId = 'document-shell-iframe-print-styles'
+  let style = doc.getElementById(styleId) as HTMLStyleElement | null
+
+  if (!style) {
+    style = doc.createElement('style')
+    style.id = styleId
+    doc.head.appendChild(style)
+  }
+
+  style.textContent = `
+    @media print {
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      body * {
+        overflow: visible !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  `
+}
+
 function printPage() {
-  nextTick(() => {
-    window.print()
-  })
+  const iframe = iframeRef.value
+  if (iframe?.contentWindow) {
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow.document
+      if (doc) {
+        injectIframePrintStyles(doc)
+      }
+
+      iframe.contentWindow.focus()
+      iframe.contentWindow.print()
+      return
+    } catch (error) {
+      console.warn('DocumentShell iframe print failed', error)
+    }
+  }
+
+  requestAnimationFrame(() => window.print())
 }
 </script>
 
 <template>
-  <div class="document-shell">
-    <div class="document-shell-toolbar no-print">
-      <div class="document-shell-title">
-        <div v-if="props.showTitle" class="title">{{ props.title }}</div>
-        <div v-if="props.subtitle" class="subtitle">{{ props.subtitle }}</div>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap justify-between gap-3 items-center no-print">
+      <div v-if="props.showTitle" class="flex flex-col gap-1">
+        <div class="text-lg font-bold">{{ props.title }}</div>
+        <div v-if="props.subtitle" class="text-slate-500 text-sm">{{ props.subtitle }}</div>
       </div>
 
-      <div class="document-shell-actions">
-        <slot name="actions" />
-
-        <Button
-          v-if="props.showDownload && props.downloadUrl"
-          icon="bi bi-download"
-          :label="props.downloadLabel"
-          class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-          :loading="isDownloading"
-          :disabled="isDownloading || !props.downloadUrl"
-          @click="downloadDocument"
-        />
+      <div class="flex gap-2 items-center relative">
+        <div v-if="topLevelOptions.length" class="relative">
+          <template v-if="topLevelOptions.length === 1">
+            <Button
+              :label="buttonLabelForOptions(topLevelOptions)"
+              icon="bi bi-download"
+              class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+              :loading="isDownloading"
+              :disabled="isDownloading || !topLevelOptions.length"
+              @click="download(topLevelOptions[0])"
+            />
+          </template>
+          <template v-else>
+            <SplitButton
+              :label="buttonLabelForOptions(topLevelOptions)"
+              icon="bi bi-download"
+              :model="splitMenuItems(topLevelOptions)"
+              class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+              :loading="isDownloading"
+              :disabled="isDownloading || !topLevelOptions.length"
+              @click="download(topLevelOptions[0])"
+            />
+          </template>
+        </div>
 
         <Button
           v-if="props.showPrintButton"
@@ -135,96 +329,110 @@ function printPage() {
       </div>
     </div>
 
-    <div class="document-shell-content">
-      <aside v-if="$slots.metadata" class="document-shell-metadata no-print">
-        <slot name="metadata" />
-      </aside>
+    <section class="flex flex-col gap-4">
+      <div v-if="props.previewUrl" id="document-shell-print" class="w-full flex justify-center">
+        <iframe
+          ref="iframeRef"
+          :src="props.previewUrl"
+          title="Document preview"
+          frameborder="0"
+          scrolling="no"
+          class="w-full overflow-hidden shadow-lg"
+          :style="{ maxWidth: previewWidthStyle, height: iframeHeight }"
+          @load="onIframeLoad"
+        ></iframe>
+      </div>
 
-      <section class="document-shell-main">
-        <slot />
+      <div v-if="props.files?.length" class="flex flex-col gap-3">
+        <div
+          v-for="(file, index) in props.files"
+          :key="file.title || index"
+          class="flex justify-between items-center gap-4 p-4 border border-slate-300 rounded-2xl bg-slate-50"
+        >
+          <div class="flex flex-col gap-1">
+            <div class="font-semibold">{{ file.title }}</div>
+            <div v-if="file.description" class="text-slate-500 text-sm">{{ file.description }}</div>
+          </div>
 
-        <template v-if="props.showPreview && props.previewUrl">
-          <slot name="preview">
-            <ServerRenderedDocumentPreview :src="props.previewUrl" />
-          </slot>
-        </template>
-      </section>
-    </div>
+          <div class="relative">
+            <template v-if="file.downloads.length === 1">
+              <Button
+                :label="buttonLabelForOptions(file.downloads)"
+                icon="bi bi-download"
+                class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                :disabled="isDownloading || !file.downloads?.length"
+                @click="download(file.downloads[0])"
+              />
+            </template>
+            <template v-else>
+              <SplitButton
+                :label="buttonLabelForOptions(file.downloads)"
+                icon="bi bi-download"
+                :model="splitMenuItems(file.downloads)"
+                class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                :disabled="isDownloading || !file.downloads?.length"
+                @click="download(file.downloads[0])"
+              />
+            </template>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <div v-if="downloadError" class="document-shell-error no-print">
+    <div v-if="downloadError" class="text-red-700 text-sm no-print">
       {{ downloadError }}
     </div>
   </div>
 </template>
 
-<style scoped>
-.document-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+<style scoped lang="scss">
 
-.document-shell-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: center;
-}
+  iframe {
+    box-shadow: 0 0 8px #00000026;
+  }
 
-.document-shell-title {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+@media print {
 
-.title {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
 
-.subtitle {
-  color: #4b5563;
-  font-size: 0.95rem;
-}
+  body * {
+    visibility: hidden !important;
+  }
 
-.document-shell-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
+  iframe {
+    box-shadow: none !important;
+  }
 
-.document-shell-content {
-  display: grid;
-  gap: 1rem;
-}
 
-.document-shell-metadata {
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  background: #f8fafc;
-}
 
-.document-shell-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+  #document-shell-print,
+  #document-shell-print * {
+    visibility: visible !important;
+  }
 
-.document-shell-error {
-  color: #b91c1c;
-  font-size: 0.95rem;
-}
+  #document-shell-print {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
 
-.document-shell-preview {
-  width: 100%;
-}
+  #document-shell-print iframe {
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
 
-.document-shell-preview iframe {
-  width: 100%;
-  min-height: 850px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  border-radius: 0.5rem;
+  .no-print {
+    display: none !important;
+  }
 }
 </style>
