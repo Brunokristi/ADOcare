@@ -5,21 +5,37 @@
     <meta charset="utf-8">
     <style>
         @page {
-            margin: 14mm;
+            size: A4 portrait;
+            /* margin: 14mm; */
         }
 
+
+
+        html,
         body {
             margin: 0;
             padding: 0;
+            width: auto;
             font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
             color: #000;
             background: #fff;
+            box-sizing: border-box;
+        }
+
+        html{
+            margin: 14mm;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         .document-content {
-            width: 780px;
+            width: auto;
+            max-width: none;
             margin: 0 auto;
+            box-sizing: border-box;
         }
 
         .title {
@@ -32,6 +48,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             margin-bottom: 8px;
         }
 
@@ -39,6 +56,8 @@
             border: 1px solid #000;
             padding: 6px;
             vertical-align: top;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
         .sign-wrap {
