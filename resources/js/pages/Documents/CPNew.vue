@@ -101,40 +101,21 @@ async function loadPreviewUrl(documentId: string) {
   }
 }
 
-function formatDate(v?: string) {
-  if (!v) return '';
-  return new Date(v).toLocaleDateString('sk-SK');
-}
-
 </script>
 
 <template>
   <DocumentShell
     title="Cestovný príkaz"
     :previewUrl="previewUrl"
-    :downloadUrl="`/api/v1/cps/${route.params.documentId}/download`"
-    downloadContentType="application/pdf"
-    downloadLabel="Stiahnuť PDF"
+    :downloadOptions="[
+      {
+        url: `/api/v1/cps/${route.params.documentId}/download`,
+        fileType: 'PDF',
+        contentType: 'application/pdf',
+      },
+    ]"
     :showPrintButton="true"
-  >
-    <template #metadata>
-      <div class="document-metadata" v-if="!loading">
-        <div><strong>Zamestnávateľ:</strong> {{ cpData.company_name }}</div>
-        <div><strong>Zamestnanec:</strong> {{ cpData.user_name }}</div>
-        <div><strong>Obdobie:</strong> {{ cpData.month }}/{{ cpData.year }}</div>
-      </div>
-    </template>
-  </DocumentShell>
+  />
 </template>
 
-<style scoped>
-.document-metadata {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 0.5rem;
-  background: #f8fafc;
-}
-</style>
+
