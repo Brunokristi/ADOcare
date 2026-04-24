@@ -54,6 +54,7 @@ use App\Http\Controllers\Api\SubscriptionTierController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\ForceJsonResponse;
 
 Route::get('/v1/scans/{sessionId}/{filename}', [\App\Http\Controllers\Api\ScanFileController::class, 'image'])
     ->middleware(['api.auth', 'subscription.active'])
@@ -104,6 +105,24 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
         }
     });
 
+    Route::macro('documentRoutes', function ($name, $controller, $options = []) {
+        Route::get("/{$name}", [$controller, 'index'])
+            ->middleware('role:any');
+        Route::post("/{$name}", [$controller, 'store'])
+            ->middleware('role:any');
+        Route::get("/{$name}/{document}/preview", [$controller, 'preview'])
+            ->middleware(['role:any', 'can:view,document'])
+            ->withoutMiddleware(ForceJsonResponse::class);
+        Route::get("/{$name}/{document}/preview-url", [$controller, 'previewUrl'])
+            ->middleware(['role:any', 'can:view,document']);
+
+        Route::get("/{$name}/{document}/download", [$controller, 'download'])
+            ->middleware(['role:any', 'can:view,document'])
+            ->withoutMiddleware(ForceJsonResponse::class);
+
+        Route::get("/{$name}/{document}", [$controller, 'show'])
+            ->middleware(['role:any', 'can:view,document']);
+    });
 
     Route::apiResourceComplete('cars', CarController::class);
     Route::delete('cars', [CarController::class, 'destroyMany']);
@@ -318,29 +337,9 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show'])
         ->middleware(['role:any', 'can:view,document']);
 
-    Route::get('/cps', [CPDocumentController::class, 'index'])
-        ->middleware('role:any');
-    Route::post('/cps', [CPDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/cps/{document}/preview', [CPDocumentController::class, 'preview'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/cps/{document}/preview-url', [CPDocumentController::class, 'previewUrl'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/cps/{document}/download', [CPDocumentController::class, 'download'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/cps/{document}', [CPDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+    Route::documentRoutes('cps', CPDocumentController::class);
+    Route::documentRoutes('dzcs', DZCDocumentController::class);
 
-    Route::get('/dzcs', [DZCDocumentController::class, 'index'])
-        ->middleware('role:any');
-    Route::post('/dzcs', [DZCDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/dzcs/{document}/preview', [DZCDocumentController::class, 'preview'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/dzcs/{document}/download', [DZCDocumentController::class, 'download'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/dzcs/{document}', [DZCDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
     Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv'])
         ->middleware(['role:any', 'can:view,document']);
 
