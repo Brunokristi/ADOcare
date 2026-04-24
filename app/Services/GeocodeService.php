@@ -20,7 +20,68 @@ class GeocodeService
             'language' => 'sk',
         ]);
 
-        return ['body' => $r->json(), 'status' => $r->status()];
+        $json = $r->json();
+        $predictions = $json['predictions'] ?? [];
+
+        if (!empty($predictions)) {
+            return ['body' => $json, 'status' => $r->status()];
+        }
+
+        if (($json['status'] ?? null) === 'REQUEST_DENIED' || empty($predictions)) {
+            $fallback = $this->autocompleteFallback($text);
+            if (!empty($fallback['body']['predictions'] ?? [])) {
+                return $fallback;
+            }
+        }
+
+        return ['body' => $json, 'status' => $r->status()];
+    }
+
+    private function autocompleteFallback(string $text): array
+    {
+        $r = Http::timeout(10)
+            ->withHeaders([
+                'Accept' => 'application/json',
+                'User-Agent' => config('app.name', 'ADOcare') . '/autocomplete-fallback',
+            ])
+            ->get('https://nominatim.openstreetmap.org/search', [
+                'q' => $text,
+                'format' => 'jsonv2',
+                'addressdetails' => 1,
+                'countrycodes' => 'sk',
+                'limit' => 10,
+            ]);
+
+        if (!$r->successful()) {
+            return ['body' => ['predictions' => []], 'status' => $r->status()];
+        }
+
+        $predictions = collect($r->json() ?? [])
+            ->map(function (array $item): array {
+                $address = $item['display_name'] ?? '';
+                $street = trim(implode(' ', array_filter([
+                    $item['address']['road'] ?? null,
+                    $item['address']['house_number'] ?? null,
+                ])));
+                $city = trim((string) ($item['address']['city'] ?? ($item['address']['town'] ?? ($item['address']['village'] ?? ($item['address']['municipality'] ?? '')))));
+                $zip = trim((string) ($item['address']['postcode'] ?? ''));
+
+                return [
+                    'description' => $address,
+                    'place_id' => 'osm:' . ($item['place_id'] ?? $item['osm_id'] ?? uniqid('', true)),
+                    'source' => 'nominatim',
+                    'lat' => isset($item['lat']) ? (float) $item['lat'] : null,
+                    'lng' => isset($item['lon']) ? (float) $item['lon'] : null,
+                    'address' => $address,
+                    'street' => $street,
+                    'city' => $city,
+                    'zip' => $zip,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return ['body' => ['predictions' => $predictions], 'status' => 200];
     }
 
     public function details(string $placeId): array

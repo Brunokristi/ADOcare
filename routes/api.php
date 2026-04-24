@@ -49,18 +49,19 @@ use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\ScanSessionController;
 use App\Http\Controllers\Api\ScanUploadController;
 use App\Http\Controllers\Api\ScanFileController;
+use App\Http\Controllers\Api\SubscriptionTierController;
 
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/v1/scans/{sessionId}/{filename}', [\App\Http\Controllers\Api\ScanFileController::class, 'image'])
-    ->middleware('api.auth')
+    ->middleware(['api.auth', 'subscription.active'])
     ->where('filename', '.*');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('api.auth');
+})->middleware(['api.auth', 'subscription.active']);
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
@@ -76,7 +77,7 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-Route::prefix('v1')->middleware('api.auth')->group(function () {
+Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(function () {
 
     Route::macro('apiResourceComplete', function ($name, $controller, ?string $middleware = null, ?string $readMiddleware = null) {
         if ($readMiddleware) {
@@ -173,6 +174,10 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
     Route::get('/my-company/doctors', [MyCompanyController::class, 'doctors']);
+    Route::get('/my-company/subscription-details', [MyCompanyController::class, 'subscriptionDetails'])
+        ->middleware('role:manager,superadmin');
+    Route::get('/my-company/subscription-payments', [MyCompanyController::class, 'subscriptionPayments'])
+        ->middleware('role:manager,superadmin');
 
     Route::group(['prefix' => 'manager', 'middleware' => 'role:manager,superadmin'], function () {
         Route::get('/user-statistics', [ManagerController::class, 'userStatistics']);
@@ -215,7 +220,17 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::apiResourceComplete('invoices', InvoiceController::class, 'role:manager,superadmin');
     Route::apiResourceComplete('plans', PlanController::class);
     Route::delete('/plans', [PlanController::class, 'destroyMany']);
-    Route::apiResourceComplete('procedures', ProcedureController::class, 'role:superadmin', 'role:any');
+    Route::apiResource('procedures', ProcedureController::class)
+        ->only(['index', 'show'])
+        ->middleware('role:any');
+    Route::apiResource('procedures', ProcedureController::class)
+        ->only(['update'])
+        ->middleware('role:manager,superadmin');
+    Route::apiResource('procedures', ProcedureController::class)
+        ->only(['store', 'destroy'])
+        ->middleware('role:superadmin');
+    Route::delete('procedures', [ProcedureController::class, 'destroyMany'])
+        ->middleware('role:superadmin');
     Route::apiResourceComplete('patient-points', PatientPointController::class, 'role:any');
     Route::apiResourceComplete('report-months', ReportMonthController::class, 'role:any');
     Route::group(['prefix' => 'roles', 'middleware' => 'role:any'], function () {
@@ -238,7 +253,14 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::delete('/users/{user}/signature', [UserController::class, 'deleteSignature'])
         ->middleware('role:manager,superadmin');
     Route::apiResourceComplete('users', UserController::class, 'role:manager,superadmin');
+    Route::get('companies/subscriptions', [CompanyController::class, 'subscriptions'])
+        ->middleware('role:superadmin');
+    Route::get('companies/{company}/subscription-details', [CompanyController::class, 'subscriptionDetails'])
+        ->middleware('role:superadmin');
+    Route::put('companies/{company}/subscription', [CompanyController::class, 'updateSubscription'])
+        ->middleware('role:superadmin');
     Route::apiResourceComplete('companies', CompanyController::class, 'role:superadmin');
+    Route::apiResourceComplete('subscription-tiers', SubscriptionTierController::class, 'role:superadmin');
     Route::get('companies/{company}/stats', [CompanyController::class, 'stats'])
         ->middleware('role:manager,superadmin');
     Route::get('companies/{company}/users', [CompanyController::class, 'users'])
@@ -246,7 +268,7 @@ Route::prefix('v1')->middleware('api.auth')->group(function () {
     Route::get('companies/{company}/branches', [CompanyController::class, 'branches'])
         ->middleware('role:manager,superadmin');
     Route::get('companies/{company}/stamp', [CompanyController::class, 'stamp'])
-        ->middleware('role:manager,superadmin');
+        ->middleware('role:any');
     Route::delete('companies/{company}/stamp', [CompanyController::class, 'deleteStamp'])
         ->middleware('role:manager,superadmin');
 

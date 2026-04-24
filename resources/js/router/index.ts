@@ -5,6 +5,7 @@ import managerRoutes from './manager';
 import superadminRoutes from './superadmin';
 import generalRoutes from './general';
 import { computed } from 'vue';
+import { isSubscriptionExpired } from '@/utils/subscription';
 
 // flag used by App.vue to show the error page without changing the URL
 import { ref } from 'vue'
@@ -55,6 +56,12 @@ router.beforeEach(async (to, _from, next) => {
 
     if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
         return next({ name: 'login', query: { redirect: to.fullPath } });
+    }
+
+    if (auth.isAuthenticated && isSubscriptionExpired(auth.user?.company ?? null, auth.currentRole)) {
+        if (to.name !== 'subscription-expired') {
+            return next({ name: 'subscription-expired' });
+        }
     }
 
     if (to.name === 'dashboard' && dashbordRouteName.value !== 'dashboard') {

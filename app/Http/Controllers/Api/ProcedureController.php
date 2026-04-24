@@ -67,8 +67,9 @@ class ProcedureController extends Controller
     public function store(ProcedureStoreRequest $request)
     {
         $data = $request->validated();
+        $companyId = $request->user()?->company_id;
 
-        $procedure = $this->service->createWithPrices($data);
+        $procedure = $this->service->createWithPrices($data, $companyId);
 
         return $this->success($procedure, 'Created', Response::HTTP_CREATED);
     }
@@ -100,8 +101,9 @@ class ProcedureController extends Controller
     public function update(ProcedureUpdateRequest $request, Procedure $procedure)
     {
         $data = $request->validated();
+        $companyId = $request->user()?->company_id;
 
-        $procedure = $this->service->updateWithPrices($procedure, $data);
+        $procedure = $this->service->updateWithPrices($procedure, $data, $companyId);
 
         return $this->success($procedure, 'Updated');
     }

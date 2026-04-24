@@ -91,6 +91,22 @@ export interface Diagnosis {
   updated_at: string | null
 }
 
+export interface CompanySubscriptionPayment {
+  // columns
+  id: number
+  company_id: number
+  received_at: string
+  amount: number
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  company: Company
+  // counts
+  // exists
+  company_exists: boolean
+}
+
 export interface Country {
   // columns
   id: number
@@ -196,6 +212,7 @@ export interface User {
   company_id: number | null
   role_id: number | null
   signature_path: string | null
+  deleted_at: string | null
   // overrides
   branch_roles: Array<{ branch_id: int, role_id: ?int, position: ?string }>
   // relations
@@ -287,6 +304,26 @@ export interface CarService {
   car_exists: boolean
 }
 
+export interface SubscriptionTier {
+  // columns
+  id: number
+  name: string
+  price_monthly: number | null
+  users_limit: number | null
+  description: string | null
+  is_active: boolean
+  sort_order: number
+  created_at: string | null
+  updated_at: string | null
+  deleted_at: string | null
+  // relations
+  companies: Company[]
+  // counts
+  companies_count: number
+  // exists
+  companies_exists: boolean
+}
+
 export interface Company {
   // columns
   id: number
@@ -312,23 +349,54 @@ export interface Company {
   send_notifications: boolean
   notification_settings: Array<unknown> | null
   visit_locations: Array<unknown> | null
+  deleted_at: string | null
+  subscription_tier_id: number | null
+  subscription_price_monthly: number | null
+  subscription_users_limit_override: number | null
+  subscription_status: string
+  subscription_started_at: string | null
+  subscription_ends_at: string | null
+  subscription_notes: string | null
   // relations
+  subscription_tier: SubscriptionTier
   branches: Branch[]
   cars: Car[]
   patients: Patient[]
   users: User[]
   representative: User
+  subscription_payments: CompanySubscriptionPayment[]
+  subscription_paid_months: CompanySubscriptionPaidMonth[]
   // counts
   branches_count: number
   cars_count: number
   patients_count: number
   users_count: number
+  subscription_payments_count: number
+  subscription_paid_months_count: number
   // exists
+  subscription_tier_exists: boolean
   branches_exists: boolean
   cars_exists: boolean
   patients_exists: boolean
   users_exists: boolean
   representative_exists: boolean
+  subscription_payments_exists: boolean
+  subscription_paid_months_exists: boolean
+}
+
+export interface CompanySubscriptionPaidMonth {
+  // columns
+  id: number
+  company_id: number
+  year: number
+  month: number
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  company: Company
+  // counts
+  // exists
+  company_exists: boolean
 }
 
 export interface Branch {

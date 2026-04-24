@@ -10,6 +10,7 @@ use App\Http\Resources\DoctorCollection;
 use App\Http\Resources\UserCollection;
 use App\Models\Branch;
 use App\Models\Car;
+use App\Models\CompanySubscriptionPayment;
 use App\Models\Doctor;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -157,6 +158,76 @@ class MyCompanyController extends Controller
         $results = ApiQuery::apply(request(), $query, searchable: ['first_name', 'last_name']);
 
         return $this->success(new DoctorCollection($results), 'Doctors retrieved');
+    }
+
+    /**
+     * Get current user's company subscription details.
+     */
+    public function subscriptionDetails(Request $request)
+    {
+        $company = $request->user()?->company;
+
+        if (!$company) {
+            return $this->notFound('No company associated with current user');
+        }
+
+        $company->load([
+            'subscriptionTier',
+            'subscriptionPayments' => fn($q) => $q->orderByDesc('received_at')->orderByDesc('id'),
+            'subscriptionPaidMonths' => fn($q) => $q->orderByDesc('year')->orderBy('month'),
+        ]);
+
+        return $this->success([
+            'id' => $company->id,
+            'name' => $company->name,
+            'subscription_tier_id' => $company->subscription_tier_id,
+            'subscription_price_monthly' => $company->subscription_price_monthly,
+            'subscription_users_limit_override' => $company->subscription_users_limit_override,
+            'subscription_status' => $company->subscription_status,
+            'subscription_notes' => $company->subscription_notes,
+            'subscription_tier' => $company->subscriptionTier,
+            'payments' => $company->subscriptionPayments->map(fn($payment) => [
+                'id' => $payment->id,
+                'received_at' => optional($payment->received_at)->toDateString(),
+                'amount' => $payment->amount,
+                'notes' => $payment->notes,
+            ])->values(),
+            'paid_months_by_year' => $company->subscriptionPaidMonths
+                ->groupBy('year')
+                ->map(fn($items, $year) => [
+                    'year' => (int) $year,
+                    'months' => $items->pluck('month')->map(fn($m) => (int) $m)->values(),
+                ])
+                ->values()
+                ->sortByDesc('year')
+                ->values(),
+        ], 'My company subscription details retrieved');
+    }
+
+    /**
+     * List current user's company subscription payments.
+     */
+    public function subscriptionPayments(Request $request)
+    {
+        $company = $request->user()?->company;
+
+        if (!$company) {
+            return $this->success(new BaseCollection(collect([])), 'My company subscription payments retrieved');
+        }
+
+        $query = CompanySubscriptionPayment::query()
+            ->where('company_id', $company->id)
+            ->orderByDesc('received_at')
+            ->orderByDesc('id');
+
+        $results = ApiQuery::apply(
+            $request,
+            $query,
+            searchable: ['notes'],
+            allowedFilters: ['received_at']
+        );
+
+        return $this->success(new BaseCollection($results), 'My company subscription payments retrieved');
     }
 
 }

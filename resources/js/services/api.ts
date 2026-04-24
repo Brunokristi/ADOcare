@@ -52,6 +52,10 @@ api.interceptors.response.use(
             // emit an event or handle globally
             window.dispatchEvent(new CustomEvent('unauthenticated'));
         }
+
+        if (err.response && err.response.status === 402) {
+            window.dispatchEvent(new CustomEvent('subscription-expired'));
+        }
         return Promise.reject(err);
     }
 );

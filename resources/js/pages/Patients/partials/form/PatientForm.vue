@@ -48,13 +48,37 @@ const insuranceOptions = ref<{ id: number; name: string }[]>([])
 const countryOptions = ref<{ id: number; name: string; code: string }[]>([])
 // branchOptions / nurseOptions are handled via the scoped API helper
 
+function doctorOptionLabel(doc: Partial<Doctor>) {
+    return `${doc.title ?? ''} ${doc.first_name ?? ''} ${doc.last_name ?? ''}`.replace(/\s+/g, ' ').trim()
+}
+
+async function ensureSelectedDoctorOption(selectedId: number | null | undefined) {
+    if (!selectedId) return
+    if (doctorOptions.value.some((o) => o.id === selectedId)) return
+
+    const { data, error } = await list<Doctor>(`/doctors/${selectedId}`)
+    if (error || !data) return
+
+    const doctor = data as unknown as Doctor
+    doctorOptions.value = [
+        ...doctorOptions.value,
+        {
+            id: doctor.id,
+            name: doctorOptionLabel(doctor),
+        },
+    ]
+}
+
 const canEditAssignments = computed(
     () => (props.allowAssignmentEditing ?? (authStore.isManager || authStore.isSuperadmin)),
 )
 
 async function loadFavouriteDoctors() {
-    const branchId = authStore.currentBranch?.id
+    const branchId = (localPatient.value.branch_id as unknown as number | null | undefined) ?? authStore.currentBranch?.id
+    const selectedId = localPatient.value.doctor_id as unknown as number | null | undefined
+
     if (!branchId) {
+        await ensureSelectedDoctorOption(selectedId)
         return { data: [] as Doctor[], error: null }
     }
 
@@ -62,13 +86,10 @@ async function loadFavouriteDoctors() {
 
     doctorOptions.value = (data ?? []).map((doc) => ({
         id: doc.id,
-        name: `${doc.title ?? ''} ${doc.first_name} ${doc.last_name}`.replace(/\s+/g, ' ').trim(),
+        name: doctorOptionLabel(doc),
     }))
 
-    const selectedId = localPatient.value.doctor_id as unknown as number | null | undefined
-    if (selectedId && !doctorOptions.value.some((o) => o.id === selectedId)) {
-        ; (localPatient.value as any).doctor_id = null
-    }
+    await ensureSelectedDoctorOption(selectedId)
 
     return { data, error }
 }
@@ -169,6 +190,10 @@ onMounted(async () => {
 watch(
     () => localPatient.value.branch_id,
     (branchId) => {
+        void loadFavouriteDoctors().then(({ error }) => {
+            if (error) console.error('Failed to load favourite doctors', error)
+        })
+
         if (canEditAssignments.value) {
             void loadNursesForBranch(branchId).then(({ error }) => {
                 if (error) console.error('Failed to load nurses', error)
@@ -198,6 +223,47 @@ watch(
 const addressEntity = ref<Record<string, any> | null>(null)
 const { addressQuery, init: initAddressForm, onAutocompleteSelected, onMapClick: addressOnMapClick } = useAddressForm(addressEntity)
 
+function composeAddressFromFields(address?: string | null, city?: string | null, zip?: string | null): string | null {
+    const parts = [address, city, zip]
+        .filter((part) => typeof part === 'string' && part.trim().length > 0)
+        .map((part) => String(part).trim())
+
+    return parts.length > 0 ? parts.join(', ') : null
+}
+
+function formatAddressLabel(place: { address?: string; street?: string; city?: string; zip?: string }) {
+    if (place.address && place.address.trim()) return place.address.trim()
+    return [place.street, place.city, place.zip]
+        .filter((part) => typeof part === 'string' && part.trim().length > 0)
+        .map((part) => String(part).trim())
+        .join(', ')
+}
+
+async function onMapAddressUpdate(geo: { lat: number | null; lon: number | null }) {
+    try {
+        const place = await addressOnMapClick(geo)
+
+        localPatient.value.latitude = geo.lat ?? localPatient.value.latitude
+        localPatient.value.longitude = geo.lon ?? localPatient.value.longitude
+
+        if (place) {
+            localPatient.value.address = place.street || place.address || localPatient.value.address
+            localPatient.value.city = place.city || localPatient.value.city
+            localPatient.value.zip = place.zip || localPatient.value.zip
+            localPatient.value.latitude = place.latitude ?? localPatient.value.latitude
+            localPatient.value.longitude = place.longitude ?? localPatient.value.longitude
+            addressQuery.value = formatAddressLabel(place) || composeAddressFromFields(localPatient.value.address, localPatient.value.city, localPatient.value.zip)
+        } else {
+            addressQuery.value = composeAddressFromFields(localPatient.value.address, localPatient.value.city, localPatient.value.zip)
+        }
+    } catch (err) {
+        console.error('Map address update failed', err)
+        localPatient.value.latitude = geo.lat ?? localPatient.value.latitude
+        localPatient.value.longitude = geo.lon ?? localPatient.value.longitude
+        addressQuery.value = composeAddressFromFields(localPatient.value.address, localPatient.value.city, localPatient.value.zip)
+    }
+}
+
 const doctorSelectRef = ref<any>(null)
 
 const onDoctorSelectShow = async () => {
@@ -225,7 +291,7 @@ watch(
         addressEntity.value = { ...next, psc: next.zip }
         initAddressForm()
     },
-    { immediate: true, deep: true }
+    { immediate: true }
 )
 
 // propagate local changes up to parent (avoid loops)
@@ -257,6 +323,13 @@ watch(
         }
     },
     { deep: true }
+)
+
+watch(
+    () => [localPatient.value.address, localPatient.value.city, localPatient.value.zip],
+    ([address, city, zip]) => {
+        addressQuery.value = composeAddressFromFields(address as string | null, city as string | null, zip as string | null)
+    },
 )
 
 
@@ -396,7 +469,7 @@ watch(
 
             <div class="col-span-12">
                 <MapSelector :latitude="localPatient.latitude" :longitude="localPatient.longitude"
-                    :disabled="authStore.currentRole === 'manager'" @update="addressOnMapClick" />
+                    :disabled="authStore.currentRole === 'manager'" @update="onMapAddressUpdate" />
                 <small v-if="submitted && errors.coordinates" class="text-danger">{{ errors.coordinates }}</small>
             </div>
         </div>

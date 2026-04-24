@@ -87,7 +87,7 @@ async function submit() {
                 </div>
 
                 <div>
-                    <label for="pin" class="block text-normal mb-1">PIN</label>
+                    <label for="pin" class="block text-normal mb-1">Heslo</label>
 
                     <IconField class="flex items-center w-full">
                         <InputText id="pin" v-model="pin" :type="showPin ? 'text' : 'password'" class="w-full" />
@@ -99,7 +99,7 @@ async function submit() {
                     </IconField>
 
                     <small v-if="submitted && !pin" class="text-danger">
-                        PIN je povinný.
+                        Heslo je povinné.
                     </small>
                 </div>
 

@@ -5,6 +5,7 @@ import Branches from "@/pages/Settings/Branches/BranchesPage.vue";
 import Settings from "@/pages/Settings.vue";
 import Users from "@/pages/Settings/Users/UsersPage.vue";
 import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
+import SubscriptionsPage from "@/pages/Settings/Subscriptions/SubscriptionsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
@@ -203,6 +204,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 component: CompanySettings,
                 meta: { title: 'Nastavenia', link: 'nastavenia', sidebar: showOnSidebar, navbar: true, overflow: true },
             },
+
             {
                 path: 'branches',
                 name: 'manager-settings-branches',
@@ -220,6 +222,12 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'manager-settings-cars',
                 component: Cars,
                 meta: { title: 'Autá', link: 'autá', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'subscriptions',
+                name: 'manager-settings-subscriptions',
+                component: SubscriptionsPage,
+                meta: { title: 'Predplatné', link: 'predplatné', sidebar: showOnSidebar, navbar: true, },
             },
         ],
     },

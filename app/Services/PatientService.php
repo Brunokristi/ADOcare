@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Branch;
+use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -72,13 +73,22 @@ class PatientService
         $patient->delete();
     }
 
-    public function deleteManyByIds(array $ids, bool $deletePatientPoints = false): void
+    public function deleteManyByIds(
+        array $ids,
+        bool $deletePatientPoints = false,
+        bool $deletePatientDocuments = false,
+    ): void
     {
-        DB::transaction(function () use ($ids, $deletePatientPoints) {
+        DB::transaction(function () use ($ids, $deletePatientPoints, $deletePatientDocuments) {
             if ($deletePatientPoints) {
                 // Delete all patient_points for the patients being deleted
                 \App\Models\PatientPoint::whereIn('patient_id', $ids)->delete();
             }
+
+            if ($deletePatientDocuments) {
+                Document::whereIn('patient_id', $ids)->delete();
+            }
+
             Patient::whereIn('id', $ids)->delete();
         });
     }
