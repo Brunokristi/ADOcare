@@ -104,7 +104,7 @@ class CPDocumentController extends Controller
         return response()->view('pdf.travel_cp', [
             'cpData' => $payload,
             'signatureDataUri' => $signatureDataUri,
-        ]);
+        ])->header('Content-Type', 'text/html; charset=utf-8');
     }
 
     /**

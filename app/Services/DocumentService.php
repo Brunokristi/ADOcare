@@ -266,8 +266,10 @@ class DocumentService
         $cachePath = $this->getTravelDocumentPdfCachePath($document);
         $disk = Storage::disk('local');
 
+
         if ($disk->exists($cachePath)) {
-            return $cachePath;
+            $disk->delete($cachePath);
+            // return $cachePath;
         }
 
         $pdfData = $this->buildTravelPdfAttachment($document);

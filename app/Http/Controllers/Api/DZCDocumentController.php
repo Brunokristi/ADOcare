@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class DZCDocumentController extends Controller
 {
@@ -121,7 +122,25 @@ class DZCDocumentController extends Controller
         return response()->view('pdf.travel_dzc', [
             'dzcData' => $payload,
             'signatureDataUri' => $signatureDataUri,
-        ]);
+        ])->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * Get a signed public preview URL for DZC document.
+     *
+     * @group Documents
+     */
+    public function previewUrl(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        $url = URL::temporarySignedRoute(
+            'documents.public',
+            now()->addMinutes(15),
+            ['document' => $document->id, 'format' => 'html']
+        );
+
+        return $this->success(['preview_url' => $url]);
     }
 
     /**
