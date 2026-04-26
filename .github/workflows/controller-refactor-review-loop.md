@@ -1,6 +1,7 @@
 ---
 description: Refactor a target Laravel file with architect-reviewer loop (max 3 rounds).
 on:
+  slash_command: refactor
   workflow_dispatch:
     inputs:
       target_file:
@@ -21,7 +22,10 @@ safe-outputs:
 
 You will refactor one target file, then validate the result with an explicit review gate.
 
-Target file: `${{ github.event.inputs.target_file }}`
+Target file source:
+
+- Slash command text (preferred when triggered by `/refactor`): `${{ steps.sanitized.outputs.text }}`
+- Manual dispatch input fallback: `${{ github.event.inputs.target_file }}`
 
 ## Roles
 
@@ -30,7 +34,10 @@ Target file: `${{ github.event.inputs.target_file }}`
 
 ## Process (Maximum 3 Rounds)
 
-1. Resolve and validate the target file path.
+1. Resolve and validate the target file path:
+   - If triggered by `/refactor`, parse the file path from `${{ steps.sanitized.outputs.text }}`.
+   - If triggered by manual dispatch, use `${{ github.event.inputs.target_file }}`.
+   - If no valid path is provided, use `add-comment` with a short usage hint and stop.
 2. Run a refactor pass using `#file:senior-laravel-architect.agent.md`.
 3. Run a verification pass using `#file:ruthless-code-reviewer.agent.md`.
 4. If reviewer verdict is **SATISFIED**, stop immediately and prepare final output.
