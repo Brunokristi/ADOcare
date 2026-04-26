@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ScanFinalizeRequest;
+use App\Http\Requests\Api\ScanSessionInfoRequest;
+use App\Http\Requests\Api\ScanUploadImageRequest;
 use App\Models\ScanSession;
 use App\Services\ScanDocumentService;
-use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class ScanUploadController extends Controller
 {
@@ -17,161 +20,101 @@ class ScanUploadController extends Controller
 
     /**
      * Upload scanned images for a session (public, token-based).
+     *
+     * @group Scan Upload
+     * @bodyParam session_token string required Session token. Example: abc123
+     * @bodyParam images[] file required One or more image files.
+     * @response 200 {"data":{"success":true,"image_paths":["scans/1.jpg"],"image_count":1},"message":"Obrazky boli uspesne nahrate."}
      */
-    public function uploadImage(Request $request)
+    public function uploadImage(ScanUploadImageRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'session_token' => ['required', 'string'],
-            'images' => ['required', 'array', 'min:1'],
-            'images.*' => ['required', 'file', 'max:102400'],
-        ]);
+        $validated = $request->validated();
 
         $session = $this->service->getSessionByToken($validated['session_token']);
         if (!$session) {
-            return $this->error('Invalid or expired session', 401);
+            return $this->error('Neplatna alebo expirovana relacia.', 401);
         }
 
-        /** @var UploadedFile[] $files */
+        /** @var array<int, \Illuminate\Http\UploadedFile> $files */
         $files = $request->file('images', []);
-
         if (!is_array($files) || count($files) === 0) {
-            // This is the classic "mobile sent something but PHP didn't create UploadedFile"
             Log::warning('scan upload: no files parsed', [
                 'has_images_key' => $request->has('images'),
                 'content_type' => $request->header('content-type'),
             ]);
 
-            return $this->error('No files received (images)', 422);
+            return $this->error('Neboli prijate ziadne subory (images).', 422);
         }
 
-        $stored = [];
-
-        foreach ($files as $i => $file) {
-            if (!$file) {
-                Log::warning("scan upload: images.$i is null");
-                continue;
-            }
-
-            // Upload error diagnostics (CRITICAL for mobile issues)
-            if ($file->getError() !== UPLOAD_ERR_OK) {
-                Log::warning("scan upload: images.$i upload error", [
-                    'error' => $file->getError(),
-                    'error_message' => $file->getErrorMessage(),
-                    'original' => $file->getClientOriginalName(),
-                    'client_mime' => $file->getClientMimeType(),
-                    'size' => $file->getSize(),
-                ]);
-
-                return $this->error("Upload failed for images.$i: " . $file->getErrorMessage(), 422);
-            }
-
-            // Mime allowlist (more reliable than 'mimes' for HEIC/webp in some setups)
-            $allowed = [
-                'image/jpeg',
-                'image/png',
-                'image/webp',
-                'image/heic',
-                'image/heif',
-            ];
-
-            $clientMime = $file->getClientMimeType() ?: '';
-            if (!in_array($clientMime, $allowed, true)) {
-                return $this->error("Unsupported image type for images.$i ({$clientMime})", 422);
-            }
-
-            // Optional: normalize to JPG to avoid HEIC/webp downstream pobems
-            // If you already do this in storeScannedImage(), remove this conversion and just store.
-            $normalizedFile = $this->normalizeToJpegIfNeeded($file);
-
-            $stored[] = $this->service->storeScannedImage($session, $normalizedFile);
+        try {
+            $stored = $this->service->storeUploadedImagesForSession($session, $files, 'scan upload');
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
         }
 
         return $this->success([
             'success' => true,
             'image_paths' => $stored,
             'image_count' => count($stored),
-        ], 'Images uploaded successfully', 200);
+        ], 'Obrazky boli uspesne nahrate.', 200);
     }
 
     /**
      * Finalize the scan session and create document.
+     *
+     * @group Scan Upload
+     * @bodyParam session_token string required Session token. Example: abc123
+     * @bodyParam images[] file required One or more image files.
+     * @response 200 {"data":{"document_id":1,"message":"Skenovany dokument bol uspesne vytvoreny."},"message":"Dokument bol uspesne vytvoreny."}
      */
-    public function finalize(Request $request)
+    public function finalize(ScanFinalizeRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'session_token' => ['required', 'string'],
-            'images' => ['required', 'array', 'min:1'],
-            'images.*' => ['required', 'file', 'max:102400'], // 10MB each, in KB
-        ]);
+        $validated = $request->validated();
 
         $session = $this->service->getSessionByToken($validated['session_token']);
-        if (!$session) return $this->error('Invalid or expired session', 401);
-        if ($session->status === 'completed') return $this->error('Session already finalized', 400);
+        if (!$session) {
+            return $this->error('Neplatna alebo expirovana relacia.', 401);
+        }
 
-        /** @var UploadedFile[] $files */
+        if ($session->status === 'completed') {
+            return $this->error('Relacia uz bola finalizovana.', 400);
+        }
+
+        /** @var array<int, \Illuminate\Http\UploadedFile> $files */
         $files = $request->file('images', []);
         if (!is_array($files) || count($files) === 0) {
             Log::warning('scan finalize: no files parsed', [
                 'has_images_key' => $request->has('images'),
                 'content_type' => $request->header('content-type'),
             ]);
-            return $this->error('No files received (images)', 422);
+
+            return $this->error('Neboli prijate ziadne subory (images).', 422);
         }
 
-        $filePaths = [];
-
-        foreach ($files as $i => $file) {
-            if (!$file) {
-                Log::warning("scan finalize: images.$i is null");
-                continue;
-            }
-
-            if ($file->getError() !== UPLOAD_ERR_OK) {
-                Log::warning("scan finalize: images.$i upload error", [
-                    'error' => $file->getError(),
-                    'error_message' => $file->getErrorMessage(),
-                    'original' => $file->getClientOriginalName(),
-                    'client_mime' => $file->getClientMimeType(),
-                    'size' => $file->getSize(),
-                ]);
-
-                return $this->error("Upload failed for images.$i: " . $file->getErrorMessage(), 422);
-            }
-
-            $allowed = [
-                'image/jpeg',
-                'image/png',
-                'image/webp',
-                'image/heic',
-                'image/heif',
-            ];
-
-            $clientMime = $file->getClientMimeType() ?: '';
-            if (!in_array($clientMime, $allowed, true)) {
-                return $this->error("Unsupported image type for images.$i ({$clientMime})", 422);
-            }
-
-            $normalizedFile = $this->normalizeToJpegIfNeeded($file);
-
-            $filePaths[] = $this->service->storeScannedImage($session, $normalizedFile);
+        try {
+            $filePaths = $this->service->storeUploadedImagesForSession($session, $files, 'scan finalize');
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
         }
 
         $document = $this->service->createDocumentFromScans($session, $filePaths);
 
         return $this->success([
             'document_id' => $document->id,
-            'message' => 'Scan document created successfully',
-        ], 'Document created', 200);
+            'message' => 'Skenovany dokument bol uspesne vytvoreny.',
+        ], 'Dokument bol uspesne vytvoreny.', 200);
     }
 
     /**
      * Get session info.
+     *
+     * @group Scan Upload
+     * @queryParam session_token string required Session token. Example: abc123
+     * @response 200 {"data":{"valid":true,"session_id":1,"patient_id":1,"patient_name":"Jan Novak","expires_in":300,"is_expired":false}}
      */
-    public function getSessionInfo(Request $request)
+    public function getSessionInfo(ScanSessionInfoRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'session_token' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
         $session = $this->service->getSessionByToken($validated['session_token']);
 
@@ -179,7 +122,7 @@ class ScanUploadController extends Controller
             $session = ScanSession::where('session_token', $validated['session_token'])->first();
             if ($session) {
                 return response()->json([
-                    'message' => 'Session expired',
+                    'message' => 'Relacia expirovala.',
                     'data' => [
                         'debug' => [
                             'expires_at' => $session->expires_at->toIso8601String(),
@@ -191,7 +134,7 @@ class ScanUploadController extends Controller
                     ],
                 ], 401);
             }
-            return $this->error('Invalid or expired session', 401);
+            return $this->error('Neplatna alebo expirovana relacia.', 401);
         }
 
         $session->load('patient');
@@ -212,80 +155,4 @@ class ScanUploadController extends Controller
         ]);
     }
 
-    /**
-     * Normalize HEIC/WEBP/PNG to JPG when possible.
-     * Returns an UploadedFile (original or converted temp file).
-     *
-     * If you already do conversion in ScanDocumentService::storeScannedImage(), you can delete this.
-     */
-    private function normalizeToJpegIfNeeded(UploadedFile $file): UploadedFile
-    {
-        $mime = $file->getClientMimeType() ?: '';
-
-        // Already JPEG -> keep
-        if ($mime === 'image/jpeg') {
-            return $file;
-        }
-
-        // If Imagick exists, it can handle HEIC in many server setups (when delegates installed).
-        if (extension_loaded('imagick')) {
-            try {
-                $imagick = new \Imagick();
-                $imagick->readImage($file->getRealPath());
-                $imagick->setImageFormat('jpeg');
-
-                $tmpPath = tempnam(sys_get_temp_dir(), 'scan_') . '.jpg';
-                $imagick->writeImage($tmpPath);
-                $imagick->clear();
-                $imagick->destroy();
-
-                return new UploadedFile(
-                    $tmpPath,
-                    pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.jpg',
-                    'image/jpeg',
-                    null,
-                    true // test mode: do not require HTTP upload
-                );
-            } catch (\Throwable $e) {
-                // Fall through to return original
-                Log::warning('normalizeToJpegIfNeeded: imagick failed, storing original', [
-                    'error' => $e->getMessage(),
-                    'mime' => $mime,
-                ]);
-                return $file;
-            }
-        }
-
-        // If no imagick, we can still convert PNG -> JPG via GD (not HEIC).
-        if (in_array($mime, ['image/png', 'image/webp'], true) && extension_loaded('gd')) {
-            try {
-                $src = null;
-                if ($mime === 'image/png') $src = imagecreatefrompng($file->getRealPath());
-                if ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) $src = imagecreatefromwebp($file->getRealPath());
-
-                if ($src) {
-                    $tmpPath = tempnam(sys_get_temp_dir(), 'scan_') . '.jpg';
-                    imagejpeg($src, $tmpPath, 90);
-                    imagedestroy($src);
-
-                    return new UploadedFile(
-                        $tmpPath,
-                        pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.jpg',
-                        'image/jpeg',
-                        null,
-                        true
-                    );
-                }
-            } catch (\Throwable $e) {
-                Log::warning('normalizeToJpegIfNeeded: gd failed, storing original', [
-                    'error' => $e->getMessage(),
-                    'mime' => $mime,
-                ]);
-                return $file;
-            }
-        }
-
-        // If we can't convert (likely HEIC without Imagick delegates), store original.
-        return $file;
-    }
 }

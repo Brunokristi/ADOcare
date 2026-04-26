@@ -6,8 +6,11 @@ use App\Jobs\ProcessScanOcr;
 use App\Models\Document;
 use App\Models\ScanSession;
 use App\Models\Patient;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Service responsible for creating scan documents, managing scan sessions,
@@ -15,6 +18,10 @@ use Illuminate\Support\Str;
  */
 class ScanDocumentService
 {
+    public function __construct(private ScanImageNormalizerService $imageNormalizer)
+    {
+    }
+
     /**
      * Create a new scan session for a patient.
      * The session is used to link mobile uploads to a specific patient/branch context.
@@ -175,5 +182,45 @@ class ScanDocumentService
     {
         $payload = $this->getScanPayload($document);
         return $payload['image_paths'] ?? [];
+    }
+
+    /**
+     * Validate, normalize and store uploaded scan images for a session.
+     *
+     * @param UploadedFile[] $files
+     * @return array<int, string>
+     */
+    public function storeUploadedImagesForSession(ScanSession $session, array $files, string $logPrefix): array
+    {
+        $storedPaths = [];
+
+        foreach ($files as $i => $file) {
+            if (!$file instanceof UploadedFile) {
+                Log::warning($logPrefix . ": images.$i is null");
+                continue;
+            }
+
+            if ($file->getError() !== UPLOAD_ERR_OK) {
+                Log::warning($logPrefix . ": images.$i upload error", [
+                    'error' => $file->getError(),
+                    'error_message' => $file->getErrorMessage(),
+                    'original' => $file->getClientOriginalName(),
+                    'client_mime' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+
+                throw new RuntimeException("Nahravanie zlyhalo pre images.$i: " . $file->getErrorMessage());
+            }
+
+            $clientMime = $file->getClientMimeType() ?: '';
+            if (!$this->imageNormalizer->isAllowedMime($clientMime)) {
+                throw new RuntimeException("Nepodporovany typ obrazka pre images.$i ({$clientMime})");
+            }
+
+            $normalizedFile = $this->imageNormalizer->normalizeToJpegIfNeeded($file);
+            $storedPaths[] = $this->storeScannedImage($session, $normalizedFile);
+        }
+
+        return $storedPaths;
     }
 }
