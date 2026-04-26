@@ -19,13 +19,11 @@ class DocumentPolicy extends BasePolicy
             // Check if document belongs to a patient in their company
             if ($document->patient_id) {
                 $patient = $document->patient;
-                dd($patient);
                 return $patient && $user->isInCompany($patient->branch->company_id);
             }
             // Check if document's branch is in their company
             if ($document->branch_id) {
                 $branch = $document->branch;
-                dd($branch);
                 return $branch && $user->isInCompany($branch->company_id);
             }
         }
