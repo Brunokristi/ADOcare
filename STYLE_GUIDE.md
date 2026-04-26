@@ -6,6 +6,7 @@ Quick summary
  - Keep controllers thin and delegate business logic to services.
  - Scope list GET endpoints to the most specific context (e.g. `/v1/branches/2/users` or `/v1/my-company/users`).
  - Use Resource/Collection classes for API responses and the ApiResponse trait (`$this->success()` / `$this->error()`).
+- Every API endpoint controller method must include Scribe API doc annotations in its docblock (`@group`, params, and example responses).
  - Prefer many small, well-documented functions; prefer `use` imports and 4-space indentation.
 
 If you'd like formal checks (PR checklist, linters or actions) added, open an issue or request it in the PR description.
@@ -58,6 +59,7 @@ This guide is meant for both humans and automated agents that modify the codebas
 
 - Documentation & docstrings
 	- Add PHPDoc-style docblocks to all public classes and methods (controllers, services, helpers). Document parameters and return types and include a one-line description.
+	- Every API endpoint controller method must include Scribe-compatible API annotations in its docblock (at minimum `@group`, relevant `@urlParam`/`@queryParam`/`@bodyParam`, and `@response` examples) so API documentation can be generated consistently.
 
 - When to break the rules
 	- If a change will violate a guideline, ask for confirmation and record the reason in the PR. State which guideline is being broken and why, and propose mitigations.
@@ -77,7 +79,7 @@ This guide is meant for both humans and automated agents that modify the codebas
 	- When processing large datasets, prefer `cursor()` or `chunk()` to avoid loading entire tables into memory. Use transactions when mutating multiple related rows.
 
 - Validation
-	- Prefer FormRequest classes for complex request validation and authorization instead of inline `$request->validate()`.
+	- Use FormRequest classes for request validation and authorization instead of inline `$request->validate()`.
 
 - Authorization & security policies
 	- Enforce authorization **server-side** for every endpoint — never rely on client-side checks.
@@ -121,7 +123,7 @@ This guide is meant for both humans and automated agents that modify the codebas
 		- Keep authorization logic DRY — centralize in policies/middleware rather than sprinkling checks across services.
 
 - Documentation & API docs
-	- When adding or changing API endpoints, update Scribe/OpenAPI docs and include examples in the PR.
+	- When adding or changing API endpoints, ensure Scribe annotations in controller docblocks are updated and regenerate Scribe/OpenAPI docs; include request/response examples in the PR.
 
 
 ---

@@ -7,23 +7,36 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     /**
-     * Create a new token for the user.
-     * @param \App\Models\User $user
-     * @param \DateTimeInterface|null $expiresAt // Default in 1 day
-     * @return string
+     * Create a new API token for a user.
      */
-    private function createToken(User $user, $expiresAt = new \DateTime('+1 day'))
+    private function createToken(User $user, ?DateTimeInterface $expiresAt = null): string
     {
+        $expiresAt ??= now()->addDay();
+
         return $user->createToken('AuthToken', [], $expiresAt)->plainTextToken;
     }
 
-    // User Registration API - Only admin can register users
+    /**
+     * Find user by code or login for the given identifier.
+     */
+    private function findUserByLoginOrCode(string $identifier): ?User
+    {
+        return User::query()
+            ->where('code', $identifier)
+            ->orWhere('login', $identifier)
+            ->first();
+    }
+
+    /**
+     * Register a new user account.
+     */
     public function register(RegisterRequest $request)
     {
         $data = $request->validated();
@@ -35,54 +48,52 @@ class AuthController extends Controller
             'pin' => Hash::make($data['pin']),
         ]);
 
-        return $this->success(new UserResource($user), 'User registered successfully.', 201);
+        return $this->success(new UserResource($user), 'Pouzivatel bol uspesne zaregistrovany.', 201);
     }
 
-    // User Login API
+    /**
+     * Authenticate a user and return an API token.
+     */
     public function login(LoginRequest $request)
     {
         $data = $request->validated();
 
-        $user = User::where('code', $data['login'])
-            ->orWhere('login', $data['login'])
-            ->first();
+        $user = $this->findUserByLoginOrCode($data['login']);
 
         if (!$user || !Hash::check($data['pin'], $user->pin)) {
-            return $this->error('Invalid login/code or pin.', 401);
+            return $this->error('Nespravne prihlasovacie meno/kod alebo PIN.', 401);
         }
 
-        // Load relationships needed by frontend; include `role` so the
-        // client receives the user's global role object.
-        $user->load(['branches', 'company', 'role']);
+        $user->loadMissing(['branches', 'company', 'role']);
 
         $token = $this->createToken($user);
 
         return $this->success([
             'token' => $token,
-            'user' => $user,
-        ], 'Login successful.');
+            'user' => new UserResource($user),
+        ], 'Prihlasenie bolo uspesne.');
     }
 
 
-    // User Profile API (Protected)
+    /**
+     * Return authenticated user profile details.
+     */
     public function profile(Request $request)
     {
-        $userId = auth()->id();
+        $user = $request->user();
+        $user?->loadMissing(['branches', 'company', 'role']);
 
-        $user = User::query()
-            ->where('id', $userId)
-            ->with(['branches', 'company', 'role'])
-            ->first();
-
-        return $this->success(new UserResource($user), 'Profile retrieved');
+        return $this->success(new UserResource($user), 'Profil bol uspesne nacitany.');
     }
 
 
-    // User Logout API
+    /**
+     * Revoke all active tokens for authenticated user.
+     */
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
 
-        return $this->success(null, 'Logout successful');
+        return $this->success(null, 'Odhlasenie bolo uspesne.');
     }
 }
