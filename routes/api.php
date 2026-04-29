@@ -336,6 +336,14 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
         ->middleware('role:any');
     Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show'])
         ->middleware(['role:any', 'can:view,document']);
+    Route::get('/agreements/{document}/preview', [AgreementDocumentController::class, 'preview'])
+        ->middleware(['role:any', 'can:view,document'])
+        ->withoutMiddleware(ForceJsonResponse::class);
+    Route::get('/agreements/{document}/preview-url', [AgreementDocumentController::class, 'previewUrl'])
+        ->middleware(['role:any', 'can:view,document']);
+    Route::get('/agreements/{document}/download', [AgreementDocumentController::class, 'download'])
+        ->middleware(['role:any', 'can:view,document'])
+        ->withoutMiddleware(ForceJsonResponse::class);
 
     Route::documentRoutes('cps', CPDocumentController::class);
     Route::documentRoutes('dzcs', DZCDocumentController::class);

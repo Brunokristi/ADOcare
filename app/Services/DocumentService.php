@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Filters\ApiQuery;
 use App\Mail\GenericEmail;
 use App\Models\Branch;
+use App\Models\Company;
 use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
@@ -286,6 +287,11 @@ class DocumentService
         return $this->loadUserSignatureDataUri($userId);
     }
 
+    public function getCompanyStampDataUri(?int $companyId): ?string
+    {
+        return $this->loadCompanyStampDataUri($companyId);
+    }
+
     private function getTravelDocumentPdfCachePath(Document $document): string
     {
         return sprintf('documents/pdf/%s/%d.pdf', $document->type, $document->id);
@@ -358,6 +364,27 @@ class DocumentService
         }
 
         $binary = Storage::disk('local')->get($signaturePath);
+        if ($binary === null || $binary === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . base64_encode($binary);
+    }
+
+    private function loadCompanyStampDataUri(?int $companyId): ?string
+    {
+        if (!$companyId) {
+            return null;
+        }
+
+        $company = Company::find($companyId);
+        $stampPath = $company?->stamp_path;
+
+        if (!$stampPath || !Storage::disk('local')->exists($stampPath)) {
+            return null;
+        }
+
+        $binary = Storage::disk('local')->get($stampPath);
         if ($binary === null || $binary === '') {
             return null;
         }

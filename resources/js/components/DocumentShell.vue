@@ -21,6 +21,15 @@ interface FileItem {
   downloads: DownloadOption[]
 }
 
+interface ActionButton {
+  id: string
+  label: string
+  icon: string
+  tooltip?: string
+  disabled?: boolean
+  loading?: boolean
+}
+
 interface Props {
   title: string
   subtitle?: string
@@ -34,6 +43,7 @@ interface Props {
   downloadLabel?: string
   downloadOptions?: DownloadOption[]
   files?: FileItem[]
+  actions?: ActionButton[]
   showPrintButton?: boolean
   showTitle?: boolean
 }
@@ -45,6 +55,7 @@ const props = withDefaults(defineProps<Props>(), {
   downloadLabel: 'Download',
   downloadOptions: () => [],
   files: () => [],
+  actions: () => [],
   showPrintButton: true,
   showTitle: true,
 })
@@ -285,6 +296,14 @@ function printPage() {
 
   requestAnimationFrame(() => window.print())
 }
+
+const emit = defineEmits<{
+  actionClick: [buttonId: string]
+}>()
+
+function onActionClick(actionId: string) {
+  emit('actionClick', actionId)
+}
 </script>
 
 <template>
@@ -296,11 +315,22 @@ function printPage() {
       </div>
 
       <div class="flex gap-2 items-center relative">
+        <div v-for="action in props.actions" :key="action.id" class="relative">
+          <Button
+            :icon="action.icon"
+            :title="action.tooltip || action.label"
+            :disabled="action.disabled || action.loading"
+            :loading="action.loading"
+            class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+            @click="onActionClick(action.id)"
+          />
+        </div>
+
         <div v-if="topLevelOptions.length" class="relative">
           <template v-if="topLevelOptions.length === 1">
             <Button
-              :label="buttonLabelForOptions(topLevelOptions)"
               icon="bi bi-download"
+              title="Download"
               class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
               :loading="isDownloading"
               :disabled="isDownloading || !topLevelOptions.length"
@@ -309,7 +339,6 @@ function printPage() {
           </template>
           <template v-else>
             <SplitButton
-              :label="buttonLabelForOptions(topLevelOptions)"
               icon="bi bi-download"
               :model="splitMenuItems(topLevelOptions)"
               class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
@@ -323,6 +352,7 @@ function printPage() {
         <Button
           v-if="props.showPrintButton"
           icon="bi bi-printer"
+          title="Print"
           class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
           @click="printPage"
         />
@@ -357,8 +387,8 @@ function printPage() {
           <div class="relative">
             <template v-if="file.downloads.length === 1">
               <Button
-                :label="buttonLabelForOptions(file.downloads)"
                 icon="bi bi-download"
+                title="Download"
                 class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
                 :disabled="isDownloading || !file.downloads?.length"
                 @click="download(file.downloads[0])"
@@ -366,7 +396,6 @@ function printPage() {
             </template>
             <template v-else>
               <SplitButton
-                :label="buttonLabelForOptions(file.downloads)"
                 icon="bi bi-download"
                 :model="splitMenuItems(file.downloads)"
                 class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
