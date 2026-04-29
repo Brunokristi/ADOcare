@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ScanSession;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Document;
+use App\Services\DocumentService;
+use Illuminate\Support\Facades\URL;
 
 class ScanFileController extends Controller
 {
@@ -95,7 +97,7 @@ class ScanFileController extends Controller
 
         $raw = Storage::disk('local')->get($document->path);
         $json = json_decode($raw, true);
-        
+
         if (!is_array($json)) {
             return response()->json([
                 'message' => 'Scan JSON je neplatný.',
@@ -123,5 +125,82 @@ class ScanFileController extends Controller
                 'extracted_pages' => $json['extracted_pages'] ?? null,
             ],
         ]);
+    }
+
+    /**
+     * Preview scan document as HTML via Blade template.
+     */
+    public function preview(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        if (!$document->path || !Storage::disk('local')->exists($document->path)) {
+            return response()->json(['message' => 'Scan JSON file not found'], 404);
+        }
+
+        $raw = Storage::disk('local')->get($document->path);
+        $json = json_decode($raw, true);
+
+        if (!is_array($json)) {
+            return response()->json(['message' => 'Invalid scan JSON'], 422);
+        }
+
+        // Build data for Blade
+        $scanData = [
+            'patient_name' => $json['patient_name'] ?? '',
+            'patient_birth_number' => $json['patient_birth_number'] ?? '',
+            'date' => $json['scanned_at'] ?? '',
+            'images' => [],
+        ];
+
+        // Convert image paths to data URIs or direct URLs
+        $sessionId = $json['scan_session_id'] ?? null;
+        $paths = $json['image_paths'] ?? [];
+
+        foreach ($paths as $p) {
+            if (!is_string($p) || $p === '') continue;
+            $filename = basename(str_replace('\\', '/', $p));
+            $imageUrl = "/api/v1/scans/{$sessionId}/" . rawurlencode($filename);
+            $scanData['images'][] = $imageUrl;
+        }
+
+        return response()->view('pdf.scan', [
+            'scanData' => $scanData,
+        ])->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * Download scan PDF generated from Blade template.
+     */
+    public function download(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            return response()->json(['message' => 'Scan PDF not found'], 500);
+        }
+
+        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+        return response()->download(Storage::disk('local')->path($pdfPath), $downloadName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
+     * Get a signed public preview URL for scan document.
+     */
+    public function previewUrl(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        $url = URL::temporarySignedRoute(
+            'documents.public',
+            now()->addMinutes(15),
+            ['document' => $document->id, 'format' => 'html']
+        );
+
+        return response()->json(['preview_url' => $url]);
     }
 }

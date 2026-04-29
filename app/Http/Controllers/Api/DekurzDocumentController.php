@@ -15,8 +15,10 @@ use App\Models\PatientPoint;
 use App\Http\Requests\StoreDekurzRequest;
 use App\Services\DekurzAiPrefillService;
 use App\Services\DekurzDocumentService;
+use App\Services\DocumentService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 
 
 class DekurzDocumentController extends Controller
@@ -115,6 +117,61 @@ class DekurzDocumentController extends Controller
         }
 
         return $this->success(['improved_text' => $improved], 'Text bol úspešne vylepšený pomocou AI.');
+    }
+
+    /**
+     * Preview dekurz document as HTML via Blade template.
+     */
+    public function preview(Document $document, DekurzDocumentService $service)
+    {
+        $document->loadMissing('user');
+
+        $dekurzData = $service->findDekurzFileForDocument($document);
+        if (!$dekurzData) {
+            return response()->json(['message' => 'Dekurz data not found'], 404);
+        }
+
+        $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($dekurzData['user_id'] ?? 0));
+
+        return response()->view('pdf.dekurz', [
+            'dekurzData' => $dekurzData,
+            'signatureDataUri' => $signatureDataUri,
+        ])->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * Download dekurz PDF generated from Blade template.
+     */
+    public function download(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            return response()->json(['message' => 'Dekurz PDF not found'], 500);
+        }
+
+        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+        return response()->download(Storage::disk('local')->path($pdfPath), $downloadName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
+     * Get a signed public preview URL for dekurz document.
+     */
+    public function previewUrl(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        $url = URL::temporarySignedRoute(
+            'documents.public',
+            now()->addMinutes(15),
+            ['document' => $document->id, 'format' => 'html']
+        );
+
+        return response()->json(['preview_url' => $url]);
     }
 
 }

@@ -236,6 +236,14 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::apiResourceComplete('macros', MacroController::class);
     Route::get('/invoices/{invoice}/file', [InvoiceController::class, 'file'])
         ->middleware('role:manager,superadmin');
+    Route::get('/invoices/{invoice}/preview', [InvoiceController::class, 'preview'])
+        ->middleware('role:manager,superadmin')
+        ->withoutMiddleware(ForceJsonResponse::class);
+    Route::get('/invoices/{invoice}/preview-url', [InvoiceController::class, 'previewUrl'])
+        ->middleware('role:manager,superadmin');
+    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
+        ->middleware('role:manager,superadmin')
+        ->withoutMiddleware(ForceJsonResponse::class);
     Route::apiResourceComplete('invoices', InvoiceController::class, 'role:manager,superadmin');
     Route::apiResourceComplete('plans', PlanController::class);
     Route::delete('/plans', [PlanController::class, 'destroyMany']);
@@ -319,10 +327,9 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::delete('/branches/{branch}/doctors/{doctor}', [BranchDoctorController::class, 'detach'])
         ->middleware('role:manager,superadmin');
 
-    Route::post('/proposals', [ProposalDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/proposals/{document}', [ProposalDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+    Route::documentRoutes('proposals', ProposalDocumentController::class);
+
+    // Patient-specific proposal routes
     Route::get('/patients/{patient}/proposals', [ProposalDocumentController::class, 'getByPatient'])
         ->middleware(['role:any', 'can:view,patient']);
     Route::get('/patients/{patient}/proposals/latest', [ProposalDocumentController::class, 'latestByPatient'])
@@ -332,18 +339,7 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::post('/patients/{patient}/proposals/ocr-prefill', [ProposalDocumentController::class, 'prefillFromLatestScan'])
         ->middleware(['role:any', 'can:view,patient']);
 
-    Route::post('/agreements', [AgreementDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/agreements/{document}', [AgreementDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/agreements/{document}/preview', [AgreementDocumentController::class, 'preview'])
-        ->middleware(['role:any', 'can:view,document'])
-        ->withoutMiddleware(ForceJsonResponse::class);
-    Route::get('/agreements/{document}/preview-url', [AgreementDocumentController::class, 'previewUrl'])
-        ->middleware(['role:any', 'can:view,document']);
-    Route::get('/agreements/{document}/download', [AgreementDocumentController::class, 'download'])
-        ->middleware(['role:any', 'can:view,document'])
-        ->withoutMiddleware(ForceJsonResponse::class);
+    Route::documentRoutes('agreements', AgreementDocumentController::class);
 
     Route::documentRoutes('cps', CPDocumentController::class);
     Route::documentRoutes('dzcs', DZCDocumentController::class);
@@ -351,8 +347,9 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv'])
         ->middleware(['role:any', 'can:view,document']);
 
-    Route::post('/dekurz', [DekurzDocumentController::class, 'store'])
-        ->middleware('role:any');
+    Route::documentRoutes('dekurz', DekurzDocumentController::class);
+
+    // Special dekurz endpoints
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates'])
         ->middleware('role:any');
     Route::get('/dekurz/last', [DekurzDocumentController::class, 'last'])
@@ -361,38 +358,20 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
         ->middleware(['role:any', 'can:view,patient']);
     Route::post('/patients/{patient}/dekurz/ai-improve-text', [DekurzDocumentController::class, 'improveText'])
         ->middleware(['role:any', 'can:view,patient']);
-    Route::get('/dekurz/{document}', [DekurzDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
 
-    Route::post('/leave-documents', [LeaveDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/leave-documents/{document}', [LeaveDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+    Route::documentRoutes('leave-documents', LeaveDocumentController::class);
     Route::get('/patients/{patient}/leave/latest', [LeaveDocumentController::class, 'latestByPatient'])
         ->middleware(['role:any', 'can:view,patient']);
 
-    Route::post('/records', [RecordDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/records/{document}', [RecordDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+    Route::documentRoutes('records', RecordDocumentController::class);
     Route::get('/patients/{patient}/records/latest', [RecordDocumentController::class, 'latestByPatient'])
         ->middleware(['role:any', 'can:view,patient']);
 
-    Route::post('/kilometers-batches', [KilometersBatchDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/kilometers-batches', [KilometersBatchDocumentController::class, 'index'])
-        ->middleware('role:any');
-    Route::get('/kilometers-batches/{document}', [KilometersBatchDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+    Route::documentRoutes('kilometers-batches', KilometersBatchDocumentController::class);
     Route::get('/patients/{patient}/kilometers-batches/latest', [KilometersBatchDocumentController::class, 'latestByPatient'])
         ->middleware(['role:any', 'can:view,patient']);
 
-    Route::post('/points-batches', [PointsBatchDocumentController::class, 'store'])
-        ->middleware('role:any');
-    Route::get('/points-batches', [PointsBatchDocumentController::class, 'index'])
-        ->middleware('role:any');
-    Route::get('/points-batches/{document}', [PointsBatchDocumentController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+    Route::documentRoutes('points-batches', PointsBatchDocumentController::class);
 
     Route::get('/batch-documents/company', [BatchDocumentController::class, 'indexByCompany'])
         ->middleware('role:manager,superadmin');

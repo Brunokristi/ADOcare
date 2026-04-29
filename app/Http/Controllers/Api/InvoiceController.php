@@ -11,12 +11,14 @@ use App\Models\Company;
 use App\Models\Document;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Services\DocumentService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class InvoiceController extends Controller
 {
@@ -145,6 +147,71 @@ class InvoiceController extends Controller
         }
 
         return $this->success($payload, 'Faktúra bola načítaná');
+    }
+
+    /**
+     * Preview invoice document as HTML via Blade template.
+     */
+    public function preview(Request $request, Invoice $invoice)
+    {
+        $actor = $request->user();
+        if (!$actor instanceof User || !$this->canAccess($actor, $invoice)) {
+            return $this->forbidden('Nemáte oprávnenie na prístup k tejto faktúre');
+        }
+
+        $payload = $this->readDocumentJson($invoice->path);
+
+        if (!is_array($payload) || !array_key_exists('company_register', $payload)) {
+            $payload = $this->buildInvoicePayload($invoice, $actor);
+            Storage::disk('local')->put($invoice->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        }
+
+        return response()->view('pdf.invoice', [
+            'invoiceData' => $payload,
+        ])->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * Download invoice PDF generated from Blade template.
+     */
+    public function download(Request $request, Invoice $invoice)
+    {
+        $actor = $request->user();
+        if (!$actor instanceof User || !$this->canAccess($actor, $invoice)) {
+            return $this->forbidden('Nemáte oprávnenie na prístup k tejto faktúre');
+        }
+
+        // For invoices, we use a simpler filename-based approach
+        $pdfPath = sprintf('invoices/pdf/%d.pdf', $invoice->id);
+
+        if (!Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('Invoice PDF not found', 500);
+        }
+
+        $downloadName = 'faktúra_' . $invoice->invoice_number . '.pdf';
+
+        return response()->download(Storage::disk('local')->path($pdfPath), $downloadName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
+     * Get a signed public preview URL for invoice.
+     */
+    public function previewUrl(Request $request, Invoice $invoice)
+    {
+        $actor = $request->user();
+        if (!$actor instanceof User || !$this->canAccess($actor, $invoice)) {
+            return $this->forbidden('Nemáte oprávnenie na prístup k tejto faktúre');
+        }
+
+        $url = URL::temporarySignedRoute(
+            'invoices.public',
+            now()->addMinutes(15),
+            ['invoice' => $invoice->id, 'format' => 'html']
+        );
+
+        return $this->success(['preview_url' => $url]);
     }
 
     public function update(UpdateInvoiceRequest $request, Invoice $invoice)

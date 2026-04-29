@@ -8,6 +8,9 @@ use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\LeaveDocumentService;
+use App\Services\DocumentService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 /**
  * Handles leave document endpoints.
@@ -81,5 +84,66 @@ class LeaveDocumentController extends Controller
             'document_id' => $document->id,
             'leave_data' => $leaveFile,
         ], 'Najnovšia prepúšťacia správa bola načítaná');
+    }
+
+    /**
+     * Preview leave document as HTML via Blade template.
+     *
+     * @group Documents
+     */
+    public function preview(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $leaveData = $this->service->findLeaveFileForDocument($document);
+        if (!$leaveData) {
+            return $this->error('Leave data not found', 404);
+        }
+
+        $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($leaveData['user_id'] ?? 0));
+
+        return response()->view('pdf.leave', [
+            'leaveData' => $leaveData,
+            'signatureDataUri' => $signatureDataUri,
+        ])->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * Download leave PDF generated from Blade template.
+     *
+     * @group Documents
+     */
+    public function download(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('Leave PDF not found', 500);
+        }
+
+        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+        return response()->download(Storage::disk('local')->path($pdfPath), $downloadName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
+     * Get a signed public preview URL for leave document.
+     *
+     * @group Documents
+     */
+    public function previewUrl(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        $url = URL::temporarySignedRoute(
+            'documents.public',
+            now()->addMinutes(15),
+            ['document' => $document->id, 'format' => 'html']
+        );
+
+        return $this->success(['preview_url' => $url]);
     }
 }

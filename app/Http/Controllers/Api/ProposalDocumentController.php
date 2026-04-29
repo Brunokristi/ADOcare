@@ -9,8 +9,11 @@ use App\Models\Document;
 use App\Models\Patient;
 use App\Services\ProposalDocumentService;
 use App\Services\ProposalOcrPrefillService;
+use App\Services\DocumentService;
 use App\Http\Requests\StoreProposalRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class ProposalDocumentController extends Controller
 {
@@ -120,5 +123,68 @@ class ProposalDocumentController extends Controller
         }
 
         return $this->success($data, 'Prefill bol úspešne vygenerovaný z OCR dokumentu.');
+    }
+
+    /**
+     * Preview proposal document as HTML via Blade template.
+     *
+     * @group Documents
+     */
+    public function preview(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $payload = $this->service->getProposalPayload($document);
+        if (! $payload) {
+            return $this->error('Proposal data not found', 404);
+        }
+
+        $stampDataUri = app(DocumentService::class)->getCompanyStampDataUri((int) ($payload['company_id'] ?? 0));
+        $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($payload['representative_id'] ?? 0));
+
+        return response()->view('pdf.proposal', [
+            'proposalData' => $payload,
+            'stampDataUri' => $stampDataUri,
+            'signatureDataUri' => $signatureDataUri,
+        ])->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    /**
+     * Download proposal PDF generated from Blade template.
+     *
+     * @group Documents
+     */
+    public function download(Document $document)
+    {
+        $document->loadMissing('user');
+
+        $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
+        if (! $pdfPath || ! Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('Proposal PDF not found', 500);
+        }
+
+        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+        return response()->download(Storage::disk('local')->path($pdfPath), $downloadName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
+     * Get a signed public preview URL for proposal document.
+     *
+     * @group Documents
+     */
+    public function previewUrl(Document $document)
+    {
+        $this->authorize('view', $document);
+
+        $url = URL::temporarySignedRoute(
+            'documents.public',
+            now()->addMinutes(15),
+            ['document' => $document->id, 'format' => 'html']
+        );
+
+        return $this->success(['preview_url' => $url]);
     }
 }
