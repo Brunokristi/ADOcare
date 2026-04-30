@@ -14,7 +14,7 @@
             padding: 0;
             width: auto;
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-size: 14px;
             color: #000;
             background: #fff;
             box-sizing: border-box;
@@ -38,7 +38,7 @@
         .title {
             text-align: center;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 16px;
             margin-bottom: 12px;
         }
 
@@ -52,10 +52,11 @@
 
         td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 8px;
             vertical-align: top;
             overflow-wrap: break-word;
             word-wrap: break-word;
+            line-height: 1.2;
         }
 
         .signature-block {
@@ -68,6 +69,7 @@
         }
 
         .signature-box {
+            position: relative;
             min-width: 150px;
         }
 
@@ -77,9 +79,22 @@
             position: relative;
         }
 
-        .signature {
-            max-width: 170px;
+        .stamp-image {
+            max-width: 150px;
             max-height: 60px;
+            object-fit: contain;
+            opacity: 70%;
+        }
+
+        .signature-overlay {
+            position: absolute;
+            z-index: 2;
+            max-width: 200px;
+            max-height: 100px;
+            object-fit: contain;
+            top: 50%;
+            left: 60%;
+            transform: translate(-40%, -55%);
         }
 
         .line {
@@ -91,11 +106,42 @@
         .text-justify {
             text-align: justify;
         }
+
+        .problem-list {
+            margin: 4px 0;
+            padding-left: 20px;
+        }
+
+        .problem-list li {
+            margin: 0 0 2px 0;
+        }
+
+        .fill-box {
+            margin-top: 6px;
+            white-space: pre-line;
+            word-break: break-word;
+        }
     </style>
 </head>
 
 <body>
     <div class="document-content">
+        @php
+            $problemLabels = [
+                'nutrition' => 'výživy',
+                'mobility' => 'mobility',
+                'elimination' => 'vylučovania/vyprázdňovania',
+                'injections' => 'aplikácie s. c. inj.',
+                'hygiene' => 'hygieny',
+                'wound_care' => 'starosti o ranu',
+                'other_findings' => 'iné zistenia',
+            ];
+
+            $getProblemLabel = function (string $value) use ($problemLabels) {
+                return $problemLabels[$value] ?? $value;
+            };
+        @endphp
+
         <div class="title">
             OŠETROVATEĽSKÁ PREPÚŠŤACIA SPRÁVA
         </div>
@@ -104,12 +150,12 @@
         <table>
             <tbody>
                 <tr>
-                    <td style="width: 60%;">
-                        Pacient:<br/>
+                    <td style="width: 50%;">
+                        Meno, priezvisko, titul pacienta/pacientky:<br />
                         <strong>{{ $leaveData['patient_name'] ?? '' }}</strong>
                     </td>
-                    <td style="width: 40%;">
-                        Rodné číslo:<br/>
+                    <td style="width: 50%;">
+                        Rodné číslo:<br />
                         <strong>{{ $leaveData['patient_birth_number'] ?? '' }}</strong>
                     </td>
                 </tr>
@@ -120,18 +166,21 @@
         <table>
             <tbody>
                 <tr>
-                    <td>
-                        Sestra:<br/>
-                        <strong>{{ $leaveData['user_name'] ?? '' }}</strong>
-                    </td>
-                    <td>
-                        Dátum:<br/>
+                    <td style="width: 50%;">
+
+                        Dátum:<br />
                         <strong>
-                            @if(!empty($leaveData['date']))
+                            @if (!empty($leaveData['date']))
                                 {{ \Carbon\Carbon::parse($leaveData['date'])->format('d.m.Y') }}
                             @endif
                         </strong>
                     </td>
+                    <td style="width: 50%;">
+
+                        Zdravotný pracovník:<br />
+                        <strong>{{ $leaveData['user_name'] ?? '' }}</strong>
+                    </td>
+
                 </tr>
             </tbody>
         </table>
@@ -141,11 +190,11 @@
             <tbody>
                 <tr>
                     <td colspan="2">
-                        <strong>Problematika pacientov v domácej péči:</strong>
-                        @if(!empty($leaveData['problems']))
-                            <ul style="margin: 4px 0; padding-left: 20px;">
-                                @foreach($leaveData['problems'] as $problem)
-                                    <li>{{ $problem }}</li>
+                        <strong>Pretrvávajúce problémy pri prepustení v oblasti sebaopatery:</strong>
+                        @if (!empty($leaveData['problems']))
+                            <ul class="problem-list">
+                                @foreach ($leaveData['problems'] as $problem)
+                                    <li>{{ $getProblemLabel($problem) }}</li>
                                 @endforeach
                             </ul>
                         @else
@@ -161,7 +210,7 @@
             <tbody>
                 <tr>
                     <td>
-                        <strong>Iné zistenia:</strong><br/>
+                        <strong>Iné zistenia:</strong><br />
                         {{ $leaveData['other_findings'] ?? '' }}
                     </td>
                 </tr>
@@ -173,7 +222,7 @@
             <tbody>
                 <tr>
                     <td class="text-justify">
-                        <strong>Výsledok domácej zdravotnej starostlivosti:</strong><br/>
+                        <strong>Vyhodnotenie výsledkov ošetrovateľskej starostlivosti:</strong><br />
                         {{ $leaveData['results'] ?? '' }}
                     </td>
                 </tr>
@@ -185,7 +234,7 @@
             <tbody>
                 <tr>
                     <td class="text-justify">
-                        <strong>Edukácia pacienta/rodiny:</strong><br/>
+                        <strong>Realizovaná edukácia o:</strong><br />
                         {{ $leaveData['education'] ?? '' }}
                     </td>
                 </tr>
@@ -197,7 +246,7 @@
             <tbody>
                 <tr>
                     <td>
-                        <strong>Vybrané položky:</strong><br/>
+                        <strong>Pacient pri ukončení hospitalizácie prevzal:</strong><br />
                         {{ $leaveData['received'] ?? '' }}
                     </td>
                 </tr>
@@ -208,8 +257,11 @@
         <div class="signature-block">
             <div class="signature-box">
                 <div class="signature-area">
-                    @if(!empty($signatureDataUri))
-                        <img src="{{ $signatureDataUri }}" alt="Podpis" class="signature">
+                    @if (!empty($stampDataUri))
+                        <img src="{{ $stampDataUri }}" alt="Pečiatka spoločnosti" class="stamp-image" />
+                    @endif
+                    @if (!empty($signatureDataUri))
+                        <img src="{{ $signatureDataUri }}" alt="Podpis" class="signature-overlay">
                     @endif
                 </div>
                 <div class="line"></div>

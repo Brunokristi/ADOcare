@@ -15,6 +15,7 @@
             width: auto;
             font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
+            line-height: 1.35;
             color: #000;
             background: #fff;
             box-sizing: border-box;
@@ -38,8 +39,9 @@
         .title {
             text-align: center;
             font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 12px;
+            font-size: 17px;
+            line-height: 1.25;
+            margin-bottom: 18px;
         }
 
         table {
@@ -52,29 +54,38 @@
 
         td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 10px;
             vertical-align: top;
             overflow-wrap: break-word;
             word-wrap: break-word;
+            line-height: 1.45;
         }
 
         .signature-block {
-            margin-top: 24px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 48px;
+            margin-top: 32px;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
             text-align: center;
-            font-size: 11px;
+            font-size: 14px;
+            line-height: 1.35;
         }
 
         .signature-box {
-            display: flex;
-            flex-direction: column;
+            display: table-cell;
+            vertical-align: top;
+            padding-right: 28px;
+        }
+
+        .signature-box+.signature-box {
+            padding-left: 28px;
+            padding-right: 0;
         }
 
         .signature-area {
-            height: 70px;
-            margin-bottom: 8px;
+            height: 84px;
+            margin-bottom: 12px;
             position: relative;
         }
 
@@ -85,12 +96,18 @@
 
         .line {
             border-top: 1px solid #000;
-            margin-top: 4px;
+            margin-top: 8px;
             height: 0;
         }
 
         .text-justify {
             text-align: justify;
+            line-height: 1.5;
+        }
+
+        .signature-caption {
+            font-size: 13px;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -98,7 +115,7 @@
 <body>
     <div class="document-content">
         <div class="title">
-            DOHODA O POSKYTOVANÍ ZDRAVOTNEJ STAROSTLIVOSTI V ROZSAHU<br/>
+            DOHODA O POSKYTOVANÍ ZDRAVOTNEJ STAROSTLIVOSTI V ROZSAHU<br />
             OŠETROVATEĽSKEJ STAROSTLIVOSTI
         </div>
 
@@ -107,17 +124,17 @@
             <tbody>
                 <tr>
                     <td style="width: 75%;">
-                        Meno, priezvisko, titul poistenca:<br/>
+                        Meno, priezvisko, titul poistenca:<br />
                         <strong>{{ $agreementData['patient_name'] ?? '' }}</strong>
                     </td>
                     <td style="width: 25%;">
-                        Rodné číslo:<br/>
+                        Rodné číslo:<br />
                         <strong>{{ $agreementData['patient_birth_number'] ?? '' }}</strong>
                     </td>
                 </tr>
                 <tr>
                     <td colspan="2">
-                        Miesto trvalého pobytu:<br/>
+                        Miesto trvalého pobytu:<br />
                         <strong>{{ $agreementData['patient_address'] ?? '' }}</strong>
                     </td>
                 </tr>
@@ -139,13 +156,13 @@
             <tbody>
                 <tr>
                     <td colspan="2">
-                        Poskytovateľom ošetrovateľskej starostlivosti:<br/>
+                        Poskytovateľom ošetrovateľskej starostlivosti:<br />
                         <strong>ADOS</strong>
                     </td>
                 </tr>
                 <tr>
                     <td colspan="2">
-                        Názov a adresa:<br/>
+                        Názov a adresa:<br />
                         <strong>
                             {{ $agreementData['company_name'] ?? '' }},
                             {{ $agreementData['company_address'] ?? '' }},
@@ -155,11 +172,11 @@
                 </tr>
                 <tr>
                     <td style="width: 50%;">
-                        Meno, priezvisko, titul odborného zástupcu:<br/>
+                        Meno, priezvisko, titul odborného zástupcu:<br />
                         <strong>{{ $agreementData['user_name'] ?? '' }}</strong>
                     </td>
                     <td style="width: 50%;">
-                        Telefón:<br/>
+                        Telefón:<br />
                         <strong>{{ $agreementData['user_contact'] ?? '' }}</strong>
                     </td>
                 </tr>
@@ -196,14 +213,14 @@
             <tbody>
                 <tr>
                     <td style="width: 75%;">
-                        V:<br/>
+                        V:<br />
                         <strong>{{ $agreementData['branch_city'] ?? '' }}</strong>
                     </td>
                     <td style="width: 25%;">
-                        Dátum:<br/>
+                        Dátum:<br />
                         <strong>
-                            @if(!empty($agreementData['date']))
-                                {{ \Carbon\Carbon::parse($agreementData['date'])->format('d.m.Y') }}
+                            @if (!empty($agreementData['date']))
+                                {{ \Carbon\Carbon::parse($agreementData['date'])->format('d. m. Y') }}
                             @endif
                         </strong>
                     </td>
@@ -215,16 +232,16 @@
         <div class="signature-block">
             <div class="signature-box">
                 <div class="signature-area">
-                    @if(!empty($stampDataUri))
+                    @if (!empty($stampDataUri))
                         <img src="{{ $stampDataUri }}" alt="Pečiatka" class="signature">
                     @endif
-                    @if(!empty($signatureDataUri))
+                    @if (!empty($signatureDataUri))
                         <img src="{{ $signatureDataUri }}" alt="Podpis" class="signature">
                     @endif
                 </div>
                 <div class="line"></div>
                 <div>{{ $agreementData['user_name'] ?? '' }}</div>
-                <div style="font-size: 10px;">odborný zástupca poskytovateľa ošetrovateľskej starostlivosti</div>
+                <div class="signature-caption">odborný zástupca poskytovateľa ošetrovateľskej starostlivosti</div>
             </div>
             <div class="signature-box">
                 <div class="signature-area"></div>

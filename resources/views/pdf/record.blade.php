@@ -14,7 +14,7 @@
             padding: 0;
             width: auto;
             font-family: DejaVu Sans, sans-serif;
-            font-size: 10px;
+            font-size: 14px;
             color: #000;
             background: #fff;
             box-sizing: border-box;
@@ -28,24 +28,31 @@
             box-sizing: border-box;
         }
 
-        .document-content {
-            width: auto;
+        .record-sheet {
+            width: 100%;
             max-width: none;
             margin: 0 auto;
-            box-sizing: border-box;
         }
 
-        .title {
+        .page {
+            width: 100%;
+        }
+
+        .header {
+            line-height: 1.2;
+        }
+
+        .header-title {
             text-align: center;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 16px;
             margin-bottom: 8px;
         }
 
-        .subtitle {
+        .header-sub {
             text-align: center;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 13px;
             margin-bottom: 6px;
             margin-top: 8px;
         }
@@ -54,105 +61,354 @@
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
             text-align: left;
+            page-break-inside: avoid;
         }
 
         td {
-            border: 1px solid #000;
-            padding: 3px;
+            padding: 6px;
             vertical-align: top;
             overflow-wrap: break-word;
             word-wrap: break-word;
-            line-height: 1.2;
+            border: 1px solid #000;
+
         }
 
-        .label {
+        .field-table {
+            font-size: 9px;
+        }
+
+        .field-table.compact td {
+            padding: 4px 6px;
+        }
+
+        .field-table.full td {
+            padding: 6px;
+        }
+
+        /* Section table styles: header row is bold and has stronger border; body rows have lighter separators */
+        .section-table {
+            border: 1px solid #000;
+        }
+
+        .section-table thead th {
+            text-align: left;
             font-weight: 700;
-            width: 30%;
+            text-transform: uppercase;
+            font-size: 9px;
+            padding: 8px 6px;
+            border-bottom: 1px solid #000;
         }
 
-        .value {
-            font-family: monospace;
+        .section-table tbody td {
+            border-bottom: 1px solid #ddd;
+            padding: 6px;
+        }
+
+        .section-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            margin: 6px 0;
+            padding: 4px;
+            border-bottom: 1px solid #000;
+        }
+
+        .field-label {
+            font-weight: 700;
+            font-size: 9px;
+        }
+
+        .field-value {
             white-space: pre-wrap;
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 9px;
+        }
+
+        ul.value-list {
+            margin: 0 0 0 14px;
+            padding: 0;
+        }
+
+        ul.value-list li {
+            margin: 0 0 2px 0;
+        }
+
+        .footer {
+            margin-top: 12px;
+        }
+
+        .signatures {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .sign-cell {
+            display: table-cell;
+            vertical-align: top;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .sign-area {
+            height: 70px;
+        }
+
+        .stamp {
+            max-width: 150px;
+            max-height: 60px;
+            object-fit: contain;
+            opacity: 0.9;
+        }
+
+        .signature-img {
+            max-width: 180px;
+            max-height: 90px;
+            object-fit: contain;
         }
     </style>
 </head>
 
 <body>
-    <div class="document-content">
-        <div class="title">MEDICÍNSKY ZÁZNAM</div>
+    <div class="record-sheet">
+        <div class="page">
+            <div class="header">
+                <div class="header-title">OŠETROVATEĽSKÝ ZÁZNAM</div>
 
-        <!-- PATIENT INFO -->
-        <table>
-            <tbody>
-                <tr>
-                    <td style="width: 50%;">
-                        <strong>Pacient:</strong> {{ $recordData['patient_name'] ?? '' }}
-                    </td>
-                    <td style="width: 50%;">
-                        <strong>RČ:</strong> {{ $recordData['patient_birth_number'] ?? '' }}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <strong>Dátum:</strong> {{ $recordData['date'] ?? '' }}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- VITALS AND OBSERVATIONS -->
-        <div class="subtitle">Pozorovaní a zistenia</div>
-        <table>
-            <tbody>
-                @if(!empty($recordData['form_fields']) && is_array($recordData['form_fields']))
-                    @foreach($recordData['form_fields'] as $field)
+                <table>
+                    <tbody>
                         <tr>
-                            <td class="label">{{ $field['label'] ?? $field['name'] ?? '' }}</td>
-                            <td class="value">{{ $field['value'] ?? '' }}</td>
+                            <td>
+                                Zdravotnícke zariadenie:<br /><strong>{{ $recordData['company_name'] ?? ($recordData['facilityName'] ?? '') }}</strong>
+                            </td>
+                            <td>
+                                Sídlo / adresa:<br /><strong>{{ $recordData['company_address'] ?? ($recordData['facilityAddress'] ?? '') }}</strong>
+                            </td>
                         </tr>
+                    </tbody>
+                </table>
+
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Meno, priezvisko, titul pacienta/pacientky:<br /><strong>{{ $recordData['patient_name'] ?? ($recordData['patientName'] ?? '') }}</strong>
+                            </td>
+                            <td>
+                                Rodné číslo:<br /><strong>{{ $recordData['patient_birth_number'] ?? ($recordData['patientIdNumber'] ?? '') }}</strong>
+                            </td>
+                            <td>
+                                Kód ZP:<br /><strong>{{ $recordData['insurance_code'] ?? ($recordData['patientHealthCode'] ?? '') }}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">
+                                Trvalý pobyt:<br /><strong>{{ $recordData['patient_address'] ?? ($recordData['patientCurrentAddress'] ?? '') }}</strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="content">
+                @php
+                    // Prefer an explicit form spec passed in recordData.form_spec; otherwise load the default spec config
+                    $defaultSpecFile = resource_path('views/pdf/form_specs/record_form_spec.php');
+                    $defaultSpec = file_exists($defaultSpecFile) ? include $defaultSpecFile : null;
+                    $formSpec = $recordData['form_spec'] ?? $defaultSpec;
+                    $formData = $recordData['form_data'] ?? ($recordData['formData'] ?? []);
+
+                    $formatValue = function ($val) {
+                        if (is_array($val)) {
+                            return json_encode($val, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+                        }
+                        return (string) ($val ?? '');
+                    };
+
+                    // load translations (generic + field-specific)
+                    $translationsFile = resource_path('views/pdf/form_specs/record_form_translations.php');
+                    $translationsConfig = file_exists($translationsFile) ? include $translationsFile : ['generic' => [], 'fields' => []];
+                    $genericTranslations = $translationsConfig['generic'] ?? [];
+                    $fieldTranslations = $translationsConfig['fields'] ?? [];
+                @endphp
+
+                @if ($formSpec && is_array($formSpec['sections'] ?? null))
+                    @php
+                        // helper to read nested keys like 'nutrition.weightKg'
+                        $getNested = function ($data, $key) {
+                            if ($key === null || $key === '') {
+                                return null;
+                            }
+                            $parts = explode('.', $key);
+                            $cur = $data;
+                            foreach ($parts as $p) {
+                                if (is_array($cur) && array_key_exists($p, $cur)) {
+                                    $cur = $cur[$p];
+                                } else {
+                                    return null;
+                                }
+                            }
+                            return $cur;
+                        };
+
+                        $translateScalar = function ($value, $fieldId = null) use ($genericTranslations, $fieldTranslations) {
+                            $lookup = is_bool($value) ? ($value ? '1' : '0') : (is_scalar($value) ? (string) $value : null);
+
+                            if ($lookup === null) {
+                                return null;
+                            }
+
+                            if ($fieldId && isset($fieldTranslations[$fieldId][$lookup])) {
+                                return $fieldTranslations[$fieldId][$lookup];
+                            }
+
+                            $normalized = strtolower($lookup);
+                            if (isset($genericTranslations[$lookup])) {
+                                return $genericTranslations[$lookup];
+                            }
+
+                            if (isset($genericTranslations[$normalized])) {
+                                return $genericTranslations[$normalized];
+                            }
+
+                            return null;
+                        };
+
+                        $renderValue = function ($val, $fieldId = null) use ($formatValue, $translateScalar) {
+                            if (is_null($val) || $val === '') {
+                                return '-';
+                            }
+
+                            if (is_array($val)) {
+                                $items = array_values($val);
+                                $out = '<ul class="value-list">';
+                                foreach ($items as $it) {
+                                    if (is_array($it)) {
+                                        $out .= '<li>' . e(json_encode($it, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . '</li>';
+                                        continue;
+                                    }
+
+                                    $translated = $translateScalar($it, $fieldId);
+                                    $out .= '<li>' . e($translated ?? (string) $it) . '</li>';
+                                }
+                                $out .= '</ul>';
+                                return $out;
+                            }
+
+                            $translated = $translateScalar($val, $fieldId);
+                            if ($translated !== null) {
+                                return e($translated);
+                            }
+
+                            return nl2br(e($formatValue($val)));
+                        };
+                    @endphp
+
+                    @foreach ($formSpec['sections'] as $section)
+                        <table class="section-table">
+                            <thead>
+                                <tr>
+                                    <th colspan="4">{{ $section['title'] ?? $section['id'] }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $fields = $section['fields'] ?? [];
+                                    $count = count($fields);
+                                @endphp
+
+                                @if ($count === 0)
+                                    <tr>
+                                        <td colspan="4" class="field-value">-</td>
+                                    </tr>
+                                @elseif ($count <= 2 || ($section['layout'] ?? 'compact') === 'full')
+                                    {{-- Render each field stacked (label then value) consuming full width --}}
+                                    @foreach ($fields as $f)
+                                        @php $val = $getNested($formData, $f['id']); @endphp
+                                        <tr>
+                                            <td colspan="4" class="field-label small">{{ $f['label'] ?? $f['id'] }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4" class="field-value">{!! $renderValue($val, $f['id']) !!}</td>
+                                        </tr>
+                                    @endforeach
+                                @else
+                                    {{-- Render two items per row: label/value | label/value --}}
+                                    @foreach (array_chunk($fields, 2) as $pair)
+                                        <tr>
+                                            @foreach ($pair as $f)
+                                                @php $val = $getNested($formData, $f['id']); @endphp
+                                                <td class="field-label" style="width:25%">{{ $f['label'] ?? $f['id'] }}</td>
+                                                <td class="field-value" style="width:25%">{!! $renderValue($val, $f['id']) !!}</td>
+                                            @endforeach
+                                            @if (count($pair) === 1)
+                                                <td style="width:25%"></td>
+                                                <td style="width:25%"></td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            </tbody>
+                        </table>
                     @endforeach
-                @elseif(!empty($recordData['observations']))
-                    <tr>
-                        <td colspan="2">
-                            {{ $recordData['observations'] ?? '' }}
-                        </td>
-                    </tr>
+                @elseif (!empty($formData) && is_array($formData))
+                    <div class="section-title">Pozorovaní a zistenia</div>
+                    <table class="field-table compact">
+                        <tbody>
+                            @php $pairs = array_chunk($formData, 2, true); @endphp
+                            @foreach ($pairs as $pair)
+                                <tr>
+                                    @foreach ($pair as $k => $v)
+                                        <td class="field-label">{{ $k }}</td>
+                                        <td class="field-value">{{ $formatValue($v) ?: '-' }}</td>
+                                    @endforeach
+                                    @if (count($pair) === 1)
+                                        <td class="field-label"></td>
+                                        <td class="field-value"></td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 @else
-                    <tr>
-                        <td colspan="2">Žiadne záznamy</td>
-                    </tr>
+                    <div class="section-title">Pozorovaní a zistenia</div>
+                    <table class="field-table full">
+                        <tbody>
+                            <tr>
+                                <td>Žiadne záznamy</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 @endif
-            </tbody>
-        </table>
+            </div>
 
-        <!-- NOTES -->
-        @if(!empty($recordData['notes']))
-            <div class="subtitle">Poznámky</div>
-            <table>
-                <tbody>
-                    <tr>
-                        <td>{{ $recordData['notes'] }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        @endif
-
-        <!-- SIGNATURE -->
-        <table>
-            <tbody>
-                <tr>
-                    <td style="width: 100%; text-align: center;">
-                        <br/>
-                        @if(!empty($signatureDataUri))
-                            <img src="{{ $signatureDataUri }}" alt="Podpis" style="max-width: 150px; max-height: 50px;">
-                        @endif
-                        <div style="border-top: 1px solid #000;">{{ $recordData['user_name'] ?? '' }}</div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+            <div class="footer">
+                <div class="signatures">
+                    <div class="sign-cell">
+                        <div class="sign-area"></div>
+                        <div style="border-top:1px solid #000; margin-top:6px;">podpis pacienta</div>
+                    </div>
+                    <div class="sign-cell">
+                        <div class="sign-area">
+                            @if (!empty($recordData['company_stamp'] ?? ($recordData['stampDataUri'] ?? null)))
+                                <img src="{{ $recordData['company_stamp'] ?? ($recordData['stampDataUri'] ?? null) }}" alt="Pečiatka" class="stamp" />
+                            @endif
+                            @if (!empty($signatureDataUri))
+                                <img src="{{ $signatureDataUri }}" alt="Podpis" class="signature-img" />
+                            @endif
+                        </div>
+                        <div style="border-top:1px solid #000; margin-top:6px;">{{ $recordData['user_name'] ?? ($recordData['userName'] ?? '') }}</div>
+                        <div style="font-size:10px;">zdravotný pracovník</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 
