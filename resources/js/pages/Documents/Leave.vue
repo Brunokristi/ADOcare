@@ -1,390 +1,44 @@
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/services/api';
-import { useUiOverlayStore } from '@/stores/uiOverlay';
+import { ref, onMounted, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/services/api'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
+import DocumentShell from '@/components/DocumentShell.vue'
 
-interface DocumentData {
-  patientName: string;
-  patientIdNumber: string;
-  userName: string;
-  date: string;
-  problems: string[];
-  otherFindings: string;
-  results: string;
-  education: string;
-  received: string;
-  userId: number;
-  companyId: number;
-}
-
-const route = useRoute();
-const loading = ref(false);
-const uiOverlayStore = useUiOverlayStore();
-const stampUrl = ref<string | null>(null)
-const signatureUrl = ref<string | null>(null)
-
-const documentData = ref<DocumentData>({
-  patientName: '',
-  patientIdNumber: '',
-  userName: '',
-  date: '',
-  problems: [],
-  otherFindings: '',
-  results: '',
-  education: '',
-  received: '',
-  userId: 0,
-  companyId: 0,
-});
-
-const problemLabels: Record<string, string> = {
-  nutrition: 'výživy',
-  mobility: 'mobility',
-  elimination: 'vylučovania/vyprázdňovania',
-  injections: 'aplikácie s. c. inj.',
-  hygiene: 'hygieny',
-  wound_care: 'starosti o ranu',
-  other_findings: 'iné zistenia',
-};
+const route = useRoute()
+const loading = ref(false)
+const previewUrl = ref('')
+const uiOverlayStore = useUiOverlayStore()
 
 onMounted(async () => {
-  await loadNursingDocument(String(route.params.documentId));
-});
+    await loadPreviewUrl(String(route.params.documentId))
+})
 
 watchEffect(() => {
-  uiOverlayStore.setContentLoading(loading.value);
-});
+    uiOverlayStore.setContentLoading(loading.value)
+})
 
-function unwrapApiData(payload: any) {
-  return payload?.data?.data ?? payload?.data ?? payload ?? {};
-}
+async function loadPreviewUrl(documentId: string) {
+    loading.value = true
 
-async function loadNursingDocument(documentId: string) {
-  loading.value = true;
-
-  try {
-    const res = await api.get(`/v1/leave-documents/${documentId}`);
-    const response = unwrapApiData(res);
-    const leave = response?.leave_data ?? {};
-
-    documentData.value = {
-      patientName: leave.patient_name ?? '',
-      patientIdNumber: leave.patient_birth_number ?? '',
-      userName: leave.user_name ?? '',
-      date: leave.date ?? '',
-      problems: leave.problems ?? [],
-      otherFindings: leave.other_findings ?? '',
-      results: leave.results ?? '',
-      education: leave.education ?? '',
-      received: leave.received ?? '',
-      userId: leave.user_id ?? 0,
-      companyId: leave.company_id ?? 0,
-
-    };
-
-    await Promise.all([
-      loadStampImage(),
-      loadSignatureImage(),
-    ]);
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function loadStampImage() {
-    const companyId = documentData.value.companyId
-    if (!companyId) { stampUrl.value = null; return }
     try {
-        if (stampUrl.value) URL.revokeObjectURL(stampUrl.value)
-        const res = await api.get(`/v1/companies/${companyId}/stamp`, { responseType: 'blob' })
-        stampUrl.value = URL.createObjectURL(res.data)
-    } catch {
-        stampUrl.value = null
+        const res = await api.get(`/v1/leave-documents/${documentId}/preview-url`)
+        previewUrl.value = res.data?.data?.preview_url ?? ''
+    } catch (error) {
+        console.error('Failed to load leave preview URL:', error)
+        previewUrl.value = ''
+    } finally {
+        loading.value = false
     }
-}
-
-async function loadSignatureImage() {
-    const representativeId = documentData.value.userId
-    if (!representativeId) { signatureUrl.value = null; return }
-    try {
-        if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
-        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' })
-        signatureUrl.value = URL.createObjectURL(res.data)
-    } catch {
-        signatureUrl.value = null
-    }
-}
-
-function getProblemLabel(value: string): string {
-  return problemLabels[value] ?? value;
-}
-
-function formatDateTime(v?: string) {
-  if (!v) return '';
-  const date = new Date(v);
-  return date.toLocaleString('sk-SK');
-}
-
-function printPage() {
-  requestAnimationFrame(() => window.print());
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <!-- Toolbar -->
-    <Toolbar
-      class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print"
-    >
-      <template #start>
-        <span class="text-heading-accent">
-          Ošetrovateľská prepúšťacia správa
-        </span>
-      </template>
-
-      <template #end>
-        <Button
-          icon="bi bi-printer"
-          class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-          @click="printPage"
-        />
-      </template>
-    </Toolbar>
-
-
-    <div v-if="!loading" class="nursing-sheet-wrapper">
-      <div id="nursing-sheet">
-        <div class="text-center font-bold text-lg mb-3">
-          OŠETROVATEĽSKÁ PREPÚŠŤACIA SPRÁVA
-        </div>
-
-        <div class="sheet-grid">
-          <div class="top">
-            <table class="w-full border-collapse text-sm mb-2">
-              <tbody>
-                <tr>
-                  <td class="border border-black p-2 w-1/2">
-                    Meno, priezvisko, titul pacienta/pacientky:<br />
-                    <strong>{{ documentData.patientName }}</strong>
-                  </td>
-                  <td class="border border-black p-2 w-1/2">
-                    Rodné číslo:<br />
-                    <strong>{{ documentData.patientIdNumber }}</strong>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <table class="w-full border-collapse text-sm mb-2">
-              <tbody>
-                <tr>
-                  <td class="border border-black p-2 w-1/2">
-                    Dátum:<br />
-                    <strong>{{ formatDateTime(documentData.date) }}</strong>
-                  </td>
-                  <td class="border border-black p-2 w-1/2">
-                    Zdravotný pracovník:<br />
-                    <strong>{{ documentData.userName }}</strong>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="middle">
-            <table class="w-full border-collapse text-sm block-table">
-              <tbody>
-                <tr>
-                  <td class="border border-black p-2">
-                    <strong>Pretrvávajúce problémy pri prepustení v oblasti sebaopatery:</strong>
-                    <div class="mt-2 flex flex-col gap-1 ml-4">
-                      <div v-for="problem in documentData.problems" :key="problem" class="text-sm">
-                        • {{ getProblemLabel(problem) }}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr v-if="documentData.otherFindings">
-                  <td class="border border-black p-2">
-                    <strong>Iné zistenia:</strong>
-                    <div class="fill-box whitespace-pre-line">
-                      {{ documentData.otherFindings }}
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="border border-black p-2">
-                    <strong>Vyhodnotenie výsledkov ošetrovateľskej starostlivosti:</strong>
-                    <div class="fill-box whitespace-pre-line">
-                      {{ documentData.results }}
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="border border-black p-2">
-                    <strong>Realizovaná edukácia o:</strong>
-                    <div class="fill-box whitespace-pre-line">
-                      {{ documentData.education }}
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td class="border border-black p-2">
-                    <strong>Pacient pri ukončení hospitalizácie prevzal:</strong>
-                    <div class="fill-box whitespace-pre-line">
-                      {{ documentData.received }}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="mt-4 grid grid-cols-2 gap-12 text-sm">
-              <div class="text-center">
-               <div class="signature-box">
-                  <img
-                    v-if="stampUrl"
-                    :src="stampUrl"
-                    alt="Pečiatka spoločnosti"
-                    class="stamp-image"
-                  />
-
-                  <img
-                    v-if="signatureUrl"
-                    :src="signatureUrl"
-                    alt="Podpis odborného zástupcu"
-                    class="signature-overlay"
-                  />
-                </div>
-                <div class="border-t-1 border-black mb-2"></div>
-                {{ documentData.userName }} <br>
-                <span class="text-xs">zdravotný pracovník</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <DocumentShell title="Ošetrovateľská prepúšťacia správa" :previewUrl="previewUrl" :downloadOptions="[
+        {
+            url: `/api/v1/leave-documents/${route.params.documentId}/download`,
+            fileType: 'PDF',
+            contentType: 'application/pdf',
+        },
+    ]" :showPrintButton="true" />
 </template>
-
-
-<style>
-#nursing-sheet {
-  width: 210mm;
-  height: 297mm;
-  margin: 0 auto;
-  background: white;
-  box-sizing: border-box;
-  padding: 14mm;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.nursing-sheet-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
-}
-
-/* grid: top fixed, middle fills, footer fixed */
-.sheet-grid {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 6px;
-  height: 100%;
-}
-
-/* middle contains rows that share remaining height */
-.middle {
-  display: grid;
-  grid-template-rows: auto auto auto auto auto;
-  gap: 6px;
-  min-height: 0;
-}
-
-.footer {
-  min-height: 150px;
-}
-
-.block-table {
-  height: 100%;
-}
-
-.fill-box {
-  margin-top: 6px;
-  height: calc(100% - 18px);
-  overflow: hidden;
-  word-break: break-word;
-}
-
-/* clamp long address a bit */
-.clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.signature-box {
-    position: relative;
-    height: 70px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.stamp-image {
-    max-width: 150px;
-    max-height: 60px;
-    object-fit: contain;
-    opacity: 70%;
-}
-
-.signature-overlay {
-    position: absolute;
-    z-index: 2;
-    max-width: 200px;
-    max-height: 100px;
-    object-fit: contain;
-    top: 50%;
-    left: 60%;
-    transform: translate(-40%, -55%);
-}
-
-@page {
-  size: A4;
-  margin: 0;
-}
-
-
-@media print {
-  body { margin: 0; padding: 0; }
-  body * { visibility: hidden !important; }
-
-  #nursing-sheet,
-  #nursing-sheet * {
-    visibility: visible !important;
-  }
-
-  #nursing-sheet {
-    position: fixed !important;
-    inset: 0 !important;
-    margin: 0 auto!important;
-    box-shadow: none !important;
-  }
-
-  .no-print,
-  .p-toolbar {
-    display: none !important;
-  }
-}
-</style>

@@ -1,312 +1,44 @@
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/services/api';
-import { useUiOverlayStore } from '@/stores/uiOverlay';
+import { ref, onMounted, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/services/api'
+import { useUiOverlayStore } from '@/stores/uiOverlay'
+import DocumentShell from '@/components/DocumentShell.vue'
 
-interface CPData {
-    company_name: string;
-    user_id: number;
-    ico: string;
-    city: string;
-    user_name: string;
-  job_title?: string;
-    start_date: string;
-    end_date: string;
-  trip_purpose?: string;
-    month: string;
-    year: string;
-    car_model: string;
-    car_license_plate: string;
-    representative_name: string;
-    representative_id: number | null;
-    lastday_previous_month: string;
-}
-
-const route = useRoute();
-const loading = ref(false);
-const uiOverlayStore = useUiOverlayStore();
-const signatureUrl = ref<string | null>(null)
-
-const cpData = ref<CPData>({
-    company_name: '',
-    user_id: 0,
-    ico: '',
-    city: '',
-    user_name: '',
-    job_title: 'Terénna zdravotná sestra',
-    start_date: '',
-    end_date: '',
-    trip_purpose: 'Zdravotná starostlivosť o pacientov v domácom prostredí',
-    month: '',
-    year: '',
-    car_model: '',
-    car_license_plate: '',
-    representative_name: '',
-    representative_id: null,
-    lastday_previous_month: '',
-});
+const route = useRoute()
+const loading = ref(false)
+const previewUrl = ref('')
+const uiOverlayStore = useUiOverlayStore()
 
 onMounted(async () => {
-  await loadCP(String(route.params.documentId));
-});
+  await loadPreviewUrl(String(route.params.documentId))
+})
 
 watchEffect(() => {
-  uiOverlayStore.setContentLoading(loading.value);
-});
+  uiOverlayStore.setContentLoading(loading.value)
+})
 
-async function loadCP(documentId: string) {
-  loading.value = true;
+async function loadPreviewUrl(documentId: string) {
+  loading.value = true
 
   try {
-    const res = await api.get(`/v1/cps/${documentId}`);
-    const cp = res.data?.data?.cp_data ?? {};
-
-    cpData.value = {
-        company_name: cp.company_name ?? '',
-        ico: cp.ico ?? '',
-        user_id: cp.user_id ?? '',
-        city: cp.city ?? '',
-        user_name: cp.user_name ?? '',
-        job_title: cp.job_title ?? 'Terénna zdravotná sestra',
-        start_date: cp.start_date ?? '',
-        end_date: cp.end_date ?? '',
-        trip_purpose: cp.trip_purpose ?? 'Zdravotná starostlivosť o pacientov v domácom prostredí',
-        month: cp.month ?? '',
-        year: cp.year ?? '',
-        car_model: cp.car_model ?? '',
-        car_license_plate: cp.car_license_plate ?? '',
-        representative_name: cp.representative_name ?? '',
-        representative_id: cp.representative_id ?? null,
-        lastday_previous_month: cp.lastday_previous_month ?? '',
-    };
-
-    await loadSignatureImage()
-
-    console.log('Loaded CP data:', cpData.value);
+    const res = await api.get(`/v1/cps/${documentId}/preview-url`)
+    previewUrl.value = res.data?.data?.preview_url ?? ''
   } catch (error) {
-    console.error('Failed to load agreement:', error);
+    console.error('Failed to load CP preview URL:', error)
+    previewUrl.value = ''
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-}
-
-function formatDate(v?: string) {
-  if (!v) return '';
-  return new Date(v).toLocaleDateString('sk-SK');
-}
-
-function formatUserId(id?: number) {
-  if (!id) return '';
-  return String(id).padStart(3, '0');
-}
-
-function printPage() {
-  requestAnimationFrame(() => window.print());
-}
-
-async function loadSignatureImage() {
-    const representativeId = cpData.value.representative_id
-    if (!representativeId) { signatureUrl.value = null; return }
-    try {
-        if (signatureUrl.value) URL.revokeObjectURL(signatureUrl.value)
-        const res = await api.get(`/v1/users/${representativeId}/signature`, { responseType: 'blob' })
-        signatureUrl.value = URL.createObjectURL(res.data)
-    } catch {
-        signatureUrl.value = null
-    }
 }
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <!-- Toolbar -->
-    <Toolbar
-      class="bg-transparent! border-0! p-0! py-3! shadow-none! flex items-center justify-between no-print"
-    >
-      <template #start>
-        <span class="text-heading-accent">
-          Cestovný príkaz
-        </span>
-      </template>
-
-      <template #end>
-        <Button
-          icon="bi bi-printer"
-          class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-          @click="printPage"
-        />
-      </template>
-    </Toolbar>
-
-
-    <div v-if="!loading" class="agreement-sheet-wrapper">
-      <div id="agreement-sheet">
-        <!-- TITLE -->
-        <div class="text-center font-bold text-lg mb-4">
-          CESTOVNÝ PRÍKAZ
-        </div>
-
-        <!-- DATE RANGE -->
-        <table class="w-full border-collapse text-sm mb-2">
-          <tbody>
-            <tr>
-              <td class="border border-black p-2 w-full" colspan="2">
-                Cestovný príkaz:
-                <strong>{{ `${formatUserId(cpData.user_id)}${cpData.month}${cpData.year}` }}</strong>
-              </td>
-            </tr>
-            <tr>
-                <td class="border border-black p-2 w-1/2">
-                    <strong>Zamestnávateľ:</strong><br />
-                    Názov: {{ cpData.company_name }} <br />
-                    IČO: {{ cpData.ico }}
-                </td>
-                <td class="border border-black p-2 w-1/2">
-                    <strong>Zamestnanec:</strong><br />
-                    Meno: {{ cpData.user_name }}<br />
-                  Funkcia: {{ cpData.job_title || 'Terénna zdravotná sestra' }}
-                </td>
-            </tr>
-            <tr>
-              <td class="border border-black p-2 w-full" colspan="2">
-                <strong>Účel pracovných ciest:</strong><br />
-                {{ cpData.trip_purpose || 'Zdravotná starostlivosť o pacientov v domácom prostredí' }}
-              </td>
-            </tr>
-             <tr>
-              <td class="border border-black p-2 w-full" colspan="2">
-                <strong>Miesto výkonu práce: </strong><br />
-                {{ cpData.city }} a okolie
-              </td>
-            </tr>
-            <tr>
-                <td class="border border-black p-2 w-1/2">
-                    <strong>Obdobie platnosti:</strong><br />
-                    od {{ formatDate(cpData.start_date) }} <br />
-                    do {{ formatDate(cpData.end_date) }}
-                </td>
-                <td class="border border-black p-2 w-1/2">
-                    <strong>Dopravný prostriedok:</strong><br />
-                    {{ cpData.car_model }}<br />
-                    ŠPZ: {{ cpData.car_license_plate }}
-                </td>
-            </tr>
-            <tr>
-              <td class="border border-black p-2 w-full" colspan="2">
-                <strong>Predpokladané náklady:</strong><br />
-                Podľa skutočného výkonu
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table class="w-full border-collapse text-sm mb-2">
-          <tbody>
-            <tr>
-              <td class="border border-black p-2 w-1/2">
-                Dátum:<br />
-                <strong>{{ formatDate(cpData.lastday_previous_month) }}</strong>
-              </td>
-              <td class="border border-black p-2 w-1/2">
-                Schválil:<br />
-                <strong>{{ cpData.representative_name }}</strong>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="mt-16 grid grid-cols-2 gap-12 text-sm">
-          <div class="text-center">
-          </div>
-          <div class="text-center">
-            <div class="signature-box">
-                  <img
-                    v-if="signatureUrl"
-                    :src="signatureUrl"
-                    alt="Podpis odborného zástupcu"
-                    class="signature-overlay"
-                  />
-                </div>
-            <div class="border-t border-black mb-2"></div>
-            podpis schválujúceho
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
+  <DocumentShell title="Cestovný príkaz" :previewUrl="previewUrl" :downloadOptions="[
+    {
+      url: `/api/v1/cps/${route.params.documentId}/download`,
+      fileType: 'PDF',
+      contentType: 'application/pdf',
+    },
+  ]" :showPrintButton="true" />
 </template>
-
-
-<style scoped>
-#agreement-sheet {
-  width: 210mm;
-  height: 297mm;
-  margin: 0 auto;
-  background: white;
-  box-sizing: border-box;
-  padding: 14mm;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-}
-
-.agreement-sheet-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.signature-box {
-    position: relative;
-    height: 70px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.stamp-image {
-    max-width: 150px;
-    max-height: 60px;
-    object-fit: contain;
-    opacity: 70%;
-}
-
-.signature-overlay {
-    position: absolute;
-    z-index: 2;
-    max-width: 200px;
-    max-height: 100px;
-    object-fit: contain;
-    top: 50%;
-    left: 60%;
-    transform: translate(-40%, -55%);
-}
-
-@page {
-  size: A4;
-  margin: 0;
-}
-
-@media print {
-  body { margin: 0; padding: 0; }
-  body * { visibility: hidden !important; }
-
-  #agreement-sheet,
-  #agreement-sheet * {
-    visibility: visible !important;
-  }
-
-  #agreement-sheet {
-    position: fixed !important;
-    inset: 0 !important;
-    margin: 0 auto!important;
-    box-shadow: none !important;
-  }
-
-  .no-print,
-  .p-toolbar {
-    display: none !important;
-  }
-}
-</style>

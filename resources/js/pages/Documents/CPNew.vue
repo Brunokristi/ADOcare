@@ -83,7 +83,6 @@ async function loadCP(documentId: string) {
     };
 
     await loadPreviewUrl(documentId);
-    console.log('Loaded CP data:', cpData.value);
   } catch (error) {
     console.error('Failed to load agreement:', error);
   } finally {
