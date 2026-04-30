@@ -347,13 +347,13 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::get('/dzcs/{document}/csv', [DZCDocumentController::class, 'exportCsv'])
         ->middleware(['role:any', 'can:view,document']);
 
-    Route::documentRoutes('dekurz', DekurzDocumentController::class);
 
     // Special dekurz endpoints
     Route::get('/dekurz/available-dates', [DekurzDocumentController::class, 'availableDates'])
         ->middleware('role:any');
     Route::get('/dekurz/last', [DekurzDocumentController::class, 'last'])
         ->middleware('role:any');
+    Route::documentRoutes('dekurz', DekurzDocumentController::class);
     Route::post('/patients/{patient}/dekurz/ai-prefill', [DekurzDocumentController::class, 'prefillFromLatestProposal'])
         ->middleware(['role:any', 'can:view,patient']);
     Route::post('/patients/{patient}/dekurz/ai-improve-text', [DekurzDocumentController::class, 'improveText'])
@@ -411,8 +411,8 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
 
     Route::post('/scan-sessions', [ScanSessionController::class, 'store']);
     Route::get('/scan-sessions/{sessionId}', [ScanSessionController::class, 'show']);
-    Route::get('/scan/{document}', [ScanFileController::class, 'show'])
-        ->middleware(['role:any', 'can:view,document']);
+
+    Route::documentRoutes('scan', ScanFileController::class);
     Route::patch('/scan/{document}/text', [ScanFileController::class, 'updateText'])
         ->middleware(['role:any', 'can:update,document']);
 
