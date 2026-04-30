@@ -8,36 +8,56 @@ use App\Models\Document;
 use App\Models\Patient;
 use App\Services\RecordDocumentService;
 use App\Services\DocumentService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 class RecordDocumentController extends Controller
 {
+    /**
+     * Store a new record document.
+     *
+     * @group Documents
+     * @bodyParam patient_id int required Patient ID. Example: 1
+     * @bodyParam date date required Record date. Example: 2026-04-01
+     * @response 201 {"data":{"document_id":1},"message":"Ošetrovateľský záznam bol úspešne vytvorený"}
+     */
     public function store(StoreRecordDocumentRequest $request, RecordDocumentService $service)
     {
         $document = $service->create($request->validated(), Auth::user());
 
-        return response()->json([
-            'success' => true,
+        return $this->success([
             'document_id' => $document->id,
-            'message' => 'Ošetrovateľský záznam bol úspešne vytvorený',
-        ], 201);
+        ], 'Ošetrovateľský záznam bol úspešne vytvorený', 201);
     }
 
+    /**
+     * Show record document payload.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     */
     public function show(Document $document, RecordDocumentService $service)
     {
         $document->loadMissing('patient');
 
         $recordFile = $service->findRecordFileForDocument($document);
         if (!$recordFile) {
-            return response()->json(['message' => 'Record data not found'], 404);
+            return $this->error('Dáta ošetrovateľského záznamu sa nenašli', 404);
         }
 
-        return response()->json(['document' => $document, 'record_data' => $recordFile]);
+        return $this->success([
+            'document' => $document,
+            'record_data' => $recordFile,
+        ]);
     }
 
+    /**
+     * Show latest record document for a patient.
+     *
+     * @group Documents
+     * @urlParam patient int required Patient ID. Example: 1
+     */
     public function latestByPatient(Patient $patient, RecordDocumentService $service)
     {
         $document = Document::where('patient_id', $patient->id)
@@ -47,19 +67,25 @@ class RecordDocumentController extends Controller
             ->first();
 
         if (!$document) {
-            return response()->json(['message' => 'No record found'], 404);
+            return $this->error('Ošetrovateľský záznam sa nenašiel', 404);
         }
 
         $recordFile = $service->findRecordFileForDocument($document);
         if (!$recordFile) {
-            return response()->json(['message' => 'Record data not found'], 404);
+            return $this->error('Dáta ošetrovateľského záznamu sa nenašli', 404);
         }
 
-        return response()->json(['document_id' => $document->id, 'record_data' => $recordFile]);
+        return $this->success([
+            'document_id' => $document->id,
+            'record_data' => $recordFile,
+        ], 'Najnovší ošetrovateľský záznam bol načítaný');
     }
 
     /**
      * Preview record document as HTML via Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function preview(Document $document, RecordDocumentService $service)
     {
@@ -67,7 +93,7 @@ class RecordDocumentController extends Controller
 
         $recordData = $service->findRecordFileForDocument($document);
         if (!$recordData) {
-            return response()->json(['message' => 'Record data not found'], 404);
+            return $this->error('Dáta ošetrovateľského záznamu sa nenašli', 404);
         }
 
         $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($recordData['user_id'] ?? 0));
@@ -80,6 +106,9 @@ class RecordDocumentController extends Controller
 
     /**
      * Download record PDF generated from Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function download(Document $document)
     {
@@ -87,7 +116,7 @@ class RecordDocumentController extends Controller
 
         $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
         if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            return response()->json(['message' => 'Record PDF not found'], 500);
+            return $this->error('PDF ošetrovateľského záznamu sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
@@ -99,6 +128,9 @@ class RecordDocumentController extends Controller
 
     /**
      * Get a signed public preview URL for record document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function previewUrl(Document $document)
     {
@@ -110,6 +142,6 @@ class RecordDocumentController extends Controller
             ['document' => $document->id, 'format' => 'html']
         );
 
-        return response()->json(['preview_url' => $url]);
+        return $this->success(['preview_url' => $url]);
     }
 }

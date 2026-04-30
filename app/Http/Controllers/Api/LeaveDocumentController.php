@@ -97,7 +97,7 @@ class LeaveDocumentController extends Controller
 
         $leaveData = $this->service->findLeaveFileForDocument($document);
         if (!$leaveData) {
-            return $this->error('Leave data not found', 404);
+            return $this->error('Dáta prepúšťacej správy sa nenašli', 404);
         }
 
         $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($leaveData['user_id'] ?? 0));
@@ -119,7 +119,7 @@ class LeaveDocumentController extends Controller
 
         $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
         if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            return $this->error('Leave PDF not found', 500);
+            return $this->error('PDF prepúšťacej správy sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';

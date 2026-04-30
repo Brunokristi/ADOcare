@@ -23,35 +23,59 @@ use Illuminate\Support\Facades\URL;
 
 class DekurzDocumentController extends Controller
 {
-    public function __construct(private DekurzAiPrefillService $aiPrefillService)
-    {
+    public function __construct(
+        private DekurzAiPrefillService $aiPrefillService,
+        private DocumentService $documentService,
+        private DekurzDocumentService $dekurzDocumentService,
+    ) {
     }
 
-    public function store(StoreDekurzRequest $request, DekurzDocumentService $service)
+    /**
+     * Store a new dekurz document.
+     *
+     * @group Documents
+     * @bodyParam patient_id int required Patient ID. Example: 1
+     * @bodyParam month date required Month date. Example: 2026-04-01
+     * @response 201 {"data":{"document_id":1,"next_dekurz_number":2},"message":"Dekurz bol úspešne vytvorený"}
+     */
+    public function store(StoreDekurzRequest $request)
     {
-        $document = $service->create($request->validated(), Auth::user());
+        $document = $this->dekurzDocumentService->create($request->validated(), Auth::user());
 
-        return response()->json([
-            'success' => true,
+        return $this->success([
             'document_id' => $document->id,
             'next_dekurz_number' => $document->next_dekurz_number,
-            'message' => 'Dekurz bol úspešne vytvorený',
-        ], 201);
+        ], 'Dekurz bol úspešne vytvorený', 201);
     }
 
-    public function show(Document $document, DekurzDocumentService $service)
+    /**
+     * Show dekurz document payload.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     */
+    public function show(Document $document)
     {
         $document->loadMissing(['user', 'patient']);
 
-        $dekurzFile = $service->findDekurzFileForDocument($document);
-        if (! $dekurzFile) {
-            return response()->json(['message' => 'Dekurz data not found'], 404);
+        $dekurzFile = $this->dekurzDocumentService->findDekurzFileForDocument($document);
+        if (!$dekurzFile) {
+            return $this->error('Dáta dekurzu sa nenašli', 404);
         }
 
-        return response()->json(['document' => $document, 'dekurz_data' => $dekurzFile]);
+        return $this->success([
+            'document' => $document,
+            'dekurz_data' => $dekurzFile,
+        ]);
     }
 
-    public function last(Request $request, DekurzDocumentService $service)
+    /**
+     * Get the last dekurz data for a patient.
+     *
+     * @group Documents
+     * @bodyParam patient_id int required Patient ID. Example: 1
+     */
+    public function last(Request $request)
     {
         $data = $request->validate([
             'patient_id' => 'required|integer|exists:patients,id',
@@ -63,30 +87,48 @@ class DekurzDocumentController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        if (! $doc) {
-            return response()->json(['success' => true, 'data' => null]);
+        if (!$doc) {
+            return $this->success(['data' => null]);
         }
 
-        $dekurz = $service->findDekurzFileForDocument($doc);
-        if (! $dekurz) {
-            return response()->json(['success' => true, 'data' => null]);
+        $dekurz = $this->dekurzDocumentService->findDekurzFileForDocument($doc);
+        if (!$dekurz) {
+            return $this->success(['data' => null]);
         }
 
-        return response()->json(['success' => true, 'data' => ['document_id' => $doc->id, 'sections' => $dekurz['sections'] ?? []]]);
+        return $this->success([
+            'data' => [
+                'document_id' => $doc->id,
+                'sections' => $dekurz['sections'] ?? [],
+            ],
+        ]);
     }
 
-    public function availableDates(Request $request, DekurzDocumentService $service)
+    /**
+     * Get available dates for a patient's dekurz.
+     *
+     * @group Documents
+     * @bodyParam patient_id int required Patient ID. Example: 1
+     * @bodyParam month date required Month date. Example: 2026-04-01
+     */
+    public function availableDates(Request $request)
     {
         $data = $request->validate([
             'patient_id' => 'required|integer|exists:patients,id',
             'month' => 'required|date',
         ]);
 
-        $result = $service->getAvailableDates((int) $data['patient_id'], $data['month']);
+        $result = $this->dekurzDocumentService->getAvailableDates((int) $data['patient_id'], $data['month']);
 
-        return response()->json(['success' => true, 'message' => 'Available dates retrieved', 'data' => $result]);
+        return $this->success($result, 'Dostupné termíny boli načítané');
     }
 
+    /**
+     * Prefill dekurz from latest proposal AI.
+     *
+     * @group Documents
+     * @urlParam patient int required Patient ID. Example: 1
+     */
     public function prefillFromLatestProposal(Patient $patient)
     {
         try {
@@ -101,6 +143,13 @@ class DekurzDocumentController extends Controller
         return $this->success($data, 'Návrh textov dekurzu bol úspešne vygenerovaný.');
     }
 
+    /**
+     * Improve dekurz text using AI.
+     *
+     * @group Documents
+     * @urlParam patient int required Patient ID. Example: 1
+     * @bodyParam text string required Text to improve.
+     */
     public function improveText(Patient $patient, Request $request)
     {
         $request->validate([
@@ -121,17 +170,20 @@ class DekurzDocumentController extends Controller
 
     /**
      * Preview dekurz document as HTML via Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
-    public function preview(Document $document, DekurzDocumentService $service)
+    public function preview(Document $document)
     {
         $document->loadMissing('user');
 
-        $dekurzData = $service->findDekurzFileForDocument($document);
+        $dekurzData = $this->dekurzDocumentService->findDekurzFileForDocument($document);
         if (!$dekurzData) {
-            return response()->json(['message' => 'Dekurz data not found'], 404);
+            return $this->error('Dáta dekurzu sa nenašli', 404);
         }
 
-        $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($dekurzData['user_id'] ?? 0));
+        $signatureDataUri = $this->documentService->getUserSignatureDataUri((int) ($dekurzData['user_id'] ?? 0));
 
         return response()->view('pdf.dekurz', [
             'dekurzData' => $dekurzData,
@@ -141,14 +193,17 @@ class DekurzDocumentController extends Controller
 
     /**
      * Download dekurz PDF generated from Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function download(Document $document)
     {
         $document->loadMissing('user');
 
-        $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
+        $pdfPath = $this->documentService->getTravelDocumentPdfPath($document);
         if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            return response()->json(['message' => 'Dekurz PDF not found'], 500);
+            return $this->error('PDF dekurzu sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
@@ -160,6 +215,9 @@ class DekurzDocumentController extends Controller
 
     /**
      * Get a signed public preview URL for dekurz document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function previewUrl(Document $document)
     {
@@ -171,7 +229,7 @@ class DekurzDocumentController extends Controller
             ['document' => $document->id, 'format' => 'html']
         );
 
-        return response()->json(['preview_url' => $url]);
+        return $this->success(['preview_url' => $url]);
     }
 
 }

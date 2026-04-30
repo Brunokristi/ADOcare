@@ -57,8 +57,8 @@ class AgreementDocumentController extends Controller
         $document->loadMissing('patient');
 
         $payload = $this->service->getAgreementPayload($document);
-        if (! $payload) {
-            return $this->error('Agreement data not found', 404);
+        if (!$payload) {
+            return $this->error('Dáta dohody sa nenašli', 404);
         }
 
         return $this->success([
@@ -77,8 +77,8 @@ class AgreementDocumentController extends Controller
         $document->loadMissing('user');
 
         $payload = $this->service->getAgreementPayload($document);
-        if (! $payload) {
-            return $this->error('Agreement data not found', 404);
+        if (!$payload) {
+            return $this->error('Dáta dohody sa nenašli', 404);
         }
 
         $stampDataUri = app(DocumentService::class)->getCompanyStampDataUri((int) ($payload['company_id'] ?? 0));
@@ -101,8 +101,8 @@ class AgreementDocumentController extends Controller
         $document->loadMissing('user');
 
         $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
-        if (! $pdfPath || ! Storage::disk('local')->exists($pdfPath)) {
-            return $this->error('Agreement PDF not found', 500);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('PDF dohody sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';

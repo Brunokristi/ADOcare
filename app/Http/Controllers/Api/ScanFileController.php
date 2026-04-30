@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ScanSession;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Document;
 use App\Services\DocumentService;
@@ -11,42 +10,40 @@ use Illuminate\Support\Facades\URL;
 
 class ScanFileController extends Controller
 {
+    /**
+     * Show scan metadata for a document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     */
     public function show(Document $document)
     {
         $this->authorize('view', $document);
 
         // document->path points to JSON like: scans/documents/132_1772264811.json
         if (!$document->path || !Storage::disk('local')->exists($document->path)) {
-            return response()->json([
-                'message' => 'Scan JSON súbor neexistuje.',
-                'data' => null,
-            ], 404);
+            return $this->error('Scan JSON súbor neexistuje.', 404, ['data' => null]);
         }
 
         $raw = Storage::disk('local')->get($document->path);
 
         $json = json_decode($raw, true);
         if (!is_array($json)) {
-            return response()->json([
-                'message' => 'Scan JSON je neplatný.',
-                'data' => null,
-            ], 422);
+            return $this->error('Scan JSON je neplatný.', 422, ['data' => null]);
         }
 
         $sessionId = $json['scan_session_id'] ?? null;
         $paths = $json['image_paths'] ?? [];
 
         if (!$sessionId || !is_array($paths) || count($paths) === 0) {
-            return response()->json([
-                'message' => 'V scan JSON chýbajú obrázky alebo session.',
-                'data' => null,
-            ], 404);
+            return $this->error('V scan JSON chýbajú obrázky alebo session.', 404, ['data' => null]);
         }
 
         // Convert stored paths like "scans/132/file.jpg" -> filename -> public URL via ScanFileController
         $images = [];
         foreach ($paths as $p) {
-            if (!is_string($p) || $p === '') continue;
+            if (!is_string($p) || $p === '')
+                continue;
             $filename = basename(str_replace('\\', '/', $p));
             $images[] = [
                 'name' => $filename,
@@ -54,32 +51,47 @@ class ScanFileController extends Controller
             ];
         }
 
-        return response()->json([
-            'data' => [
-                'document_id' => $json['document_id'] ?? $document->id,
-                'scan_session_id' => (int) $sessionId,
-                'image_count' => $json['image_count'] ?? count($images),
-                'scanned_at' => $json['scanned_at'] ?? null,
-                'patient_name' => $json['patient_name'] ?? null,
-                'patient_birth_number' => $json['patient_birth_number'] ?? null,
-                'images' => $images,
-                'extracted_text' => $json['extracted_text'] ?? null,
-                'extracted_pages' => $json['extracted_pages'] ?? null,
-                'ocr_engine' => $json['ocr_engine'] ?? null,
-                'ocr_at' => $json['ocr_at'] ?? null,
-            ],
-        ]);
+        return $this->success([
+            'document_id' => $json['document_id'] ?? $document->id,
+            'scan_session_id' => (int) $sessionId,
+            'image_count' => $json['image_count'] ?? count($images),
+            'scanned_at' => $json['scanned_at'] ?? null,
+            'patient_name' => $json['patient_name'] ?? null,
+            'patient_birth_number' => $json['patient_birth_number'] ?? null,
+            'images' => $images,
+            'extracted_text' => $json['extracted_text'] ?? null,
+            'extracted_pages' => $json['extracted_pages'] ?? null,
+            'ocr_engine' => $json['ocr_engine'] ?? null,
+            'ocr_at' => $json['ocr_at'] ?? null,
+        ], 'Skenovaný dokument bol načítaný');
     }
 
+    /**
+     * Serve a scan image by session and filename.
+     *
+     * @group Documents
+     * @urlParam sessionId int required Scan session ID. Example: 12
+     * @urlParam filename string required Image filename. Example: image.jpg
+     */
     public function image(int $sessionId, string $filename)
     {
         $path = "scans/{$sessionId}/{$filename}";
 
-        abort_unless(\Storage::disk('local')->exists($path), 404);
+        abort_unless(Storage::disk('local')->exists($path), 404);
 
-        return \Storage::disk('local')->response($path);
+        $absolutePath = Storage::disk('local')->path($path);
+
+        return response()->file($absolutePath);
     }
 
+    /**
+     * Update extracted OCR text for a scan document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     * @bodyParam page_index int optional Page index. Example: 0
+     * @bodyParam text string required Text content.
+     */
     public function updateText(Document $document)
     {
         $this->authorize('update', $document);
@@ -90,18 +102,14 @@ class ScanFileController extends Controller
         ]);
 
         if (!$document->path || !Storage::disk('local')->exists($document->path)) {
-            return response()->json([
-                'message' => 'Scan JSON súbor neexistuje.',
-            ], 404);
+            return $this->error('Scan JSON súbor neexistuje.', 404);
         }
 
         $raw = Storage::disk('local')->get($document->path);
         $json = json_decode($raw, true);
 
         if (!is_array($json)) {
-            return response()->json([
-                'message' => 'Scan JSON je neplatný.',
-            ], 422);
+            return $this->error('Scan JSON je neplatný.', 422);
         }
 
         // Update the text based on page_index
@@ -118,59 +126,37 @@ class ScanFileController extends Controller
         // Save back to JSON
         Storage::disk('local')->put($document->path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-        return response()->json([
-            'message' => 'Text bol úspešne aktualizovaný.',
-            'data' => [
-                'extracted_text' => $json['extracted_text'] ?? null,
-                'extracted_pages' => $json['extracted_pages'] ?? null,
-            ],
-        ]);
+        return $this->success([
+            'extracted_text' => $json['extracted_text'] ?? null,
+            'extracted_pages' => $json['extracted_pages'] ?? null,
+        ], 'Text bol úspešne aktualizovaný.');
     }
 
     /**
      * Preview scan document as HTML via Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function preview(Document $document)
     {
         $this->authorize('view', $document);
 
-        if (!$document->path || !Storage::disk('local')->exists($document->path)) {
-            return response()->json(['message' => 'Scan JSON file not found'], 404);
+        $preview = app(DocumentService::class)->getDocumentPreviewData($document);
+        if (!$preview) {
+            return $this->error('Náhľad skenu nie je dostupný', 404);
         }
 
-        $raw = Storage::disk('local')->get($document->path);
-        $json = json_decode($raw, true);
-
-        if (!is_array($json)) {
-            return response()->json(['message' => 'Invalid scan JSON'], 422);
-        }
-
-        // Build data for Blade
-        $scanData = [
-            'patient_name' => $json['patient_name'] ?? '',
-            'patient_birth_number' => $json['patient_birth_number'] ?? '',
-            'date' => $json['scanned_at'] ?? '',
-            'images' => [],
-        ];
-
-        // Convert image paths to data URIs or direct URLs
-        $sessionId = $json['scan_session_id'] ?? null;
-        $paths = $json['image_paths'] ?? [];
-
-        foreach ($paths as $p) {
-            if (!is_string($p) || $p === '') continue;
-            $filename = basename(str_replace('\\', '/', $p));
-            $imageUrl = "/api/v1/scans/{$sessionId}/" . rawurlencode($filename);
-            $scanData['images'][] = $imageUrl;
-        }
-
-        return response()->view('pdf.scan', [
-            'scanData' => $scanData,
-        ])->header('Content-Type', 'text/html; charset=utf-8');
+        return response()
+            ->view($preview['view'], $preview['data'])
+            ->header('Content-Type', 'text/html; charset=utf-8');
     }
 
     /**
      * Download scan PDF generated from Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function download(Document $document)
     {
@@ -178,7 +164,7 @@ class ScanFileController extends Controller
 
         $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
         if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            return response()->json(['message' => 'Scan PDF not found'], 500);
+            return $this->error('PDF skenu sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
@@ -190,6 +176,9 @@ class ScanFileController extends Controller
 
     /**
      * Get a signed public preview URL for scan document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function previewUrl(Document $document)
     {
@@ -201,6 +190,6 @@ class ScanFileController extends Controller
             ['document' => $document->id, 'format' => 'html']
         );
 
-        return response()->json(['preview_url' => $url]);
+        return $this->success(['preview_url' => $url]);
     }
 }

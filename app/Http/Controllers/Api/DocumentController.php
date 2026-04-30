@@ -6,10 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
 use App\Models\Document;
 use App\Models\Patient;
-use App\Models\User;
-use App\Services\CPDocumentService;
 use App\Services\DocumentService;
-use App\Services\DZCDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +17,15 @@ class DocumentController extends Controller
     {
     }
 
+    /**
+     * Create a company travel document (CP/DZC).
+     *
+     * @group Documents
+     * @bodyParam type string required Document type (cp, dzc). Example: cp
+     * @bodyParam branch_id int required Branch ID. Example: 1
+     * @bodyParam period string required Period in YYYY-MM. Example: 2026-04
+     * @response 201 {"data":{"document_id":1,"type":"cp"},"message":"Cestovný príkaz bol úspešne vytvorený"}
+     */
     public function createCompanyTravelDocument(Request $request)
     {
         $validated = $request->validate([
@@ -46,6 +52,14 @@ class DocumentController extends Controller
         );
     }
 
+    /**
+     * List travel documents for the authenticated user.
+     *
+     * @group Documents
+     * @queryParam branch_id int optional Filter by branch ID. Example: 2
+     * @queryParam period string optional Period in YYYY-MM. Example: 2026-04
+     * @queryParam per_page int optional Items per page. Example: 25
+     */
     public function indexTravelDocuments(Request $request)
     {
         $perPage = (int) $request->input('per_page', 25);
@@ -60,9 +74,17 @@ class DocumentController extends Controller
             $perPage
         );
 
-        return response()->json($documents);
+        return $this->success($documents, 'Dokumenty boli načítané');
     }
 
+    /**
+     * List travel documents for a company (manager/superadmin).
+     *
+     * @group Documents
+     * @queryParam branch_ids string|array optional Comma-separated branch IDs. Example: 1,2
+     * @queryParam period string optional Period in YYYY-MM. Example: 2026-04
+     * @queryParam per_page int optional Items per page. Example: 25
+     */
     public function indexTravelDocumentsForCompany(Request $request)
     {
         $perPage = (int) $request->input('per_page', 25);
@@ -80,18 +102,21 @@ class DocumentController extends Controller
 
         $documents = $this->service->getTravelDocumentsForCompany($branchIdArray, $period, $perPage);
 
-        return response()->json($documents);
+        return $this->success($documents, 'Dokumenty boli načítané');
     }
 
     /**
      * Display a listing of documents for a patient.
+     *
+     * @group Documents
+     * @urlParam patientId int required Patient ID. Example: 1
      */
     public function index(Request $request, $patientId)
     {
         $patient = Patient::findOrFail($patientId);
         $this->authorize('view', $patient);
 
-        $query = Document::where('patient_id', $patientId);
+        $query = Document::query()->where('patient_id', $patientId);
 
         $results = ApiQuery::apply(
             $request,
@@ -101,11 +126,17 @@ class DocumentController extends Controller
             ['sort' => '-created_at']
         );
 
-        return response()->json($results);
+        return $this->success($results, 'Dokumenty boli načítané');
     }
 
     /**
      * Store a newly created document.
+     *
+     * @group Documents
+     * @urlParam patientId int required Patient ID. Example: 1
+     * @bodyParam type string required Document type. Example: scan
+     * @bodyParam file file required Uploaded file.
+     * @response 201 {"data":{"document":{"id":1}},"message":"Dokument bol uložený"}
      */
     public function store(Request $request, $patientId)
     {
@@ -129,21 +160,27 @@ class DocumentController extends Controller
             'path' => $path,
         ]);
 
-        return response()->json($document, 201);
+        return $this->success(['document' => $document], 'Dokument bol uložený', 201);
     }
 
     /**
      * Display the specified document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function show(Document $document)
     {
         $this->authorize('view', $document);
 
-        return response()->json($document);
+        return $this->success(['document' => $document]);
     }
 
     /**
      * Download the specified document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function download(Document $document)
     {
@@ -156,6 +193,11 @@ class DocumentController extends Controller
 
     /**
      * Public, signed access to a document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     * @queryParam format string optional Set to html for preview. Example: html
+     * @queryParam download int optional Set to 1 for file download. Example: 1
      */
     public function publicDocument(Request $request, Document $document)
     {
@@ -164,25 +206,14 @@ class DocumentController extends Controller
         }
 
         if ($request->query('format') === 'html') {
-            if ($document->type === 'cp') {
-                $payload = app(CPDocumentService::class)->getCpPayload($document);
-                $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($payload['representative_id'] ?? 0));
-
-                return response()->view('pdf.travel_cp', [
-                    'cpData' => $payload,
-                    'signatureDataUri' => $signatureDataUri,
-                ]);
+            $preview = $this->service->getDocumentPreviewData($document);
+            if ($preview) {
+                return response()
+                    ->view($preview['view'], $preview['data'])
+                    ->header('Content-Type', 'text/html; charset=utf-8');
             }
 
-            if ($document->type === 'dzc') {
-                $payload = app(DZCDocumentService::class)->getDzcPayload($document);
-                $signatureDataUri = app(DocumentService::class)->getUserSignatureDataUri((int) ($payload['user_id'] ?? 0));
-
-                return response()->view('pdf.travel_dzc', [
-                    'dzcData' => $payload,
-                    'signatureDataUri' => $signatureDataUri,
-                ]);
-            }
+            abort(404, 'Náhľad dokumentu nie je dostupný');
         }
 
         $pdfPath = $this->service->getTravelDocumentPdfPath($document);
@@ -201,6 +232,14 @@ class DocumentController extends Controller
             'Content-Type' => 'application/pdf',
         ]);
     }
+    /**
+     * Update the specified document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     * @bodyParam type string optional Document type. Example: scan
+     * @bodyParam name string optional Document name. Example: dokument.pdf
+     */
     public function update(Request $request, Document $document)
     {
         $this->authorize('update', $document);
@@ -212,11 +251,14 @@ class DocumentController extends Controller
 
         $document->update($validated);
 
-        return response()->json($document);
+        return $this->success(['document' => $document], 'Dokument bol aktualizovaný');
     }
 
     /**
      * Delete the specified document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function destroy(Document $document)
     {
@@ -229,33 +271,42 @@ class DocumentController extends Controller
                 'path' => $document->path,
             ]);
 
-            return response()->json([
-                'error' => 'Nepodarilo sa odstrániť súbor z disku',
+            return $this->error('Nepodarilo sa odstrániť súbor z disku', 500, [
                 'path' => $document->path,
-            ], 500);
+            ]);
         }
 
         $document->delete();
 
-        return response()->json(['message' => 'Dokument bol úspešne odstránený']);
+        return $this->success(null, 'Dokument bol úspešne odstránený');
     }
 
     /**
      * Delete multiple documents.
+     *
+     * @group Documents
+     * @bodyParam ids integer[] required Document IDs. Example: [1,2,3]
      */
     public function destroyMany(Request $request)
     {
         $ids = $request->input('ids', []);
 
         if (empty($ids)) {
-            return response()->json(['message' => 'Neboli poskytnuté žiadne ID'], 400);
+            return $this->error('Neboli poskytnuté žiadne ID', 400);
         }
 
         $this->service->deleteManyDocumentsWithAssets($ids);
 
-        return response()->json(['message' => 'Dokumenty boli úspešne odstránené']);
+        return $this->success(null, 'Dokumenty boli úspešne odstránené');
     }
 
+    /**
+     * Email travel document links.
+     *
+     * @group Documents
+     * @bodyParam email string required Recipient email. Example: user@example.com
+     * @bodyParam ids integer[] required Document IDs. Example: [1,2,3]
+     */
     public function emailTravelDocuments(Request $request)
     {
         $validated = $request->validate([
@@ -280,7 +331,7 @@ class DocumentController extends Controller
         $documents = $this->service->buildTravelDocumentLinks($validated['ids'], $user);
 
         if (empty($documents)) {
-            return response()->json(['message' => 'Neboli nájdené žiadne dokumenty, ku ktorým máte prístup'], 404);
+            return $this->error('Neboli nájdené žiadne dokumenty, ku ktorým máte prístup', 404);
         }
 
         $to = $validated['email'];
@@ -298,23 +349,29 @@ class DocumentController extends Controller
 
         $this->service->sendEmail($to, $subject, 'emails.document_links', $viewData);
 
-        return response()->json([
-            'message' => 'Email bol úspešne odoslaný',
+        return $this->success([
             'documents_count' => count($documents),
-        ]);
+        ], 'Email bol úspešne odoslaný');
     }
 
+    /**
+     * List documents for a patient by type.
+     *
+     * @group Documents
+     * @urlParam patientId int required Patient ID. Example: 1
+     * @urlParam type string required Document type. Example: proposal
+     */
     public function getByType($patientId, $type)
     {
         $patient = Patient::findOrFail($patientId);
         $this->authorize('view', $patient);
 
-        $documents = Document::where('patient_id', $patientId)
+        $documents = Document::query()->where('patient_id', $patientId)
             ->where('type', $type)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($documents);
+        return $this->success(['documents' => $documents]);
     }
 
     /**
@@ -322,6 +379,12 @@ class DocumentController extends Controller
      * Supports two scenarios:
      * 1. Patient document: checks patient_id, user_id, type, and period
      * 2. User document: checks user_id, type, branch_id, and period
+     *
+     * @group Documents
+     * @bodyParam type string required Document type. Example: proposal
+     * @bodyParam date date required Document date. Example: 2026-04-01
+     * @bodyParam patient_id int optional Patient ID. Example: 1
+     * @bodyParam branch_id int optional Branch ID. Example: 2
      */
     public function checkExists(Request $request)
     {
@@ -333,14 +396,16 @@ class DocumentController extends Controller
                 'branch_id' => 'nullable|numeric',
             ]);
 
-            return response()->json($this->service->documentExists($validated, Auth::id()));
+            return $this->success($this->service->documentExists($validated, Auth::id()));
         } catch (\Exception $e) {
             \Log::error('Document checkExists error: ' . $e->getMessage(), [
                 'request' => $request->all(),
                 'exception' => $e,
             ]);
 
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->error('Overenie existencie dokumentu zlyhalo', 500, [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

@@ -20,23 +20,22 @@ class ProposalDocumentController extends Controller
     public function __construct(
         private ProposalDocumentService $service,
         private ProposalOcrPrefillService $ocrPrefillService,
-    )
-    {
+    ) {
     }
 
     /**
-        * Store a new proposal document.
-        *
-        * @group Documents
-        * @bodyParam patient_id integer required Patient ID. Example: 1
-        * @bodyParam medical_diagnosis_ids integer[] nullable Array of medical diagnosis IDs. Example: [1, 2]
-        * @bodyParam nurse_diagnosis_ids integer[] nullable Array of nurse diagnosis IDs. Example: [3, 4]
-        * @bodyParam date date required Document date. Example: 2024-01-01
-        * @bodyParam epicrisis_description string required
-        * @bodyParam care_plan string required
-        * @bodyParam expected_duration string required
-        * @bodyParam procedures array nullable Array of procedures
-        * @response 201 {"document_id":123, "proposal": {"document_id":123}}
+     * Store a new proposal document.
+     *
+     * @group Documents
+     * @bodyParam patient_id integer required Patient ID. Example: 1
+     * @bodyParam medical_diagnosis_ids integer[] nullable Array of medical diagnosis IDs. Example: [1, 2]
+     * @bodyParam nurse_diagnosis_ids integer[] nullable Array of nurse diagnosis IDs. Example: [3, 4]
+     * @bodyParam date date required Document date. Example: 2024-01-01
+     * @bodyParam epicrisis_description string required
+     * @bodyParam care_plan string required
+     * @bodyParam expected_duration string required
+     * @bodyParam procedures array nullable Array of procedures
+     * @response 201 {"document_id":123, "proposal": {"document_id":123}}
      */
     public function store(StoreProposalRequest $request)
     {
@@ -59,8 +58,8 @@ class ProposalDocumentController extends Controller
     {
         $document->loadMissing('patient');
         $payload = $this->service->getProposalPayload($document);
-        if (! $payload) {
-            return $this->error('Proposal data not found', 404);
+        if (!$payload) {
+            return $this->error('Dáta návrhu sa nenašli', 404);
         }
 
         return $this->success(['document' => $document, 'proposal_data' => $payload]);
@@ -80,13 +79,13 @@ class ProposalDocumentController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if (! $document) {
-            return $this->error('No proposal found', 404);
+        if (!$document) {
+            return $this->error('Návrh sa nenašiel', 404);
         }
 
         $payload = $this->service->getProposalPayload($document);
-        if (! $payload) {
-            return $this->error('Proposal data not found', 404);
+        if (!$payload) {
+            return $this->error('Dáta návrhu sa nenašli', 404);
         }
 
         return $this->success(['document_id' => $document->id, 'proposal_data' => $payload]);
@@ -135,8 +134,8 @@ class ProposalDocumentController extends Controller
         $document->loadMissing('user');
 
         $payload = $this->service->getProposalPayload($document);
-        if (! $payload) {
-            return $this->error('Proposal data not found', 404);
+        if (!$payload) {
+            return $this->error('Dáta návrhu sa nenašli', 404);
         }
 
         $stampDataUri = app(DocumentService::class)->getCompanyStampDataUri((int) ($payload['company_id'] ?? 0));
@@ -159,8 +158,8 @@ class ProposalDocumentController extends Controller
         $document->loadMissing('user');
 
         $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
-        if (! $pdfPath || ! Storage::disk('local')->exists($pdfPath)) {
-            return $this->error('Proposal PDF not found', 500);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('PDF návrhu sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';

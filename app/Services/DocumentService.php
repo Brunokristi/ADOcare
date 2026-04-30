@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Filters\ApiQuery;
+use App\Http\Filters\ApiQuery;
 use App\Mail\GenericEmail;
 use App\Models\Branch;
 use App\Models\Company;
@@ -179,9 +179,13 @@ class DocumentService
 
     public function deleteManyDocumentsWithAssets(array $ids): void
     {
-        $documents = Document::whereIn('id', $ids)->get();
+        $documents = Document::query()->whereIn('id', $ids)->get();
 
         foreach ($documents as $document) {
+            if (!$document instanceof Document) {
+                continue;
+            }
+
             $this->deleteScanAssetsIfAny($document);
 
             if (Storage::disk('local')->exists($document->path)) {
@@ -236,7 +240,7 @@ class DocumentService
 
     public function getPatientDocuments(Request $request, int $patientId)
     {
-        $query = Document::where('patient_id', $patientId);
+        $query = Document::query()->where('patient_id', $patientId);
 
         return ApiQuery::apply(
             $request,
@@ -269,7 +273,7 @@ class DocumentService
 
 
         if ($disk->exists($cachePath)) {
-            $disk->delete($cachePath);
+            // $disk->delete($cachePath);
             // return $cachePath;
         }
 
@@ -280,6 +284,43 @@ class DocumentService
 
         $disk->put($cachePath, $pdfData['data']);
         return $cachePath;
+    }
+
+    /**
+     * Resolve preview view and payload for a document.
+     *
+     * @return array{view: string, data: array<string, mixed>, filename?: string}|null
+     */
+    public function getDocumentPreviewData(Document $document): ?array
+    {
+        return $this->buildDocumentViewData($document);
+    }
+
+    /**
+     * Build sheet data for batch statement templates.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function buildStatementSheetFromBatchPayload(array $payload, string $type): array
+    {
+        $meta = (array) ($payload['meta'] ?? []);
+        $batchNumber = (string) ($payload['batchNumber'] ?? '0');
+        $period = (array) ($payload['period'] ?? []);
+
+        return [
+            'fileType' => $type === 'kilometers' ? 'vykázané kilometre' : 'vykázané body',
+            'fileName' => (string) ($meta['fileName'] ?? ('davka.' . $batchNumber . '.txt')),
+            'kilometers' => (string) ($meta['totalKilometers'] ?? ''),
+            'amount' => (string) ($meta['amount'] ?? '0'),
+            'periodFrom' => (string) ($period[0] ?? ''),
+            'periodTo' => (string) ($period[1] ?? ''),
+            'performedBy' => (string) ($meta['performedBy'] ?? ''),
+            'performedDate' => (string) ($meta['performedDate'] ?? now()->toDateString()),
+            'companyName' => (string) ($meta['companyName'] ?? ''),
+            'branchName' => (string) ($meta['branchName'] ?? ''),
+            'insuranceName' => (string) ($meta['insuranceName'] ?? ''),
+        ];
     }
 
     public function getUserSignatureDataUri(?int $userId): ?string
@@ -307,47 +348,224 @@ class DocumentService
 
     private function buildTravelPdfAttachment(Document $document): ?array
     {
-        if ($document->type === 'cp') {
-            $payload = app(CPDocumentService::class)->getCpPayload($document);
-            if (!$payload) {
-                return null;
-            }
+        $preview = $this->buildDocumentViewData($document);
+        if (!$preview) {
+            return null;
+        }
 
-            $signatureDataUri = $this->loadUserSignatureDataUri((int) ($payload['representative_id'] ?? 0));
+        $pdf = Pdf::loadView($preview['view'], $preview['data'])->setPaper('a4', 'portrait');
 
-            $pdf = Pdf::loadView('pdf.travel_cp', [
+        return [
+            'data' => $pdf->output(),
+            'name' => $preview['filename'] ?? $this->buildDefaultPdfFilename($document),
+            'mime' => 'application/pdf',
+        ];
+    }
+
+    /**
+     * @return array{view: string, data: array<string, mixed>, filename?: string}|null
+     */
+    private function buildDocumentViewData(Document $document): ?array
+    {
+        return match ($document->type) {
+            'cp' => $this->buildCpViewData($document),
+            'dzc' => $this->buildDzcViewData($document),
+            'proposal' => $this->buildProposalViewData($document),
+            'agreement' => $this->buildAgreementViewData($document),
+            'leave' => $this->buildLeaveViewData($document),
+            'record' => $this->buildRecordViewData($document),
+            'dekurz' => $this->buildDekurzViewData($document),
+            'scan' => $this->buildScanViewData($document),
+            'kilometers_batch' => $this->buildBatchViewData($document, 'kilometers'),
+            'points_batch' => $this->buildBatchViewData($document, 'points'),
+            default => null,
+        };
+    }
+
+    private function buildCpViewData(Document $document): ?array
+    {
+        $payload = app(CPDocumentService::class)->getCpPayload($document);
+        if (!$payload) {
+            return null;
+        }
+
+        $signatureDataUri = $this->loadUserSignatureDataUri((int) ($payload['representative_id'] ?? 0));
+
+        return [
+            'view' => 'pdf.travel_cp',
+            'data' => [
                 'cpData' => $payload,
                 'signatureDataUri' => $signatureDataUri,
-            ])->setPaper('a4', 'portrait');
+            ],
+            'filename' => $this->buildTravelPdfFilename('CP', $payload, $document),
+        ];
+    }
 
-            return [
-                'data' => $pdf->output(),
-                'name' => $this->buildTravelPdfFilename('CP', $payload, $document),
-                'mime' => 'application/pdf',
-            ];
+    private function buildDzcViewData(Document $document): ?array
+    {
+        $payload = app(DZCDocumentService::class)->getDzcPayload($document);
+        if (!$payload) {
+            return null;
         }
 
-        if ($document->type === 'dzc') {
-            $payload = app(DZCDocumentService::class)->getDzcPayload($document);
-            if (!$payload) {
-                return null;
-            }
+        $signatureDataUri = $this->loadUserSignatureDataUri((int) ($payload['user_id'] ?? 0));
 
-            $signatureDataUri = $this->loadUserSignatureDataUri((int) ($payload['user_id'] ?? 0));
-
-            $pdf = Pdf::loadView('pdf.travel_dzc', [
+        return [
+            'view' => 'pdf.travel_dzc',
+            'data' => [
                 'dzcData' => $payload,
                 'signatureDataUri' => $signatureDataUri,
-            ])->setPaper('a4', 'portrait');
+            ],
+            'filename' => $this->buildTravelPdfFilename('DZP', $payload, $document),
+        ];
+    }
 
-            return [
-                'data' => $pdf->output(),
-                'name' => $this->buildTravelPdfFilename('DZP', $payload, $document),
-                'mime' => 'application/pdf',
-            ];
+    private function buildProposalViewData(Document $document): ?array
+    {
+        $payload = app(ProposalDocumentService::class)->getProposalPayload($document);
+        if (!$payload) {
+            return null;
         }
 
-        return null;
+        return [
+            'view' => 'pdf.proposal',
+            'data' => [
+                'proposalData' => $payload,
+                'stampDataUri' => $this->loadCompanyStampDataUri((int) ($payload['company_id'] ?? 0)),
+                'signatureDataUri' => $this->loadUserSignatureDataUri((int) ($payload['representative_id'] ?? 0)),
+            ],
+        ];
+    }
+
+    private function buildAgreementViewData(Document $document): ?array
+    {
+        $payload = app(AgreementDocumentService::class)->getAgreementPayload($document);
+        if (!$payload) {
+            return null;
+        }
+
+        return [
+            'view' => 'pdf.agreement',
+            'data' => [
+                'agreementData' => $payload,
+                'stampDataUri' => $this->loadCompanyStampDataUri((int) ($payload['company_id'] ?? 0)),
+                'signatureDataUri' => $this->loadUserSignatureDataUri((int) ($payload['branch_representative_id'] ?? 0)),
+            ],
+        ];
+    }
+
+    private function buildLeaveViewData(Document $document): ?array
+    {
+        $payload = app(LeaveDocumentService::class)->findLeaveFileForDocument($document);
+        if (!$payload) {
+            return null;
+        }
+
+        return [
+            'view' => 'pdf.leave',
+            'data' => [
+                'leaveData' => $payload,
+                'signatureDataUri' => $this->loadUserSignatureDataUri((int) ($payload['user_id'] ?? 0)),
+            ],
+        ];
+    }
+
+    private function buildRecordViewData(Document $document): ?array
+    {
+        $payload = app(RecordDocumentService::class)->findRecordFileForDocument($document);
+
+        if (!$payload) {
+            return null;
+        }
+
+        return [
+            'view' => 'pdf.record',
+            'data' => [
+                'recordData' => $payload,
+                'signatureDataUri' => $this->loadUserSignatureDataUri((int) ($payload['user_id'] ?? 0)),
+            ],
+        ];
+    }
+
+    private function buildDekurzViewData(Document $document): ?array
+    {
+        $payload = app(DekurzDocumentService::class)->findDekurzFileForDocument($document);
+        if (!$payload) {
+            return null;
+        }
+
+        if (!array_key_exists('patient_birth_number', $payload)) {
+            $payload['patient_birth_number'] = $payload['patient_personal_number'] ?? '';
+        }
+
+        if (!array_key_exists('visits', $payload)) {
+            $payload['visits'] = collect($payload['days'] ?? [])
+                ->map(fn(array $day) => [
+                    'date' => $day['date'] ?? null,
+                    'time_from' => $day['terrain_time'] ?? null,
+                    'time_to' => $day['administrative_time'] ?? null,
+                    'note' => $day['text'] ?? '',
+                    'terrain_time' => $day['terrain_time'] ?? null,
+                    'administrative_time' => $day['administrative_time'] ?? null,
+                ])
+                ->all();
+        }
+
+        return [
+            'view' => 'pdf.dekurz',
+            'data' => [
+                'dekurzData' => $payload,
+                'signatureDataUri' => $this->loadUserSignatureDataUri((int) ($payload['user_id'] ?? 0)),
+            ],
+        ];
+    }
+
+    private function buildScanViewData(Document $document): ?array
+    {
+        $payload = app(ScanDocumentService::class)->getScanPayload($document);
+        if (!$payload) {
+            return null;
+        }
+
+        return [
+            'view' => 'pdf.scan',
+            'data' => [
+                'scanData' => [
+                    'patient_name' => $payload['patient_name'] ?? '',
+                    'patient_birth_number' => $payload['patient_birth_number'] ?? '',
+                    'date' => $payload['scanned_at'] ?? '',
+                    'images' => $payload['image_paths'] ?? [],
+                ],
+            ],
+        ];
+    }
+
+    private function buildBatchViewData(Document $document, string $type): ?array
+    {
+        $payload = $type === 'kilometers'
+            ? app(KilometersBatchDocumentService::class)->getKilometersBatchPayload($document)
+            : app(PointsBatchDocumentService::class)->getPointsBatchPayload($document);
+
+        if (!$payload) {
+            return null;
+        }
+
+        $sheet = $this->buildStatementSheetFromBatchPayload($payload, $type);
+
+        return [
+            'view' => 'pdf.statement',
+            'data' => ['sheet' => $sheet],
+        ];
+    }
+
+    private function buildDefaultPdfFilename(Document $document): string
+    {
+        $base = pathinfo((string) $document->name, PATHINFO_FILENAME);
+        if ($base === '') {
+            $base = (string) ($document->type ?? 'document');
+        }
+
+        return $this->sanitizeFilenamePart($base) . '.pdf';
     }
 
     private function loadUserSignatureDataUri(?int $userId): ?string

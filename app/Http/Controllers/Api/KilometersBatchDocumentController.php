@@ -18,6 +18,19 @@ class KilometersBatchDocumentController extends Controller
     {
     }
 
+    /**
+     * Store a new kilometers batch document.
+     *
+     * @group Documents
+     * @bodyParam batchNumber int required Batch number. Example: 1
+     * @bodyParam batchType.code string required Batch type code. Example: N
+     * @bodyParam insurance.id int required Insurance company ID. Example: 3
+     * @bodyParam period array required Period range. Example: ["2026-04-01","2026-04-30"]
+     * @bodyParam user.id int required User ID. Example: 10
+     * @bodyParam branch.id int required Branch ID. Example: 2
+     * @bodyParam company.id int required Company ID. Example: 1
+     * @response 201 {"data":{"document_id":1},"message":"Kilometre dávka bola úspešne uložená"}
+     */
     public function store(StoreKilometersBatchRequest $request)
     {
         [$document, $payload] = $this->service->createKilometersBatch(
@@ -31,15 +44,21 @@ class KilometersBatchDocumentController extends Controller
         ], 'Kilometre dávka bola úspešne uložená', 201);
     }
 
+    /**
+     * Show kilometers batch document payload.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
+     */
     public function show(Document $document)
     {
         // optional: ensure correct type
         if ($document->type !== 'kilometers_batch') {
-            return $this->error('Invalid document type', 400);
+            return $this->error('Nesprávny typ dokumentu', 400);
         }
 
         $payload = $this->service->getKilometersBatchPayload($document);
-        if (! $payload) {
+        if (!$payload) {
             return $this->error('Kilometers batch data not found', 404);
         }
 
@@ -49,28 +68,36 @@ class KilometersBatchDocumentController extends Controller
         ]);
     }
 
+    /**
+     * List kilometers batch documents.
+     *
+     * @group Documents
+     * @queryParam branch_id int optional Branch ID. Example: 2
+     * @queryParam period string optional Period in YYYY-MM. Example: 2026-04
+     * @queryParam per_page int optional Items per page. Example: 25
+     */
     public function index(Request $request)
     {
         $branchId = $request->integer('branch_id');
         $period = $request->string('period')->toString();
-        $userId   = auth()->id();
+        $userId = auth()->id();
 
         $items = Document::query()
             ->where('type', 'kilometers_batch')
             ->with(['insuranceCompany:id,name'])
-            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-            ->when($period !== '', fn ($q) => $q->where('period', $period))
-            ->when($userId, fn ($q) => $q->where('user_id', $userId))
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->when($period !== '', fn($q) => $q->where('period', $period))
+            ->when($userId, fn($q) => $q->where('user_id', $userId))
             ->get()
-            ->map(function ($doc) {
-            $doc->insurance_company_name = $doc->insuranceCompany?->name;
+            ->map(function (Document $doc) {
+                $doc->insurance_company_name = $doc->insuranceCompany?->name;
 
-            // Load amount from payload meta
-            $payload = $this->service->getKilometersBatchPayload($doc);
-            $doc->amount = data_get($payload, 'meta.amount', 0);
+                // Load amount from payload meta
+                $payload = $this->service->getKilometersBatchPayload($doc);
+                $doc->amount = data_get($payload, 'meta.amount', 0);
 
-            return $doc;
-        })->values();
+                return $doc;
+            })->values();
 
         $items = $this->applyDocumentSort($items, $request->input('sort', '-created_at'));
 
@@ -82,11 +109,11 @@ class KilometersBatchDocumentController extends Controller
 
         return $this->success([
             'items' => $items,                 // ✅ array of rows
-            'meta'  => [                       // ✅ pagination info
+            'meta' => [                       // ✅ pagination info
                 'current_page' => $page,
-                'per_page'     => $perPage,
-                'total'        => $total,
-                'last_page'    => $lastPage,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $lastPage,
             ],
         ]);
     }
@@ -104,7 +131,7 @@ class KilometersBatchDocumentController extends Controller
             $field = ltrim($part, '-');
 
             $items = $items->sortBy(
-                fn (Document $doc) => $this->normalizeSortableValue($doc, $field),
+                fn(Document $doc) => $this->normalizeSortableValue($doc, $field),
                 SORT_NATURAL | SORT_FLAG_CASE,
                 $direction === 'desc'
             )->values();
@@ -128,36 +155,45 @@ class KilometersBatchDocumentController extends Controller
 
     /**
      * Preview kilometers batch document as HTML via Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function preview(Document $document)
     {
         if ($document->type !== 'kilometers_batch') {
-            return $this->error('Invalid document type', 400);
+            return $this->error('Nesprávny typ dokumentu', 400);
         }
 
         $payload = $this->service->getKilometersBatchPayload($document);
         if (!$payload) {
-            return $this->error('Kilometers batch data not found', 404);
+            return $this->error('Dáta kilometrovej dávky sa nenašli', 404);
         }
 
+        $sheet = app(DocumentService::class)->buildStatementSheetFromBatchPayload($payload, 'kilometers');
+
+        dd($sheet);
+
         return response()->view('pdf.statement', [
-            'batchData' => $payload,
-            'batchType' => 'kilometers',
+            'sheet' => $sheet,
         ])->header('Content-Type', 'text/html; charset=utf-8');
     }
 
     /**
      * Download kilometers batch PDF generated from Blade template.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function download(Document $document)
     {
         if ($document->type !== 'kilometers_batch') {
-            return $this->error('Invalid document type', 400);
+            return $this->error('Nesprávny typ dokumentu', 400);
         }
 
         $pdfPath = app(DocumentService::class)->getTravelDocumentPdfPath($document);
         if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            return $this->error('Kilometers batch PDF not found', 500);
+            return $this->error('PDF kilometrovej dávky sa nenašlo', 500);
         }
 
         $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
@@ -169,6 +205,9 @@ class KilometersBatchDocumentController extends Controller
 
     /**
      * Get a signed public preview URL for kilometers batch document.
+     *
+     * @group Documents
+     * @urlParam document int required Document ID. Example: 1
      */
     public function previewUrl(Document $document)
     {

@@ -117,6 +117,7 @@ class InvoiceController extends Controller
                 }
 
                 $payload = $this->buildInvoicePayload($invoice, $actor);
+                dump($payload,$invoice->path);
                 Storage::disk('local')->put($invoice->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
                 return $invoice;
@@ -348,6 +349,8 @@ class InvoiceController extends Controller
         ]);
         $association = $this->getAssociatedDocumentsAndTotal($invoice, (int) ($actor->company_id ?? 0));
 
+        dump($association);
+
         return [
             'company_name' => $invoice->user?->company?->name,
             'company_address' => $invoice->user?->company?->address,
@@ -436,6 +439,9 @@ class InvoiceController extends Controller
                 'amount' => $amount,
             ];
         }
+
+        dump($rows);
+        dump($total);
 
         return [
             'total' => round($total, 2),
