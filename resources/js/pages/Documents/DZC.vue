@@ -11,41 +11,41 @@ const previewUrl = ref('')
 const uiOverlayStore = useUiOverlayStore()
 
 onMounted(async () => {
-  await loadPreviewUrl(String(route.params.documentId))
+    await loadPreviewUrl(String(route.params.documentId))
 })
 
 watchEffect(() => {
-  uiOverlayStore.setContentLoading(loading.value)
+    uiOverlayStore.setContentLoading(loading.value)
 })
 
 async function loadPreviewUrl(documentId: string) {
-  loading.value = true
+    loading.value = true
 
-  try {
-    const res = await api.get(`/v1/dzcs/${documentId}/preview-url`)
-    previewUrl.value = res.data?.data?.preview_url ?? ''
-  } catch (error) {
-    console.error('Failed to load DZC preview URL:', error)
-    previewUrl.value = ''
-  } finally {
-    loading.value = false
-  }
+    try {
+        const res = await api.get(`/v1/dzcs/${documentId}/preview-url`)
+        previewUrl.value = res.data?.data?.preview_url ?? ''
+    } catch (error) {
+        console.error('Failed to load DZC preview URL:', error)
+        previewUrl.value = ''
+    } finally {
+        loading.value = false
+    }
 }
 </script>
 
 <template>
-  <DocumentShell title="Denný záznam ciest" :previewUrl="previewUrl" :downloadOptions="[
-    {
-      label: 'PDF',
-      url: `/api/v1/dzcs/${route.params.documentId}/download`,
-      fileType: 'PDF',
-      contentType: 'application/pdf',
-    },
-    {
-      label: 'CSV',
-      url: `/api/v1/dzcs/${route.params.documentId}/csv`,
-      fileType: 'CSV',
-      contentType: 'text/csv',
-    },
-  ]" :showPrintButton="true" />
+    <DocumentShell title="Denný záznam ciest" :previewUrl="previewUrl" :downloadOptions="[
+        {
+            label: 'PDF',
+            url: `/api/v1/dzcs/${route.params.documentId}/download`,
+            fileType: 'PDF',
+            contentType: 'application/pdf',
+        },
+        {
+            label: 'CSV',
+            url: `/api/v1/dzcs/${route.params.documentId}/csv`,
+            fileType: 'CSV',
+            contentType: 'text/csv',
+        },
+    ]" :showPrintButton="true" />
 </template>
