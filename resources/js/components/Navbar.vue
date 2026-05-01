@@ -47,6 +47,20 @@ const {
     setBranchId,
 } = usePatients()
 
+async function loadPatientsForSelectedBranch() {
+    if (authStore.isManager || authStore.isSuperadmin) {
+        return
+    }
+
+    const branchId = selectedBranchId.value
+    if (branchId == null || branchId < 0) {
+        return
+    }
+
+    setBranchId(branchId)
+    await loadPatients()
+}
+
 /* when patient is selected from navbar → save & go to detail page */
 watch(selectedPatient, (opt) => {
     if (!opt) return
@@ -84,6 +98,7 @@ async function forceValidBranchSelection() {
         return
     }
     const opts = branchOptions.value ?? []
+
     if (!opts.length) return
 
     const current = selectedBranchId.value
@@ -99,91 +114,66 @@ async function forceValidBranchSelection() {
     await applyBranchSelection(nextId)
 }
 
-/**
- * Hard block clearing the select (null/undefined/empty) and block ids not in options.
- * Also ensures manager/nurse both always have something selected.
- */
-watch(
-    [selectedBranchId, branchOptions],
-    async ([id]) => {
-        if (authStore.currentRole === 'superadmin') {
-            // superadmin does not use branch selection at all
-            return
-        }
-        const opts = branchOptions.value ?? []
-        if (!opts.length) return
+async function handleBranchChange(event: { value?: number | null } | number | null) {
+    if (authStore.currentRole === 'superadmin') {
+        return
+    }
 
-        const valid = id != null && opts.some((b: any) => b.id === id)
-        if (!valid) {
-            await forceValidBranchSelection()
-            return
-        }
+    const id = typeof event === 'number' ? event : event?.value ?? null
+    const opts = branchOptions.value ?? []
+    const valid = id != null && opts.some((b) => b.id === id)
 
-        // Keep app state in sync
-        if (!authStore.isManager) {
-            setBranchId(id as number)
-            loadPatients()
-        }
-    },
-    { immediate: true }
-)
+    if (!valid) {
+        await forceValidBranchSelection()
+        return
+    }
+
+    await applyBranchSelection(id)
+
+    if (!authStore.isManager) {
+        await loadPatientsForSelectedBranch()
+    }
+}
 
 /* ------------ LIFECYCLE ------------ */
+
+async function initializePatients() {
+    // Always force a valid selection from the dropdown (manager or nurse)
+    // NOTE: we do NOT set -1; it must always be a real option id.
+    if (authStore.currentRole == 'superadmin') return;
+
+    await forceValidBranchSelection()
+
+    // Nurse: load patients for selected branch
+    if (authStore.isManager) {
+        // Manager: no patients, but branch stays selected (still required)
+        patientStore.clear()
+    } else {
+        patientStore.loadFromStorage()
+        await loadPatientsForSelectedBranch()
+    }
+}
+
 
 onMounted(async () => {
     await authStore.waitUntilInitialized()
 
-    // Always force a valid selection from the dropdown (manager or nurse)
-    // NOTE: we do NOT set -1; it must always be a real option id.
-    if (authStore.currentRole !== 'superadmin') {
-        await forceValidBranchSelection()
-
-        // Nurse: load patients for selected branch
-        if (!authStore.isManager) {
-            patientStore.loadFromStorage()
-            setBranchId(selectedBranchId.value as number)
-            await loadPatients()
-        } else {
-            // Manager: no patients, but branch stays selected (still required)
-            patientStore.clear()
-        }
+    if (isAuthenticated.value) {
+        await initializePatients()
     }
+
 })
 
-/* reload patients when currentBranch changes (if your app changes it elsewhere) */
-watch(
-    () => authStore.currentBranch?.id,
-    async () => {
-        // If currentBranch changes to something not in options, force back to valid option.
-        await forceValidBranchSelection()
 
-        if (!authStore.isManager) {
-            setBranchId(selectedBranchId.value as number)
-            loadPatients()
-        }
+watch(branchOptions, async (newOpts) => {
+    if (!newOpts || newOpts.length === 0) {
+        selectedBranchId.value = null
+        return
     }
-)
 
-/* handle role changes (nurse ↔ manager) */
-watch(
-    () => authStore.currentRole,
-    async (newRole, oldRole) => {
-        if (!oldRole) return
+    initializePatients()
+});
 
-        // Always keep a valid branch selected regardless of role
-        await forceValidBranchSelection()
-
-        if (newRole === 'manager') {
-            patientStore.clear()
-            await router.dashboard()
-        } else if (oldRole === 'manager') {
-            patientStore.loadFromStorage()
-            setBranchId(selectedBranchId.value as number)
-            await loadPatients()
-            await router.dashboard()
-        }
-    }
-)
 </script>
 
 <template>
@@ -212,9 +202,13 @@ watch(
                 dropdownIcon="bi bi-chevron-down text-white!"
                 class="w-60 h-7! flex items-center border-none! bg-tag2! text-normal text-white!">
                 <template #value>
-                    <span v-if="patientStore.current" class="flex items-center gap-2 text-normal text-white whitespace-nowrap">
-                        <span class="truncate max-w-[220px]">{{ (patientStore.current.title ?? '') + ' ' + (patientStore.current.first_name ?? '') + ' ' + (patientStore.current.last_name ?? '') }}</span>
-                        <span class="bg-darkgrey rounded-md text-mini text-white px-2">{{ patientStore.current.personal_number }}</span>
+                    <span v-if="patientStore.current"
+                        class="flex items-center gap-2 text-normal text-white whitespace-nowrap">
+                        <span class="truncate max-w-55">{{ (patientStore.current.title ?? '') + ' ' +
+                            (patientStore.current.first_name ?? '') + ' ' + (patientStore.current.last_name ?? '')
+                            }}</span>
+                        <span class="bg-darkgrey rounded-md text-mini text-white px-2">{{
+                            patientStore.current.personal_number }}</span>
                     </span>
                     <span v-else class="text-normal text-white">Vyberte pacienta</span>
                 </template>
@@ -260,15 +254,7 @@ watch(
                 optionLabel="label" optionValue="id" dropdownIcon="bi bi-chevron-down text-white!"
                 class="w-60 h-7! flex items-center bg-tag2! border-none! text-normal! text-white!" :showClear="false"
                 :editable="false" :placeholder="branchOptions?.length ? undefined : 'Načítavam pobočky...'" @change="async (e) => {
-                    // Only allow option ids
-                    const opts = branchOptions ?? []
-                    const id = e?.value
-                    const valid = id != null && opts.some((b: any) => b.id === id)
-                    if (!valid) {
-                        await forceValidBranchSelection()
-                        return
-                    }
-                    await applyBranchSelection(id)
+                    await handleBranchChange(e)
                 }">
                 <template #value>
                     <span class="text-normal text-white">{{branchOptions?.find((b: any) => b.id ===
