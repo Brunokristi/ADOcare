@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import { useUiOverlayStore } from '@/stores/uiOverlay'
+import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
 import DocumentShell from '@/components/DocumentShell.vue'
 
 type DownloadOption = {
@@ -39,45 +39,33 @@ type KilometersBatchPayload = {
 
 const route = useRoute()
 const documentId = computed(() => Number(route.params.documentId))
-const uiOverlayStore = useUiOverlayStore()
 
 const loading = ref(false)
-const previewUrl = ref('')
 const payload = ref<KilometersBatchPayload | null>(null)
+const { previewUrl, loadPreview } = useDocumentPreviewLoader()
 
 onMounted(async () => {
-    await Promise.all([loadPreviewUrl(), loadPayload()])
-})
-
-watchEffect(() => {
-    uiOverlayStore.setContentLoading(loading.value)
-})
-
-async function loadPreviewUrl() {
     loading.value = true
-
+    loadPayload()
     try {
-        const res = await api.get(`/v1/kilometers-batches/${documentId.value}/preview-url`)
-        previewUrl.value = res.data?.data?.preview_url ?? ''
-    } catch (error) {
-        console.error('Failed to load kilometers batch preview URL:', error)
-        previewUrl.value = ''
+        await loadPreview(`/v1/kilometers-batches/${documentId.value}/preview`)
     } finally {
         loading.value = false
     }
-}
+})
+
+watchEffect(() => {
+    // Overlay loading state is handled by composable, but keep this for payload loading indicator
+    // Could be removed if not needed
+})
 
 async function loadPayload() {
-    loading.value = true
-
     try {
         const res = await api.get(`/v1/kilometers-batches/${documentId.value}`)
         payload.value = (res.data?.data?.kilometers_batch ?? null) as KilometersBatchPayload | null
     } catch (error) {
         console.error('Failed to load kilometers batch payload:', error)
         payload.value = null
-    } finally {
-        loading.value = false
     }
 }
 

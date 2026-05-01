@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watchEffect } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
-import { useUiOverlayStore } from '@/stores/uiOverlay'
+import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
 import DocumentShell from '@/components/DocumentShell.vue'
 
 const route = useRoute()
 const toast = useToast()
-const uiOverlayStore = useUiOverlayStore()
 
 const loading = ref(false)
-const previewUrl = ref('')
 const documentId = computed(() => Number(route.params.documentId))
+const { previewUrl, loadPreview } = useDocumentPreviewLoader()
 
 const extractedText = ref('')
 const extractedPages = ref<Array<{ page: number; file: string; text: string }>>([])
@@ -51,29 +50,14 @@ const pageOptions = computed(() => {
 })
 
 onMounted(async () => {
-    await Promise.all([
-        loadPreviewUrl(String(route.params.documentId)),
-        loadScanDocument(String(route.params.documentId)),
-    ])
-})
-
-watchEffect(() => {
-    uiOverlayStore.setContentLoading(loading.value)
-})
-
-async function loadPreviewUrl(id: string) {
     loading.value = true
-
     try {
-        const res = await api.get(`/v1/scan/${id}/preview-url`)
-        previewUrl.value = res.data?.data?.preview_url ?? ''
-    } catch (error) {
-        console.error('Failed to load scan preview URL:', error)
-        previewUrl.value = ''
+        await loadPreview(`/v1/scan/${documentId.value}/preview`)
     } finally {
+        await loadScanDocument(String(documentId.value))
         loading.value = false
     }
-}
+})
 
 async function loadScanDocument(id: string) {
     try {

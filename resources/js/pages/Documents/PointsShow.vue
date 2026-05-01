@@ -2,8 +2,8 @@
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import { useUiOverlayStore } from '@/stores/uiOverlay'
-import DocumentShell, { type DownloadOption, type FileItem } from '@/components/DocumentShell.vue'
+import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
+import DocumentShell, { type FileItem } from '@/components/DocumentShell.vue'
 
 
 
@@ -30,45 +30,32 @@ type PointsBatchPayload = {
 
 const route = useRoute()
 const documentId = computed(() => Number(route.params.documentId))
-const uiOverlayStore = useUiOverlayStore()
 
 const loading = ref(false)
-const previewUrl = ref('')
 const payload = ref<PointsBatchPayload | null>(null)
+const { previewUrl, loadPreview } = useDocumentPreviewLoader()
 
 onMounted(async () => {
-    await Promise.all([loadPreviewUrl(), loadPayload()])
+    loading.value = true
+    try {
+        await loadPreview(`/v1/points-batches/${documentId.value}/preview`)
+    } finally {
+        await loadPayload()
+        loading.value = false
+    }
 })
 
 watchEffect(() => {
-    uiOverlayStore.setContentLoading(loading.value)
+    // Keep this if needed for additional UI feedback, or remove if not
 })
 
-async function loadPreviewUrl() {
-    loading.value = true
-
-    try {
-        const res = await api.get(`/v1/points-batches/${documentId.value}/preview-url`)
-        previewUrl.value = res.data?.data?.preview_url ?? ''
-    } catch (error) {
-        console.error('Failed to load points batch preview URL:', error)
-        previewUrl.value = ''
-    } finally {
-        loading.value = false
-    }
-}
-
 async function loadPayload() {
-    loading.value = true
-
     try {
         const res = await api.get(`/v1/points-batches/${documentId.value}`)
         payload.value = (res.data?.data?.points_batch ?? null) as PointsBatchPayload | null
     } catch (error) {
         console.error('Failed to load points batch payload:', error)
         payload.value = null
-    } finally {
-        loading.value = false
     }
 }
 

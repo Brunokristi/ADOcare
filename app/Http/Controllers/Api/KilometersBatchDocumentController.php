@@ -172,7 +172,6 @@ class KilometersBatchDocumentController extends Controller
 
         $sheet = app(DocumentService::class)->buildStatementSheetFromBatchPayload($payload, 'kilometers');
 
-        dd($sheet);
 
         return response()->view('pdf.statement', [
             'sheet' => $sheet,
