@@ -7,6 +7,7 @@ use App\Mail\GenericEmail;
 use App\Models\Branch;
 use App\Models\Company;
 use App\Models\Document;
+use App\Models\Invoice;
 use App\Models\Patient;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -332,7 +334,53 @@ class DocumentService
     {
         return $this->loadCompanyStampDataUri($companyId);
     }
+    /**
+     * Get or generate invoice PDF path.
+     * Generates PDF from Blade template if it doesn't exist.
+     */
+    public function getInvoicePdfPath(Invoice $invoice): ?string
+    {
+        $pdfPath = $this->getInvoicePdfCachePath($invoice);
+        $disk = Storage::disk('local');
 
+        // if ($disk->exists($pdfPath)) {
+        //     return $pdfPath;
+        // }
+
+        return $this->buildAndSaveInvoicePdf($invoice, $pdfPath);
+    }
+
+    private function getInvoicePdfCachePath(Invoice $invoice): string
+    {
+        return sprintf('invoices/pdf/%d.pdf', $invoice->id);
+    }
+
+    private function buildAndSaveInvoicePdf(Invoice $invoice, string $pdfPath): ?string
+    {
+        $invoiceData = json_decode(
+            (string) Storage::disk('local')->get($invoice->path),
+            true
+        );
+
+        if (!is_array($invoiceData)) {
+            return null;
+        }
+
+        try {
+            $pdf = Pdf::loadView('pdf.invoice', [
+                'invoiceData' => $invoiceData,
+            ])->setPaper('a4', 'portrait');
+
+            Storage::disk('local')->put($pdfPath, $pdf->output());
+            return $pdfPath;
+        } catch (\Exception $e) {
+            Log::error('Failed to generate invoice PDF', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
     private function getTravelDocumentPdfCachePath(Document $document): string
     {
         return sprintf('documents/pdf/%s/%d.pdf', $document->type, $document->id);

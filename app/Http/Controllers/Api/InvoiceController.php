@@ -35,8 +35,8 @@ class InvoiceController extends Controller
                 'user:id,title,first_name,last_name,company_id',
                 'relatedInvoice:id,invoice_number',
             ])
-            ->whereHas('user', fn ($q) => $q->where('company_id', $actor->company_id))
-            ->when($request->filled('period'), fn ($q) => $q->where('period', $request->string('period')->toString()));
+            ->whereHas('user', fn($q) => $q->where('company_id', $actor->company_id))
+            ->when($request->filled('period'), fn($q) => $q->where('period', $request->string('period')->toString()));
 
         $results = ApiQuery::apply(
             $request,
@@ -47,9 +47,9 @@ class InvoiceController extends Controller
         );
 
         if ($results instanceof LengthAwarePaginator) {
-            $results->setCollection($results->getCollection()->map(fn (Invoice $invoice) => $this->toRow($invoice)));
+            $results->setCollection($results->getCollection()->map(fn(Invoice $invoice) => $this->toRow($invoice)));
         } elseif ($results instanceof Collection) {
-            $results = $results->map(fn (Invoice $invoice) => $this->toRow($invoice));
+            $results = $results->map(fn(Invoice $invoice) => $this->toRow($invoice));
         }
 
         return $this->success($results, 'Faktúry boli načítané');
@@ -117,7 +117,7 @@ class InvoiceController extends Controller
                 }
 
                 $payload = $this->buildInvoicePayload($invoice, $actor);
-                dump($payload,$invoice->path);
+                dump($payload, $invoice->path);
                 Storage::disk('local')->put($invoice->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
                 return $invoice;
@@ -182,11 +182,9 @@ class InvoiceController extends Controller
             return $this->forbidden('Nemáte oprávnenie na prístup k tejto faktúre');
         }
 
-        // For invoices, we use a simpler filename-based approach
-        $pdfPath = sprintf('invoices/pdf/%d.pdf', $invoice->id);
-
-        if (!Storage::disk('local')->exists($pdfPath)) {
-            return $this->error('Invoice PDF not found', 500);
+        $pdfPath = app(DocumentService::class)->getInvoicePdfPath($invoice);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            return $this->error('PDF faktúry sa nenašlo', 500);
         }
 
         $downloadName = 'faktúra_' . $invoice->invoice_number . '.pdf';
@@ -285,7 +283,7 @@ class InvoiceController extends Controller
         $ids = $request->validated()['ids'];
         $invoices = Invoice::query()
             ->whereIn('id', $ids)
-            ->whereHas('user', fn ($q) => $q->where('company_id', $actor->company_id))
+            ->whereHas('user', fn($q) => $q->where('company_id', $actor->company_id))
             ->get();
 
         foreach ($invoices as $invoice) {
@@ -349,8 +347,6 @@ class InvoiceController extends Controller
         ]);
         $association = $this->getAssociatedDocumentsAndTotal($invoice, (int) ($actor->company_id ?? 0));
 
-        dump($association);
-
         return [
             'company_name' => $invoice->user?->company?->name,
             'company_address' => $invoice->user?->company?->address,
@@ -412,7 +408,7 @@ class InvoiceController extends Controller
         $documentsQuery = Document::query()
             ->where('type', $targetType)
             ->where('period', $invoice->period)
-            ->whereHas('user', fn ($q) => $q->where('company_id', $companyId))
+            ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
             ->with([
                 'user:id,code,initials',
                 'branch:id,code',
@@ -440,8 +436,6 @@ class InvoiceController extends Controller
             ];
         }
 
-        dump($rows);
-        dump($total);
 
         return [
             'total' => round($total, 2),
@@ -470,7 +464,7 @@ class InvoiceController extends Controller
         $query = Invoice::query()
             ->where('type', (string) $validated['type'])
             ->where('period', (string) $validated['period'])
-            ->whereHas('user', fn ($q) => $q->where('company_id', $actor->company_id));
+            ->whereHas('user', fn($q) => $q->where('company_id', $actor->company_id));
 
         if (array_key_exists('insurance_company_id', $validated) && $validated['insurance_company_id']) {
             $query->where('insurance_company_id', (int) $validated['insurance_company_id']);

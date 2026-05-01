@@ -19,15 +19,17 @@
             background: #fff;
         }
 
+        html {
+            margin: 14mm
+        }
+
         * {
             box-sizing: border-box;
         }
 
         .invoice-sheet {
-            width: 210mm;
-            height: 297mm;
             margin: 0 auto;
-            padding: 20mm;
+            /* padding: 6mm; */
             background: white;
             box-sizing: border-box;
         }
