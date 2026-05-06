@@ -95,21 +95,16 @@ const topLevelOptions = computed<DownloadOption[]>(() => {
 function getOptionLabel(option: DownloadOption): string {
     if (option.label) return option.label
     if (option.fileType) return option.fileType
-    const path = option.url.split('?')[0]
-    return path.split('/').pop() || 'Download'
-}
-
-function buttonLabelForOptions(options: DownloadOption[]): string {
-    if (!options.length) return 'Download'
-    return getOptionLabel(options[0])
+    const path = option.url.split('?')[0] ?? ''
+    return path.split('/').pop() ?? 'Download'
 }
 
 function splitMenuItems(options: DownloadOption[]) {
     if (options.length <= 1) return []
 
     return options.slice(1).map((option) => ({
-        label: getOptionLabel(option),
-        command: () => download(option),
+        label: getOptionLabel(option!),
+        command: () => download(option!),
     }))
 }
 
@@ -117,7 +112,7 @@ function makeFilename(option: DownloadOption): string {
     if (option.filename) return option.filename
     const extension = option.fileType
         ? option.fileType.replace(/\./g, '').toLowerCase()
-        : option.url.split('?')[0].split('.').pop() ?? 'bin'
+        : (option.url.split('?')[0]?.split('.').pop() ?? 'bin')
 
     return `download.${extension}`
 }
@@ -163,7 +158,7 @@ function getFilenameFromResponse(response: any): string | null {
     const match = /filename\*?=([^;]+)/i.exec(contentDisposition)
     if (!match) return null
 
-    let filename = match[1].trim()
+    let filename = match[1]!.trim()
     filename = filename.replace(/^(UTF-8'')/, '')
     filename = filename.replace(/['"]+/g, '')
     return decodeURIComponent(filename)
@@ -224,6 +219,7 @@ async function download(option: DownloadOption) {
 }
 
 const previewWidthStyle = computed(() => props.previewWidth || '210mm')
+const firstTopLevelOption = computed(() => topLevelOptions.value[0])
 
 watch(
     () => props.previewUrl,
@@ -362,13 +358,13 @@ function onActionClick(actionId: string) {
                         <Button icon="bi bi-file-earmark-pdf" title="Download" 
                             class="download-button bg-darkgrey! border-darkgrey! hover:bg-white! hover:border-white! hover:text-darkgrey! h-7!"
                             :loading="isDownloading" :disabled="isDownloading || !topLevelOptions.length"
-                            @click="download(topLevelOptions[0])" />
+                            @click="firstTopLevelOption && download(firstTopLevelOption)" />
                     </template>
                     <template v-else>
                         <SplitButton icon="bi bi-download" :model="splitMenuItems(topLevelOptions)" 
                             class="download-button bg-darkgrey! border-darkgrey! hover:bg-white! hover:border-white! hover:text-darkgrey! h-7!"
                             :loading="isDownloading" :disabled="isDownloading || !topLevelOptions.length"
-                            @click="download(topLevelOptions[0])" />
+                            @click="firstTopLevelOption && download(firstTopLevelOption)" />
                     </template>
                 </div>
 
