@@ -893,6 +893,7 @@ watch(
                     <div>
                         <label class="block text-normal mb-2">Číslo dekurzu</label>
                         <InputText v-model="dekurzNumber" class="w-full !border-none" inputClass="!w-full !border-none"
+                            type="number" @input="dekurzNumber = dekurzNumber.replace(/[^0-9]/g, '')"
                             :invalid="submitted && !!errors.dekurzNumber" />
                         <small v-if="submitted && errors.dekurzNumber" class="text-danger">{{ errors.dekurzNumber
                         }}</small>

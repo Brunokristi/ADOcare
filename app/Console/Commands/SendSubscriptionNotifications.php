@@ -13,6 +13,28 @@ class SendSubscriptionNotifications extends Command
 
     protected $description = 'Send subscription notifications to configured company recipients.';
 
+    /**
+     * Calculate subscription end date from the latest paid month.
+     */
+    private function getSubscriptionEndDate(Company $company): ?\DateTime
+    {
+        $latestPaidMonth = $company->subscriptionPaidMonths()
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->first();
+
+        if (!$latestPaidMonth) {
+            return null;
+        }
+
+        // Last day of the paid month
+        return \Carbon\Carbon::create(
+            (int) $latestPaidMonth->year,
+            (int) $latestPaidMonth->month,
+            1
+        )->endOfMonth()->toDateTime();
+    }
+
     public function handle(): int
     {
         $dryRun = (bool) $this->option('dry-run');
@@ -23,7 +45,7 @@ class SendSubscriptionNotifications extends Command
         $expiryOffsets = [30, 10, 5, 1, 0];
 
         $companies = Company::query()
-            ->with(['subscriptionTier'])
+            ->with(['subscriptionTier', 'subscriptionPaidMonths'])
             ->withCount('users')
             ->where('send_notifications', true)
             ->when($companyId, fn ($query) => $query->whereKey($companyId))
@@ -58,37 +80,19 @@ class SendSubscriptionNotifications extends Command
 
             $items = [];
 
-            if ($company->subscription_ends_at) {
-                $endsAt = $company->subscription_ends_at->copy()->startOfDay();
-                $daysUntilEnd = (int) $today->diffInDays($endsAt, false);
+            // Calculate subscription end date from latest paid month
+            $endsAt = $this->getSubscriptionEndDate($company);
+            if ($endsAt) {
+                $endsAtCarbon = \Carbon\Carbon::instance($endsAt)->startOfDay();
+                $daysUntilEnd = (int) $today->diffInDays($endsAtCarbon, false);
 
                 if ($force || in_array($daysUntilEnd, $expiryOffsets, true)) {
                     $items[] = [
                         'title' => 'Koniec predplatného',
                         'message' => sprintf(
                             'Predplatné končí %s (zostáva %d dní).',
-                            $endsAt->format('d.m.Y'),
+                            $endsAtCarbon->format('d.m.Y'),
                             $daysUntilEnd
-                        ),
-                    ];
-                }
-            }
-
-            $effectiveLimit = $company->subscription_users_limit_override
-                ?? $company->subscriptionTier?->users_limit;
-            $usersCount = (int) ($company->users_count ?? 0);
-
-            if ($effectiveLimit !== null) {
-                $remaining = (int) $effectiveLimit - $usersCount;
-
-                if ($force || in_array($remaining, [2, 1, 0], true) || $remaining < 0) {
-                    $items[] = [
-                        'title' => 'Limit používateľov',
-                        'message' => sprintf(
-                            'Spoločnosť má %d používateľov. Limit je %d. Zostáva %d miest.',
-                            $usersCount,
-                            (int) $effectiveLimit,
-                            $remaining
                         ),
                     ];
                 }
