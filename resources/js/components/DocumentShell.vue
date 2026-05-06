@@ -267,24 +267,6 @@ function injectIframePrintStyles(doc: Document) {
 
     style.textContent = `
     @media print {
-      html, body {
-        height: auto !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      body * {
-        overflow: visible !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      body * {
-        overflow: visible !important;
-      }
-
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;

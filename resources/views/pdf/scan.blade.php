@@ -71,8 +71,8 @@
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            margin-bottom: 4px;
             page-break-inside: avoid;
+            margin-bottom: 8px;
         }
 
         .info-table td,
@@ -90,7 +90,7 @@
         }
 
         .page-number {
-            text-align: right;
+            text-align: left;
         }
 
 
