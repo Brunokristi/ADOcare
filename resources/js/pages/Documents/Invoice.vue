@@ -19,10 +19,5 @@ onMounted(() => {
             fileType: 'PDF',
             contentType: 'application/pdf',
         },
-        {
-            url: `/api/v1/invoices/${route.params.documentId}/file`,
-            fileType: 'Originál',
-            contentType: 'application/octet-stream',
-        }
     ]" :showPrintButton="true" />
 </template>

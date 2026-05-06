@@ -181,11 +181,11 @@ watch(branchOptions, async (newOpts) => {
         :key="authStore.currentRole ?? 'default'">
         <div v-if="isAuthenticated" class="flex items-center gap-2 text-normal">
             <Button icon="bi bi-arrow-left" text
-                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
+                class="h-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="router.back" />
 
             <Button icon="bi bi-circle text-xs" text
-                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
+                class="h-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="router.dashboard" />
 
             <!-- PATIENT SELECT (only nurse users, hide for manager & superadmin) -->
@@ -268,11 +268,11 @@ watch(branchOptions, async (newOpts) => {
             </span>
 
             <Button icon="bi bi-box-arrow-right" text
-                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
+                class="h-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="logout" />
 
             <Button :icon="props.isSidebarOpen ? 'bi bi-x-lg' : 'bi bi-list'" text
-                class="h-7! w-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
+                class="h-7! min-h-0! px-2! rounded-md! bg-white! text-darkgrey! flex items-center justify-center"
                 @click="toggleSidebar" />
         </div>
     </nav>

@@ -24,16 +24,13 @@ const selectedPageIndex = ref<number | null>(null)
 const isSaving = ref(false)
 
 const actions = computed(() => {
-    //   if (!extractedText.value && extractedPages.value.length === 0) {
-    //     return []
-    //   }
-
     return [
         {
             id: 'extract-text',
-            label: 'Extrahovaný text',
-            icon: 'bi bi-file-earmark-text',
-            tooltip: 'Extrahovaný text',
+            label: 'Extrahovať text',
+            icon: '/adonis.svg',
+            tooltip: 'Extrahovať text',
+            adonis: true,
         },
     ]
 })
