@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import api from '@/services/api';
 import UniversalDataTable from '@/components/UniversalDataTable.vue';
 import ActionButtons from '@/components/table-columns/ActionButtons.vue';
+import useEmailDocumentsDialog from '@/composables/useEmailDocumentsDialog';
 import type { DataTableOptions, RemoteTableReturn } from '@/types/datatable'
 
 
@@ -22,6 +23,7 @@ const loading = ref(false);
 const documents = ref<PatientDocument[]>([]);
 const error = ref<string | null>(null);
 const documentRemote = ref<RemoteTableReturn>({} as RemoteTableReturn);
+const { openEmailDocumentsDialog } = useEmailDocumentsDialog();
 
 const loadDocuments = async () => {
     loading.value = true;
@@ -113,7 +115,7 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
             sortable: true,
             render: (v: string | undefined) => formatDateWithTime(v)
         },
-        
+
         {
             field: 'preview',
             header: '',
@@ -133,6 +135,19 @@ const options = computed<DataTableOptions<PatientDocument>>(() => ({
     ],
 
     actions: [
+        {
+            key: 'email',
+            disabled: ({ selectedRows }: { selectedRows: PatientDocument[] }) => selectedRows.length === 0,
+            icon: 'bi bi-send',
+            class: 'bg-accent!',
+            tooltip: 'Poslať vybrané dokumenty emailom',
+            handler: async ({ selectedRows, remote }: { selectedRows: PatientDocument[]; remote: any }) => {
+                await openEmailDocumentsDialog({
+                    documents: selectedRows,
+                    remote,
+                });
+            },
+        },
         {
             key: 'delete',
             disabled: ({ selectedRows }: { selectedRows: PatientDocument[] }) => selectedRows.length === 0,

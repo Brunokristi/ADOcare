@@ -7,6 +7,7 @@ import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import InvoiceForm from './InvoiceForm.vue'
 import InvoiceBulkCreateForm from './InvoiceBulkCreateForm.vue'
 import useModal from '@/composables/useModal'
+import useEmailDocumentsDialog from '@/composables/useEmailDocumentsDialog'
 import type { DataTableOptions } from '@/types/datatable'
 
 type InvoiceRow = {
@@ -27,6 +28,7 @@ type InvoiceRow = {
 
 const toast = useToast()
 const { openModal } = useModal()
+const { openEmailDocumentsDialog } = useEmailDocumentsDialog()
 const actionRemote = ref<any>(null)
 
 const now = new Date()
@@ -199,6 +201,21 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
       class: 'bg-accent!',
       handler: async () => {
         await openCreate()
+      },
+    },
+    {
+      key: 'email',
+      disabled: ({ selectedRows }: { selectedRows: InvoiceRow[] }) => selectedRows.length === 0,
+      icon: 'bi bi-send',
+      class: 'bg-accent!',
+      tooltip: 'Poslať vybrané faktúry emailom',
+      handler: async ({ selectedRows, remote }: { selectedRows: InvoiceRow[]; remote: any }) => {
+        await openEmailDocumentsDialog({
+          documents: selectedRows,
+          remote,
+          idKey: 'invoice_ids',
+          header: 'Odoslať faktúry emailom',
+        })
       },
     },
     {

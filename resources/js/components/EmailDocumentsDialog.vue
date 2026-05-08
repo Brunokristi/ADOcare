@@ -7,7 +7,7 @@
         </div>
 
         <div>
-            <label class="block text-sm mb-2">Vybrané dokumenty ({{ props.documents.length }})</label>
+            <label class="block text-sm mb-2">Vybrané položky ({{ props.documents.length }})</label>
 
             <div class="max-h-64 overflow-auto border rounded-md bg-white border-none">
                 <div v-for="doc in props.documents" :key="doc.id"
@@ -23,7 +23,7 @@
                 </div>
 
                 <div v-if="props.documents.length === 0" class="text-sm text-darkgrey text-center py-6">
-                    Nie sú vybrané žiadne dokumenty.
+                    Nie sú vybrané žiadne položky.
                 </div>
             </div>
         </div>
@@ -50,6 +50,19 @@ const formatDocumentType = (type?: string) => {
         cp: 'Cestovný príkaz',
         dzc: 'Denný záznam ciest',
         kilometers: 'Kilometráž',
+        kilometers_batch: 'Dávka kilometrov',
+        points_batch: 'Dávka bodov',
+        proposal: 'Návrh',
+        agreement: 'Dohoda',
+        dekurz: 'Dekurz',
+        leave: 'Prepúšťacia správa',
+        record: 'Ošetrovateľský záznam',
+        scan: 'Lekársky nález',
+        invoice: 'Faktúra',
+        procedures: 'Faktúra (výkonová)',
+        transport: 'Faktúra (dopravná)',
+        credit_note: 'Dobropis',
+        debit_note: 'Ťarchopis',
     }
     return typeMap[type || ''] || type || ''
 }
@@ -62,10 +75,11 @@ type Document = {
 
 const props = defineProps<{
     documents: Document[]
-    onSend?: (payload: { email: string; ids: number[] }) => Promise<void>
+    onSend?: (payload: Record<string, unknown>) => Promise<void>
     apiEndpoint?: string
     apiMethod?: 'post' | 'put' | 'patch' | 'delete'
     apiPayload?: Record<string, unknown>
+    idKey?: 'ids' | 'invoice_ids'
     buttonLabel?: string
     successMessage?: string
     modalResolve?: (value?: any) => void
@@ -83,7 +97,7 @@ const close = () => {
     }
 }
 
-async function sendRequest(payload: { email: string; ids: number[] }) {
+async function sendRequest(payload: Record<string, unknown>) {
     if (props.onSend) {
         return props.onSend(payload)
     }
@@ -125,7 +139,9 @@ const onSendClick = async () => {
 
     sending.value = true
     try {
-        await sendRequest({ email, ids: props.documents.map((d) => d.id) })
+        const idsKey = props.idKey ?? 'ids'
+        const payload = { email, [idsKey]: props.documents.map((d) => d.id) }
+        await sendRequest(payload)
 
         toast.add({ severity: 'success', summary: 'Úspech', detail: props.successMessage ?? 'Email bol odoslaný', life: 3000 })
         emit('sent')

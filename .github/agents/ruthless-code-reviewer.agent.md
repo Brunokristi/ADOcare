@@ -49,7 +49,7 @@ Tooling & actions
 
 Examples of prompts to give this agent
 
-- "Review `resources/js/pages/Manager/Documents.vue` against `STYLE_GUIDE.md` and produce a review + suggested patches."
+- "Review `resources/js/pages/Manager/TravelDocuments.vue` against `STYLE_GUIDE.md` and produce a review + suggested patches."
 - "Review the files in PR #123 and list critical security issues first."
 
 Ambiguities to ask the user
@@ -70,7 +70,7 @@ Feedback loop
 # Quick prompt templates
 
 - Review a file:
-  "Review [resources/js/pages/Manager/Documents.vue](resources/js/pages/Manager/Documents.vue) vs STYLE_GUIDE.md. Output review and apply_patch-ready snippets."
+  "Review [resources/js/pages/Manager/TravelDocuments.vue](resources/js/pages/Manager/TravelDocuments.vue) vs STYLE_GUIDE.md. Output review and apply_patch-ready snippets."
 
 - Review a PR:
   "Review PR #123 for security, then style; prioritize fixes and provide apply_patch diffs for easy changes."

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, markRaw } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
-import EmailDocumentsDialog from '@/components/EmailDocumentsDialog.vue'
 import DocumentCreateForm from './DocumentCreateForm.vue'
 import useModal from '@/composables/useModal'
+import useEmailDocumentsDialog from '@/composables/useEmailDocumentsDialog'
 import type { DataTableOptions } from '@/types/datatable'
 
 type Document = {
@@ -32,6 +32,7 @@ type Branch = {
 
 const toast = useToast()
 const { openModal } = useModal()
+const { openEmailDocumentsDialog } = useEmailDocumentsDialog()
 const branches = ref<Branch[]>([])
 const loading = ref(true)
 const now = new Date()
@@ -111,30 +112,6 @@ const formatPeriod = (period?: string) => {
         month: '2-digit',
         year: 'numeric',
     })
-}
-
-async function openEmailDialog(selectedRows: Document[], remote?: any) {
-    try {
-        await openModal(
-            markRaw(EmailDocumentsDialog),
-            {
-                documents: selectedRows,
-                apiEndpoint: 'v1/documents/email',
-                apiMethod: 'post',
-                apiPayload: {},
-                header: 'Odoslať dokumenty emailom',
-            },
-            { header: 'Odoslať dokumenty emailom', style: { width: '40rem' }, closable: true }
-        )
-    } catch (err) {
-        console.error('Failed to open email modal', err)
-    } finally {
-        if (remote?.reload) {
-            await remote.reload()
-        } else if (remote?.loadPage) {
-            await remote.loadPage(1)
-        }
-    }
 }
 
 async function openCreate(remote?: any) {
@@ -235,7 +212,10 @@ const options = computed<DataTableOptions<Document>>(() => ({
             class: 'bg-accent!',
             tooltip: 'Poslať vybrané dokumenty emailom',
             handler: async ({ selectedRows, remote }: { selectedRows: Document[]; remote: any }) => {
-                await openEmailDialog(selectedRows, remote)
+                await openEmailDocumentsDialog({
+                    documents: selectedRows,
+                    remote,
+                })
             },
         },
         {

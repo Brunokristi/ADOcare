@@ -401,6 +401,35 @@ class DocumentService
     {
         return $this->loadCompanyStampDataUri($companyId);
     }
+
+    /**
+     * Build payload for batch TXT download from stored document data.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function buildBatchDownloadPayload(Document $document): ?array
+    {
+        $payload = match ($document->type) {
+            'kilometers_batch' => app(KilometersBatchDocumentService::class)->getKilometersBatchPayload($document),
+            'points_batch' => app(PointsBatchDocumentService::class)->getPointsBatchPayload($document),
+            default => null,
+        };
+
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        return [
+            'batchNumber' => (int) ($payload['batchNumber'] ?? 0),
+            'batchType' => ['code' => (string) data_get($payload, 'batchType.code', 'N')],
+            'insurance' => ['id' => (int) data_get($payload, 'insurance.id', 0)],
+            'period' => (array) ($payload['period'] ?? []),
+            'user' => ['id' => (int) data_get($payload, 'user.id', 0)],
+            'branch' => ['id' => (int) data_get($payload, 'branch.id', 0)],
+            'company' => ['id' => data_get($payload, 'company.id')],
+            'patients' => (array) ($payload['patients'] ?? []),
+        ];
+    }
     /**
      * Get or generate invoice PDF path.
      * Generates PDF from Blade template if it doesn't exist.

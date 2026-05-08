@@ -149,18 +149,11 @@ function updateState(payload: Partial<WizardState>) {
         <div class="card">
             <Tabs :value="activeTab">
                 <TabList>
-                    <Tab
-                        v-for="step in steps"
-                        :key="step.value"
-                        :value="step.value"
-                        @click="goToStep(step.value)"
-                    >
+                    <Tab v-for="step in steps" :key="step.value" :value="step.value" @click="goToStep(step.value)">
                         <div class="flex items-center gap-2">
                             <span>{{ step.label }}</span>
-                            <span
-                                v-if="step.isCompleted()"
-                                class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white text-xs"
-                            >
+                            <span v-if="step.isCompleted()"
+                                class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white text-xs">
                                 ✓
                             </span>
                         </div>
@@ -168,41 +161,20 @@ function updateState(payload: Partial<WizardState>) {
                 </TabList>
 
                 <TabPanels>
-                    <TabPanel
-                        v-for="step in steps"
-                        :key="step.value"
-                        :value="step.value"
-                    >
-                        <component
-                            :is="step.component"
-                            :wizard-state="wizardState"
-                            @next="nextStep"
-                            @prev="prevStep"
-                            @update-state="updateState"
-                        />
+                    <TabPanel v-for="step in steps" :key="step.value" :value="step.value">
+                        <component :is="step.component" :wizard-state="wizardState" @next="nextStep" @prev="prevStep"
+                            @update-state="updateState" />
                     </TabPanel>
                 </TabPanels>
             </Tabs>
         </div>
 
         <div class="mt-6 flex justify-between">
-            <Button
-                type="button"
-                icon="bi bi-arrow-left"
-                outlined
-                :disabled="!canGoPrev"
-                @click="prevStep"
-                class="bg-accent! border-0! hover:bg-darkgrey! text-white! text-normal! px-5!"
+            <Button type="button" icon="bi bi-arrow-left" outlined :disabled="!canGoPrev" @click="prevStep"
+                class="bg-accent! border-0! hover:bg-darkgrey! text-white! text-normal! px-5!" />
 
-            />
-
-            <Button
-                v-if="canGoNext"
-                type="button"
-                icon="bi bi-arrow-right"
-                class="bg-accent! border-0! hover:bg-darkgrey! text-white! text-normal! px-5!"
-                @click="nextStep"
-            />
+            <Button v-if="canGoNext" type="button" icon="bi bi-arrow-right"
+                class="bg-accent! border-0! hover:bg-darkgrey! text-white! text-normal! px-5!" @click="nextStep" />
         </div>
     </div>
 </template>

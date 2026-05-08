@@ -8,10 +8,12 @@ import { useAuthStore } from '@/stores/auth';
 import { useUiOverlayStore } from '@/stores/uiOverlay';
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
+import useEmailDocumentsDialog from '@/composables/useEmailDocumentsDialog'
 import type { DataTableOptions } from '@/types/datatable'
 
 const authStore = useAuthStore();
 const toast = useToast();
+const { openEmailDocumentsDialog } = useEmailDocumentsDialog()
 const branchId = computed(() => authStore.currentBranch?.id ?? null);
 const uiOverlayStore = useUiOverlayStore()
 
@@ -398,6 +400,19 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
     actions: [
         {
+            key: 'email',
+            disabled: ({ selectedRows }: { selectedRows: DocRow[] }) => selectedRows.length === 0,
+            icon: 'bi bi-send',
+            class: 'bg-accent!',
+            tooltip: 'Poslať vybrané dokumenty emailom',
+            handler: async ({ selectedRows, remote }: { selectedRows: DocRow[]; remote: any }) => {
+                await openEmailDocumentsDialog({
+                    documents: selectedRows,
+                    remote,
+                })
+            },
+        },
+        {
             key: 'delete',
             disabled: ({ selectedRows }: { selectedRows: DocRow[] }) => selectedRows.length === 0,
             icon: 'bi bi-eraser',
@@ -419,15 +434,10 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
                 <div class="grid grid-cols-12 gap-4">
                     <div class="col-span-12 md:col-span-3">
                         <label class="block text-normal mb-1">Číslo dávky</label>
-                        <InputText
-                            v-model="batchNumber"
-                            @keydown="onBatchNumberKeydown"
-                            maxlength="6"
+                        <InputText v-model="batchNumber" @keydown="onBatchNumberKeydown" maxlength="6"
                             inputmode="numeric"
                             inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                            class="border-none!"
-                            fluid
-                        />
+                            class="border-none!" fluid />
                         <small v-if="submitted && !batchNumber" class="text-danger">
                             Číslo dávky je povinné.
                         </small>
@@ -435,13 +445,8 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
                     <div class="col-span-12 md:col-span-3">
                         <label class="block text-normal mb-1">Typ dávky</label>
-                        <Select
-                            v-model="batchType"
-                            :options="batchTypes"
-                            optionLabel="name"
-                            fluid
-                            class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                        />
+                        <Select v-model="batchType" :options="batchTypes" optionLabel="name" fluid
+                            class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" />
                         <small v-if="submitted && !batchType" class="text-danger">
                             Typ dávky je povinný.
                         </small>
@@ -449,13 +454,8 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
                     <div class="col-span-12 md:col-span-3">
                         <label class="block text-normal mb-1">Poisťovňa</label>
-                        <Select
-                            v-model="insurance"
-                            :options="insurances"
-                            optionLabel="name"
-                            fluid
-                            class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                        />
+                        <Select v-model="insurance" :options="insurances" optionLabel="name" fluid
+                            class="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!" />
                         <small v-if="submitted && !insurance" class="text-danger">
                             Poisťovňa je povinná.
                         </small>
@@ -463,14 +463,9 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
 
                     <div class="col-span-12 md:col-span-3">
                         <label class="block text-normal mb-1">Obdobie</label>
-                        <DatePicker
-                            v-model="dates"
-                            view="month"
-                            dateFormat="MM yy"
-                            :manualInput="false"
+                        <DatePicker v-model="dates" view="month" dateFormat="MM yy" :manualInput="false"
                             inputClass="w-full! border-none! shadow-none! bg-white! focus:ring-0! focus:shadow-none!"
-                            fluid
-                        />
+                            fluid />
 
                         <small v-if="submitted && !dates" class="text-danger">
                             Obdobie je povinné.
@@ -482,17 +477,9 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
                             Vyhľadajte pacienta
                         </label>
 
-                        <AutoComplete
-                            v-model="selectedPatients"
-                            :suggestions="filteredPatients"
-                            multiple
-                            optionLabel="name"
-                            :minLength="1"
-                            @complete="searchPatients"
-                            :loading="patientsLoading"
-                            fluid
-                            class="w-full"
-                        >
+                        <AutoComplete v-model="selectedPatients" :suggestions="filteredPatients" multiple
+                            optionLabel="name" :minLength="1" @complete="searchPatients" :loading="patientsLoading"
+                            fluid class="w-full">
                             <template #option="slotProps">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-normal text-darkgrey">
@@ -505,32 +492,26 @@ const options = computed<DataTableOptions<DocRow>>(() => ({
                             </template>
 
                             <template #chip="slotProps">
-                                <div
-                                    class="
+                                <div class="
                                         inline-flex items-center gap-2
                                         bg-darkgrey text-lightgrey
                                         px-3 py-1 rounded-md
                                         text-xs sm:text-sm
-                                    "
-                                >
+                                    ">
                                     <span class="pr-2 border-r border-lightgrey truncate max-w-32 sm:max-w-40">
                                         {{ slotProps.value.name }}
                                     </span>
                                     <span class="px-1 sm:px-2 whitespace-nowrap">
                                         {{ slotProps.value.personalNumber }}
                                     </span>
-                                    <i
-                                        class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
-                                        @click.stop="removePatient(slotProps.value)"
-                                    ></i>
+                                    <i class="bi bi-x-lg cursor-pointer text-[0.6rem] sm:text-[0.7rem]"
+                                        @click.stop="removePatient(slotProps.value)"></i>
                                 </div>
                             </template>
                         </AutoComplete>
 
-                        <small
-                            v-if="submitted && isCorrectionBatch && !selectedPatients.length"
-                            class="text-danger block mt-1"
-                        >
+                        <small v-if="submitted && isCorrectionBatch && !selectedPatients.length"
+                            class="text-danger block mt-1">
                             Pri opravnej dávke je potrebné vybrať aspoň jedného pacienta.
                         </small>
                     </div>

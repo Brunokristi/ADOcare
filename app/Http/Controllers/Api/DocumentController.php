@@ -9,6 +9,8 @@ use App\Models\Document;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\DocumentService;
+use App\Http\Controllers\Api\KilometersExportController;
+use App\Http\Controllers\Api\PointsExportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -205,6 +207,19 @@ class DocumentController extends Controller
     {
         if (!Storage::disk('local')->exists($document->path)) {
             abort(404, 'Dokument nebol nájdený');
+        }
+
+        if ($request->query('download') === '1' && in_array($document->type, ['kilometers_batch', 'points_batch'], true)) {
+            $payload = $this->service->buildBatchDownloadPayload($document);
+            if (!$payload) {
+                abort(404, 'TXT súbor pre dávku nebol nájdený');
+            }
+
+            $downloadRequest = Request::create('/', 'POST', $payload);
+
+            return $document->type === 'kilometers_batch'
+                ? app(KilometersExportController::class)->download($downloadRequest)
+                : app(PointsExportController::class)->download($downloadRequest);
         }
 
         if ($request->query('format') === 'html') {

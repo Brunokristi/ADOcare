@@ -17,6 +17,8 @@
             'leave' => 'Prepúšťacia správa',
             'record' => 'Ošetrovateľský záznam',
             'scan' => 'Lekársky nález',
+            'kilometers_batch' => 'Dávka kilometrov',
+            'points_batch' => 'Dávka bodov',
             'invoice' => 'Faktúra',
             'other' => 'Iné',
         ];

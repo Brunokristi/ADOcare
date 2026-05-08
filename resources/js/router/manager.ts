@@ -10,7 +10,7 @@ import type { RouteRecordRaw } from "vue-router";
 import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 import Manager from "@/pages/Manager.vue";
-import Documents from "@/pages/Manager/Documents.vue";
+import TravelDocuments from "@/pages/Manager/TravelDocuments.vue";
 import DataDocuments from "@/pages/Manager/DataDocuments.vue";
 import Invoices from "@/pages/Manager/Invoices.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
@@ -133,9 +133,9 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 meta: { title: 'Vykázané dávky', sidebar: showOnSidebar, navbar: true, link: 'vykázané dávky' },
             },
             {
-                path: 'documents',
-                name: 'manager-overview-documents',
-                component: Documents,
+                path: 'travel',
+                name: 'manager-overview-travel',
+                component: TravelDocuments,
                 meta: { title: 'Cestovné Dokumenty', sidebar: showOnSidebar, navbar: true, link: 'cestovné dokumenty' },
             },
             {

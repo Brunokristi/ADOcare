@@ -19,7 +19,7 @@ import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import DiagnosesPage from "@/pages/Settings/Diagnoses/DiagnosesPage.vue";
 import type { RouteRecordRaw } from "vue-router";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
-import Documents from "@/pages/Manager/Documents.vue";
+import Documents from "@/pages/Manager/TravelDocuments.vue";
 import PlansPage from "@/pages/Settings/Plans/PlansPage.vue";
 import SubscriptionPackagesPage from "@/pages/Settings/Subscriptions/SubscriptionPackagesPage.vue";
 import CompanySubscriptionsPage from "@/pages/Settings/Subscriptions/CompanySubscriptionsPage.vue";
