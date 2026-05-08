@@ -119,7 +119,7 @@ async function openEmailDialog(selectedRows: Document[], remote?: any) {
             markRaw(EmailDocumentsDialog),
             {
                 documents: selectedRows,
-                apiEndpoint: 'v1/documents/travel/company/email',
+                apiEndpoint: 'v1/documents/email',
                 apiMethod: 'post',
                 apiPayload: {},
                 header: 'Odoslať dokumenty emailom',

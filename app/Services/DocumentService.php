@@ -121,17 +121,30 @@ class DocumentService
         return $documents;
     }
 
-    public function buildTravelDocumentLinks(array $ids, User $user, int $ttlMinutes = 10080): array
+    /**
+     * Build signed public links for documents the user can view.
+     *
+     * @param array<int> $ids
+     * @param array<int, string>|null $types
+     * @return array<int, array<string, mixed>>
+     */
+    public function buildDocumentLinks(array $ids, User $user, int $ttlMinutes = 10080, ?array $types = null): array
     {
-        $query = Document::query()
-            ->whereIn('id', $ids)
-            ->whereIn('type', ['cp', 'dzc']);
-
-        if ($user->company_id) {
-            $query->whereHas('user', fn($q) => $q->where('company_id', $user->company_id));
+        if (empty($ids)) {
+            return [];
         }
 
-        $documents = $query->get();
+        $query = Document::query()->whereIn('id', $ids);
+
+        if (!empty($types)) {
+            $query->whereIn('type', $types);
+        }
+
+        $documents = $query
+            ->with(['patient.branch', 'branch'])
+            ->get()
+            ->filter(fn(Document $document) => $user->can('view', $document));
+
         if ($documents->isEmpty()) {
             return [];
         }
@@ -145,7 +158,44 @@ class DocumentService
                 'view_link' => $this->generatePublicDocumentLink($document, $ttlMinutes, false),
                 'download_link' => $this->generatePublicDocumentLink($document, $ttlMinutes, true),
             ];
-        })->toArray();
+        })->values()->toArray();
+    }
+
+    /**
+     * Build signed public links for invoices the user can view.
+     *
+     * @param array<int> $ids
+     * @return array<int, array<string, mixed>>
+     */
+    public function buildInvoiceLinks(array $ids, User $user, int $ttlMinutes = 10080): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $invoices = Invoice::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->filter(fn(Invoice $invoice) => $user->can('view', $invoice));
+
+        if ($invoices->isEmpty()) {
+            return [];
+        }
+
+        return $invoices->map(function (Invoice $invoice) use ($ttlMinutes) {
+            $displayName = $invoice->invoice_number
+                ? 'Faktúra ' . $invoice->invoice_number
+                : ($invoice->name ?: 'Faktúra');
+
+            return [
+                'id' => $invoice->id,
+                'name' => $displayName,
+                'type' => 'invoice',
+                'period' => $invoice->period,
+                'view_link' => $this->generatePublicInvoiceLink($invoice, $ttlMinutes, false),
+                'download_link' => $this->generatePublicInvoiceLink($invoice, $ttlMinutes, true),
+            ];
+        })->values()->toArray();
     }
 
     public function sendEmail(string $to, string $subject, string $view, array $viewData): void
@@ -162,6 +212,23 @@ class DocumentService
 
         return URL::temporarySignedRoute(
             'documents.public',
+            now()->addMinutes($ttlMinutes),
+            $parameters
+        );
+    }
+
+    /**
+     * Generate a signed public link for invoice preview or download.
+     */
+    public function generatePublicInvoiceLink(Invoice $invoice, int $ttlMinutes = 10080, bool $download = false): string
+    {
+        $parameters = ['invoice' => $invoice->id];
+        if ($download) {
+            $parameters['download'] = 1;
+        }
+
+        return URL::temporarySignedRoute(
+            'invoices.public',
             now()->addMinutes($ttlMinutes),
             $parameters
         );

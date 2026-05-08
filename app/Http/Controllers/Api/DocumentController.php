@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Filters\ApiQuery;
+use App\Http\Requests\SendDocumentsEmailRequest;
 use App\Models\Document;
 use App\Models\Patient;
+use App\Models\User;
 use App\Services\DocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -301,21 +303,56 @@ class DocumentController extends Controller
     }
 
     /**
-     * Email travel document links.
+     * Email document and invoice links.
      *
      * @group Documents
      * @bodyParam email string required Recipient email. Example: user@example.com
-     * @bodyParam ids integer[] required Document IDs. Example: [1,2,3]
+     * @bodyParam ids integer[] optional Document IDs. Example: [1,2,3]
+     * @bodyParam invoice_ids integer[] optional Invoice IDs. Example: [10,11]
+     * @response 200 {"data":{"documents_count":2,"invoices_count":1,"total_count":3},"message":"Email bol úspešne odoslaný"}
      */
-    public function emailTravelDocuments(Request $request)
+    public function emailDocuments(SendDocumentsEmailRequest $request)
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer'],
-        ]);
+        $user = $request->user();
+        if (!$user) {
+            return $this->error('Používateľ nie je autentifikovaný', 401);
+        }
 
-        $user = Auth::user();
+        $validated = $request->validated();
+        $documents = $this->service->buildDocumentLinks($validated['ids'] ?? [], $user);
+        $invoices = $this->service->buildInvoiceLinks($validated['invoice_ids'] ?? [], $user);
+        $items = array_merge($documents, $invoices);
+
+        if (empty($items)) {
+            return $this->error('Neboli nájdené žiadne dokumenty ani faktúry, ku ktorým máte prístup', 404);
+        }
+
+        $this->sendDocumentsEmail($user, $validated['email'], $items, 'Dokumenty');
+
+        return $this->success([
+            'documents_count' => count($documents),
+            'invoices_count' => count($invoices),
+            'total_count' => count($items),
+        ], 'Email bol úspešne odoslaný');
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $documents
+     */
+    private function sendDocumentsEmail(User $user, string $to, array $documents, string $subjectPrefix): void
+    {
+        $viewData = $this->buildDocumentsEmailViewData($user, $to, $documents);
+        $subject = $subjectPrefix . ' - ' . ($viewData['companyName'] ?: 'ADOcare');
+
+        $this->service->sendEmail($to, $subject, 'emails.document_links', $viewData);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $documents
+     * @return array<string, mixed>
+     */
+    private function buildDocumentsEmailViewData(User $user, string $to, array $documents): array
+    {
         $user->loadMissing('company', 'branches.company');
 
         $senderName = trim(implode(' ', array_filter([
@@ -326,32 +363,17 @@ class DocumentController extends Controller
 
         // Primary source is user's company relation, fallback to company from first assigned branch.
         $company = $user->company ?? $user->branches->first()?->company;
-        $companyName = $company?->name;
 
-        $documents = $this->service->buildTravelDocumentLinks($validated['ids'], $user);
-
-        if (empty($documents)) {
-            return $this->error('Neboli nájdené žiadne dokumenty, ku ktorým máte prístup', 404);
-        }
-
-        $to = $validated['email'];
-        $subject = 'Cestovné dokumenty - ' . ($companyName ?: 'ADOcare');
-        $viewData = [
+        return [
             'recipientName' => $to,
             'senderName' => $senderName ?: ($user->email ?? ''),
-            'companyName' => $companyName,
+            'companyName' => $company?->name,
             'companyAddress' => $company?->address,
             'companyCity' => $company?->city,
             'companyEmail' => $company?->email,
             'companyPhone' => $company?->phone,
             'documents' => $documents,
         ];
-
-        $this->service->sendEmail($to, $subject, 'emails.document_links', $viewData);
-
-        return $this->success([
-            'documents_count' => count($documents),
-        ], 'Email bol úspešne odoslaný');
     }
 
     /**

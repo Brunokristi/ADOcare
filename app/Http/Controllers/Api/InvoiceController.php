@@ -195,6 +195,44 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Public, signed access to an invoice PDF.
+     *
+     * @group Invoices
+     * @urlParam invoice int required Invoice ID. Example: 1
+     * @queryParam format string optional Set to html for preview. Example: html
+     * @queryParam download int optional Set to 1 for file download. Example: 1
+     */
+    public function publicInvoice(Request $request, Invoice $invoice)
+    {
+        if ($request->query('format') === 'html') {
+            $payload = $this->readDocumentJson($invoice->path);
+            if (!is_array($payload) || !array_key_exists('company_register', $payload)) {
+                abort(404, 'Náhľad faktúry nie je dostupný');
+            }
+
+            return response()->view('pdf.invoice', [
+                'invoiceData' => $payload,
+            ])->header('Content-Type', 'text/html; charset=utf-8');
+        }
+
+        $pdfPath = app(DocumentService::class)->getInvoicePdfPath($invoice);
+        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+            abort(500, 'Chyba pri generovaní PDF faktúry');
+        }
+
+        $downloadName = 'faktúra_' . $invoice->invoice_number . '.pdf';
+        $absolutePath = Storage::disk('local')->path($pdfPath);
+
+        if ($request->query('download') === '1') {
+            return response()->download($absolutePath, $downloadName);
+        }
+
+        return response()->file($absolutePath, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
      * Get a signed public preview URL for invoice.
      */
     public function previewUrl(Request $request, Invoice $invoice)
