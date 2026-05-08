@@ -159,7 +159,7 @@ class SendCarMaintenanceNotifications extends Command
         }
 
         $lines[] = '';
-        $lines[] = 'S pozdravom';
+        $lines[] = 'S pozdravom,';
         $lines[] = 'ADOcare';
 
         return implode("\n", $lines);

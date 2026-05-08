@@ -73,7 +73,7 @@ class Company extends Model
 
     public function users()
     {
-        return $this->hasManyThrough(User::class, Branch::class, 'company_id', 'id', 'id', 'id');
+        return $this->hasMany(User::class);
     }
 
     public function representative()

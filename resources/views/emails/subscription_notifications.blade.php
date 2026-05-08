@@ -7,7 +7,7 @@
 
     <p>
         zasielame upozornenie na predplatné spoločnosti
-        <strong>{{ $companyName ?? 'Neznáma spoločnosť' }}</strong>.
+        <strong>{{ $companyName ?? 'Neznáma spoločnosť' }}</strong>
     </p>
 
     @if(!empty($items) && is_array($items))
@@ -21,5 +21,6 @@
         </ul>
     @endif
 
-    <p>S pozdravom<br>ADOcare</p>
+    <p>S pozdravom,</p>
+    <p>ADOcare</p>
 @endsection

@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import axios from 'axios'
 import Button from 'primevue/button'
 import SplitButton from 'primevue/splitbutton'
+import AdonisButton from '@/components/AdonisButton.vue'
 import api from '@/services/api'
 
 export interface DownloadOption {
@@ -28,6 +29,8 @@ export interface ActionButton {
     tooltip?: string
     disabled?: boolean
     loading?: boolean
+    adonis?: boolean
+    compact?: boolean
 }
 
 export interface Props {
@@ -92,21 +95,16 @@ const topLevelOptions = computed<DownloadOption[]>(() => {
 function getOptionLabel(option: DownloadOption): string {
     if (option.label) return option.label
     if (option.fileType) return option.fileType
-    const path = option.url.split('?')[0]
-    return path.split('/').pop() || 'Download'
-}
-
-function buttonLabelForOptions(options: DownloadOption[]): string {
-    if (!options.length) return 'Download'
-    return getOptionLabel(options[0])
+    const path = option.url.split('?')[0] ?? ''
+    return path.split('/').pop() ?? 'Download'
 }
 
 function splitMenuItems(options: DownloadOption[]) {
     if (options.length <= 1) return []
 
     return options.slice(1).map((option) => ({
-        label: getOptionLabel(option),
-        command: () => download(option),
+        label: getOptionLabel(option!),
+        command: () => download(option!),
     }))
 }
 
@@ -114,7 +112,7 @@ function makeFilename(option: DownloadOption): string {
     if (option.filename) return option.filename
     const extension = option.fileType
         ? option.fileType.replace(/\./g, '').toLowerCase()
-        : option.url.split('?')[0].split('.').pop() ?? 'bin'
+        : (option.url.split('?')[0]?.split('.').pop() ?? 'bin')
 
     return `download.${extension}`
 }
@@ -160,7 +158,7 @@ function getFilenameFromResponse(response: any): string | null {
     const match = /filename\*?=([^;]+)/i.exec(contentDisposition)
     if (!match) return null
 
-    let filename = match[1].trim()
+    let filename = match[1]!.trim()
     filename = filename.replace(/^(UTF-8'')/, '')
     filename = filename.replace(/['"]+/g, '')
     return decodeURIComponent(filename)
@@ -221,6 +219,7 @@ async function download(option: DownloadOption) {
 }
 
 const previewWidthStyle = computed(() => props.previewWidth || '210mm')
+const firstTopLevelOption = computed(() => topLevelOptions.value[0])
 
 watch(
     () => props.previewUrl,
@@ -268,17 +267,6 @@ function injectIframePrintStyles(doc: Document) {
 
     style.textContent = `
     @media print {
-      html, body {
-        height: auto !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      body * {
-        overflow: visible !important;
-      }
-
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -318,74 +306,63 @@ function onActionClick(actionId: string) {
 
 <template>
     <div class="flex flex-col gap-4">
-        <div class="flex flex-wrap justify-between gap-3 items-center no-print">
+        <div class="bg-tag2 border-t border-darkgrey py-2 px-3 -mt-8 -mx-8 sticky -top-8 z-10 flex flex-wrap justify-between gap-3 items-center no-print">
             <div v-if="props.showTitle" class="flex flex-col gap-1">
-                <div class="text-lg font-bold">{{ props.title }}</div>
+                <div class="text-normal text-white">{{ props.title }}</div>
                 <div v-if="props.subtitle" class="text-slate-500 text-sm">{{ props.subtitle }}</div>
             </div>
 
             <div class="flex gap-2 items-center relative">
                 <div v-for="action in props.actions" :key="action.id" class="relative">
-                    <Button :icon="action.icon" :title="action.tooltip || action.label"
-                        :disabled="action.disabled || action.loading" :loading="action.loading"
-                        class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-                        @click="onActionClick(action.id)" />
+                    <AdonisButton
+                        v-if="action.adonis"
+                        :icon="action.icon"
+                        :label="action.label"
+                        :disabled="action.disabled || action.loading"
+                        :loading="action.loading"
+                        :title="action.tooltip || action.label"
+                        @click="onActionClick(action.id)"
+                    />
+
+                    <Button
+                        v-else
+                        :icon="action.icon"
+                        :title="action.tooltip || action.label"
+                        :disabled="action.disabled || action.loading"
+                        :loading="action.loading"
+                        class="bg-darkgrey! border-darkgrey! hover:bg-white! hover:border-white! hover:text-darkgrey! h-7!"
+                        @click="onActionClick(action.id)"
+                    />
                 </div>
 
                 <div v-if="topLevelOptions.length" class="relative">
                     <template v-if="topLevelOptions.length === 1">
-                        <Button icon="bi bi-download" title="Download"
-                            class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                        <Button icon="bi bi-file-earmark-pdf" title="Download" 
+                            class="download-button bg-darkgrey! border-darkgrey! hover:bg-white! hover:border-white! hover:text-darkgrey! h-7!"
                             :loading="isDownloading" :disabled="isDownloading || !topLevelOptions.length"
-                            @click="download(topLevelOptions[0])" />
+                            @click="firstTopLevelOption && download(firstTopLevelOption)" />
                     </template>
                     <template v-else>
-                        <SplitButton icon="bi bi-download" :model="splitMenuItems(topLevelOptions)"
-                            class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                        <SplitButton icon="bi bi-download" :model="splitMenuItems(topLevelOptions)" 
+                            class="download-button bg-darkgrey! border-darkgrey! hover:bg-white! hover:border-white! hover:text-darkgrey! h-7!"
                             :loading="isDownloading" :disabled="isDownloading || !topLevelOptions.length"
-                            @click="download(topLevelOptions[0])" />
+                            @click="firstTopLevelOption && download(firstTopLevelOption)" />
                     </template>
                 </div>
 
                 <Button v-if="props.showPrintButton" icon="bi bi-printer" title="Print"
-                    class="bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
+                    class="bg-darkgrey! border-darkgrey! hover:bg-white! hover:border-white! hover:text-darkgrey! h-7!"
                     @click="printPage" />
             </div>
         </div>
 
         <section class="flex flex-col gap-4">
-            <div v-if="props.files?.length" class="flex flex-col gap-3">
-                <div v-for="(file, index) in props.files" :key="file.title || index"
-                    class="flex justify-between items-center gap-4 p-4 border border-slate-300 rounded-2xl bg-slate-50">
-                    <div class="flex flex-col gap-1">
-                        <div class="font-semibold">{{ file.title }}</div>
-                        <div v-if="file.description" class="text-slate-500 text-sm">{{ file.description }}</div>
-                    </div>
-
-                    <div class="relative">
-                        <template v-if="file.downloads.length === 1">
-                            <Button icon="bi bi-download" title="Download"
-                                class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-                                :disabled="isDownloading || !file.downloads?.length"
-                                @click="download(file.downloads[0])" />
-                        </template>
-                        <template v-else>
-                            <SplitButton icon="bi bi-download" :model="splitMenuItems(file.downloads)"
-                                class="download-button bg-accent! border-accent! hover:bg-darkgrey! hover:border-darkgrey! h-7!"
-                                :disabled="isDownloading || !file.downloads?.length"
-                                @click="download(file.downloads[0])" />
-                        </template>
-                    </div>
-                </div>
-            </div>
 
             <div v-if="props.previewUrl" id="document-shell-print" class="w-full flex justify-center">
                 <iframe ref="iframeRef" :src="props.previewUrl" title="Document preview" frameborder="0" scrolling="no"
                     class="w-full overflow-hidden shadow-lg"
                     :style="{ maxWidth: previewWidthStyle, height: iframeHeight }" @load="onIframeLoad"></iframe>
             </div>
-
-
         </section>
 
         <div v-if="downloadError" class="text-red-700 text-sm no-print">

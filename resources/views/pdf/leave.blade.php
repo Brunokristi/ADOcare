@@ -146,7 +146,7 @@
             OŠETROVATEĽSKÁ PREPÚŠŤACIA SPRÁVA
         </div>
 
-        <!-- PATIENT INFO -->
+        <!-- PATIENT + NURSE INFO -->
         <table>
             <tbody>
                 <tr>
@@ -159,15 +159,8 @@
                         <strong>{{ $leaveData['patient_birth_number'] ?? '' }}</strong>
                     </td>
                 </tr>
-            </tbody>
-        </table>
-
-        <!-- NURSE INFO -->
-        <table>
-            <tbody>
                 <tr>
                     <td style="width: 50%;">
-
                         Dátum:<br />
                         <strong>
                             @if (!empty($leaveData['date']))
@@ -176,16 +169,14 @@
                         </strong>
                     </td>
                     <td style="width: 50%;">
-
                         Zdravotný pracovník:<br />
                         <strong>{{ $leaveData['user_name'] ?? '' }}</strong>
                     </td>
-
                 </tr>
             </tbody>
         </table>
 
-        <!-- NURSING SECTION -->
+        <!-- NURSING + FINDINGS + RESULTS + EDUCATION + RECEIVED -->
         <table>
             <tbody>
                 <tr>
@@ -202,50 +193,26 @@
                         @endif
                     </td>
                 </tr>
-            </tbody>
-        </table>
-
-        <!-- OTHER FINDINGS -->
-        <table>
-            <tbody>
                 <tr>
-                    <td>
+                    <td colspan="2">
                         <strong>Iné zistenia:</strong><br />
                         {{ $leaveData['other_findings'] ?? '' }}
                     </td>
                 </tr>
-            </tbody>
-        </table>
-
-        <!-- RESULTS -->
-        <table>
-            <tbody>
                 <tr>
-                    <td class="text-justify">
+                    <td colspan="2" class="text-justify">
                         <strong>Vyhodnotenie výsledkov ošetrovateľskej starostlivosti:</strong><br />
                         {{ $leaveData['results'] ?? '' }}
                     </td>
                 </tr>
-            </tbody>
-        </table>
-
-        <!-- EDUCATION -->
-        <table>
-            <tbody>
                 <tr>
-                    <td class="text-justify">
+                    <td colspan="2" class="text-justify">
                         <strong>Realizovaná edukácia o:</strong><br />
                         {{ $leaveData['education'] ?? '' }}
                     </td>
                 </tr>
-            </tbody>
-        </table>
-
-        <!-- RECEIVED ITEMS -->
-        <table>
-            <tbody>
                 <tr>
-                    <td>
+                    <td colspan="2">
                         <strong>Pacient pri ukončení hospitalizácie prevzal:</strong><br />
                         {{ $leaveData['received'] ?? '' }}
                     </td>
@@ -265,8 +232,7 @@
                     @endif
                 </div>
                 <div class="line"></div>
-                <div>{{ $leaveData['user_name'] ?? '' }}</div>
-                <div style="font-size: 10px;">podpis sestry</div>
+                <div style="font-size: 15px;">{{ $leaveData['user_name'] ?? '' }}</div>
             </div>
         </div>
     </div>

@@ -93,7 +93,7 @@ const downloadFiles = computed<FileItem[]>(() => {
         description: `Davka č. ${payload.value.batchNumber}`,
         downloads: [{
             filename: fileName,
-            url: '/api/v1/batches/points/download',
+            url: '/v1/batches/points/download',
             method: 'post',
             payload: buildDownloadPayloadFromStored(payload.value),
             fileType: 'TXT',
@@ -104,8 +104,48 @@ const downloadFiles = computed<FileItem[]>(() => {
 
     return [item]
 })
+
+const actions = computed(() => [
+    {
+        id: 'download-batch',
+        label: 'Stiahnuť dáta dávky',
+        icon: 'bi bi-download',
+        adonis: true,
+    },
+])
+
+async function handleActionClick(actionId: string) {
+    if (actionId !== 'download-batch') return
+    if (!payload.value) return
+
+    const fileName = payload.value.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
+
+    try {
+        const res = await api.post('/v1/batches/points/download', buildDownloadPayloadFromStored(payload.value), {
+            responseType: 'blob',
+            headers: { Accept: 'text/plain' },
+        })
+
+        const blob = new Blob([res.data], { type: 'text/plain' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(url), 100)
+    } catch (err) {
+        console.error('Failed to download batch:', err)
+    }
+}
 </script>
 
 <template>
-    <DocumentShell title="Sprievodný list" :previewUrl="previewUrl" :files="downloadFiles" :showPrintButton="true" />
+    <DocumentShell
+        title="Dávka bodov"
+        :previewUrl="previewUrl"
+        :files="downloadFiles"
+        :actions="actions"
+        :showPrintButton="true"
+        @actionClick="handleActionClick"
+    />
 </template>
