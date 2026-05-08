@@ -51,6 +51,13 @@ type InvoicePayload = {
     updated_at: string
 }
 
+const props = defineProps<{
+    publicData?: any,
+    isPublic?: boolean,
+    signature?: string,
+    expires?: string
+}>()
+
 const route = useRoute()
 const uiOverlayStore = useUiOverlayStore()
 
@@ -142,6 +149,11 @@ function formatCurrency(value: number) {
 }
 
 async function loadInvoice() {
+    if (props.isPublic && props.publicData) {
+        invoice.value = props.publicData.payload
+        return
+    }
+
     if (!documentId.value) return
 
     loading.value = true
@@ -205,7 +217,7 @@ watchEffect(() => {
                             <div>
                                 <div class="text-2xl font-bold uppercase mb-2">
                                     {{ invoice.type === 'credit_note' ? 'Dobropis' : (invoice.type === 'debit_note' ?
-                                    'Ťarchopis' : 'Faktúra') }}
+                                        'Ťarchopis' : 'Faktúra') }}
                                 </div>
                                 <div class=" mb-1">
                                     Faktúra číslo: <strong>{{ invoice.invoice_number || '' }}</strong>

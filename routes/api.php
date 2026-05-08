@@ -78,6 +78,16 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+
+Route::get('/public/documents/{document}/data', [DocumentController::class, 'publicDocumentData'])
+    ->name('documents.public.data')
+    ->middleware('signed');
+
+Route::get('/public/invoices/{invoice}/data', [InvoiceController::class, 'publicInvoiceData'])
+    ->name('invoices.public.data')
+    ->middleware('signed');
+
+
 Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(function () {
 
     Route::macro('apiResourceComplete', function ($name, $controller, ?string $middleware = null, ?string $readMiddleware = null) {

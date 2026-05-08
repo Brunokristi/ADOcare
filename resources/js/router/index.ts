@@ -4,6 +4,7 @@ import nures from './nurse';
 import managerRoutes from './manager';
 import superadminRoutes from './superadmin';
 import generalRoutes from './general';
+import publicRoutes from './public';
 import { computed } from 'vue';
 import { isSubscriptionExpired } from '@/utils/subscription';
 
@@ -13,6 +14,7 @@ export const navigationAccessError = ref(false)
 
 const routes = [
     ...generalRoutes,
+    ...publicRoutes,
     ...nures,
     ...managerRoutes,
     ...superadminRoutes,

@@ -204,9 +204,21 @@ class InvoiceController extends Controller
      */
     public function publicInvoice(Request $request, Invoice $invoice)
     {
+        if ($request->query('download') === '1') {
+            $pdfPath = app(DocumentService::class)->getInvoicePdfPath($invoice);
+            if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+                abort(500, 'Chyba pri generovaní PDF faktúry');
+            }
+
+            $downloadName = 'faktúra_' . $invoice->invoice_number . '.pdf';
+            $absolutePath = Storage::disk('local')->path($pdfPath);
+
+            return response()->download($absolutePath, $downloadName);
+        }
+
         if ($request->query('format') === 'html') {
             $payload = $this->readDocumentJson($invoice->path);
-            if (!is_array($payload) || !array_key_exists('company_register', $payload)) {
+            if (!is_array($payload)) {
                 abort(404, 'Náhľad faktúry nie je dostupný');
             }
 
@@ -215,20 +227,45 @@ class InvoiceController extends Controller
             ])->header('Content-Type', 'text/html; charset=utf-8');
         }
 
-        $pdfPath = app(DocumentService::class)->getInvoicePdfPath($invoice);
-        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            abort(500, 'Chyba pri generovaní PDF faktúry');
+        // Request expires is a string time stamp, convert to int for URL generation
+        $expires = is_numeric($request->query('expires')) ? (int) $request->query('expires') : null;
+
+        if (!$expires) {
+            abort(400, 'Neplatný alebo chýbajúci parameter expires');
         }
 
-        $downloadName = 'faktúra_' . $invoice->invoice_number . '.pdf';
-        $absolutePath = Storage::disk('local')->path($pdfPath);
+        // Generate the signature specifically for the DATA endpoint to pass to the SPA
+        $dataUrl = URL::temporarySignedRoute(
+            'invoices.public.data',
+            \Carbon\Carbon::createFromTimestamp($expires),
+            ['invoice' => $invoice->id]
+        );
 
-        if ($request->query('download') === '1') {
-            return response()->download($absolutePath, $downloadName);
+        $query = [];
+        parse_str(parse_url($dataUrl, PHP_URL_QUERY), $query);
+
+        return redirect()->route('spa', [
+            'any' => "public/invoices/{$invoice->id}",
+            'signature' => $query['signature'] ?? null,
+            'expires' => $expires,
+        ]);
+    }
+
+    /**
+     * Get data for a public invoice.
+     */
+    public function publicInvoiceData(Invoice $invoice)
+    {
+        $payload = $this->readDocumentJson($invoice->path);
+        if (!is_array($payload)) {
+            abort(404, 'Údaje faktúry nie sú dostupné');
         }
 
-        return response()->file($absolutePath, [
-            'Content-Type' => 'application/pdf',
+        return $this->success([
+            'id' => $invoice->id,
+            'type' => 'invoice',
+            'name' => $invoice->name,
+            'payload' => $payload,
         ]);
     }
 

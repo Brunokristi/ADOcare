@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\PointsExportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class DocumentController extends Controller
 {
@@ -209,17 +210,29 @@ class DocumentController extends Controller
             abort(404, 'Dokument nebol nájdený');
         }
 
-        if ($request->query('download') === '1' && in_array($document->type, ['kilometers_batch', 'points_batch'], true)) {
-            $payload = $this->service->buildBatchDownloadPayload($document);
-            if (!$payload) {
-                abort(404, 'TXT súbor pre dávku nebol nájdený');
+        if ($request->query('download') === '1') {
+            if (in_array($document->type, ['kilometers_batch', 'points_batch'], true)) {
+                $payload = $this->service->buildBatchDownloadPayload($document);
+                if (!$payload) {
+                    abort(404, 'TXT súbor pre dávku nebol nájdený');
+                }
+
+                $downloadRequest = Request::create('/', 'POST', $payload);
+
+                return $document->type === 'kilometers_batch'
+                    ? app(KilometersExportController::class)->download($downloadRequest)
+                    : app(PointsExportController::class)->download($downloadRequest);
             }
 
-            $downloadRequest = Request::create('/', 'POST', $payload);
+            $pdfPath = $this->service->getTravelDocumentPdfPath($document);
+            if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
+                abort(500, 'Chyba pri generovaní PDF dokumentu');
+            }
 
-            return $document->type === 'kilometers_batch'
-                ? app(KilometersExportController::class)->download($downloadRequest)
-                : app(PointsExportController::class)->download($downloadRequest);
+            $filePath = Storage::disk('local')->path($pdfPath);
+            $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+
+            return response()->download($filePath, $downloadName);
         }
 
         if ($request->query('format') === 'html') {
@@ -233,20 +246,47 @@ class DocumentController extends Controller
             abort(404, 'Náhľad dokumentu nie je dostupný');
         }
 
-        $pdfPath = $this->service->getTravelDocumentPdfPath($document);
-        if (!$pdfPath || !Storage::disk('local')->exists($pdfPath)) {
-            abort(500, 'Chyba pri generovaní PDF dokumentu');
+        // Request expires is a string time stamp, convert to int for URL generation
+        $expires = is_numeric($request->query('expires')) ? (int) $request->query('expires') : null;
+
+        if (!$expires) {
+            abort(400, 'Neplatný nebo chybějící parameter expires');
         }
 
-        $filePath = Storage::disk('local')->path($pdfPath);
-        $downloadName = pathinfo($document->name, PATHINFO_FILENAME) . '.pdf';
+        // Generate the signature specifically for the DATA endpoint to pass to the SPA
+        // Passing Carbon ensures Laravel uses it as an absolute timestamp
+        $dataUrl = URL::temporarySignedRoute(
+            'documents.public.data',
+            \Carbon\Carbon::createFromTimestamp($expires),
+            ['document' => $document->id]
+        );
 
-        if ($request->query('download') === '1') {
-            return response()->download($filePath, $downloadName);
+        $query = [];
+        parse_str(parse_url($dataUrl, PHP_URL_QUERY), $query);
+
+        return redirect()->route('spa', [
+            'any' => "public/documents/{$document->id}",
+            'signature' => $query['signature'] ?? null,
+            'expires' => $expires,
+        ]);
+    }
+
+
+    /**
+     * Get data for a public document.
+     */
+    public function publicDocumentData(Document $document)
+    {
+        $preview = $this->service->getDocumentPreviewData($document);
+        if (!$preview) {
+            abort(404, 'Údaje dokumentu nie sú dostupné');
         }
 
-        return response()->file($filePath, [
-            'Content-Type' => 'application/pdf',
+        return $this->success([
+            'id' => $document->id,
+            'type' => $document->type,
+            'name' => $document->name,
+            'payload' => $preview['data'],
         ]);
     }
     /**
