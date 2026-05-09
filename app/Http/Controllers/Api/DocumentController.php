@@ -211,6 +211,12 @@ class DocumentController extends Controller
         }
 
         if ($request->query('download') === '1') {
+            $format = $request->query('format', 'pdf');
+
+            if ($format === 'csv' && $document->type === 'dzc') {
+                return app(DZCDocumentController::class)->exportCsv($document);
+            }
+
             if (in_array($document->type, ['kilometers_batch', 'points_batch'], true)) {
                 $payload = $this->service->buildBatchDownloadPayload($document);
                 if (!$payload) {
@@ -246,15 +252,14 @@ class DocumentController extends Controller
             abort(404, 'Náhľad dokumentu nie je dostupný');
         }
 
-        // Request expires is a string time stamp, convert to int for URL generation
+        // Request expires is a string timestamp, convert to int for URL generation
         $expires = is_numeric($request->query('expires')) ? (int) $request->query('expires') : null;
 
         if (!$expires) {
-            abort(400, 'Neplatný nebo chybějící parameter expires');
+            abort(400, 'Neplatný alebo chýbajúci parameter expires');
         }
 
         // Generate the signature specifically for the DATA endpoint to pass to the SPA
-        // Passing Carbon ensures Laravel uses it as an absolute timestamp
         $dataUrl = URL::temporarySignedRoute(
             'documents.public.data',
             \Carbon\Carbon::createFromTimestamp($expires),

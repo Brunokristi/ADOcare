@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 
 // We'll use a dynamic component approach to reuse existing "Show" components
-import DocumentInvoiceShow from '@/pages/Documents/InvoiceShow.vue'
+import DocumentInvoice from '@/pages/Documents/Invoice.vue'
 import DocumentPointsShow from '@/pages/Documents/PointsShow.vue'
 import DocumentKilometersShow from '@/pages/Documents/KilometersShow.vue'
 import DocumentCP from '@/pages/Documents/CP.vue'
@@ -14,6 +14,7 @@ import DocumentAgreement from '@/pages/Documents/Agreement.vue'
 import DocumentLeave from '@/pages/Documents/Leave.vue'
 import DocumentRecord from '@/pages/Documents/Record.vue'
 import DocumentNalez from '@/pages/Documents/Nalez.vue'
+import DocumentDekurz from '@/pages/Documents/Dekurz.vue'
 
 const route = useRoute()
 const loading = ref(true)
@@ -34,10 +35,10 @@ onMounted(async () => {
 async function loadData() {
     loading.value = true
     error.value = null
-    
+
     const id = route.params.documentId
     const baseUrl = isInvoice.value ? `/api/public/invoices/${id}/data` : `/api/public/documents/${id}/data`
-    
+
     try {
         const response = await axios.get(baseUrl, {
             params: {
@@ -45,7 +46,7 @@ async function loadData() {
                 expires: expires.value
             }
         })
-        
+
         documentData.value = response.data.data
         documentType.value = isInvoice.value ? 'invoice' : documentData.value.type
     } catch (err: any) {
@@ -58,9 +59,9 @@ async function loadData() {
 
 const activeComponent = computed(() => {
     if (!documentType.value) return null
-    
+
     switch (documentType.value) {
-        case 'invoice': return DocumentInvoiceShow
+        case 'invoice': return DocumentInvoice
         case 'points_batch': return DocumentPointsShow
         case 'kilometers_batch': return DocumentKilometersShow
         case 'cp': return DocumentCP
@@ -70,14 +71,15 @@ const activeComponent = computed(() => {
         case 'leave': return DocumentLeave
         case 'record': return DocumentRecord
         case 'scan': return DocumentNalez
+        case 'dekurz': return DocumentDekurz
         default: return null
     }
 })
 
-// We need to provide the data to the components. 
+// We need to provide the data to the components.
 // Most components currently fetch their own data using route.params.documentId.
 // We'll need to refactor them slightly or "mock" the API they use.
-// For now, let's see if we can pass it via props if they support it, 
+// For now, let's see if we can pass it via props if they support it,
 // OR use a Provider/Injection pattern.
 </script>
 
@@ -87,7 +89,7 @@ const activeComponent = computed(() => {
             <i class="bi bi-arrow-repeat animate-spin text-4xl text-accent mb-4"></i>
             <p class="text-gray-600">Načítavam dokument...</p>
         </div>
-        
+
         <div v-else-if="error" class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md border-t-4 border-danger">
             <h1 class="text-2xl font-bold text-danger mb-4">Chyba</h1>
             <p class="text-gray-700 mb-6">{{ error }}</p>
@@ -95,15 +97,10 @@ const activeComponent = computed(() => {
                 Ak si myslíte, že ide o chybu, kontaktujte odosielateľa.
             </div>
         </div>
-        
+
         <div v-else class="max-w-5xl mx-auto">
-            <component 
-                :is="activeComponent" 
-                :public-data="documentData"
-                :is-public="true"
-                :signature="signature"
-                :expires="expires"
-            />
+            <component :is="activeComponent" :public-data="documentData" :is-public="true" :signature="signature"
+                :expires="expires" />
         </div>
     </div>
 </template>

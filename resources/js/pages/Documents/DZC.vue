@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
+import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
 import DocumentShell from '@/components/DocumentShell.vue'
 import api from '@/services/api'
 
+const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
-const { previewUrl, loadPreview } = useDocumentPreviewLoader()
 
-onMounted(() => {
-    loadPreview(`/v1/dzcs/${route.params.documentId}/preview`)
+const { previewUrl, getPublicLink, documentId } = usePublicDocument(props, {
+    privatePreviewUrl: `/v1/dzcs/${route.params.documentId}/preview`
 })
 
 const actions = computed(() => [
@@ -48,9 +48,14 @@ function saveBlob(data: BlobPart, mimeType: string, filename: string) {
 }
 
 async function handleActionClick(actionId: string) {
-    const id = String(route.params.documentId)
+    const id = String(documentId.value)
 
     if (actionId === 'download-pdf') {
+        if (props.isPublic && props.signature) {
+            window.open(getPublicLink({ download: true, format: 'pdf' }), '_blank')
+            return
+        }
+
         try {
             const res = await api.get(`/v1/dzcs/${id}/download`, {
                 responseType: 'blob',
@@ -68,6 +73,11 @@ async function handleActionClick(actionId: string) {
     }
 
     if (actionId === 'download-csv') {
+        if (props.isPublic && props.signature) {
+            window.open(getPublicLink({ download: true, format: 'csv' }), '_blank')
+            return
+        }
+
         try {
             const res = await api.get(`/v1/dzcs/${id}/csv`, {
                 responseType: 'blob',
@@ -84,5 +94,6 @@ async function handleActionClick(actionId: string) {
 </script>
 
 <template>
-    <DocumentShell title="Denný záznam ciest" :previewUrl="previewUrl" :actions="actions" :showPrintButton="true" @actionClick="handleActionClick" />
+    <DocumentShell title="Denný záznam ciest" :previewUrl="previewUrl" :actions="actions" :showPrintButton="true"
+        @actionClick="handleActionClick" />
 </template>

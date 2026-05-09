@@ -1,19 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
-import DocumentShell from '@/components/DocumentShell.vue'
-
-type DownloadOption = {
-    label?: string
-    url: string
-    method?: 'get' | 'post'
-    payload?: Record<string, any>
-    filename?: string
-    contentType?: string
-    fileType?: string
-}
+import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
+import DocumentShell, { type FileItem } from '@/components/DocumentShell.vue'
 
 type KilometersBatchPayload = {
     document_id: number
@@ -37,37 +27,13 @@ type KilometersBatchPayload = {
     }
 }
 
+const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
-const documentId = computed(() => Number(route.params.documentId))
 
-const loading = ref(false)
-const payload = ref<KilometersBatchPayload | null>(null)
-const { previewUrl, loadPreview } = useDocumentPreviewLoader()
-
-onMounted(async () => {
-    loading.value = true
-    loadPayload()
-    try {
-        await loadPreview(`/v1/kilometers-batches/${documentId.value}/preview`)
-    } finally {
-        loading.value = false
-    }
+const { data: payload, loading, previewUrl, getPublicLink } = usePublicDocument<KilometersBatchPayload>(props, {
+    privateDataUrl: `/v1/kilometers-batches/${route.params.documentId}`,
+    privatePreviewUrl: `/v1/kilometers-batches/${route.params.documentId}/preview`
 })
-
-watchEffect(() => {
-    // Overlay loading state is handled by composable, but keep this for payload loading indicator
-    // Could be removed if not needed
-})
-
-async function loadPayload() {
-    try {
-        const res = await api.get(`/v1/kilometers-batches/${documentId.value}`)
-        payload.value = (res.data?.data?.kilometers_batch ?? null) as KilometersBatchPayload | null
-    } catch (error) {
-        console.error('Failed to load kilometers batch payload:', error)
-        payload.value = null
-    }
-}
 
 function buildDownloadPayloadFromStored(p: KilometersBatchPayload) {
     return {
@@ -82,7 +48,7 @@ function buildDownloadPayloadFromStored(p: KilometersBatchPayload) {
     }
 }
 
-const files = computed((): Array<{ title: string; description?: string; downloads: DownloadOption[] }> => {
+const files = computed<FileItem[]>(() => {
     if (!payload.value) return []
 
     const fileName = payload.value.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
@@ -93,9 +59,9 @@ const files = computed((): Array<{ title: string; description?: string; download
             description: 'Vykázaný súbor',
             downloads: [
                 {
-                    url: '/v1/batches/kilometers/download',
-                    method: 'post',
-                    payload: buildDownloadPayloadFromStored(payload.value),
+                    url: props.isPublic ? getPublicLink({ download: true, format: 'txt' }) : '/v1/batches/kilometers/download',
+                    method: props.isPublic ? 'get' : 'post',
+                    payload: props.isPublic ? undefined : buildDownloadPayloadFromStored(payload.value),
                     fileType: 'TXT',
                     contentType: 'text/plain',
                     filename: fileName,
@@ -120,6 +86,11 @@ async function handleActionClick(actionId: string) {
 
     const fileName = payload.value.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
 
+    if (props.isPublic) {
+        window.open(getPublicLink({ download: true, format: 'txt' }), '_blank')
+        return
+    }
+
     try {
         const res = await api.post('/v1/batches/kilometers/download', buildDownloadPayloadFromStored(payload.value), {
             responseType: 'blob',
@@ -140,12 +111,6 @@ async function handleActionClick(actionId: string) {
 </script>
 
 <template>
-    <DocumentShell
-        title="Dávka kilometre"
-        :previewUrl="previewUrl"
-        :files="files"
-        :actions="actions"
-        :showPrintButton="true"
-        @actionClick="handleActionClick"
-    />
+    <DocumentShell title="Dávka kilometre" :previewUrl="previewUrl" :files="files" :actions="actions"
+        :showPrintButton="true" @actionClick="handleActionClick" />
 </template>

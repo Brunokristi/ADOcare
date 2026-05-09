@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { useUiOverlayStore } from '@/stores/uiOverlay'
+import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
 
 type AssociatedDocument = {
     branch_code: string
@@ -51,19 +52,15 @@ type InvoicePayload = {
     updated_at: string
 }
 
-const props = defineProps<{
-    publicData?: any,
-    isPublic?: boolean,
-    signature?: string,
-    expires?: string
-}>()
-
+const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
 const uiOverlayStore = useUiOverlayStore()
 
-const loading = ref(false)
-const invoice = ref<InvoicePayload | null>(null)
+const { data, loading } = usePublicDocument(props, {
+    privateDataUrl: `/v1/invoices/${route.params.documentId}`
+})
 
+const invoice = computed(() => data.value as InvoicePayload | null)
 const documentId = computed(() => Number(route.params.documentId))
 
 const formattedTotal = computed(() => {
@@ -149,31 +146,12 @@ function formatCurrency(value: number) {
 }
 
 async function loadInvoice() {
-    if (props.isPublic && props.publicData) {
-        invoice.value = props.publicData.payload
-        return
-    }
-
-    if (!documentId.value) return
-
-    loading.value = true
-
-    try {
-        const res = await api.get(`/v1/invoices/${documentId.value}`)
-        invoice.value = res.data?.data ?? null
-    } catch (err) {
-        console.error('Failed to load invoice', err)
-        invoice.value = null
-    } finally {
-        loading.value = false
-    }
+    // Handled by composable
 }
 
 function printPage() {
     window.print()
 }
-
-onMounted(loadInvoice)
 
 watchEffect(() => {
     uiOverlayStore.setContentLoading(loading.value)

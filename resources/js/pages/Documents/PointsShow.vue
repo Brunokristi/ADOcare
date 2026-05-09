@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
+import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
 import DocumentShell, { type FileItem } from '@/components/DocumentShell.vue'
-
-
 
 type PointsBatchPayload = {
     document_id: number
@@ -28,36 +26,13 @@ type PointsBatchPayload = {
     }
 }
 
+const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
-const documentId = computed(() => Number(route.params.documentId))
 
-const loading = ref(false)
-const payload = ref<PointsBatchPayload | null>(null)
-const { previewUrl, loadPreview } = useDocumentPreviewLoader()
-
-onMounted(async () => {
-    loading.value = true
-    try {
-        await loadPreview(`/v1/points-batches/${documentId.value}/preview`)
-    } finally {
-        await loadPayload()
-        loading.value = false
-    }
+const { data: payload, loading, previewUrl, getPublicLink } = usePublicDocument<PointsBatchPayload>(props, {
+    privateDataUrl: `/v1/points-batches/${route.params.documentId}`,
+    privatePreviewUrl: `/v1/points-batches/${route.params.documentId}/preview`
 })
-
-watchEffect(() => {
-    // Keep this if needed for additional UI feedback, or remove if not
-})
-
-async function loadPayload() {
-    try {
-        const res = await api.get(`/v1/points-batches/${documentId.value}`)
-        payload.value = (res.data?.data?.points_batch ?? null) as PointsBatchPayload | null
-    } catch (error) {
-        console.error('Failed to load points batch payload:', error)
-        payload.value = null
-    }
-}
 
 function buildDownloadPayloadFromStored(p: PointsBatchPayload) {
     return {
@@ -72,19 +47,7 @@ function buildDownloadPayloadFromStored(p: PointsBatchPayload) {
     }
 }
 
-
-// const downloadOptions = computed<DownloadOption[]>(() => {
-//     return [
-//         {
-//             url: `/api/v1/points-batches/${documentId.value}/download`,
-//             fileType: 'PDF',
-//             contentType: 'application/pdf',
-//         }
-//     ]
-// })
-
 const downloadFiles = computed<FileItem[]>(() => {
-
     if (!payload.value) return []
 
     const fileName = payload.value?.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
@@ -93,12 +56,11 @@ const downloadFiles = computed<FileItem[]>(() => {
         description: `Davka č. ${payload.value.batchNumber}`,
         downloads: [{
             filename: fileName,
-            url: '/v1/batches/points/download',
-            method: 'post',
-            payload: buildDownloadPayloadFromStored(payload.value),
+            url: props.isPublic ? getPublicLink({ download: true, format: 'txt' }) : '/v1/batches/points/download',
+            method: props.isPublic ? 'get' : 'post',
+            payload: props.isPublic ? undefined : buildDownloadPayloadFromStored(payload.value),
             fileType: 'TXT',
             contentType: 'text/plain',
-
         }]
     }
 
@@ -120,6 +82,11 @@ async function handleActionClick(actionId: string) {
 
     const fileName = payload.value.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
 
+    if (props.isPublic) {
+        window.open(getPublicLink({ download: true, format: 'txt' }), '_blank')
+        return
+    }
+
     try {
         const res = await api.post('/v1/batches/points/download', buildDownloadPayloadFromStored(payload.value), {
             responseType: 'blob',
@@ -140,12 +107,6 @@ async function handleActionClick(actionId: string) {
 </script>
 
 <template>
-    <DocumentShell
-        title="Dávka bodov"
-        :previewUrl="previewUrl"
-        :files="downloadFiles"
-        :actions="actions"
-        :showPrintButton="true"
-        @actionClick="handleActionClick"
-    />
+    <DocumentShell title="Dávka bodov" :previewUrl="previewUrl" :files="downloadFiles" :actions="actions"
+        :showPrintButton="true" @actionClick="handleActionClick" />
 </template>

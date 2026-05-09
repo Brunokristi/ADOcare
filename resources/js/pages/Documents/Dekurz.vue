@@ -1,23 +1,17 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useDocumentPreviewLoader } from '@/composables/useDocumentPreviewLoader'
+import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
 import DocumentShell from '@/components/DocumentShell.vue'
 
+const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
-const { previewUrl, loadPreview } = useDocumentPreviewLoader()
 
-onMounted(() => {
-    loadPreview(`/v1/dekurz/${route.params.documentId}/preview`)
+const { previewUrl, downloadOptions } = usePublicDocument(props, {
+    privatePreviewUrl: `/v1/dekurz/${route.params.documentId}/preview`,
+    privateDownloadUrl: `/api/v1/dekurz/${route.params.documentId}/download`
 })
 </script>
 
 <template>
-    <DocumentShell title="Dekurz" :previewUrl="previewUrl" :downloadOptions="[
-        {
-            url: `/api/v1/dekurz/${route.params.documentId}/download`,
-            fileType: 'PDF',
-            contentType: 'application/pdf',
-        },
-    ]" :showPrintButton="true" />
+    <DocumentShell title="Dekurz" :previewUrl="previewUrl" :downloadOptions="downloadOptions" :showPrintButton="true" />
 </template>
