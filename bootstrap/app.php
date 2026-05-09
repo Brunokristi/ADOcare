@@ -90,6 +90,37 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 return $response->error($message, $status, $errors);
             }
+
+            // Render HTML errors through the universal Slovak error view
+            $status = 500;
+            if (method_exists($e, 'getStatusCode')) {
+                $status = $e->getStatusCode();
+            }
+
+            $title = match ($status) {
+                404 => 'Stránka sa nenašla',
+                403 => 'Prístup zakázaný',
+                401 => 'Bez autentifikácie',
+                default => 'Serverová chyba',
+            };
+
+            $message = match ($status) {
+                404 => 'Požadovanú stránku sa nám nepodarilo nájsť.',
+                403 => 'Nemáte povolenie na prístup k tejto stránke.',
+                401 => 'Musíte sa prihlásiť, aby ste mohli pokračovať.',
+                default => 'Nastala neočakávaná chyba na strane servera.',
+            };
+
+            if (method_exists($e, 'getMessage') && $e->getMessage()) {
+                $title .= ' (' . $e->getMessage() . ')';
+            }
+
+            return response()->view('errors.error', [
+                'code' => $status,
+                'title' => $title,
+                'message' => $message,
+                'exception' => $e,
+            ], $status);
         });
 
 
