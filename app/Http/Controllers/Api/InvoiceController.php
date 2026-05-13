@@ -72,7 +72,9 @@ class InvoiceController extends Controller
                 }
 
                 // Guard: keep only one invoice per (type, period, insurance company) within actor's company.
-                $this->deletePreviousScopedInvoices($actor, $validated);
+                if (!$this->isNoteType((string) $validated['type'])) {
+                    $this->deletePreviousScopedInvoices($actor, $validated);
+                }
 
                 $jsonPath = sprintf(
                     'invoices/invoice_%s_%s_%s.json',
@@ -113,7 +115,6 @@ class InvoiceController extends Controller
                 }
 
                 $payload = $this->buildInvoicePayload($invoice, $actor);
-                dump($payload, $invoice->path);
                 Storage::disk('local')->put($invoice->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
                 return $invoice;
