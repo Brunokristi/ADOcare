@@ -65,6 +65,28 @@ class PatientPointController extends Controller
             $validated['user_id'] = $request->user()->id;
         }
 
+        // Look up procedure_id from procedure_code if not provided
+        if (!isset($validated['procedure_id']) || !$validated['procedure_id']) {
+            $procedureId = DB::table('procedures')
+                ->where('code', $validated['procedure_code'])
+                ->value('id');
+
+            if ($procedureId) {
+                $validated['procedure_id'] = $procedureId;
+            }
+        }
+
+        // Look up diagnosis_id from diagnosis_code if not provided
+        if (!isset($validated['diagnosis_id']) || !$validated['diagnosis_id']) {
+            $diagnosisId = DB::table('diagnoses')
+                ->where('code', $validated['diagnosis_code'])
+                ->value('id');
+
+            if ($diagnosisId) {
+                $validated['diagnosis_id'] = $diagnosisId;
+            }
+        }
+
         $point = PatientPoint::create($validated);
 
         // (Optional) make consistent with macros:
