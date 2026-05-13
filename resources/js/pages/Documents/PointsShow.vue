@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
+import { useAuthStore } from '@/stores/auth'
 import DocumentShell, { type FileItem } from '@/components/DocumentShell.vue'
 
 type PointsBatchPayload = {
@@ -29,36 +30,63 @@ type PointsBatchPayload = {
 const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
 
-const { data: payload, loading, previewUrl, getPublicLink } = usePublicDocument<PointsBatchPayload>(props, {
+const authStore = useAuthStore()
+
+const { data: payload, previewUrl, getPublicLink } = usePublicDocument<PointsBatchPayload>(props, {
     privateDataUrl: `/v1/points-batches/${route.params.documentId}`,
     privatePreviewUrl: `/v1/points-batches/${route.params.documentId}/preview`
 })
 
+const stored = computed(() => {
+    if (!payload.value) return null
+    // controller returns { document, points_batch } — unwrap when present
+    // otherwise payload.value may already be the points batch
+    // support both shapes for robustness
+    // @ts-ignore
+    return (payload.value.points_batch ?? payload.value) as PointsBatchPayload | null
+})
+
 function buildDownloadPayloadFromStored(p: PointsBatchPayload) {
+    // Use stored company id when available, otherwise fall back to current user's branch company id
+    const companyId = p.company?.id ?? authStore.currentBranch?.company_id ?? null
+
+    // Coerce numeric fields to integers and normalize dates to yyyy-mm-dd
+    const batchNumber = Number(p.batchNumber) || 0
+    const insuranceId = Number(p.insurance?.id) || 0
+    const userId = Number(p.user?.id) || Number(authStore.user?.id) || 0
+    const branchId = Number(p.branch?.id) || Number(authStore.currentBranch?.id) || 0
+    const normalizedPeriod = (p.period ?? []).map((d) => {
+        try {
+            return new Date(d).toISOString().slice(0, 10)
+        } catch (e) {
+            return d
+        }
+    })
+
     return {
-        batchNumber: p.batchNumber,
+        batchNumber: batchNumber,
         batchType: { code: p.batchType?.code ?? 'N' },
-        insurance: { id: p.insurance?.id ?? 0 },
-        period: p.period ?? [],
-        user: { id: p.user?.id },
-        branch: { id: p.branch?.id },
-        company: { id: p.company?.id ?? null },
-        patients: (p.patients ?? []).map((x) => ({ id: x.id })),
+        insurance: { id: insuranceId },
+        period: normalizedPeriod,
+        user: { id: userId },
+        branch: { id: branchId },
+        company: { id: companyId },
+        patients: (p.patients ?? []).map((x) => ({ id: Number(x.id) })),
     }
 }
 
 const downloadFiles = computed<FileItem[]>(() => {
-    if (!payload.value) return []
+    if (!stored.value) return []
 
-    const fileName = payload.value?.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
+    const fileName = stored.value?.meta?.fileName ?? `davka.${stored.value.batchNumber}.txt`
     const item: FileItem = {
         title: fileName,
-        description: `Davka č. ${payload.value.batchNumber}`,
+        description: `Davka č. ${payload.value?.batchNumber}`,
         downloads: [{
             filename: fileName,
             url: props.isPublic ? getPublicLink({ download: true, format: 'txt' }) : '/v1/batches/points/download',
             method: props.isPublic ? 'get' : 'post',
-            payload: props.isPublic ? undefined : buildDownloadPayloadFromStored(payload.value),
+            payload: props.isPublic ? undefined : buildDownloadPayloadFromStored(stored.value!),
             fileType: 'TXT',
             contentType: 'text/plain',
         }]
@@ -78,9 +106,9 @@ const actions = computed(() => [
 
 async function handleActionClick(actionId: string) {
     if (actionId !== 'download-batch') return
-    if (!payload.value) return
+    if (!stored.value) return
 
-    const fileName = payload.value.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
+    const fileName = stored.value.meta?.fileName ?? `davka.${stored.value.batchNumber}.txt`
 
     if (props.isPublic) {
         window.open(getPublicLink({ download: true, format: 'txt' }), '_blank')
@@ -88,7 +116,7 @@ async function handleActionClick(actionId: string) {
     }
 
     try {
-        const res = await api.post('/v1/batches/points/download', buildDownloadPayloadFromStored(payload.value), {
+        const res = await api.post('/v1/batches/points/download', buildDownloadPayloadFromStored(stored.value!), {
             responseType: 'blob',
             headers: { Accept: 'text/plain' },
         })

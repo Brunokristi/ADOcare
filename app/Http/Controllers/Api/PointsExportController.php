@@ -126,6 +126,12 @@ class PointsExportController extends Controller
 
     public function download(Request $request)
     {
+        logger()->info('PointsExportController::download called', [
+            'payload' => $request->all(),
+            'raw' => $request->getContent(),
+            'headers' => $request->headers->all(),
+        ]);
+
         $data = $request->validate([
             'batchNumber' => 'required|integer',
             'batchType.code' => 'required|string|in:N,O,I,E,F',
