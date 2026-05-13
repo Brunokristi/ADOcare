@@ -274,17 +274,42 @@ async function onSubmit() {
                 patientIds: JSON.stringify(sheet.patients ?? []),
             },
         });
-    } catch (error) {
-        console.error('Generation failed', error);
+    } catch (error: any) {
+        console.error('Generation failed', error)
+
+        const errors = error?.response?.data?.errors?.kilometers_export
+
+        if (Array.isArray(errors) && errors.length) {
+            errors.slice(0, 8).forEach((message: string) => {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Chýbajúce údaje',
+                    detail: message,
+                    life: 8000,
+                })
+            })
+
+            if (errors.length > 8) {
+                toast.add({
+                    severity: 'warn',
+                    summary: 'Ďalšie chyby',
+                    detail: `Našlo sa ešte ${errors.length - 8} ďalších chýb. Skontrolujte údaje pacientov, lekárov, prevádzky a poisťovne.`,
+                    life: 8000,
+                })
+            }
+
+            return
+        }
+
         toast.add({
             severity: 'error',
             summary: 'Chyba',
-            detail: 'Nepodarilo sa vygenerovať kilometre.',
+            detail: error?.response?.data?.message ?? 'Nepodarilo sa vygenerovať kilometre.',
             life: 4000,
         })
     } finally {
-        uiOverlayStore.setContentLoading(false)
-    }
+            uiOverlayStore.setContentLoading(false)
+        }
 }
 
 const formatLocalDate = (date: Date) => {

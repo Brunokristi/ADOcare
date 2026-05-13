@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
@@ -32,8 +32,9 @@ const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
 
 const authStore = useAuthStore()
+const validationErrors = ref<string[]>([])
 
-const { data: payload, loading, previewUrl, getPublicLink } = usePublicDocument<KilometersBatchPayload>(props, {
+const { data: payload, previewUrl, getPublicLink } = usePublicDocument<KilometersBatchPayload>(props, {
     privateDataUrl: `/v1/kilometers-batches/${route.params.documentId}`,
     privatePreviewUrl: `/v1/kilometers-batches/${route.params.documentId}/preview`
 })
@@ -106,6 +107,7 @@ async function handleActionClick(actionId: string) {
     if (actionId !== 'download-batch') return
     if (!stored.value) return
 
+    validationErrors.value = []
     const fileName = stored.value.meta?.fileName ?? `davka.${stored.value.batchNumber}.txt`
 
     if (props.isPublic) {
@@ -126,13 +128,33 @@ async function handleActionClick(actionId: string) {
         a.download = fileName
         a.click()
         setTimeout(() => URL.revokeObjectURL(url), 100)
-    } catch (err) {
-        console.error('Failed to download kilometers batch:', err)
+    } catch (err: any) {
+        // Handle validation errors from backend
+        const errorData = err?.response?.data
+        if (errorData?.errors) {
+            validationErrors.value = Object.values(errorData.errors).flat() as string[]
+            console.error('Validation errors:', validationErrors.value)
+        } else if (errorData?.message) {
+            validationErrors.value = [errorData.message]
+            console.error('Download error:', errorData.message)
+        } else {
+            console.error('Failed to download kilometers batch:', err)
+        }
     }
 }
 </script>
 
 <template>
-    <DocumentShell title="Dávka kilometre" :previewUrl="previewUrl" :files="files" :actions="actions"
-        :showPrintButton="true" @actionClick="handleActionClick" />
+    <div class="flex flex-col gap-4">
+        <div v-if="validationErrors.length > 0" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <p class="font-bold mb-2">Chyba pri sťahovaní dávky:</p>
+            <ul class="list-disc list-inside">
+                <li v-for="(error, idx) in validationErrors" :key="idx" class="text-sm">
+                    {{ error }}
+                </li>
+            </ul>
+        </div>
+        <DocumentShell title="Dávka kilometre" :previewUrl="previewUrl" :files="files" :actions="actions"
+            :showPrintButton="true" @actionClick="handleActionClick" />
+    </div>
 </template>

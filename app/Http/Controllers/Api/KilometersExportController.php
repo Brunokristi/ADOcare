@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class KilometersExportController extends Controller
 {
@@ -71,6 +72,8 @@ class KilometersExportController extends Controller
                 'pp.id',
                 'pp.patient_id',
                 'pp.date',
+                'p.first_name',
+                'p.last_name',
                 'b.latitude as branch_lat',
                 'b.longitude as branch_lng',
                 'p.latitude as patient_lat',
@@ -81,6 +84,9 @@ class KilometersExportController extends Controller
             ->orderBy('pp.patient_id')
             ->orderBy('pp.id')
             ->get();
+                        
+        $this->validateKilometersRowsForPreview($rows);
+
 
         if ($rows->isEmpty()) {
             Log::warning('Kilometers preview: no rows matched query');
@@ -299,6 +305,16 @@ class KilometersExportController extends Controller
             ])
             ->get();
 
+        $this->validateKilometersDownloadData(
+            rows: $rows,
+            company: $company,
+            branch: $branch,
+            user: $user,
+            workingTime: $workingTime,
+            insuranceBranchCode: $insuranceBranchCode,
+            userCar: $userCar,
+        );
+
         $visitedAddressesPerDay = [];
         $kilometersPerRow = [];
 
@@ -466,6 +482,8 @@ class KilometersExportController extends Controller
                 'pp.id',
                 'pp.patient_id',
                 'pp.date',
+                'p.first_name',
+                'p.last_name',
                 'b.latitude as branch_lat',
                 'b.longitude as branch_lng',
                 'p.latitude as patient_lat',
@@ -476,6 +494,8 @@ class KilometersExportController extends Controller
             ->orderBy('pp.patient_id')
             ->orderBy('pp.id')
             ->get();
+
+        $this->validateKilometersRowsForPreview($rows);
 
         $visitedAddressesPerDay = [];
 
@@ -667,5 +687,131 @@ class KilometersExportController extends Controller
         }
 
         return $normalized;
+    }
+
+    private function validateKilometersRowsForPreview($rows): void
+    {
+        $errors = [];
+
+        if ($rows->isEmpty()) {
+            $errors[] = 'Nenašli sa žiadne výkony pre zadané filtre.';
+        }
+
+        foreach ($rows as $row) {
+            $patientName = $this->formatPatientName($row);
+
+            $this->addMissingError($errors, $row->branch_lat, "Chýba GPS latitude prevádzky pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->branch_lng, "Chýba GPS longitude prevádzky pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->patient_lat, "Chýba GPS latitude pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->patient_lng, "Chýba GPS longitude pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->price, "Chýba cena výkonu 0000 pre pacienta {$patientName}.");
+        }
+
+        $this->throwKilometersValidationErrors($errors);
+    }
+
+    private function validateKilometersDownloadData(
+        $rows,
+        $company,
+        $branch,
+        $user,
+        $workingTime,
+        $insuranceBranchCode,
+        $userCar,
+    ): void {
+        $errors = [];
+
+        if ($rows->isEmpty()) {
+            $errors[] = 'Nenašli sa žiadne výkony pre zadané filtre.';
+        }
+
+        $this->addMissingError($errors, $company?->ico ?? null, 'Chýba IČO spoločnosti.');
+        $this->addMissingError($errors, $company?->name ?? null, 'Chýba názov spoločnosti.');
+
+        $this->addMissingError($errors, $branch?->identificator ?? null, 'Chýba identifikátor prevádzky.');
+        $this->addMissingError($errors, $branch?->code ?? null, 'Chýba kód prevádzky.');
+
+        $this->addMissingError($errors, $user?->code ?? null, 'Chýba kód používateľa.');
+        $this->addMissingError($errors, $workingTime, 'Chýba pracovný čas používateľa na prevádzke.');
+        $this->addMissingError($errors, $insuranceBranchCode, 'Chýba kód pobočky poisťovne.');
+        $this->addMissingError($errors, $userCar, 'Chýba EČV vozidla používateľa.');
+
+        foreach ($rows as $row) {
+            $patientName = $this->formatPatientName($row);
+
+            $this->addMissingError($errors, $row->personal_number, "Chýba rodné číslo pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->last_name, "Chýba priezvisko pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->first_name, "Chýba meno pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->sex, "Chýba pohlavie pacienta {$patientName}.");
+
+            $this->addMissingError($errors, $row->patient_city, "Chýba mesto pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->patient_address, "Chýba adresa pacienta {$patientName}.");
+
+            $this->addMissingError($errors, $row->patient_lat, "Chýba GPS latitude pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->patient_lng, "Chýba GPS longitude pacienta {$patientName}.");
+
+            $this->addMissingError($errors, $row->diagnosis_code, "Chýba diagnóza pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->procedure_code, "Chýba kód výkonu pri pacientovi {$patientName}.");
+
+            $this->addMissingError($errors, $row->doctor_pzs, "Chýba PZS lekára pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->doctor_zpr, "Chýba ZPR lekára pri pacientovi {$patientName}.");
+
+            $this->addMissingError($errors, $row->branch_city, "Chýba mesto prevádzky pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->branch_address, "Chýba adresa prevádzky pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->branch_lat, "Chýba GPS latitude prevádzky pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->branch_lng, "Chýba GPS longitude prevádzky pri pacientovi {$patientName}.");
+
+            $this->addMissingError($errors, $row->price, "Chýba cena výkonu 0000 pre pacienta {$patientName}.");
+        }
+
+        $this->throwKilometersValidationErrors($errors);
+    }
+
+    private function addMissingError(array &$errors, mixed $value, string $message): void
+    {
+        if (!$this->isFilledValue($value)) {
+            $errors[] = $message;
+        }
+    }
+
+    private function isFilledValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function formatPatientName(object $row): string
+    {
+        $name = trim(($row->last_name ?? '') . ' ' . ($row->first_name ?? ''));
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        if (!empty($row->patient_id)) {
+            return "#{$row->patient_id}";
+        }
+
+        return 'neznámy pacient';
+    }
+
+    private function throwKilometersValidationErrors(array $errors): void
+    {
+        $errors = array_values(array_unique($errors));
+
+        if (!$errors) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'kilometers_export' => $errors,
+        ]);
     }
 }

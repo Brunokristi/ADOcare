@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PointsExportController extends Controller
 {
@@ -241,6 +242,10 @@ class PointsExportController extends Controller
             ->get();
 
         $rows = collect($this->deduplicateNearbyProcedureRows($rows, 50));
+        
+        // Validate all required data is present before generating file
+        $this->validatePointsDownloadData($rows, $company, $branch, $user, $workingTime, $insuranceBranchCode);
+        
         $rowCount = $rows->count();
 
         $line1 = implode('|', [
@@ -532,5 +537,91 @@ class PointsExportController extends Controller
         }
 
         return $normalized;
+    }
+
+    private function validatePointsDownloadData(
+        $rows,
+        $company,
+        $branch,
+        $user,
+        $workingTime,
+        $insuranceBranchCode,
+    ): void {
+        $errors = [];
+
+        if ($rows->isEmpty()) {
+            $errors[] = 'Nenašli sa žiadne výkony pre zadané filtre.';
+        }
+
+        $this->addMissingError($errors, $company?->ico ?? null, 'Chýba IČO spoločnosti.');
+        $this->addMissingError($errors, $company?->name ?? null, 'Chýba názov spoločnosti.');
+
+        $this->addMissingError($errors, $branch?->identificator ?? null, 'Chýba identifikátor prevádzky.');
+        $this->addMissingError($errors, $branch?->code ?? null, 'Chýba kód prevádzky.');
+
+        $this->addMissingError($errors, $user?->code ?? null, 'Chýba kód používateľa.');
+        $this->addMissingError($errors, $workingTime, 'Chýba pracovný čas používateľa na prevádzke.');
+        $this->addMissingError($errors, $insuranceBranchCode, 'Chýba kód pobočky poisťovne.');
+
+        foreach ($rows as $row) {
+            $patientName = $this->formatPatientName($row);
+
+            $this->addMissingError($errors, $row->personal_number, "Chýba rodné číslo pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->last_name, "Chýba priezvisko pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->first_name, "Chýba meno pacienta {$patientName}.");
+            $this->addMissingError($errors, $row->sex, "Chýba pohlavie pacienta {$patientName}.");
+
+            $this->addMissingError($errors, $row->diagnosis_code, "Chýba diagnóza pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->procedure_code, "Chýba kód výkonu pri pacientovi {$patientName}.");
+
+            $this->addMissingError($errors, $row->doctor_pzs, "Chýba PZS lekára pri pacientovi {$patientName}.");
+            $this->addMissingError($errors, $row->doctor_zpr, "Chýba ZPR lekára pri pacientovi {$patientName}.");
+        }
+
+        $this->throwPointsValidationErrors($errors);
+    }
+
+    private function addMissingError(array &$errors, mixed $value, string $message): void
+    {
+        if (!$this->isFilledValue($value)) {
+            $errors[] = $message;
+        }
+    }
+
+    private function isFilledValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function formatPatientName(object $row): string
+    {
+        $name = trim(($row->last_name ?? '') . ' ' . ($row->first_name ?? ''));
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        return '';
+    }
+
+    private function throwPointsValidationErrors(array $errors): void
+    {
+        $errors = array_values(array_unique($errors));
+
+        if (!$errors) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'points_export' => $errors,
+        ]);
     }
 }

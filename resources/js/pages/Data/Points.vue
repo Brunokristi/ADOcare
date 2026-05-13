@@ -338,8 +338,46 @@ async function onSubmit() {
                 patientIds: JSON.stringify(sheet.patients ?? []),
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Preview or navigation failed', error);
+
+        const errorData = error?.response?.data;
+        const validationErrors = errorData?.errors;
+
+        const messages = Array.isArray(validationErrors?.points_export)
+            ? validationErrors.points_export
+            : validationErrors && typeof validationErrors === 'object'
+                ? Object.values(validationErrors).flat()
+                : [];
+
+        if (messages.length > 0) {
+            messages.slice(0, 8).forEach((message: string) => {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Chýbajúce údaje',
+                    detail: message,
+                    life: 8000,
+                });
+            });
+
+            if (messages.length > 8) {
+                toast.add({
+                    severity: 'warn',
+                    summary: 'Ďalšie chyby',
+                    detail: `Našlo sa ešte ${messages.length - 8} ďalších chýb. Skontrolujte údaje pacientov, lekárov, prevádzky a poisťovne.`,
+                    life: 8000,
+                });
+            }
+
+            return;
+        }
+
+        toast.add({
+            severity: 'error',
+            summary: 'Chyba',
+            detail: errorData?.message ?? 'Nepodarilo sa vygenerovať dávku bodov.',
+            life: 5000,
+        });
     } finally {
         loading.value = false;
     }
