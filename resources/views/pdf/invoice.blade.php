@@ -328,6 +328,16 @@
                     <div><strong>Prílohy:</strong><br />{{ count($nonZeroDocs) }} {{ $attachmentsText }}</div>
                 </div>
             @endif
+        @elseif ($type === 'credit_note' || $type === 'debit_note')
+            <!-- CREDIT/DEBIT NOTE AMOUNT -->
+            <table class="items-table">
+                <tbody>
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">K úhrade</td>
+                        <td class="text-right">{{ formatCurrency($invoiceData['total'] ?? 0) }}</td>
+                    </tr>
+                </tbody>
+            </table>
         @endif
     </div>
 </body>

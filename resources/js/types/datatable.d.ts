@@ -70,6 +70,7 @@ interface DataTableOptions<T = any> {
     actions?: ActionDef<T>[];
     defaultPageSize?: number;
     pageSizeOptions?: number[];
+    sortBy?: string;
     hideSearch?: boolean;
     hidePaginator?: boolean;
     // extra params appended to each request (filters, fixed scope)

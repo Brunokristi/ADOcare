@@ -324,6 +324,9 @@ watch([dateRangeStart, dateRangeEnd], () => {
 
 onMounted(async () => {
     syncDateRangeParams()
+    if (!isLocalMode.value && opt.value.sortBy) {
+        remote.setSort(opt.value.sortBy)
+    }
     if (isLocalMode.value) {
         applyLocalRows()
     } else {

@@ -710,7 +710,7 @@ class ManagerController extends Controller
         $notesNet = $creditNotesTotal + $debitNotesTotal;
         $notesAbsolute = abs($creditNotesTotal) + abs($debitNotesTotal);
         $netRevenue = $invoiceRevenue + $notesNet;
-        $errorPercentage = $invoiceRevenue > 0 ? (abs($debitNotesTotal) / $invoiceRevenue) * 100 : 0;
+        $errorPercentage = $invoiceRevenue > 0 ? (abs($creditNotesTotal) / $invoiceRevenue) * 100 : 0;
 
         $monthlyRows = (clone $invoiceBase)
             ->selectRaw("\n                i.period AS month,\n                SUM(CASE WHEN i.type IN ('procedures', 'transport') THEN i.total ELSE 0 END) AS invoice_revenue,\n                SUM(CASE WHEN i.type = 'credit_note' THEN i.total ELSE 0 END) AS credit_notes_total,\n                SUM(CASE WHEN i.type = 'debit_note' THEN i.total ELSE 0 END) AS debit_notes_total,\n                SUM(CASE WHEN i.type = 'procedures' THEN i.total ELSE 0 END) AS procedures_revenue,\n                SUM(CASE WHEN i.type = 'transport' THEN i.total ELSE 0 END) AS transport_revenue\n            ")
