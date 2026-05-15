@@ -2,425 +2,71 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class KilometersExportController extends Controller
 {
-    private const GROUPING_BUFFER_METERS = 50.0;
+    private const DATA_TYPE = '793n';
+    private const TRANSPORT_TYPE_ADOS = 'ADOS';
+    private const GROUPING_BUFFER_METERS = 100.0;
+    private const SLOVAKIA_COUNTRY_ID = 207;
+    private const ADDRESS_CITY_MAX_LENGTH = 50;
 
     public function preview(Request $request)
     {
-        $data = $request->validate([
-            'batchNumber' => 'required|string',
-            'batchType.code' => 'required|string',
-            'insurance.id' => 'required|integer',
-            'period' => 'required|array|size:2',
-            'period.*' => 'required|date',
+        $data = $this->validateInput($request);
+        $context = $this->buildExportContext($data);
 
-            'user.id' => 'required|integer',
-            'branch.id' => 'required|integer',
-            'company.id' => 'required|integer',
+        $this->validate793nAdosExportContext($context);
 
-            'patients' => 'array',
-            'patients.*.id' => 'integer',
-        ]);
+        $calculatedRows = $this->calculateKilometersForRows($context['rows']);
 
-        $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
-
-        $userId = (int) $data['user']['id'];
-        $branchId = (int) $data['branch']['id'];
-        $companyId = (int) $data['company']['id'];
-        $insuranceId = (int) $data['insurance']['id'];
-
-        $patientIds = collect($data['patients'] ?? [])
-            ->pluck('id')
-            ->map(fn($id) => (int) $id)
-            ->filter(fn($id) => $id > 0)
-            ->values()
-            ->all();
-
-        $amount = 0.0;
-        $totalKilometers = 0.0;
-
-        $rows = DB::table('patient_points as pp')
-            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
-            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
-            ->join('procedures as proc', function ($join) {
-                $join->where('proc.code', '0000');
-            })
-            ->join('procedure_company_prices as pcp', function ($join) {
-                $join->on('pcp.procedure_id', '=', 'proc.id')
-                    ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
-            })
-            ->where('pcp.company_id', $companyId)
-            ->where('pp.user_id', $userId)
-            ->where('pp.branch_id', $branchId)
-            ->where('p.insurance_company_id', $insuranceId)
-            ->whereBetween('pp.date', [$from, $to])
-            ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->select([
-                'pp.id',
-                'pp.patient_id',
-                'pp.date',
-                'p.first_name',
-                'p.last_name',
-                'b.latitude as branch_lat',
-                'b.longitude as branch_lng',
-                'p.latitude as patient_lat',
-                'p.longitude as patient_lng',
-                'pcp.price',
-            ])
-            ->orderBy('pp.date')
-            ->orderBy('pp.patient_id')
-            ->orderBy('pp.id')
-            ->get();
-                        
-        $this->validateKilometersRowsForPreview($rows);
-
-
-        if ($rows->isEmpty()) {
-            Log::warning('Kilometers preview: no rows matched query');
-        }
-
-        $visitedAddressesPerDay = [];
-        $skippedMissingCoords = 0;
-        $calledRouteService = 0;
-
-        foreach ($rows as $row) {
-            if (
-                $row->branch_lat === null || $row->branch_lng === null ||
-                $row->patient_lat === null || $row->patient_lng === null
-            ) {
-                $skippedMissingCoords++;
-
-                Log::warning('Skipping row due to missing coords', [
-                    'pp_id' => $row->id,
-                    'patient_id' => $row->patient_id,
-                    'branch_lat' => $row->branch_lat,
-                    'branch_lng' => $row->branch_lng,
-                    'patient_lat' => $row->patient_lat,
-                    'patient_lng' => $row->patient_lng,
-                ]);
-
-                continue;
-            }
-
-            $dateString = $this->normalizeDateString($row->date);
-            $visitedAddressesPerDay[$dateString] ??= [];
-
-            if ($this->hasNearbyVisitedAddress(
-                $visitedAddressesPerDay[$dateString],
-                (float) $row->patient_lat,
-                (float) $row->patient_lng,
-                self::GROUPING_BUFFER_METERS
-            )) {
-                $distanceKm = 0.0;
-            } else {
-                $calledRouteService++;
-
-                $distanceKm = $this->getDistanceFromRouteService(
-                    (float) $row->branch_lat,
-                    (float) $row->branch_lng,
-                    (float) $row->patient_lat,
-                    (float) $row->patient_lng
-                );
-
-                $visitedAddressesPerDay[$dateString][] = [
-                    'lat' => (float) $row->patient_lat,
-                    'lng' => (float) $row->patient_lng,
-                    'patient_id' => (int) $row->patient_id,
-                    'pp_id' => (int) $row->id,
-                ];
-            }
-
-            $totalKilometers += $distanceKm;
-            $amount += $distanceKm * (float) $row->price;
-        }
-
-        $companyName = DB::table('company')->where('id', $companyId)->value('name');
-
-        $branchName = DB::table('branches')
-            ->where('id', $branchId)
-            ->selectRaw("TRIM(CONCAT(COALESCE(city,''), ', ', COALESCE(address,''))) as name")
-            ->value('name');
-
-        $performedBy = DB::table('users')
-            ->where('id', $userId)
-            ->selectRaw("TRIM(CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,''))) as name")
-            ->value('name');
-
-        $insuranceName = DB::table('insurance_companies')
-            ->where('id', $insuranceId)
-            ->value('name');
+        $totalKilometers = collect($calculatedRows)->sum('kilometers');
+        $amount = collect($calculatedRows)->sum(
+            fn ($row) => (float) $row['kilometers'] * (float) ($row['source']->price ?? 0)
+        );
 
         $sheet = [
-            'batchNumber' => $data['batchNumber'],
-            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'batchNumber' => $context['batchNumber'],
+            'fileName' => "davka.{$context['batchNumber']}.txt",
             'amount' => (string) $amount,
             'kilometers' => round($totalKilometers, 2),
-            'periodFrom' => $from,
-            'periodTo' => $to,
-            'performedBy' => $performedBy ?: "User #{$userId}",
+            'periodFrom' => $context['from'],
+            'periodTo' => $context['to'],
+            'performedBy' => $context['performedBy'],
             'performedDate' => now()->setTimezone('Europe/Bratislava')->toDateString(),
-            'companyName' => $companyName,
-            'branchName' => $branchName,
-            'patients' => $patientIds,
-            'insuranceName' => $insuranceName,
-            'debug' => [
-                'grouping_buffer_meters' => self::GROUPING_BUFFER_METERS,
-                'skipped_missing_coords' => $skippedMissingCoords,
-                'route_service_calls' => $calledRouteService,
-            ],
+            'companyName' => $context['companyName'],
+            'branchName' => $context['branchName'],
+            'insuranceName' => $context['insuranceName'],
+            'patients' => $context['patientIds'],
         ];
 
         return response()->json([
             'success' => true,
             'message' => 'Preview generated',
-            'data' => ['sheet' => $sheet],
+            'data' => [
+                'sheet' => $sheet,
+            ],
         ]);
     }
 
     public function download(Request $request)
     {
-        $data = $request->validate([
-            'batchNumber' => 'required|integer',
-            'batchType.code' => 'required|string|in:N,O',
-            'insurance.id' => 'required|integer',
-            'period' => 'required|array|size:2',
-            'period.*' => 'required|date',
+        $data = $this->validateInput($request);
+        $context = $this->buildExportContext($data);
 
-            'user.id' => 'required|integer',
-            'branch.id' => 'required|integer',
-            'company.id' => 'required|integer',
+        $this->validate793nAdosExportContext($context);
 
-            'patients' => 'array',
-            'patients.*.id' => 'integer',
-        ]);
-
-        $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
-
-        $type = $data['batchType']['code'];
-        $batchNumber = (int) $data['batchNumber'];
-        $userId = (int) $data['user']['id'];
-        $branchId = (int) $data['branch']['id'];
-        $companyId = (int) $data['company']['id'];
-        $insuranceId = (int) $data['insurance']['id'];
-
-        $patientIds = collect($data['patients'] ?? [])
-            ->pluck('id')
-            ->filter()
-            ->values()
-            ->all();
-
-        $company = DB::table('company')
-            ->where('id', $companyId)
-            ->select('id', 'ico', 'name')
-            ->first();
-
-        $branch = DB::table('branches')
-            ->where('id', $branchId)
-            ->select('id', 'code', 'identificator')
-            ->first();
-
-        $user = DB::table('users')
-            ->where('id', $userId)
-            ->select('id', 'code')
-            ->first();
-
-        $workingTime = DB::table('user_branches')
-            ->where('user_id', $userId)
-            ->where('branch_id', $branchId)
-            ->value('working_time');
-
-        $workingTime = $workingTime ?? 0;
-
-        $insuranceBranchCode = DB::table('insurance_companies')
-            ->where('id', $insuranceId)
-            ->value('branch_code');
-
-        $userCar = DB::table('cars')
-            ->where('company_id', $companyId)
-            ->where('user_id', $userId)
-            ->value('evc') ?? '0';
-
-        $termYYYYMM = Carbon::parse($from)->format('Ym');
-        $generatedYmd = now()->setTimezone('Europe/Bratislava')->format('Ymd');
-
-        $rows = DB::table('patient_points as pp')
-            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
-            ->join('doctors as d', 'd.id', '=', 'p.doctor_id')
-            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
-            ->whereColumn('p.nurse_id', 'pp.user_id')
-            ->whereColumn('p.branch_id', 'pp.branch_id')
-            ->join('procedures as proc', function ($join) {
-                $join->where('proc.code', '0000');
-            })
-            ->join('procedure_company_prices as pcp', function ($join) {
-                $join->on('pcp.procedure_id', '=', 'proc.id')
-                    ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
-            })
-            ->where('pcp.company_id', $companyId)
-            ->where('pp.user_id', $userId)
-            ->where('pp.branch_id', $branchId)
-            ->where('p.insurance_company_id', $insuranceId)
-            ->whereBetween('pp.date', [$from, $to])
-            ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->orderBy('pp.date')
-            ->orderBy('pp.patient_id')
-            ->orderBy('pp.id')
-            ->select([
-                'pp.id',
-                'pp.date',
-                'pp.patient_id',
-                'p.personal_number',
-                'p.last_name',
-                'p.first_name',
-                'p.sex',
-                'p.city as patient_city',
-                'p.address as patient_address',
-                'p.latitude as patient_lat',
-                'p.longitude as patient_lng',
-                'pp.diagnosis_code',
-                'pp.procedure_code',
-                'pp.quantity',
-                'd.pzs as doctor_pzs',
-                'd.zpr as doctor_zpr',
-                'b.city as branch_city',
-                'b.address as branch_address',
-                'b.latitude as branch_lat',
-                'b.longitude as branch_lng',
-                'pcp.price',
-            ])
-            ->get();
-
-        $this->validateKilometersDownloadData(
-            rows: $rows,
-            company: $company,
-            branch: $branch,
-            user: $user,
-            workingTime: $workingTime,
-            insuranceBranchCode: $insuranceBranchCode,
-            userCar: $userCar,
-        );
-
-        $visitedAddressesPerDay = [];
-        $kilometersPerRow = [];
-
-        foreach ($rows as $idx => $row) {
-            if (!$this->hasValidCoords($row->branch_lat, $row->branch_lng, $row->patient_lat, $row->patient_lng)) {
-                $kilometersPerRow[$idx] = 0.0;
-                continue;
-            }
-
-            $dateString = $this->normalizeDateString($row->date);
-            $visitedAddressesPerDay[$dateString] ??= [];
-
-            if ($this->hasNearbyVisitedAddress(
-                $visitedAddressesPerDay[$dateString],
-                (float) $row->patient_lat,
-                (float) $row->patient_lng,
-                self::GROUPING_BUFFER_METERS
-            )) {
-                $kilometersPerRow[$idx] = 0.0;
-                continue;
-            }
-
-            $km = $this->getDistanceFromRouteService(
-                (float) $row->branch_lat,
-                (float) $row->branch_lng,
-                (float) $row->patient_lat,
-                (float) $row->patient_lng
-            );
-
-            $visitedAddressesPerDay[$dateString][] = [
-                'lat' => (float) $row->patient_lat,
-                'lng' => (float) $row->patient_lng,
-                'patient_id' => (int) $row->patient_id,
-                'pp_id' => (int) $row->id,
-            ];
-
-            $kilometersPerRow[$idx] = $km;
-        }
-
-        $rowCount = $rows->count();
-
-        $line1 = implode('|', [
-            $type,
-            '793n',
-            $company->ico ?? '',
-            $generatedYmd,
-            $batchNumber,
-            $rowCount,
-            '1',
-            '1',
-            $insuranceBranchCode ?? '',
-            '',
-        ]);
-
-        $line2 = implode('|', [
-            $branch->identificator ?? '',
-            $branch->code ?? '',
-            $user->code ?? '',
-            number_format((float) $workingTime, 2, '.', ''),
-            $termYYYYMM,
-            $batchNumber,
-            'EUR',
-            '',
-        ]);
-
-        $dataLines = [];
-        $i = 1;
-
-        foreach ($rows as $idx => $r) {
-            $dayDD = Carbon::parse($r->date)->format('d');
-            $patientName = $this->toAsciiString(trim(($r->last_name ?? '') . ' ' . ($r->first_name ?? '')));
-            $kilometers = $kilometersPerRow[$idx] ?? 0.0;
-
-            $fields = [
-                $i,
-                $dayDD,
-                $this->toAsciiString($r->personal_number ?? ''),
-                $patientName,
-                $this->toAsciiString($r->diagnosis_code ?? ''),
-                '',
-                '',
-                'ADOS',
-                round($kilometers, 0),
-                $this->toAsciiString($r->branch_city ?? '', 50),
-                $this->toAsciiString($r->branch_address ?? '', 50),
-                $this->toAsciiString($r->patient_city ?? '', 50),
-                $this->toAsciiString($r->patient_address ?? '', 50),
-                $i,
-                $this->toAsciiString($userCar),
-                '0',
-                '',
-                'N',
-                $this->toAsciiString($r->doctor_pzs ?? ''),
-                $this->toAsciiString($r->doctor_zpr ?? ''),
-                'SK',
-                '',
-                $this->toAsciiString($r->sex ?? ''),
-                '',
-            ];
-
-            $dataLines[] = implode('|', $fields);
-            $i++;
-        }
-
-        $content = implode("\r\n", array_merge([$line1, $line2], $dataLines)) . "\r\n";
-        $fileName = "davka.{$batchNumber}.txt";
+        $content = $this->build793nAdosContent($context);
+        $fileName = "davka.{$context['batchNumber']}.txt";
 
         return response()->streamDownload(function () use ($content) {
             echo $content;
@@ -431,150 +77,803 @@ class KilometersExportController extends Controller
 
     public function statementPdf(Request $request)
     {
-        $data = $request->validate([
-            'batchNumber' => 'required|integer',
-            'batchType.code' => 'required|string|in:N,O',
-            'insurance.id' => 'required|integer',
-            'period' => 'required|array|size:2',
-            'period.*' => 'required|date',
-            'user.id' => 'required|integer',
-            'branch.id' => 'required|integer',
-            'company.id' => 'required|integer',
-            'patients' => 'array',
-            'patients.*.id' => 'integer',
-        ]);
+        $data = $this->validateInput($request);
+        $context = $this->buildExportContext($data);
 
-        $from = Carbon::parse($data['period'][0])->setTimezone('Europe/Bratislava')->toDateString();
-        $to = Carbon::parse($data['period'][1])->setTimezone('Europe/Bratislava')->toDateString();
+        $this->validate793nAdosExportContext($context);
 
-        $userId = (int) $data['user']['id'];
-        $branchId = (int) $data['branch']['id'];
-        $companyId = (int) $data['company']['id'];
-        $insuranceId = (int) $data['insurance']['id'];
+        $calculatedRows = $this->calculateKilometersForRows($context['rows']);
 
-        $patientIds = collect($data['patients'] ?? [])
-            ->pluck('id')
-            ->filter()
-            ->values()
-            ->all();
-
-        $amount = 0.0;
-        $totalKilometers = 0.0;
-
-        $rows = DB::table('patient_points as pp')
-            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
-            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
-            ->join('procedures as proc', function ($join) {
-                $join->where('proc.code', '0000');
-            })
-            ->join('procedure_company_prices as pcp', function ($join) {
-                $join->on('pcp.procedure_id', '=', 'proc.id')
-                    ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id');
-            })
-            ->where('pcp.company_id', $companyId)
-            ->where('pp.user_id', $userId)
-            ->where('pp.branch_id', $branchId)
-            ->where('p.insurance_company_id', $insuranceId)
-            ->whereBetween('pp.date', [$from, $to])
-            ->whereIn('pp.procedure_code', ['3439', '3440'])
-            ->when(!empty($patientIds), fn($q) => $q->whereIn('pp.patient_id', $patientIds))
-            ->select([
-                'pp.id',
-                'pp.patient_id',
-                'pp.date',
-                'p.first_name',
-                'p.last_name',
-                'b.latitude as branch_lat',
-                'b.longitude as branch_lng',
-                'p.latitude as patient_lat',
-                'p.longitude as patient_lng',
-                'pcp.price',
-            ])
-            ->orderBy('pp.date')
-            ->orderBy('pp.patient_id')
-            ->orderBy('pp.id')
-            ->get();
-
-        $this->validateKilometersRowsForPreview($rows);
-
-        $visitedAddressesPerDay = [];
-
-        foreach ($rows as $row) {
-            if (!$this->hasValidCoords($row->branch_lat, $row->branch_lng, $row->patient_lat, $row->patient_lng)) {
-                continue;
-            }
-
-            $dateString = $this->normalizeDateString($row->date);
-            $visitedAddressesPerDay[$dateString] ??= [];
-
-            if ($this->hasNearbyVisitedAddress(
-                $visitedAddressesPerDay[$dateString],
-                (float) $row->patient_lat,
-                (float) $row->patient_lng,
-                self::GROUPING_BUFFER_METERS
-            )) {
-                $distanceKm = 0.0;
-            } else {
-                $distanceKm = $this->getDistanceFromRouteService(
-                    (float) $row->branch_lat,
-                    (float) $row->branch_lng,
-                    (float) $row->patient_lat,
-                    (float) $row->patient_lng
-                );
-
-                $visitedAddressesPerDay[$dateString][] = [
-                    'lat' => (float) $row->patient_lat,
-                    'lng' => (float) $row->patient_lng,
-                    'patient_id' => (int) $row->patient_id,
-                    'pp_id' => (int) $row->id,
-                ];
-            }
-
-            $totalKilometers += $distanceKm;
-            $amount += $distanceKm * (float) $row->price;
-        }
-
-        $companyName = DB::table('company')->where('id', $companyId)->value('name');
-
-        $branchName = DB::table('branches')
-            ->where('id', $branchId)
-            ->selectRaw("TRIM(CONCAT(COALESCE(city,''), ', ', COALESCE(address,''))) as name")
-            ->value('name');
-
-        $performedBy = DB::table('users')
-            ->where('id', $userId)
-            ->selectRaw("TRIM(CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,''))) as name")
-            ->value('name');
-
-        $insuranceName = DB::table('insurance_companies')
-            ->where('id', $insuranceId)
-            ->value('name');
+        $totalKilometers = collect($calculatedRows)->sum('kilometers');
+        $amount = collect($calculatedRows)->sum(
+            fn ($row) => (float) $row['kilometers'] * (float) ($row['source']->price ?? 0)
+        );
 
         $sheet = [
-            'batchNumber' => $data['batchNumber'],
-            'fileName' => "davka.{$data['batchNumber']}.txt",
+            'batchNumber' => $context['batchNumber'],
+            'fileName' => "davka.{$context['batchNumber']}.txt",
             'amount' => (string) $amount,
             'kilometers' => round($totalKilometers, 2),
-            'periodFrom' => $from,
-            'periodTo' => $to,
-            'performedBy' => $performedBy ?: "User #{$userId}",
+            'periodFrom' => $context['from'],
+            'periodTo' => $context['to'],
+            'performedBy' => $context['performedBy'],
             'performedDate' => now()->setTimezone('Europe/Bratislava')->toDateString(),
-            'companyName' => $companyName,
-            'branchName' => $branchName,
-            'insuranceName' => $insuranceName,
+            'companyName' => $context['companyName'],
+            'branchName' => $context['branchName'],
+            'insuranceName' => $context['insuranceName'],
             'fileType' => 'vykázané kilometre',
         ];
 
-        $pdf = Pdf::loadView('pdf.statement', ['sheet' => $sheet])->setPaper('a4');
+        $pdf = Pdf::loadView('pdf.statement', [
+            'sheet' => $sheet,
+        ])->setPaper('a4');
+
         $pdfName = "sprievodny_list_{$sheet['batchNumber']}.pdf";
 
         return $pdf->download($pdfName);
     }
 
+    private function validateInput(Request $request): array
+    {
+        return $request->validate([
+            'batchNumber' => ['required', 'regex:/^\d{1,6}$/'],
+            'batchType.code' => ['required', 'string', 'in:N,O'],
+            'insurance.id' => ['required', 'integer'],
+            'period' => ['required', 'array', 'size:2'],
+            'period.*' => ['required', 'date'],
+
+            'user.id' => ['required', 'integer'],
+            'branch.id' => ['required', 'integer'],
+            'company.id' => ['required', 'integer'],
+
+            'patients' => ['nullable', 'array'],
+            'patients.*.id' => ['required_with:patients', 'integer'],
+        ]);
+    }
+
+    private function buildExportContext(array $data): array
+    {
+        $from = $this->parseDateOnly($data['period'][0]);
+        $to = $this->parseDateOnly($data['period'][1]);
+
+        $type = (string) data_get($data, 'batchType.code');
+        $batchNumber = (string) data_get($data, 'batchNumber');
+
+        $userId = (int) data_get($data, 'user.id');
+        $branchId = (int) data_get($data, 'branch.id');
+        $companyId = (int) data_get($data, 'company.id');
+        $insuranceId = (int) data_get($data, 'insurance.id');
+
+        $patientIds = collect(data_get($data, 'patients', []))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
+
+        $company = DB::table('company')
+            ->where('id', $companyId)
+            ->select('id', 'ico', 'name')
+            ->first();
+
+        $branch = DB::table('branches')
+            ->where('id', $branchId)
+            ->select('id', 'code', 'identificator', 'city', 'address')
+            ->first();
+
+        $user = DB::table('users')
+            ->where('id', $userId)
+            ->select('id', 'code', 'first_name', 'last_name')
+            ->first();
+
+        $workingTime = DB::table('user_branches')
+            ->where('user_id', $userId)
+            ->where('branch_id', $branchId)
+            ->value('working_time');
+
+        $insurance = DB::table('insurance_companies')
+            ->where('id', $insuranceId)
+            ->select('id', 'name', 'branch_code')
+            ->first();
+
+        $userCar = DB::table('cars')
+            ->where('company_id', $companyId)
+            ->where('user_id', $userId)
+            ->value('evc');
+
+        $rows = DB::table('patient_points as pp')
+            ->join('patients as p', 'p.id', '=', 'pp.patient_id')
+            ->leftJoin('doctors as d', 'd.id', '=', 'p.doctor_id')
+            ->join('branches as b', 'b.id', '=', 'pp.branch_id')
+            ->leftJoin('countries as c', 'c.id', '=', 'p.country_id')
+            ->leftJoin('procedures as proc', function ($join) {
+                $join->where('proc.code', '=', '0000');
+            })
+            ->leftJoin('procedure_company_prices as pcp', function ($join) use ($companyId) {
+                $join->on('pcp.procedure_id', '=', 'proc.id')
+                    ->on('pcp.insurance_company_id', '=', 'p.insurance_company_id')
+                    ->where('pcp.company_id', '=', $companyId);
+            })
+            ->where('pp.user_id', $userId)
+            ->where('pp.branch_id', $branchId)
+            ->where('p.insurance_company_id', $insuranceId)
+            ->whereColumn('p.nurse_id', 'pp.user_id')
+            ->whereColumn('p.branch_id', 'pp.branch_id')
+            ->whereBetween('pp.date', [$from, $to])
+            ->whereIn('pp.procedure_code', ['3439', '3440'])
+            ->where('p.country_id', self::SLOVAKIA_COUNTRY_ID)
+            ->when(!empty($patientIds), fn ($query) => $query->whereIn('pp.patient_id', $patientIds))
+            ->orderBy('pp.date')
+            ->orderBy('pp.patient_id')
+            ->orderBy('pp.id')
+            ->select([
+                'pp.id',
+                'pp.date',
+                'pp.patient_id',
+                'pp.diagnosis_code',
+                'pp.procedure_code',
+
+                'p.personal_number',
+                'p.last_name',
+                'p.first_name',
+                'p.sex',
+                'p.city as patient_city',
+                'p.address as patient_address',
+                'p.latitude as patient_lat',
+                'p.longitude as patient_lng',
+                'p.country_id',
+                'c.code as country_code',
+
+                'd.pzs as doctor_pzs',
+                'd.zpr as doctor_zpr',
+
+                'b.city as branch_city',
+                'b.address as branch_address',
+                'b.latitude as branch_lat',
+                'b.longitude as branch_lng',
+
+                'pcp.price',
+            ])
+            ->get();
+
+        $rows = $this->normalizeAddressAndCityFields($rows);
+
+        $companyName = $company?->name;
+
+        $branchName = trim(($branch?->city ?? '') . ', ' . ($branch?->address ?? ''));
+        $branchName = trim($branchName, " \t\n\r\0\x0B,");
+
+        $performedBy = trim(($user?->first_name ?? '') . ' ' . ($user?->last_name ?? ''));
+
+        return [
+            'data' => $data,
+            'type' => $type,
+            'batchNumber' => $batchNumber,
+            'from' => $from,
+            'to' => $to,
+
+            'userId' => $userId,
+            'branchId' => $branchId,
+            'companyId' => $companyId,
+            'insuranceId' => $insuranceId,
+            'patientIds' => $patientIds,
+
+            'company' => $company,
+            'branch' => $branch,
+            'user' => $user,
+            'workingTime' => $workingTime,
+            'insurance' => $insurance,
+            'insuranceBranchCode' => $insurance?->branch_code,
+            'userCar' => $userCar,
+
+            'rows' => $rows,
+
+            'companyName' => $companyName,
+            'branchName' => $branchName,
+            'performedBy' => $performedBy !== '' ? $performedBy : "User #{$userId}",
+            'insuranceName' => $insurance?->name,
+        ];
+    }
+
+    private function build793nAdosContent(array $context): string
+    {
+        $type = $context['type'];
+        $batchNumber = $context['batchNumber'];
+        $rows = $context['rows'];
+        $calculatedRows = $this->calculateKilometersForRows($rows);
+
+        $company = $context['company'];
+        $branch = $context['branch'];
+        $user = $context['user'];
+        $workingTime = $context['workingTime'];
+        $insuranceBranchCode = $context['insuranceBranchCode'];
+        $userCar = $context['userCar'];
+
+        $generatedYmd = now()->setTimezone('Europe/Bratislava')->format('Ymd');
+        $termYYYYMM = Carbon::parse($context['from'])->format('Ym');
+
+        $line1Fields = [
+            $this->normalizeCode($type),
+            self::DATA_TYPE,
+            $this->toAsciiString($company->ico ?? ''),
+            $generatedYmd,
+            $batchNumber,
+            $rows->count(),
+            '1',
+            '1',
+            $this->toAsciiString($insuranceBranchCode ?? ''),
+        ];
+
+        $line2Fields = [
+            $this->normalizeCode($branch->identificator ?? ''),
+            $this->normalizeCode($branch->code ?? ''),
+            $this->normalizeCode($user->code ?? ''),
+            number_format((float) $workingTime, 2, '.', ''),
+            $termYYYYMM,
+            $batchNumber,
+            'EUR',
+        ];
+
+        $lines = [
+            $this->formatTextLine($line1Fields, 9, 'Identifikácia dávky 793n musí mať presne 9 polí.'),
+            $this->formatTextLine($line2Fields, 7, 'Záhlavie dávky 793n musí mať presne 7 polí.'),
+        ];
+
+        foreach ($calculatedRows as $index => $calculatedRow) {
+            $bodyFields = $this->build793nAdosBodyFields(
+                row: $calculatedRow['source'],
+                rowNumber: $index + 1,
+                kilometers: (float) $calculatedRow['kilometers'],
+                userCar: (string) $userCar
+            );
+
+            $lines[] = $this->formatTextLine(
+                $bodyFields,
+                23,
+                'Veta tela dávky 793n na riadku ' . ($index + 1) . ' musí mať presne 23 polí.'
+            );
+        }
+
+        return implode("\r\n", $lines) . "\r\n";
+    }
+
+    private function build793nAdosBodyFields(object $row, int $rowNumber, float $kilometers, string $userCar): array
+    {
+        $dayDD = Carbon::parse($row->date)->format('d');
+
+        $patientName = $this->toAsciiString(
+            trim(($row->last_name ?? '') . ' ' . ($row->first_name ?? '')),
+            60
+        );
+
+        return [
+            $rowNumber,
+            $dayDD,
+            $this->toAsciiString($row->personal_number ?? ''),
+            $patientName,
+            $this->toAsciiString($row->diagnosis_code ?? ''),
+            '',
+            '',
+            self::TRANSPORT_TYPE_ADOS,
+            (int) round($kilometers, 0),
+            $this->toAsciiString($this->normalizeAddressOrCity($row->branch_city ?? null), self::ADDRESS_CITY_MAX_LENGTH),
+            $this->toAsciiString($this->normalizeAddressOrCity($row->branch_address ?? null), self::ADDRESS_CITY_MAX_LENGTH),
+            $this->toAsciiString($this->normalizeAddressOrCity($row->patient_city ?? null), self::ADDRESS_CITY_MAX_LENGTH),
+            $this->toAsciiString($this->normalizeAddressOrCity($row->patient_address ?? null), self::ADDRESS_CITY_MAX_LENGTH),
+            $rowNumber,
+            $this->normalizeCode($userCar),
+            '0',
+            '',
+            'N',
+            $this->normalizeCode($row->doctor_pzs ?? ''),
+            $this->normalizeCode($row->doctor_zpr ?? ''),
+            '',
+            '',
+            '',
+        ];
+    }
+
+    private function validate793nAdosExportContext(array $context): void
+    {
+        $errors = [];
+
+        $type = $context['type'];
+        $batchNumber = $context['batchNumber'];
+        $from = $context['from'];
+        $to = $context['to'];
+
+        $company = $context['company'];
+        $branch = $context['branch'];
+        $user = $context['user'];
+        $workingTime = $context['workingTime'];
+        $insuranceBranchCode = $context['insuranceBranchCode'];
+        $userCar = $context['userCar'];
+        $rows = $context['rows'];
+
+        if (!in_array($type, ['N', 'O'], true)) {
+            $this->addValidationError(
+                $errors,
+                'Neplatný charakter dávky. Pre kilometrové dávky sú povolené hodnoty N alebo O.',
+                'batch:invalid_type'
+            );
+        }
+
+        if (!preg_match('/^\d{1,6}$/', (string) $batchNumber)) {
+            $this->addValidationError(
+                $errors,
+                'Číslo dávky musí obsahovať iba číslice a môže mať maximálne 6 číslic.',
+                'batch:invalid_number'
+            );
+        }
+
+        if (Carbon::parse($from)->format('Ym') !== Carbon::parse($to)->format('Ym')) {
+            $this->addValidationError(
+                $errors,
+                'Dávka musí byť vytvorená iba za jedno zúčtovacie obdobie v rámci jedného mesiaca.',
+                'batch:period_not_one_month'
+            );
+        }
+
+        if (Carbon::parse($from)->gt(Carbon::parse($to))) {
+            $this->addValidationError(
+                $errors,
+                'Dátum začiatku obdobia nemôže byť neskôr ako dátum konca obdobia.',
+                'batch:invalid_period_order'
+            );
+        }
+
+        if ($rows->isEmpty()) {
+            $this->addValidationError(
+                $errors,
+                'Nenašli sa žiadne kilometrové výkony 3439 alebo 3440 pre zadané filtre.',
+                'batch:no_rows'
+            );
+        }
+
+        $this->addMissingError($errors, $company, 'Spoločnosť neexistuje.', 'company:missing');
+        $this->addMissingError($errors, $company?->ico ?? null, 'Chýba IČO spoločnosti.', 'company:missing_ico');
+        $this->addPatternError($errors, $company?->ico ?? null, '/^\d{8}$/', 'IČO spoločnosti musí mať presne 8 číslic.', 'company:invalid_ico');
+        $this->addMissingError($errors, $company?->name ?? null, 'Chýba názov spoločnosti.', 'company:missing_name');
+
+        $this->addMissingError($errors, $branch, 'Prevádzka neexistuje.', 'branch:missing');
+        $this->addMissingError($errors, $branch?->identificator ?? null, 'Chýba identifikátor PZS.', 'branch:missing_identificator');
+        $this->addPatternError(
+            $errors,
+            $branch?->identificator ?? null,
+            '/^P\d{5}$/',
+            'Identifikátor PZS musí mať 6 znakov: písmeno P a za ním 5 číslic, napr. P12345.',
+            'branch:invalid_identificator'
+        );
+
+        $this->addMissingError($errors, $branch?->code ?? null, 'Chýba kód PZS.', 'branch:missing_code');
+        $this->addPatternError(
+            $errors,
+            $branch?->code ?? null,
+            '/^P\d{11}$/',
+            'Kód PZS musí mať 12 znakov: písmeno P a za ním 11 číslic, napr. P12345678901.',
+            'branch:invalid_code'
+        );
+
+        $this->addMissingError($errors, $user, 'Používateľ neexistuje.', 'user:missing');
+        $this->addMissingError($errors, $user?->code ?? null, 'Chýba kód zdravotníckeho pracovníka.', 'user:missing_code');
+        $this->addPatternError(
+            $errors,
+            $user?->code ?? null,
+            '/^[A-Z][A-Z0-9]{8}$/',
+            'Kód zdravotníckeho pracovníka musí mať 9 znakov: prvý znak veľké písmeno a za ním 8 alfanumerických znakov.',
+            'user:invalid_code'
+        );
+
+        $this->addMissingError($errors, $workingTime, 'Chýba úväzok zdravotníckeho pracovníka na prevádzke.', 'user_branch:missing_working_time');
+
+        if ($this->isFilledValue($workingTime) && !is_numeric($workingTime)) {
+            $this->addValidationError(
+                $errors,
+                'Úväzok zdravotníckeho pracovníka musí byť číslo.',
+                'user_branch:invalid_working_time'
+            );
+        }
+
+        $this->addMissingError($errors, $insuranceBranchCode, 'Chýba kód pobočky poisťovne.', 'insurance:missing_branch_code');
+        $this->addPatternError(
+            $errors,
+            $insuranceBranchCode,
+            '/^\d{3,4}$/',
+            'Kód pobočky poisťovne musí mať 3 až 4 číslice podľa zmluvného kódu poisťovne/pobočky.',
+            'insurance:invalid_branch_code'
+        );
+
+        $this->addMissingError($errors, $userCar, 'Chýba EČV vozidla používateľa.', 'car:missing_evc');
+        $this->addLengthBetweenError(
+            $errors,
+            $userCar,
+            6,
+            7,
+            'EČV vozidla musí mať 6 až 7 znakov.',
+            'car:invalid_evc_length'
+        );
+
+        foreach ($rows as $index => $row) {
+            $this->validate793nAdosRow($errors, $row, $index + 1, $from, $to, (string) $userCar);
+        }
+
+        $this->throwKilometersValidationErrors($errors);
+    }
+
+    private function validate793nAdosRow(
+        array &$errors,
+        object $row,
+        int $rowNumber,
+        string $from,
+        string $to,
+        string $userCar
+    ): void {
+        $patientName = $this->formatPatientName($row);
+        $label = "{$patientName} / riadok {$rowNumber}";
+
+        $this->addMissingError(
+            $errors,
+            $row->date ?? null,
+            "Chýba dátum prepravy: {$label}.",
+            $this->rowErrorKey($row, $rowNumber, 'missing_date')
+        );
+
+        if ($this->isFilledValue($row->date ?? null)) {
+            $date = Carbon::parse($row->date)->toDateString();
+
+            if ($date < $from || $date > $to) {
+                $this->addValidationError(
+                    $errors,
+                    "Dátum prepravy nie je v zadanom období: {$label}.",
+                    $this->rowErrorKey($row, $rowNumber, 'date_out_of_period')
+                );
+            }
+        }
+
+        $this->addMissingError(
+            $errors,
+            $row->personal_number ?? null,
+            "Chýba rodné číslo alebo BIČ pacienta: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_personal_number')
+        );
+
+        $this->addLengthBetweenError(
+            $errors,
+            $row->personal_number ?? null,
+            9,
+            10,
+            "Rodné číslo alebo BIČ musí mať 9 až 10 znakov: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_personal_number_length')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->last_name ?? null,
+            "Chýba priezvisko pacienta: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_last_name')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->first_name ?? null,
+            "Chýba meno pacienta: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_first_name')
+        );
+
+        $fullName = $this->toAsciiString(trim(($row->last_name ?? '') . ' ' . ($row->first_name ?? '')));
+
+        if ($this->isFilledValue($fullName) && mb_strlen($fullName) > 60) {
+            $this->addValidationError(
+                $errors,
+                "Meno poistenca môže mať maximálne 60 znakov: {$patientName}.",
+                $this->patientErrorKey($row, 'invalid_full_name_length')
+            );
+        }
+
+        $this->addMissingError(
+            $errors,
+            $row->diagnosis_code ?? null,
+            "Chýba diagnóza: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_diagnosis_code')
+        );
+
+        $this->addLengthBetweenError(
+            $errors,
+            $row->diagnosis_code ?? null,
+            3,
+            5,
+            "Kód diagnózy musí mať 3 až 5 znakov: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_diagnosis_length')
+        );
+
+        $this->addPatternError(
+            $errors,
+            $row->diagnosis_code ?? null,
+            '/^[A-Z][0-9A-Z]{2,4}$/i',
+            "Kód diagnózy musí byť bez bodky a bez špeciálnych znakov: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_diagnosis_format')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->procedure_code ?? null,
+            "Chýba kód výkonu: {$label}.",
+            $this->rowErrorKey($row, $rowNumber, 'missing_procedure_code')
+        );
+
+        if ($this->isFilledValue($row->procedure_code ?? null) && !in_array((string) $row->procedure_code, ['3439', '3440'], true)) {
+            $this->addValidationError(
+                $errors,
+                "Kilometrová dávka môže obsahovať iba výkony 3439 alebo 3440: {$label}.",
+                $this->rowErrorKey($row, $rowNumber, 'invalid_procedure_code')
+            );
+        }
+
+        $this->addMissingError(
+            $errors,
+            $row->branch_city ?? null,
+            "Chýba obec východiskovej stanice.",
+            'branch:missing_city'
+        );
+
+        $this->addLengthBetweenError(
+            $errors,
+            $row->branch_city ?? null,
+            1,
+            self::ADDRESS_CITY_MAX_LENGTH,
+            'Obec východiskovej stanice môže mať 1 až 50 znakov.',
+            'branch:invalid_city_length'
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->branch_address ?? null,
+            'Chýba ulica východiskovej stanice.',
+            'branch:missing_address'
+        );
+
+        $this->addLengthBetweenError(
+            $errors,
+            $row->branch_address ?? null,
+            1,
+            self::ADDRESS_CITY_MAX_LENGTH,
+            'Ulica východiskovej stanice môže mať 1 až 50 znakov.',
+            'branch:invalid_address_length'
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->patient_city ?? null,
+            "Chýba obec cieľovej stanice: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_patient_city')
+        );
+
+        $this->addLengthBetweenError(
+            $errors,
+            $row->patient_city ?? null,
+            1,
+            self::ADDRESS_CITY_MAX_LENGTH,
+            "Obec cieľovej stanice môže mať 1 až 50 znakov: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_patient_city_length')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->patient_address ?? null,
+            "Chýba ulica cieľovej stanice: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_patient_address')
+        );
+
+        $this->addLengthBetweenError(
+            $errors,
+            $row->patient_address ?? null,
+            1,
+            self::ADDRESS_CITY_MAX_LENGTH,
+            "Ulica cieľovej stanice môže mať 1 až 50 znakov: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_patient_address_length')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->branch_lat ?? null,
+            'Chýba GPS latitude prevádzky.',
+            'branch:missing_lat'
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->branch_lng ?? null,
+            'Chýba GPS longitude prevádzky.',
+            'branch:missing_lng'
+        );
+
+        $this->addCoordinateError(
+            $errors,
+            $row->branch_lat ?? null,
+            -90,
+            90,
+            'GPS latitude prevádzky je neplatná.',
+            'branch:invalid_lat'
+        );
+
+        $this->addCoordinateError(
+            $errors,
+            $row->branch_lng ?? null,
+            -180,
+            180,
+            'GPS longitude prevádzky je neplatná.',
+            'branch:invalid_lng'
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->patient_lat ?? null,
+            "Chýba GPS latitude pacienta: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_patient_lat')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->patient_lng ?? null,
+            "Chýba GPS longitude pacienta: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_patient_lng')
+        );
+
+        $this->addCoordinateError(
+            $errors,
+            $row->patient_lat ?? null,
+            -90,
+            90,
+            "GPS latitude pacienta je neplatná: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_patient_lat')
+        );
+
+        $this->addCoordinateError(
+            $errors,
+            $row->patient_lng ?? null,
+            -180,
+            180,
+            "GPS longitude pacienta je neplatná: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_patient_lng')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->price ?? null,
+            "Chýba cena výkonu 0000 v cenníku poisťovne: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_price_0000')
+        );
+
+        if ($this->isFilledValue($row->price ?? null) && !is_numeric($row->price)) {
+            $this->addValidationError(
+                $errors,
+                "Cena výkonu 0000 musí byť číslo: {$patientName}.",
+                $this->patientErrorKey($row, 'invalid_price_0000')
+            );
+        }
+
+        $this->addMissingError(
+            $errors,
+            $userCar,
+            'Chýba EČV vozidla.',
+            'car:missing_evc'
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->doctor_pzs ?? null,
+            "Chýba kód PZS odosielateľa: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_doctor_pzs')
+        );
+
+        $this->addPatternError(
+            $errors,
+            $row->doctor_pzs ?? null,
+            '/^P\d{11}$/',
+            "Kód PZS odosielateľa musí mať 12 znakov: písmeno P a za ním 11 číslic: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_doctor_pzs')
+        );
+
+        $this->addMissingError(
+            $errors,
+            $row->doctor_zpr ?? null,
+            "Chýba kód ZPR odosielateľa: {$patientName}.",
+            $this->patientErrorKey($row, 'missing_doctor_zpr')
+        );
+
+        $this->addPatternError(
+            $errors,
+            $row->doctor_zpr ?? null,
+            '/^[A-Z][A-Z0-9]{8}$/',
+            "Kód ZPR odosielateľa musí mať 9 znakov: prvý znak veľké písmeno a za ním 8 alfanumerických znakov: {$patientName}.",
+            $this->patientErrorKey($row, 'invalid_doctor_zpr')
+        );
+
+        $fields = $this->build793nAdosBodyFields($row, $rowNumber, 0.0, $userCar);
+
+        if (count($fields) !== 23) {
+            $this->addValidationError(
+                $errors,
+                "Interná chyba: veta tela dávky 793n musí mať presne 23 polí: {$label}.",
+                $this->rowErrorKey($row, $rowNumber, 'invalid_field_count')
+            );
+        }
+    }
+
+    private function calculateKilometersForRows($rows): array
+    {
+        $visitedAddressesPerDay = [];
+        $calculatedRows = [];
+
+        foreach ($rows as $index => $row) {
+            $kilometers = 0.0;
+
+            if ($this->hasValidCoords($row->branch_lat, $row->branch_lng, $row->patient_lat, $row->patient_lng)) {
+                $dateString = $this->normalizeDateString($row->date);
+                $visitedAddressesPerDay[$dateString] ??= [];
+
+                if (!$this->hasNearbyVisitedAddress(
+                    $visitedAddressesPerDay[$dateString],
+                    (float) $row->patient_lat,
+                    (float) $row->patient_lng,
+                    self::GROUPING_BUFFER_METERS
+                )) {
+                    $kilometers = $this->getDistanceFromRouteService(
+                        (float) $row->branch_lat,
+                        (float) $row->branch_lng,
+                        (float) $row->patient_lat,
+                        (float) $row->patient_lng
+                    );
+
+                    $visitedAddressesPerDay[$dateString][] = [
+                        'lat' => (float) $row->patient_lat,
+                        'lng' => (float) $row->patient_lng,
+                        'patient_id' => (int) $row->patient_id,
+                        'pp_id' => (int) $row->id,
+                    ];
+                }
+            }
+
+            $calculatedRows[] = [
+                'index' => $index,
+                'source' => $row,
+                'kilometers' => $kilometers,
+            ];
+        }
+
+        return $calculatedRows;
+    }
+
+    private function formatTextLine(array $fields, int $expectedCount, string $errorMessage): string
+    {
+        if (count($fields) !== $expectedCount) {
+            throw ValidationException::withMessages([
+                'kilometers_export' => [$errorMessage],
+            ]);
+        }
+
+        $fields = array_map(function ($field) {
+            return $this->toAsciiString((string) $field);
+        }, $fields);
+
+        return implode('|', $fields) . '|';
+    }
+
+    private function parseDateOnly(mixed $value): string
+    {
+        $value = (string) $value;
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value, $matches)) {
+            return $matches[0];
+        }
+
+        return Carbon::parse($value)->toDateString();
+    }
+
     private function normalizeDateString($date): string
     {
         return is_string($date)
-            ? $date
+            ? $this->parseDateOnly($date)
             : (method_exists($date, 'toDateString') ? $date->toDateString() : 'unknown');
     }
 
@@ -675,6 +974,30 @@ class KilometersExportController extends Controller
             && $patientLng !== null;
     }
 
+    private function normalizeCode(mixed $value): string
+    {
+        return strtoupper(trim((string) ($value ?? '')));
+    }
+
+    private function normalizeAddressAndCityFields($rows)
+    {
+        return $rows->map(function ($row) {
+            $row->branch_city = $this->normalizeAddressOrCity($row->branch_city ?? null);
+            $row->branch_address = $this->normalizeAddressOrCity($row->branch_address ?? null);
+            $row->patient_city = $this->normalizeAddressOrCity($row->patient_city ?? null);
+            $row->patient_address = $this->normalizeAddressOrCity($row->patient_address ?? null);
+
+            return $row;
+        });
+    }
+
+    private function normalizeAddressOrCity(mixed $value): string
+    {
+        $normalized = trim((string) ($value ?? ''));
+
+        return mb_substr($normalized, 0, self::ADDRESS_CITY_MAX_LENGTH);
+    }
+
     private function toAsciiString(?string $value, ?int $limit = null): string
     {
         $normalized = Str::ascii((string) ($value ?? ''));
@@ -683,94 +1006,91 @@ class KilometersExportController extends Controller
         $normalized = trim($normalized);
 
         if ($limit !== null) {
-            return substr($normalized, 0, $limit);
+            return mb_substr($normalized, 0, $limit);
         }
 
         return $normalized;
     }
 
-    private function validateKilometersRowsForPreview($rows): void
+    private function addValidationError(array &$errors, string $message, ?string $key = null): void
     {
-        $errors = [];
-
-        if ($rows->isEmpty()) {
-            $errors[] = 'Nenašli sa žiadne výkony pre zadané filtre.';
+        if ($key !== null) {
+            $errors[$key] = $message;
+            return;
         }
 
-        foreach ($rows as $row) {
-            $patientName = $this->formatPatientName($row);
-
-            $this->addMissingError($errors, $row->branch_lat, "Chýba GPS latitude prevádzky pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->branch_lng, "Chýba GPS longitude prevádzky pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->patient_lat, "Chýba GPS latitude pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->patient_lng, "Chýba GPS longitude pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->price, "Chýba cena výkonu 0000 pre pacienta {$patientName}.");
-        }
-
-        $this->throwKilometersValidationErrors($errors);
+        $errors[] = $message;
     }
 
-    private function validateKilometersDownloadData(
-        $rows,
-        $company,
-        $branch,
-        $user,
-        $workingTime,
-        $insuranceBranchCode,
-        $userCar,
+    private function addMissingError(
+        array &$errors,
+        mixed $value,
+        string $message,
+        ?string $key = null
     ): void {
-        $errors = [];
-
-        if ($rows->isEmpty()) {
-            $errors[] = 'Nenašli sa žiadne výkony pre zadané filtre.';
+        if (!$this->isFilledValue($value)) {
+            $this->addValidationError($errors, $message, $key);
         }
-
-        $this->addMissingError($errors, $company?->ico ?? null, 'Chýba IČO spoločnosti.');
-        $this->addMissingError($errors, $company?->name ?? null, 'Chýba názov spoločnosti.');
-
-        $this->addMissingError($errors, $branch?->identificator ?? null, 'Chýba identifikátor prevádzky.');
-        $this->addMissingError($errors, $branch?->code ?? null, 'Chýba kód prevádzky.');
-
-        $this->addMissingError($errors, $user?->code ?? null, 'Chýba kód používateľa.');
-        $this->addMissingError($errors, $workingTime, 'Chýba pracovný čas používateľa na prevádzke.');
-        $this->addMissingError($errors, $insuranceBranchCode, 'Chýba kód pobočky poisťovne.');
-        $this->addMissingError($errors, $userCar, 'Chýba EČV vozidla používateľa.');
-
-        foreach ($rows as $row) {
-            $patientName = $this->formatPatientName($row);
-
-            $this->addMissingError($errors, $row->personal_number, "Chýba rodné číslo pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->last_name, "Chýba priezvisko pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->first_name, "Chýba meno pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->sex, "Chýba pohlavie pacienta {$patientName}.");
-
-            $this->addMissingError($errors, $row->patient_city, "Chýba mesto pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->patient_address, "Chýba adresa pacienta {$patientName}.");
-
-            $this->addMissingError($errors, $row->patient_lat, "Chýba GPS latitude pacienta {$patientName}.");
-            $this->addMissingError($errors, $row->patient_lng, "Chýba GPS longitude pacienta {$patientName}.");
-
-            $this->addMissingError($errors, $row->diagnosis_code, "Chýba diagnóza pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->procedure_code, "Chýba kód výkonu pri pacientovi {$patientName}.");
-
-            $this->addMissingError($errors, $row->doctor_pzs, "Chýba PZS lekára pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->doctor_zpr, "Chýba ZPR lekára pri pacientovi {$patientName}.");
-
-            $this->addMissingError($errors, $row->branch_city, "Chýba mesto prevádzky pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->branch_address, "Chýba adresa prevádzky pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->branch_lat, "Chýba GPS latitude prevádzky pri pacientovi {$patientName}.");
-            $this->addMissingError($errors, $row->branch_lng, "Chýba GPS longitude prevádzky pri pacientovi {$patientName}.");
-
-            $this->addMissingError($errors, $row->price, "Chýba cena výkonu 0000 pre pacienta {$patientName}.");
-        }
-
-        $this->throwKilometersValidationErrors($errors);
     }
 
-    private function addMissingError(array &$errors, mixed $value, string $message): void
-    {
+    private function addPatternError(
+        array &$errors,
+        mixed $value,
+        string $pattern,
+        string $message,
+        ?string $key = null
+    ): void {
         if (!$this->isFilledValue($value)) {
-            $errors[] = $message;
+            return;
+        }
+
+        $value = $this->normalizeCode($value);
+
+        if (!preg_match($pattern, $value)) {
+            $this->addValidationError($errors, $message, $key);
+        }
+    }
+
+    private function addLengthBetweenError(
+        array &$errors,
+        mixed $value,
+        int $min,
+        int $max,
+        string $message,
+        ?string $key = null
+    ): void {
+        if (!$this->isFilledValue($value)) {
+            return;
+        }
+
+        $length = mb_strlen((string) $value);
+
+        if ($length < $min || $length > $max) {
+            $this->addValidationError($errors, $message, $key);
+        }
+    }
+
+    private function addCoordinateError(
+        array &$errors,
+        mixed $value,
+        float $min,
+        float $max,
+        string $message,
+        ?string $key = null
+    ): void {
+        if (!$this->isFilledValue($value)) {
+            return;
+        }
+
+        if (!is_numeric($value)) {
+            $this->addValidationError($errors, $message, $key);
+            return;
+        }
+
+        $number = (float) $value;
+
+        if ($number < $min || $number > $max) {
+            $this->addValidationError($errors, $message, $key);
         }
     }
 
@@ -800,6 +1120,20 @@ class KilometersExportController extends Controller
         }
 
         return 'neznámy pacient';
+    }
+
+    private function patientErrorKey(object $row, string $field): string
+    {
+        $patientId = $row->patient_id ?? 'unknown';
+
+        return "patient:{$patientId}:{$field}";
+    }
+
+    private function rowErrorKey(object $row, int $rowNumber, string $field): string
+    {
+        $rowId = $row->id ?? $rowNumber;
+
+        return "row:{$rowId}:{$field}";
     }
 
     private function throwKilometersValidationErrors(array $errors): void
