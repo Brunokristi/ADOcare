@@ -729,8 +729,8 @@ class PointsExportController extends Controller
         $this->addPatternError(
             $errors,
             $row->doctor_pzs ?? null,
-            '/^P\d{11}$/',
-            "Kód PZS odosielateľa musí mať 12 znakov: písmeno P a za ním 11 číslic: {$patientLabel}.",
+            '/^[A-Z]\d{11}$/',
+            "Kód PZS odosielateľa musí mať 12 znakov, písmeno  a za ním 11 číslic: {$patientLabel}.",
             $this->patientErrorKey($row, 'invalid_doctor_pzs')
         );
 
