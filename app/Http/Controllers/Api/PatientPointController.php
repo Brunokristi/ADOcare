@@ -15,6 +15,7 @@ use App\Http\Requests\UpdatePatientPointRequest;
 use App\Models\PatientPoint;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class PatientPointController extends Controller
 {

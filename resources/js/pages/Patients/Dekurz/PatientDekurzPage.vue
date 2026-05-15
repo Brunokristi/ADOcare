@@ -278,7 +278,10 @@ function validateForm() {
     if (dekurzMonth.value && isAfterDeathDate(new Date(dekurzMonth.value.getFullYear(), dekurzMonth.value.getMonth(), 1))) {
         e.dekurzMonth = 'Mesiac dekurzu nemôže byť po dátume úmrtia pacienta.'
     }
-    if (!dekurzNumber.value.trim()) e.dekurzNumber = 'Číslo dekurzu je povinné.'
+
+    if (!String(dekurzNumber.value ?? '').trim()) {
+        e.dekurzNumber = 'Číslo dekurzu je povinné.'
+    }
 
     if (!sections.value.length) {
         e.sections = 'Pridajte aspoň jednu sekciu.'
@@ -365,19 +368,26 @@ async function fetchMacros() {
 
 async function generateDekurz() {
     submitted.value = true
+
     if (!validateForm()) {
-        toast.add({ severity: 'error', summary: 'Chyba validácie', detail: 'Vyplňte všetky povinné polia.', life: 3000 })
+        toast.add({
+            severity: 'error',
+            summary: 'Chyba validácie',
+            detail: 'Vyplňte všetky povinné polia.',
+            life: 3000,
+        })
         return
     }
 
     loading.value = true
+
     try {
         const month = dekurzMonth.value as Date
 
         const payload = {
             patient_id: patientId.value,
             month: isoDate(new Date(month.getFullYear(), month.getMonth(), 1)),
-            dekurz_number: dekurzNumber.value.trim(),
+            dekurz_number: String(dekurzNumber.value ?? '').trim(),
             sections: sections.value.map(s => ({
                 text: s.text,
                 dates: (s.dates || []).map(isoDate).sort(),
@@ -388,22 +398,59 @@ async function generateDekurz() {
 
         const res = await api.post('/v1/dekurz', payload)
 
-        toast.add({ severity: 'success', summary: 'Úspešne', detail: 'Dekurz bol vygenerovaný.', life: 3000 })
+        console.log('Dekurz generate response:', res.data)
 
-        // Persist the incremented dekurz_number so the next form load shows the correct number
-        const nextNumber = res.data?.next_dekurz_number
+        const documentId =
+            res.data?.document_id ??
+            res.data?.data?.document_id ??
+            res.data?.document?.id ??
+            res.data?.data?.document?.id ??
+            null
+
+        if (!documentId) {
+            toast.add({
+                severity: 'warn',
+                summary: 'Dokument bol vygenerovaný',
+                detail: 'Backend však nevrátil ID dokumentu, preto ho neviem otvoriť.',
+                life: 4000,
+            })
+            return
+        }
+
+        const nextNumber = res.data?.next_dekurz_number ?? res.data?.data?.next_dekurz_number
+
         if (nextNumber && patientStore.current) {
             patientStore.current.dekurz_number = nextNumber
             localStorage.setItem('selected-patient', JSON.stringify(patientStore.current))
         }
 
-        if (res.data?.document_id) {
-            router.push({ name: 'documents-dekurz', params: { documentId: res.data.document_id } })
-        }
+        await router.push({
+            name: 'documents-dekurz',
+            params: {
+                documentId,
+            },
+        })
+
+        toast.add({
+            severity: 'success',
+            summary: 'Úspešne',
+            detail: 'Dekurz bol vygenerovaný.',
+            life: 3000,
+        })
     } catch (err: any) {
         console.error('Failed to generate dekurz:', err)
-        const message = err?.response?.data?.message || err?.message || 'Chyba pri generovaní dekurzu'
-        toast.add({ severity: 'error', summary: 'Chyba', detail: message, life: 3500 })
+
+        const message =
+            err?.response?.data?.message ||
+            err?.message ||
+            'Chyba pri generovaní dekurzu'
+
+        toast.add({
+            severity: 'error',
+            summary: 'Chyba',
+            detail: message,
+            life: 3500,
+        })
     } finally {
         loading.value = false
     }
@@ -892,8 +939,8 @@ watch(
 
                     <div>
                         <label class="block text-normal mb-2">Číslo dekurzu</label>
-                        <InputText v-model="dekurzNumber" class="w-full !border-none" inputClass="!w-full !border-none"
-                            type="number" @input="dekurzNumber = dekurzNumber.replace(/[^0-9]/g, '')"
+                        <InputText v-model.lazy="dekurzNumber" class="w-full !border-none" inputClass="!w-full !border-none"
+                            @input="dekurzNumber = String(dekurzNumber ?? '').replace(/[^0-9]/g, '')"
                             :invalid="submitted && !!errors.dekurzNumber" />
                         <small v-if="submitted && errors.dekurzNumber" class="text-danger">{{ errors.dekurzNumber
                         }}</small>
