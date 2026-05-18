@@ -440,8 +440,8 @@ class KilometersExportController extends Controller
         $this->addPatternError(
             $errors,
             $branch?->identificator ?? null,
-            '/^P\d{5}$/',
-            'Identifikátor PZS musí mať 6 znakov: písmeno P a za ním 5 číslic, napr. P12345.',
+            '/^[A-Z]\d{5}$/',
+            'Identifikátor PZS musí mať 6 znakov: písmeno A-Z a za ním 5 číslic.',
             'branch:invalid_identificator'
         );
 
@@ -449,8 +449,8 @@ class KilometersExportController extends Controller
         $this->addPatternError(
             $errors,
             $branch?->code ?? null,
-            '/^P\d{11}$/',
-            'Kód PZS musí mať 12 znakov: písmeno P a za ním 11 číslic, napr. P12345678901.',
+            '/^[A-Z]\d{11}$/',
+            'Kód PZS musí mať 12 znakov: písmeno A-Z a za ním 11 číslic.',
             'branch:invalid_code'
         );
 
@@ -769,8 +769,8 @@ class KilometersExportController extends Controller
         $this->addPatternError(
             $errors,
             $row->doctor_pzs ?? null,
-            '/^P\d{11}$/',
-            "Kód PZS odosielateľa musí mať 12 znakov: písmeno P a za ním 11 číslic: {$patientName}.",
+            '/^[A-Z]\d{11}$/',
+            "Kód PZS odosielateľa musí mať 12 znakov: písmeno A-Z a za ním 11 číslic: {$patientName}.",
             $this->patientErrorKey($row, 'invalid_doctor_pzs')
         );
 
