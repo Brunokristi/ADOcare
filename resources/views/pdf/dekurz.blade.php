@@ -292,16 +292,17 @@
                         @forelse($pageRows as $row)
                             @php
                                 $dateStr = \Carbon\Carbon::parse($row['date'])->format('d.m.Y');
-                                $timeStr = !empty($row['administrative_time']) ? $formatVisitTime($row['administrative_time']) : (!empty($row['terrain_time']) ? $formatVisitTime($row['terrain_time']) : '00:00');
+                                $terrainTimeStr = !empty($row['terrain_time']) ? $formatVisitTime($row['terrain_time']) : '00:00';
+                                $administrativeTimeStr = !empty($row['administrative_time']) ? $formatVisitTime($row['administrative_time']) : '00:00';
                                 $text = trim($row['text'] ?? '');
                             @endphp
                             <tr>
                                 <td class="align-top">
-                                    <div class="whitespace-pre-line text-normal">{{ $dateStr }}<br />{{ $timeStr }}</div>
+                                    <div class="whitespace-pre-line text-normal">{{ $dateStr }}<br />{{ $terrainTimeStr }}</div>
                                 </td>
                                 <td class="align-top">
                                     <div class="leading-snug text-normal">
-                                        <span class="font-normal">{{ $timeStr }}: </span>
+                                        <span class="font-normal">{{ $administrativeTimeStr }}: </span>
                                         <span class="whitespace-pre-line">{{ $text }}</span>
                                     </div>
 
