@@ -177,6 +177,19 @@
             return max(3, $descriptionLines + 3);
         };
 
+        $formatVisitTime = static function ($value): string {
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                return '00:00';
+            }
+
+            try {
+                return \Carbon\Carbon::parse($value)->format('H:i');
+            } catch (\Throwable $e) {
+                return strlen($value) >= 5 ? substr($value, -8, 5) : $value;
+            }
+        };
         $rowsPerPageLines = 22;
         $pages = [];
         $currentPageRows = [];
@@ -279,8 +292,7 @@
                         @forelse($pageRows as $row)
                             @php
                                 $dateStr = \Carbon\Carbon::parse($row['date'])->format('d.m.Y');
-                                $timeStr = isset($row['administrative_time']) ? substr($row['administrative_time'], 0, 5) : (isset($row['terrain_time']) ? substr($row['terrain_time'], 0, 5) : '00:00');
-                                $text = trim($row['text'] ?? '');
+                                $timeStr = !empty($row['administrative_time']) ? $formatVisitTime($row['administrative_time']) : (!empty($row['terrain_time']) ? $formatVisitTime($row['terrain_time']) : '00:00');
                             @endphp
                             <tr>
                                 <td class="align-top">
