@@ -293,6 +293,7 @@
                             @php
                                 $dateStr = \Carbon\Carbon::parse($row['date'])->format('d.m.Y');
                                 $timeStr = !empty($row['administrative_time']) ? $formatVisitTime($row['administrative_time']) : (!empty($row['terrain_time']) ? $formatVisitTime($row['terrain_time']) : '00:00');
+                                $text = trim($row['text'] ?? '');
                             @endphp
                             <tr>
                                 <td class="align-top">
