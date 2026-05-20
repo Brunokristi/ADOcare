@@ -86,21 +86,20 @@ class DekurzDocumentController extends Controller
             ->where('patient_id', (int) $data['patient_id'])
             ->orderByDesc('id')
             ->first();
-
-        if (!$doc) {
-            return $this->success(['data' => null]);
+        if ($doc) {
+            $dekurz = $this->dekurzDocumentService->findDekurzFileForDocument($doc);
+        } else {
+            // No DB document row — try to find the latest dekurz JSON for this patient in storage
+            $dekurz = $this->dekurzDocumentService->findLatestDekurzForPatient((int) $data['patient_id']);
         }
 
-        $dekurz = $this->dekurzDocumentService->findDekurzFileForDocument($doc);
         if (!$dekurz) {
-            return $this->success(['data' => null]);
+            return $this->success(null);
         }
 
         return $this->success([
-            'data' => [
-                'document_id' => $doc->id,
-                'sections' => $dekurz['sections'] ?? [],
-            ],
+            'document_id' => $doc->id ?? ($dekurz['document_id'] ?? null),
+            'sections' => $dekurz['sections'] ?? [],
         ]);
     }
 

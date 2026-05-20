@@ -845,6 +845,18 @@ watch(
             if (restored) {
                 // keepDates=true: load allowed days without touching section dates
                 await fetchAllowedDays(true)
+
+                // If the restored session only contained dates (no texts), try to
+                // prefill texts from the last saved dekurz so users don't have to
+                // retype text while keeping their restored dates.
+                const restoredHasNoText = sections.value.length > 0 && sections.value.every(s => !(s.text ?? '').trim())
+                if (restoredHasNoText) {
+                    // keep a snapshot of restored dates to reapply after loading texts
+                    const datesSnapshot = sections.value.map(s => (s.dates || []).slice())
+                    await loadLastDekurzDraft()
+                    // merge dates back onto the loaded sections where possible
+                    sections.value = sections.value.map((s, idx) => ({ id: s.id ?? makeId(), text: s.text ?? '', dates: datesSnapshot[idx] ?? [] }))
+                }
             } else {
                 // No session — load draft texts (empty dates) then fetch allowed days
                 await loadLastDekurzDraft()
