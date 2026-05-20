@@ -268,19 +268,105 @@ class DekurzDocumentService
 
     public function findDekurzFileForDocument(Document $document): ?array
     {
+        // If document has explicit path, try that first.
         if ($document->path && Storage::disk('local')->exists($document->path)) {
             return json_decode(Storage::disk('local')->get($document->path), true);
         }
 
-        $files = Storage::disk('local')->files('dekurz');
-        foreach ($files as $file) {
-            $content = json_decode(Storage::disk('local')->get($file), true);
-            if (($content['document_id'] ?? null) === $document->id) {
-                return $content;
+        // Search common locations where dekurz JSON files may be stored.
+        $candidateDirs = ['dekurz', 'private/dekurz'];
+
+        foreach ($candidateDirs as $dir) {
+            if (!Storage::disk('local')->exists($dir)) {
+                continue;
+            }
+
+            $files = Storage::disk('local')->allFiles($dir);
+            foreach ($files as $file) {
+                try {
+                    $content = json_decode(Storage::disk('local')->get($file), true);
+                } catch (\Throwable $e) {
+                    continue;
+                }
+
+                if (!is_array($content)) {
+                    continue;
+                }
+
+                if (($content['document_id'] ?? null) === $document->id) {
+                    return $content;
+                }
+
+                // If the file doesn't contain a matching document_id, try matching by patient_id
+                // This helps when the documents table row doesn't have a path or IDs are out-of-sync.
+                if (($content['patient_id'] ?? null) === $document->patient_id) {
+                    return $content;
+                }
             }
         }
 
         return null;
+    }
+
+    /**
+     * Find the latest dekurz JSON for a patient by scanning storage directories.
+     */
+    public function findLatestDekurzForPatient(int $patientId): ?array
+    {
+        $candidateDirs = ['dekurz', 'private/dekurz'];
+        $candidates = [];
+
+        foreach ($candidateDirs as $dir) {
+            if (!Storage::disk('local')->exists($dir)) {
+                continue;
+            }
+
+            $files = Storage::disk('local')->allFiles($dir);
+            foreach ($files as $file) {
+                try {
+                    $content = json_decode(Storage::disk('local')->get($file), true);
+                } catch (\Throwable $e) {
+                    continue;
+                }
+
+                if (!is_array($content)) {
+                    continue;
+                }
+
+                if (($content['patient_id'] ?? null) !== $patientId) {
+                    continue;
+                }
+
+                $ts = null;
+                if (!empty($content['created_at'])) {
+                    try {
+                        $ts = Carbon::parse($content['created_at'])->getTimestamp();
+                    } catch (\Throwable $e) {
+                        $ts = null;
+                    }
+                }
+
+                if (!$ts) {
+                    // fallback: use file modified time
+                    try {
+                        $path = Storage::disk('local')->path($file);
+                        $ts = filemtime($path) ?: null;
+                    } catch (\Throwable $e) {
+                        $ts = null;
+                    }
+                }
+
+                $candidates[] = ['file' => $file, 'content' => $content, 'ts' => $ts ?? 0];
+            }
+        }
+
+        if (!count($candidates)) {
+            return null;
+        }
+
+        usort($candidates, fn($a, $b) => $b['ts'] <=> $a['ts']);
+
+        return $candidates[0]['content'] ?? null;
     }
 
     /**

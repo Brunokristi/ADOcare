@@ -25,7 +25,7 @@ function onCreated() {
             </div>
         </div>
 
-        <div v-else class="flex flex-col gap-6">
+        <div v-else :key="patientStore.current?.id ?? 'none'" class="flex flex-col gap-6">
             <PatientPointsForm @created="onCreated" />
             <PatientPointsTable ref="tableRef" />
         </div>

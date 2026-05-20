@@ -5,6 +5,7 @@ import api from '@/services/api'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import ActionButtons from '@/components/table-columns/ActionButtons.vue'
 import InvoiceForm from './InvoiceForm.vue'
+import InvoiceNumberForm from './InvoiceNumberForm.vue'
 import InvoiceBulkCreateForm from './InvoiceBulkCreateForm.vue'
 import useModal from '@/composables/useModal'
 import useEmailDocumentsDialog from '@/composables/useEmailDocumentsDialog'
@@ -110,12 +111,33 @@ async function openCreateBulk() {
   }
 }
 
+async function openEdit(invoice: InvoiceRow) {
+  try {
+    await openModal(markRaw(InvoiceForm), { invoice }, { header: 'Upraviť faktúru', style: { width: '720px' }, closable: true })
+  } finally {
+    if (actionRemote.value?.loadPage) {
+      await actionRemote.value.loadPage(actionRemote.value.page.value)
+    }
+  }
+}
+
+async function openAssignNumber(invoice: InvoiceRow) {
+  try {
+    await openModal(markRaw(InvoiceNumberForm), { invoice }, { header: 'Priradiť číslo faktúry', style: { width: '520px' }, closable: true })
+  } finally {
+    if (actionRemote.value?.loadPage) {
+      await actionRemote.value.loadPage(actionRemote.value.page.value)
+    }
+  }
+}
+
 const options = computed<DataTableOptions<InvoiceRow>>(() => ({
   rowKey: 'id',
   endpointUrl: 'v1/invoices',
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50],
   selectable: true,
+  sortBy: 'invoice_number',
   dateRangeFilter: {
     mode: 'single',
     param: 'period',
@@ -132,7 +154,7 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
       field: 'invoice_number',
       header: 'Číslo faktúry',
       sortable: true,
-      render: (v: string | undefined) => v || '-',
+      slot: 'invoice-number',
     },
     {
       field: 'type',
@@ -167,11 +189,19 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
       render: (v: string | undefined) => formatDateWithTime(v),
     },
     {
-      field: 'preview',
+      field: 'actions',
       header: '',
-      width: '3rem',
+      width: '6rem',
       component: ActionButtons,
       componentOptions: [
+        {
+          icon: 'bi bi-pencil',
+          color: 'accent',
+          tooltip: 'Upraviť faktúru',
+          action: (row: InvoiceRow) => {
+            openEdit(row)
+          },
+        },
         {
           icon: 'bi bi-eye',
           color: 'info',
@@ -256,6 +286,19 @@ const options = computed<DataTableOptions<InvoiceRow>>(() => ({
 <template>
   <div class="h-full flex flex-col overflow-hidden min-h-0">
     <UniversalDataTable :options="options">
+      <template #invoice-number="{ row, value }">
+        <div class="flex items-center gap-2">
+          <span v-if="value">{{ value }}</span>
+          <button
+            v-else
+            @click.stop="openAssignNumber(row)"
+            class="text-accent hover:text-darkgrey text-sm font-medium cursor-pointer underline"
+            title="Priradiť číslo faktúry"
+          >
+            priradiť
+          </button>
+        </div>
+      </template>
       <template #actions="{ row }">
         <button @click.stop="openInvoiceInNewTab(row)" class="btn btn-sm btn-link p-0" title="Otvoriť faktúru">
           <i class="bi bi-eye"></i>

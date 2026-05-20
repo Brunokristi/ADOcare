@@ -424,6 +424,7 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 key: 'delete',
                 icon: 'bi bi-eraser',
                 class: 'bg-danger!',
+                disabled: ({ selectedRows }) => !selectedRows.length,
                 handler: async ({ selectedRows, remote }) => {
                     await deletePatients(selectedRows as Patient[], remote)
                 },

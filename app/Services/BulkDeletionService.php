@@ -25,7 +25,7 @@ class BulkDeletionService
     public int $queueThreshold;
     public int $forceSyncMax;
 
-    public function __construct(int $chunkSize = null, int $queueThreshold = null, int $forceSyncMax = null)
+    public function __construct(?int $chunkSize = null, ?int $queueThreshold = null, ?int $forceSyncMax = null)
     {
         $this->chunkSize = $chunkSize ?? config('bulk_delete.chunk_size', 100);
         $this->queueThreshold = $queueThreshold ?? config('bulk_delete.queue_threshold', 500);

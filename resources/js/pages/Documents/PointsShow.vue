@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import api from '@/services/api'
 import { usePublicDocument, type PublicDocumentProps } from '@/composables/usePublicDocument'
+import { useAuthStore } from '@/stores/auth'
 import DocumentShell, { type FileItem } from '@/components/DocumentShell.vue'
 
 type PointsBatchPayload = {
@@ -28,40 +30,97 @@ type PointsBatchPayload = {
 
 const props = defineProps<PublicDocumentProps>()
 const route = useRoute()
+const toast = useToast()
+const authStore = useAuthStore()
 
-const { data: payload, loading, previewUrl, getPublicLink } = usePublicDocument<PointsBatchPayload>(props, {
+const { data: payload, previewUrl, getPublicLink } = usePublicDocument<PointsBatchPayload>(props, {
     privateDataUrl: `/v1/points-batches/${route.params.documentId}`,
-    privatePreviewUrl: `/v1/points-batches/${route.params.documentId}/preview`
+    privatePreviewUrl: `/v1/points-batches/${route.params.documentId}/preview`,
 })
 
+const stored = computed(() => {
+    if (!payload.value) {
+        return null
+    }
+
+    // controller returns { document, points_batch } — unwrap when present
+    // otherwise payload.value may already be the points batch
+    // support both shapes for robustness
+    // @ts-ignore
+    return (payload.value.points_batch ?? payload.value) as PointsBatchPayload | null
+})
+
+function normalizeDateOnly(value: string): string {
+    const match = String(value ?? '').match(/^(\d{4}-\d{2}-\d{2})/)
+
+    if (match) {
+        return match[1] ?? ''
+    }
+
+    return value
+}
+
 function buildDownloadPayloadFromStored(p: PointsBatchPayload) {
+    const companyId = p.company?.id ?? authStore.currentBranch?.company_id ?? null
+
+    const batchNumber = Number(p.batchNumber) || 0
+    const insuranceId = Number(p.insurance?.id) || 0
+    const userId = Number(p.user?.id) || Number(authStore.user?.id) || 0
+    const branchId = Number(p.branch?.id) || Number(authStore.currentBranch?.id) || 0
+    const normalizedPeriod = (p.period ?? []).map((d) => normalizeDateOnly(d))
+
     return {
-        batchNumber: p.batchNumber,
+        batchNumber: batchNumber,
         batchType: { code: p.batchType?.code ?? 'N' },
-        insurance: { id: p.insurance?.id ?? 0 },
-        period: p.period ?? [],
-        user: { id: p.user?.id },
-        branch: { id: p.branch?.id },
-        company: { id: p.company?.id ?? null },
-        patients: (p.patients ?? []).map((x) => ({ id: x.id })),
+        insurance: { id: insuranceId },
+        period: normalizedPeriod,
+        user: { id: userId },
+        branch: { id: branchId },
+        company: { id: companyId },
+        patients: (p.patients ?? []).map((x) => ({ id: Number(x.id) })),
+    }
+}
+
+function showErrorToasts(messages: string[]) {
+    messages.slice(0, 8).forEach((message) => {
+        toast.add({
+            severity: 'error',
+            summary: 'Chyba pri sťahovaní dávky',
+            detail: message,
+            life: 20000,
+        })
+    })
+
+    if (messages.length > 8) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Ďalšie chyby',
+            detail: `Našlo sa ešte ${messages.length - 8} ďalších chýb. Skontrolujte údaje dávky.`,
+            life: 20000,
+        })
     }
 }
 
 const downloadFiles = computed<FileItem[]>(() => {
-    if (!payload.value) return []
+    if (!stored.value) {
+        return []
+    }
 
-    const fileName = payload.value?.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
+    const fileName = stored.value?.meta?.fileName ?? `davka.${stored.value.batchNumber}.txt`
+
     const item: FileItem = {
         title: fileName,
-        description: `Davka č. ${payload.value.batchNumber}`,
-        downloads: [{
-            filename: fileName,
-            url: props.isPublic ? getPublicLink({ download: true, format: 'txt' }) : '/v1/batches/points/download',
-            method: props.isPublic ? 'get' : 'post',
-            payload: props.isPublic ? undefined : buildDownloadPayloadFromStored(payload.value),
-            fileType: 'TXT',
-            contentType: 'text/plain',
-        }]
+        description: `Davka č. ${payload.value?.batchNumber}`,
+        downloads: [
+            {
+                filename: fileName,
+                url: props.isPublic ? getPublicLink({ download: true, format: 'txt' }) : '/v1/batches/points/download',
+                method: props.isPublic ? 'get' : 'post',
+                payload: props.isPublic ? undefined : buildDownloadPayloadFromStored(stored.value),
+                fileType: 'TXT',
+                contentType: 'text/plain',
+            },
+        ],
     }
 
     return [item]
@@ -77,10 +136,15 @@ const actions = computed(() => [
 ])
 
 async function handleActionClick(actionId: string) {
-    if (actionId !== 'download-batch') return
-    if (!payload.value) return
+    if (actionId !== 'download-batch') {
+        return
+    }
 
-    const fileName = payload.value.meta?.fileName ?? `davka.${payload.value.batchNumber}.txt`
+    if (!stored.value) {
+        return
+    }
+
+    const fileName = stored.value.meta?.fileName ?? `davka.${stored.value.batchNumber}.txt`
 
     if (props.isPublic) {
         window.open(getPublicLink({ download: true, format: 'txt' }), '_blank')
@@ -88,7 +152,7 @@ async function handleActionClick(actionId: string) {
     }
 
     try {
-        const res = await api.post('/v1/batches/points/download', buildDownloadPayloadFromStored(payload.value), {
+        const res = await api.post('/v1/batches/points/download', buildDownloadPayloadFromStored(stored.value), {
             responseType: 'blob',
             headers: { Accept: 'text/plain' },
         })
@@ -100,13 +164,50 @@ async function handleActionClick(actionId: string) {
         a.download = fileName
         a.click()
         setTimeout(() => URL.revokeObjectURL(url), 100)
-    } catch (err) {
+    } catch (err: any) {
+        let errorData = err?.response?.data
+
+        if (errorData instanceof Blob) {
+            try {
+                const text = await errorData.text()
+                errorData = JSON.parse(text)
+            } catch {
+                errorData = null
+            }
+        }
+
+        const errors = errorData?.errors
+
+        const messages = errors && typeof errors === 'object'
+            ? Object.values(errors).flat().map(String)
+            : errorData?.message
+                ? [String(errorData.message)]
+                : []
+
+        if (messages.length > 0) {
+            showErrorToasts(messages)
+            return
+        }
+
         console.error('Failed to download batch:', err)
+
+        toast.add({
+            severity: 'error',
+            summary: 'Chyba',
+            detail: 'Nepodarilo sa stiahnuť dávku.',
+            life: 8000,
+        })
     }
 }
 </script>
 
 <template>
-    <DocumentShell title="Dávka bodov" :previewUrl="previewUrl" :files="downloadFiles" :actions="actions"
-        :showPrintButton="true" @actionClick="handleActionClick" />
+    <DocumentShell
+        title="Dávka bodov"
+        :previewUrl="previewUrl"
+        :files="downloadFiles"
+        :actions="actions"
+        :showPrintButton="true"
+        @actionClick="handleActionClick"
+    />
 </template>

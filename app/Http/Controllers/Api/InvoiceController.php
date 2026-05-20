@@ -72,11 +72,9 @@ class InvoiceController extends Controller
                 }
 
                 // Guard: keep only one invoice per (type, period, insurance company) within actor's company.
-                $this->deletePreviousScopedInvoices($actor, $validated);
-
-                $nextInvoiceNumber = ((int) ($company->invoice_number ?? 0)) + 1;
-                $company->invoice_number = $nextInvoiceNumber;
-                $company->save();
+                if (!$this->isNoteType((string) $validated['type'])) {
+                    $this->deletePreviousScopedInvoices($actor, $validated);
+                }
 
                 $jsonPath = sprintf(
                     'invoices/invoice_%s_%s_%s.json',
@@ -87,13 +85,13 @@ class InvoiceController extends Controller
 
                 $invoice = Invoice::create([
                     'user_id' => $actor->id,
-                    'name' => 'invoice_' . $nextInvoiceNumber . '.json',
+                    'name' => 'invoice_pending.json',
                     'path' => $jsonPath,
                     'insurance_company_id' => $validated['insurance_company_id'] ?? null,
                     'period' => $validated['period'],
                     'type' => $validated['type'],
                     'total' => 0,
-                    'invoice_number' => (string) $nextInvoiceNumber,
+                    'invoice_number' => null,
                     'related_invoice_id' => $validated['related_invoice_id'] ?? null,
                     'mime_type' => 'application/json',
                 ]);
@@ -117,7 +115,6 @@ class InvoiceController extends Controller
                 }
 
                 $payload = $this->buildInvoicePayload($invoice, $actor);
-                dump($payload, $invoice->path);
                 Storage::disk('local')->put($invoice->path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
                 return $invoice;
@@ -298,6 +295,34 @@ class InvoiceController extends Controller
         $validated = $request->validated();
         $validated['mime_type'] = 'application/json';
         $manualAmount = null;
+
+        // Handle invoice_number assignment (allowed only once, if currently null)
+        if (array_key_exists('invoice_number', $validated)) {
+            if ($invoice->invoice_number !== null) {
+                return $this->error('Číslo faktúry nemožno zmeniť po priradení.', Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $proposedNumber = (int) $validated['invoice_number'];
+            $invoiceYear = substr((string) $invoice->period, 0, 4);
+
+            // Validate uniqueness within the same year
+            $existing = Invoice::query()
+                ->whereHas('user', fn($q) => $q->where('company_id', $actor->company_id))
+                ->where('invoice_number', $proposedNumber)
+                ->where('period', 'LIKE', $invoiceYear . '%')
+                ->where('id', '!=', $invoice->id)
+                ->exists();
+
+            if ($existing) {
+                return $this->error('Číslo faktúry ' . $proposedNumber . ' je už použité v roku ' . $invoiceYear . '.', Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            // Update file name with the assigned number
+            $invoice->name = 'invoice_' . $proposedNumber . '.json';
+        } else {
+            // Remove invoice_number from update if not being set
+            unset($validated['invoice_number']);
+        }
 
         if (array_key_exists('amount', $validated)) {
             $manualAmount = (float) $validated['amount'];

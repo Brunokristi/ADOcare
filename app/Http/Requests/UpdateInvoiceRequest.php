@@ -22,6 +22,7 @@ class UpdateInvoiceRequest extends FormRequest
             'type' => ['sometimes', 'string', 'in:procedures,transport,credit_note,debit_note'],
             'amount' => ['sometimes', 'numeric'],
             'related_invoice_id' => ['sometimes', 'nullable', 'integer', 'exists:invoices,id'],
+            'invoice_number' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ];
     }
 }
