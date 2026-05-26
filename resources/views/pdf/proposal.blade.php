@@ -80,14 +80,29 @@
         }
 
         .signature-area {
-            height: 50px;
+            height: 90px;
             margin-bottom: 6px;
             position: relative;
         }
 
-        .signature {
+        .signature-image,
+        .stamp-image {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .stamp-image {
+            max-width: 150px;
+            max-height: 90px;
+            z-index: 1;
+        }
+
+        .signature-image {
             max-width: 140px;
-            max-height: 50px;
+            max-height: 55px;
+            z-index: 2;
         }
 
         .line {
@@ -340,23 +355,28 @@
 
         <div class="signature-block">
             <div class="signature-box">
-                <div class="signature-area">
-                    @if(!empty($stampDataUri))
-                        <img src="{{ $stampDataUri }}" alt="Pečiatka spoločnosti" class="signature">
-                    @endif
-                </div>
+                <div class="signature-area"></div>
+
                 <div class="line"></div>
                 <div>podpis lekára a pečiatka</div>
             </div>
+
             <div class="signature-box">
                 <div class="signature-area">
+                    @if(!empty($stampDataUri))
+                        <img src="{{ $stampDataUri }}" alt="Pečiatka spoločnosti" class="stamp-image">
+                    @endif
+
                     @if(!empty($signatureDataUri))
-                        <img src="{{ $signatureDataUri }}" alt="Podpis odborného zástupcu" class="signature">
+                        <img src="{{ $signatureDataUri }}" alt="Podpis odborného zástupcu" class="signature-image">
                     @endif
                 </div>
+
                 <div class="line"></div>
                 <div>{{ $proposalData['representative_name'] ?? '' }}</div>
-                <div style="font-size: 9px;">odborný zástupca poskytovateľa ošetrovateľskej starostlivosti</div>
+                <div style="font-size: 9px;">
+                    odborný zástupca poskytovateľa ošetrovateľskej starostlivosti
+                </div>
             </div>
         </div>
     </div>
