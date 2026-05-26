@@ -26,7 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 // API auth that returns JSON 401 instead of redirecting
                 'api.auth' => \App\Http\Middleware\EnsureApiAuthenticated::class,
                 'subscription.active' => \App\Http\Middleware\EnsureCompanySubscriptionActive::class,
-                'signed.expires' => \App\Http\Middleware\ValidateExpiration::class,
+                'expires' => \App\Http\Middleware\ValidateExpiration::class,
+                'signed.url' => \App\Http\Middleware\ValidateSignedUrl::class,
             ]
         );
 

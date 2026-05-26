@@ -14,7 +14,7 @@
 </head>
 
 <body class="font-sans antialiased bg-white text-gray-900">
-    <div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-4">
         <div class="max-w-3xl w-full text-center">
             <h1 class="text-6xl font-extrabold text-gray-900">{{ $code ?? ($status ?? 'Chyba') }}</h1>
             <p class="mt-4 text-xl text-gray-700">{{ $title ?? 'Nastala chyba' }}</p>
