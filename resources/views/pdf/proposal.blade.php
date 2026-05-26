@@ -340,11 +340,6 @@
 
         <div class="signature-block">
             <div class="signature-box">
-                <div class="signature-area">
-                    @if(!empty($stampDataUri))
-                        <img src="{{ $stampDataUri }}" alt="Pečiatka spoločnosti" class="signature">
-                    @endif
-                </div>
                 <div class="line"></div>
                 <div>podpis lekára a pečiatka</div>
             </div>
@@ -352,6 +347,11 @@
                 <div class="signature-area">
                     @if(!empty($signatureDataUri))
                         <img src="{{ $signatureDataUri }}" alt="Podpis odborného zástupcu" class="signature">
+                    @endif
+                </div>
+                <div class="signature-area">
+                    @if(!empty($stampDataUri))
+                        <img src="{{ $stampDataUri }}" alt="Pečiatka spoločnosti" class="signature">
                     @endif
                 </div>
                 <div class="line"></div>
