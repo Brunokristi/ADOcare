@@ -266,12 +266,10 @@ class DocumentController extends Controller
             ['document' => $document->id]
         );
 
-        $htmlRenderUrl = URL::temporarySignedRoute(
+        $mainUrl = URL::temporarySignedRoute(
             'documents.public',
             \Carbon\Carbon::createFromTimestamp($expires),
-            [
-                'document' => $document->id,
-            ]
+            ['document' => $document->id]
         );
 
 
@@ -280,12 +278,12 @@ class DocumentController extends Controller
         parse_str(parse_url($dataUrl, PHP_URL_QUERY), $query);
         $data_signature = $query['signature'] ?? null;
 
-        parse_str(parse_url($htmlRenderUrl, PHP_URL_QUERY), $query);
-        $html_signature = $query['signature'] ?? null;
+        parse_str(parse_url($mainUrl, PHP_URL_QUERY), $query);
+        $main_signature = $query['signature'] ?? null;
 
         return redirect()->route('spa', [
             'any' => "public/documents/{$document->id}",
-            'main_signature' => $html_signature,
+            'main_signature' => $main_signature,
             'data_signature' => $data_signature,
             'expires' => $expires,
         ]);
