@@ -173,7 +173,7 @@ class KilometersExportController extends Controller
 
         $insurance = DB::table('insurance_companies')
             ->where('id', $insuranceId)
-            ->select('id', 'name', 'branch_code')
+            ->select('id', 'name', 'code', 'branch_code')
             ->first();
 
         $userCar = DB::table('cars')
@@ -263,6 +263,7 @@ class KilometersExportController extends Controller
             'user' => $user,
             'workingTime' => $workingTime,
             'insurance' => $insurance,
+            'insuranceCode' => $insurance?->code,
             'insuranceBranchCode' => $insurance?->branch_code,
             'userCar' => $userCar,
 
@@ -286,6 +287,7 @@ class KilometersExportController extends Controller
         $branch = $context['branch'];
         $user = $context['user'];
         $workingTime = $context['workingTime'];
+        $insuranceCode = (string) $context['insuranceCode'];
         $insuranceBranchCode = $context['insuranceBranchCode'];
         $userCar = $context['userCar'];
 
@@ -324,7 +326,8 @@ class KilometersExportController extends Controller
                 row: $calculatedRow['source'],
                 rowNumber: $index + 1,
                 kilometers: (float) $calculatedRow['kilometers'],
-                userCar: (string) $userCar
+                userCar: (string) $userCar,
+                insuranceCode: $insuranceCode
             );
 
             $lines[] = $this->formatTextLine(
@@ -337,13 +340,24 @@ class KilometersExportController extends Controller
         return implode("\r\n", $lines) . "\r\n";
     }
 
-    private function build793nAdosBodyFields(object $row, int $rowNumber, float $kilometers, string $userCar): array
-    {
+    private function build793nAdosBodyFields(
+        object $row,
+        int $rowNumber,
+        float $kilometers,
+        string $userCar,
+        string $insuranceCode
+    ): array {
         $dayDD = Carbon::parse($row->date)->format('d');
 
         $patientName = $this->toAsciiString(
             trim(($row->last_name ?? '') . ' ' . ($row->first_name ?? '')),
             60
+        );
+
+        $transportRecordCode = $this->buildTransportRecordCode(
+            insuranceCode: $insuranceCode,
+            date: $row->date,
+            rowNumber: $rowNumber
         );
 
         return [
@@ -360,7 +374,7 @@ class KilometersExportController extends Controller
             $this->toAsciiString($this->normalizeAddressOrCity($row->branch_address ?? null), self::ADDRESS_CITY_MAX_LENGTH),
             $this->toAsciiString($this->normalizeAddressOrCity($row->patient_city ?? null), self::ADDRESS_CITY_MAX_LENGTH),
             $this->toAsciiString($this->normalizeAddressOrCity($row->patient_address ?? null), self::ADDRESS_CITY_MAX_LENGTH),
-            $rowNumber,
+            $transportRecordCode,
             $this->normalizeCode($userCar),
             '0',
             '',
@@ -371,6 +385,18 @@ class KilometersExportController extends Controller
             '',
             '',
         ];
+    }
+
+    private function buildTransportRecordCode(
+        string $insuranceCode,
+        mixed $date,
+        int $rowNumber
+    ): string {
+        $normalizedInsuranceCode = preg_replace('/\D/', '', trim($insuranceCode)) ?? '';
+        $month = Carbon::parse($date)->format('m');
+        $formattedRowNumber = str_pad((string) $rowNumber, 4, '0', STR_PAD_LEFT);
+
+        return $normalizedInsuranceCode . $month . $formattedRowNumber;
     }
 
     private function validate793nAdosExportContext(array $context): void
@@ -386,6 +412,7 @@ class KilometersExportController extends Controller
         $branch = $context['branch'];
         $user = $context['user'];
         $workingTime = $context['workingTime'];
+        $insuranceCode = $context['insuranceCode'];
         $insuranceBranchCode = $context['insuranceBranchCode'];
         $userCar = $context['userCar'];
         $rows = $context['rows'];
@@ -474,6 +501,32 @@ class KilometersExportController extends Controller
             );
         }
 
+        $this->addMissingError(
+            $errors,
+            $insuranceCode,
+            'Chýba dvojmiestny kód poisťovne.',
+            'insurance:missing_code'
+        );
+
+        $this->addPatternError(
+            $errors,
+            $insuranceCode,
+            '/^\d{2}$/',
+            'Kód poisťovne musí obsahovať presne 2 číslice.',
+            'insurance:invalid_code'
+        );
+
+        if (
+            $this->isFilledValue($insuranceCode)
+            && !in_array((string) $insuranceCode, ['24', '25', '27'], true)
+        ) {
+            $this->addValidationError(
+                $errors,
+                'Kód poisťovne musí byť 24, 25 alebo 27.',
+                'insurance:unsupported_code'
+            );
+        }
+
         $this->addMissingError($errors, $insuranceBranchCode, 'Chýba kód pobočky poisťovne.', 'insurance:missing_branch_code');
         $this->addPatternError(
             $errors,
@@ -494,7 +547,15 @@ class KilometersExportController extends Controller
         );
 
         foreach ($rows as $index => $row) {
-            $this->validate793nAdosRow($errors, $row, $index + 1, $from, $to, (string) $userCar);
+            $this->validate793nAdosRow(
+                errors: $errors,
+                row: $row,
+                rowNumber: $index + 1,
+                from: $from,
+                to: $to,
+                userCar: (string) $userCar,
+                insuranceCode: (string) $insuranceCode
+            );
         }
 
         $this->throwKilometersValidationErrors($errors);
@@ -506,7 +567,8 @@ class KilometersExportController extends Controller
         int $rowNumber,
         string $from,
         string $to,
-        string $userCar
+        string $userCar,
+        string $insuranceCode
     ): void {
         $patientName = $this->formatPatientName($row);
         $label = "{$patientName} / riadok {$rowNumber}";
@@ -789,7 +851,41 @@ class KilometersExportController extends Controller
             $this->patientErrorKey($row, 'invalid_doctor_zpr')
         );
 
-        $fields = $this->build793nAdosBodyFields($row, $rowNumber, 0.0, $userCar);
+        if ($rowNumber > 9999) {
+            $this->addValidationError(
+                $errors,
+                "Poradové číslo riadku môže mať maximálne 4 číslice: {$label}.",
+                $this->rowErrorKey($row, $rowNumber, 'transport_record_row_number_too_large')
+            );
+        }
+
+        if (
+            $this->isFilledValue($row->date ?? null)
+            && preg_match('/^\d{2}$/', $insuranceCode)
+            && $rowNumber <= 9999
+        ) {
+            $transportRecordCode = $this->buildTransportRecordCode(
+                insuranceCode: $insuranceCode,
+                date: $row->date,
+                rowNumber: $rowNumber
+            );
+
+            if (!preg_match('/^\d{8}$/', $transportRecordCode)) {
+                $this->addValidationError(
+                    $errors,
+                    "Kód záznamu prepravy musí mať presne 8 číslic: {$label}.",
+                    $this->rowErrorKey($row, $rowNumber, 'invalid_transport_record_code')
+                );
+            }
+        }
+
+        $fields = $this->build793nAdosBodyFields(
+            row: $row,
+            rowNumber: $rowNumber,
+            kilometers: 0.0,
+            userCar: $userCar,
+            insuranceCode: $insuranceCode
+        );
 
         if (count($fields) !== 23) {
             $this->addValidationError(
