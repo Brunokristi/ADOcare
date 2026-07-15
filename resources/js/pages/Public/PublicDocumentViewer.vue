@@ -23,7 +23,8 @@ const documentType = ref<string | null>(null)
 const documentData = ref<any>(null)
 
 // The signed URL parameters
-const signature = computed(() => route.query.signature as string)
+const main_signature = computed(() => route.query.main_signature as string)
+const data_signature = computed(() => route.query.data_signature as string)
 const expires = computed(() => route.query.expires as string)
 
 const isInvoice = computed(() => route.name === 'public-invoice-view')
@@ -42,11 +43,10 @@ async function loadData() {
     try {
         const response = await axios.get(baseUrl, {
             params: {
-                signature: signature.value,
+                signature: data_signature.value,
                 expires: expires.value
             }
         })
-
         documentData.value = response.data.data
         documentType.value = isInvoice.value ? 'invoice' : documentData.value.type
     } catch (err: any) {
@@ -84,7 +84,8 @@ const activeComponent = computed(() => {
 </script>
 
 <template>
-    <div class="public-viewer min-h-screen bg-gray-100 p-4 md:p-8">
+    <div class="public-viewer min-h-screen">
+
         <div v-if="loading" class="flex flex-col items-center justify-center py-20">
             <i class="bi bi-arrow-repeat animate-spin text-4xl text-accent mb-4"></i>
             <p class="text-gray-600">Načítavam dokument...</p>
@@ -98,10 +99,8 @@ const activeComponent = computed(() => {
             </div>
         </div>
 
-        <div v-else class="max-w-5xl mx-auto">
-            <component :is="activeComponent" :public-data="documentData" :is-public="true" :signature="signature"
-                :expires="expires" />
-        </div>
+        <component :is="activeComponent" :public-data="documentData" :is-public="true" :signature="main_signature"
+            :expires="expires" />
     </div>
 </template>
 

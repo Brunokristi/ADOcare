@@ -6,11 +6,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/documents/public/{document}', [DocumentController::class, 'publicDocument'])
     ->name('documents.public')
-    ->middleware('signed.expires');
+    ->middleware('signed.url:all')->middleware('expires');
 
 Route::get('/invoices/public/{invoice}', [InvoiceController::class, 'publicInvoice'])
     ->name('invoices.public')
-    ->middleware('signed.expires');
+    ->middleware('signed.url:all')->middleware('expires');
 
 Route::get('/{any}', function () {
     return view('app');
