@@ -2,14 +2,21 @@
 
 namespace App\Services;
 
+use App\Jobs\HandleVertexModelIncidentJob;
 use App\Models\Document;
 use App\Models\Patient;
+use App\Services\Vertex\DekurzPromptBuilder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DekurzAiPrefillService
 {
+        public function __construct(
+            private readonly DekurzPromptBuilder $promptBuilder
+        ) {
+        }
+
     private const VERTEX_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 
     /**
@@ -139,17 +146,19 @@ class DekurzAiPrefillService
     {
         $attempts = 2;
         $lastError = null;
+        $lastDecoded = null;
 
         for ($attempt = 1; $attempt <= $attempts; $attempt++) {
             try {
                 $response = $this->callTunedDekurzEndpoint(
-                    $this->buildPrompt(
+                    $this->promptBuilder->build(
                         $proposal,
                         $attempt > 1
                     )
                 );
 
                 $output = $this->extractPredictionPayload($response);
+                $lastDecoded = $output;
             } catch (\Throwable $exception) {
                 $lastError = $exception;
                 continue;
@@ -159,6 +168,55 @@ class DekurzAiPrefillService
 
             if ($parsed !== null && ! empty($parsed)) {
                 return $parsed;
+            }
+
+            $lastError = new \RuntimeException('Trénovaný Dekurz model vrátil odpoveď bez platnej JSON schémy.');
+        }
+
+        $deployment = $this->resolveActiveDekurzDeployment();
+        $runtimeFallbackEnabled = (bool) config('services.vertex_ai.auto_train.runtime_fallback', true);
+
+        if (
+            $runtimeFallbackEnabled
+            && ($deployment['source'] ?? '') === 'auto_train_state'
+            && $this->isFallbackEligibleError($lastError, $lastDecoded)
+        ) {
+            $fallbackDeployment = [
+                'location' => trim((string) config('services.vertex_ai.dekurz.location')),
+                'endpoint_id' => trim((string) config('services.vertex_ai.dekurz.endpoint_id')),
+                'source' => 'config',
+            ];
+
+            try {
+                $response = $this->callTunedDekurzEndpoint(
+                    $this->promptBuilder->build($proposal, true),
+                    $fallbackDeployment
+                );
+
+                $parsed = $this->parseSectionsFromOutput($this->extractPredictionPayload($response));
+
+                if ($parsed !== null && ! empty($parsed)) {
+                    HandleVertexModelIncidentJob::dispatch([
+                        'reason' => $lastError?->getMessage(),
+                        'active_endpoint_id' => $deployment['endpoint_id'] ?? null,
+                        'fallback_endpoint_id' => $fallbackDeployment['endpoint_id'] ?? null,
+                        'status' => 'fallback_succeeded',
+                    ]);
+
+                    return $parsed;
+                }
+            } catch (\Throwable $fallbackError) {
+                HandleVertexModelIncidentJob::dispatch([
+                    'reason' => $lastError?->getMessage(),
+                    'active_endpoint_id' => $deployment['endpoint_id'] ?? null,
+                    'fallback_endpoint_id' => $fallbackDeployment['endpoint_id'] ?? null,
+                    'status' => 'fallback_failed',
+                ]);
+
+                throw new \RuntimeException(
+                    'Trénovaný endpoint zlyhal a statický fallback endpoint vrátil chybu: ' . $fallbackError->getMessage(),
+                    previous: $fallbackError
+                );
             }
         }
 
@@ -179,13 +237,13 @@ class DekurzAiPrefillService
      *
      * @return array<string, mixed>
      */
-    private function callTunedDekurzEndpoint(string $userPrompt): array
+    private function callTunedDekurzEndpoint(string $userPrompt, ?array $forcedDeployment = null): array
     {
         $projectId = trim((string) config(
             'services.vertex_ai.project_id'
         ));
 
-        $deployment = $this->resolveActiveDekurzDeployment();
+        $deployment = $forcedDeployment ?? $this->resolveActiveDekurzDeployment();
         $location = $deployment['location'];
         $endpointId = $deployment['endpoint_id'];
 
@@ -309,6 +367,52 @@ class DekurzAiPrefillService
         }
 
         return $decoded;
+    }
+
+    /**
+     * @param array<string, mixed>|string|null $decodedOutput
+     */
+    private function isFallbackEligibleError(?\Throwable $error, array|string|null $decodedOutput): bool
+    {
+        if ($decodedOutput !== null) {
+            $parsed = $this->parseSectionsFromOutput($decodedOutput);
+            if ($parsed === null || empty($parsed)) {
+                return true;
+            }
+        }
+
+        if (! $error) {
+            return false;
+        }
+
+        $message = mb_strtolower($error->getMessage());
+
+        if (
+            str_contains($message, 'http 404')
+            || str_contains($message, 'http 410')
+            || str_contains($message, 'http 429')
+            || str_contains($message, 'http 500')
+            || str_contains($message, 'http 502')
+            || str_contains($message, 'http 503')
+            || str_contains($message, 'http 504')
+            || str_contains($message, 'timeout')
+            || str_contains($message, 'connection')
+            || str_contains($message, 'neplatnú odpoveď')
+            || str_contains($message, 'nevrátila použiteľné')
+        ) {
+            return true;
+        }
+
+        if (
+            str_contains($message, 'http 400')
+            || str_contains($message, 'http 401')
+            || str_contains($message, 'http 403')
+            || str_contains($message, 'chýba nastavenie')
+        ) {
+            return false;
+        }
+
+        return false;
     }
 
     /**
@@ -519,66 +623,6 @@ class DekurzAiPrefillService
             'endpoint_id' => $endpointId,
             'source' => 'auto_train_state',
         ];
-    }
-
-    /**
-     * @param array<string, mixed> $proposal
-     */
-    private function buildPrompt(
-        array $proposal,
-        bool $strict = false
-    ): string {
-        $input = [
-            'diagnosis' => is_array($proposal['diagnosis'] ?? null)
-                ? $proposal['diagnosis']
-                : [],
-            'nurse_diagnosis' => is_array($proposal['nurse_diagnosis'] ?? null)
-                ? $proposal['nurse_diagnosis']
-                : [],
-            'epicrisis' => (string) ($proposal['epicrisis'] ?? ''),
-            'care_plan' => (string) ($proposal['care_plan'] ?? ''),
-            'mobility' => is_array($proposal['mobility'] ?? null)
-                ? $proposal['mobility']
-                : [],
-            'expected_duration' => (string) (
-                $proposal['expected_duration'] ?? ''
-            ),
-            'procedures' => is_array($proposal['procedures'] ?? null)
-                ? $proposal['procedures']
-                : [],
-        ];
-
-        $inputJson = json_encode(
-            $input,
-            JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
-        );
-
-        if (! is_string($inputJson)) {
-            throw new \RuntimeException(
-                'Nepodarilo sa vytvoriť vstup pre Dekurz AI.'
-            );
-        }
-
-        $base = "You are a nursing documentation assistant. "
-            . "Generate likely draft outputs based on the provided input. "
-            . "The output is only a draft suggestion for a nurse to review and edit. "
-            . "Return JSON only.\n\n"
-            . "You are given a structured nursing proposal. "
-            . "Generate likely dekurz section texts based on it.\n"
-            . "Return only JSON in this exact shape: "
-            . "{\"sections\":[{\"text\":\"...\"}]}.\n"
-            . "Use Slovak language. Keep medical terminology from input.\n"
-            . "Do not output markdown, code fences, or explanations.\n\n"
-            . "INPUT JSON:\n"
-            . $inputJson;
-
-        if (! $strict) {
-            return $base;
-        }
-
-        return $base
-            . "\n\nIMPORTANT: Return valid parseable JSON object only, "
-            . "starting with '{' and ending with '}'. Do not truncate output.";
     }
 
     /**

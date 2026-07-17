@@ -10,8 +10,10 @@ return new class extends Migration {
     {
         // Legacy schema enforced uniqueness only on (procedure_id, insurance_company_id).
         // Drop it so we can materialize per-company rows first.
-        DB::statement('ALTER TABLE procedure_company_prices DROP CONSTRAINT IF EXISTS uix_procedure_company_prices_proc_ins');
-        DB::statement('DROP INDEX IF EXISTS uix_procedure_company_prices_proc_ins');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE procedure_company_prices DROP CONSTRAINT IF EXISTS uix_procedure_company_prices_proc_ins');
+            DB::statement('DROP INDEX IF EXISTS uix_procedure_company_prices_proc_ins');
+        }
 
         Schema::table('procedure_company_prices', function (Blueprint $table) {
             if (!Schema::hasColumn('procedure_company_prices', 'company_id')) {

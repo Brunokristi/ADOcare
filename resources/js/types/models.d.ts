@@ -1,3 +1,17 @@
+export interface VertexTrainingRunExample {
+  // columns
+  id: number
+  training_run_id: number
+  feedback_id: number
+  dataset_role: string
+  created_at: string | null
+  // relations
+  run: VertexTrainingRun
+  // counts
+  // exists
+  run_exists: boolean
+}
+
 export interface Document {
   // columns
   id: number
@@ -285,6 +299,52 @@ export interface ScanSession {
   branch_exists: boolean
   user_exists: boolean
   document_exists: boolean
+}
+
+export interface VertexTrainingRun {
+  // columns
+  id: number
+  pipeline: string
+  version: string | null
+  status: string
+  idempotency_key: string | null
+  base_model_name: string | null
+  previous_model_name: string | null
+  previous_endpoint_name: string | null
+  previous_endpoint_id: string | null
+  previous_location: string | null
+  training_dataset_uri: string | null
+  validation_dataset_uri: string | null
+  dataset_hash: string | null
+  training_examples_count: number
+  validation_examples_count: number
+  tuning_job_name: string | null
+  new_model_name: string | null
+  new_endpoint_name: string | null
+  new_endpoint_id: string | null
+  new_location: string | null
+  current_score: number | null
+  candidate_score: number | null
+  json_validity_rate: number | null
+  required_fields_rate: number | null
+  critical_errors: number
+  http_failures: number
+  average_latency_ms: number | null
+  started_at: string | null
+  completed_at: string | null
+  promoted_at: string | null
+  failed_at: string | null
+  failure_stage: string | null
+  failure_message: string | null
+  metadata: Array<unknown> | null
+  created_at: string | null
+  updated_at: string | null
+  // relations
+  examples: VertexTrainingRunExample[]
+  // counts
+  examples_count: number
+  // exists
+  examples_exists: boolean
 }
 
 export interface CarService {

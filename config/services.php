@@ -111,9 +111,13 @@ return [
                 'VERTEX_AUTOTRAIN_ENABLED',
                 false
             ),
-            'schedule' => env(
-                'VERTEX_AUTOTRAIN_SCHEDULE',
-                'biweekly'
+            'frequency' => env(
+                'VERTEX_AUTOTRAIN_FREQUENCY',
+                'monthly'
+            ),
+            'day' => (int) env(
+                'VERTEX_AUTOTRAIN_DAY',
+                1
             ),
             'weekday' => (int) env(
                 'VERTEX_AUTOTRAIN_WEEKDAY',
@@ -159,6 +163,58 @@ return [
                 'VERTEX_AUTOTRAIN_BASE_MODELS',
                 ''
             ),
+            'min_json_validity' => (float) env(
+                'VERTEX_AUTOTRAIN_MIN_JSON_VALIDITY',
+                1.00
+            ),
+            'min_required_fields_rate' => (float) env(
+                'VERTEX_AUTOTRAIN_MIN_REQUIRED_FIELDS_RATE',
+                1.00
+            ),
+            'max_score_regression' => (float) env(
+                'VERTEX_AUTOTRAIN_MAX_SCORE_REGRESSION',
+                0.01
+            ),
+            'max_http_failures' => (int) env(
+                'VERTEX_AUTOTRAIN_MAX_HTTP_FAILURES',
+                0
+            ),
+            'max_critical_errors' => (int) env(
+                'VERTEX_AUTOTRAIN_MAX_CRITICAL_ERRORS',
+                0
+            ),
+            'poll_minutes' => (int) env(
+                'VERTEX_AUTOTRAIN_POLL_MINUTES',
+                15
+            ),
+            'max_hours' => (int) env(
+                'VERTEX_AUTOTRAIN_MAX_HOURS',
+                48
+            ),
+            'retention_days' => (int) env(
+                'VERTEX_AUTOTRAIN_RETENTION_DAYS',
+                180
+            ),
+            'keep_successful_versions' => (int) env(
+                'VERTEX_AUTOTRAIN_KEEP_SUCCESSFUL_VERSIONS',
+                4
+            ),
+            'require_manual_approval' => (bool) env(
+                'VERTEX_AUTOTRAIN_REQUIRE_MANUAL_APPROVAL',
+                false
+            ),
+            'rollback_on_health_failure' => (bool) env(
+                'VERTEX_AUTOTRAIN_ROLLBACK_ON_HEALTH_FAILURE',
+                true
+            ),
+            'runtime_fallback' => (bool) env(
+                'VERTEX_AUTOTRAIN_RUNTIME_FALLBACK',
+                true
+            ),
+            'notification_emails' => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('VERTEX_AUTOTRAIN_NOTIFICATION_EMAILS', ''))
+            ))),
         ],
     ],
 ];
