@@ -496,57 +496,73 @@ async function prefillFromLatestProposalWithAi() {
     if (!patientId.value) return
 
     loadingAiPrefill.value = true
+
     try {
-        const runPrefillRequest = () => api.post(`/v1/patients/${patientId.value}/dekurz/ai-prefill`)
-
-        let res
-        try {
-            res = await runPrefillRequest()
-        } catch (firstErr: unknown) {
-            const status = (firstErr as { response?: { status?: number } })?.response?.status
-            const shouldRetry = status === 422 || (status !== undefined && status >= 500) || status === undefined
-
-            if (!shouldRetry) {
-                throw firstErr
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 700))
-            res = await runPrefillRequest()
-        }
+        const res = await api.post(
+            `/v1/patients/${patientId.value}/dekurz/ai-prefill`,
+        )
 
         const aiSections = res.data?.data?.sections
 
         if (!Array.isArray(aiSections) || aiSections.length === 0) {
-            toast.add({ severity: 'warn', summary: 'Bez výsledku', detail: 'AI nevrátila použiteľné texty.', life: 3000 })
+            toast.add({
+                severity: 'warn',
+                summary: 'Bez výsledku',
+                detail: 'AI nevrátila použiteľné texty.',
+                life: 3000,
+            })
+
             return
         }
 
         const generatedTexts = aiSections
-            .map((section: { text?: string }) => String(section?.text ?? '').trim())
+            .map((section: { text?: string }) =>
+                String(section?.text ?? '').trim(),
+            )
             .filter((text: string) => text !== '')
 
         if (!generatedTexts.length) {
-            toast.add({ severity: 'warn', summary: 'Bez výsledku', detail: 'AI nevrátila použiteľné texty.', life: 3000 })
+            toast.add({
+                severity: 'warn',
+                summary: 'Bez výsledku',
+                detail: 'AI nevrátila použiteľné texty.',
+                life: 3000,
+            })
+
             return
         }
 
-        const fallbackDates = sections.value.find((s) => (s.dates ?? []).length > 0)?.dates ?? []
+        const fallbackDates =
+            sections.value.find(
+                section => (section.dates ?? []).length > 0,
+            )?.dates ?? []
 
-        const nextSections: DekurzSection[] = generatedTexts.map((text: string, idx: number) => ({
-            id: sections.value[idx]?.id ?? makeId(),
-            text,
-            dates: (sections.value[idx]?.dates?.length ? sections.value[idx].dates : fallbackDates) ?? [],
-        }))
+        const nextSections: DekurzSection[] = generatedTexts.map(
+            (text: string, index: number) => ({
+                id: sections.value[index]?.id ?? makeId(),
+                text,
+                dates: sections.value[index]?.dates?.length
+                    ? sections.value[index].dates
+                    : fallbackDates,
+            }),
+        )
 
         aiFeedbackPayload.value = {
             source: 'proposal_ai_prefill',
-            proposal_document_id: Number(res.data?.data?.proposal_document_id ?? 0) || null,
-            suggested_sections: generatedTexts.map((text: string) => ({ text })),
+            proposal_document_id:
+                Number(res.data?.data?.proposal_document_id ?? 0) || null,
+            suggested_sections: generatedTexts.map((text: string) => ({
+                text,
+            })),
         }
 
         sections.value = nextSections
 
-        if (sections.value.some((s) => (s.dates ?? []).length === 0)) {
+        if (
+            sections.value.some(
+                section => (section.dates ?? []).length === 0,
+            )
+        ) {
             toast.add({
                 severity: 'warn',
                 summary: 'Doplňte dátumy',
@@ -561,14 +577,49 @@ async function prefillFromLatestProposalWithAi() {
             detail: 'Texty dekurzu boli predvyplnené z posledného návrhu pomocou AI.',
             life: 3000,
         })
-    } catch (err: unknown) {
-        console.error('Failed to prefill dekurz from latest proposal using AI:', err)
+    } catch (error: unknown) {
+        const axiosError = error as {
+            message?: string
+            response?: {
+                status?: number
+                data?: {
+                    message?: string
+                    exception?: string
+                    file?: string
+                    line?: number
+                    trace?: unknown[]
+                    errors?: unknown
+                }
+            }
+        }
+
+        const response = axiosError.response?.data
+
+        console.error(
+            'Failed to prefill dekurz from latest proposal using AI:',
+            {
+                status: axiosError.response?.status,
+                message: response?.message,
+                exception: response?.exception,
+                file: response?.file,
+                line: response?.line,
+                firstTraceEntry: response?.trace?.[0],
+                trace: response?.trace,
+                errors: response?.errors,
+            },
+        )
+
         const message =
-            (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
-            (err as { message?: string })?.message ||
+            response?.message ||
+            axiosError.message ||
             'Nepodarilo sa načítať AI návrh textov dekurzu.'
 
-        toast.add({ severity: 'error', summary: 'Chyba AI', detail: message, life: 3500 })
+        toast.add({
+            severity: 'error',
+            summary: 'Chyba AI',
+            detail: message,
+            life: 5000,
+        })
     } finally {
         loadingAiPrefill.value = false
     }

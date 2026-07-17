@@ -111,7 +111,7 @@ class ProposalDocumentController extends Controller
     }
 
     /**
-     * Build proposal prefill from latest patient scan OCR via Gemini.
+     * Build proposal prefill from latest patient scan OCR via Vertex AI.
      *
      * @group Documents
      * @urlParam patient int required Patient ID. Example: 1
