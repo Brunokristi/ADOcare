@@ -12,7 +12,7 @@ const patientStore = usePatientStore()
 const authStore = useAuthStore()
 const toast = useToast()
 
-const props = defineProps<IModalContentProps & { patientId: number }>()
+const props = defineProps<IModalContentProps>()
 
 const patient = ref<Patient>({} as Patient)
 

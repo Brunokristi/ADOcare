@@ -4,6 +4,18 @@ import type { PlaceData } from '@/composables/address'
 import { searchAutocomplete, fetchPlaceDetails, parsePlaceDetailsToData } from '@/composables/address'
 import type { AutoCompleteCompleteEvent, AutoCompleteOptionSelectEvent } from 'primevue/autocomplete'
 
+type AutocompleteSuggestion = {
+    label?: string
+    place_id?: string
+    source?: string
+    address?: string
+    street?: string
+    city?: string
+    zip?: string
+    lat?: number | null
+    lng?: number | null
+}
+
 const props = defineProps<{ modelValue: string | null }>()
 const emit = defineEmits<{ (e: 'update:modelValue', v: string | null): void; (e: 'selected', v: PlaceData): void }>();
 
@@ -18,12 +30,49 @@ async function onComplete(e: AutoCompleteCompleteEvent) {
     suggestions.value = await searchAutocomplete(e.query ?? '')
 }
 
+function normalizeSuggestionToPlaceData(suggestion: AutocompleteSuggestion): PlaceData | null {
+    const address = suggestion.address ?? suggestion.label ?? ''
+    const street = suggestion.street ?? ''
+    const city = suggestion.city ?? ''
+    const zip = suggestion.zip ?? ''
+    const latitude = typeof suggestion.lat === 'number' ? suggestion.lat : null
+    const longitude = typeof suggestion.lng === 'number' ? suggestion.lng : null
+
+    if (!address && !street && !city) {
+        return null
+    }
+
+    return {
+        address,
+        street,
+        city,
+        zip,
+        latitude,
+        longitude,
+        place_id: suggestion.place_id,
+    }
+}
+
 async function onSelect(e: AutoCompleteOptionSelectEvent) {
-    const sel: any = e?.value
+    const sel = (e?.value ?? null) as AutocompleteSuggestion | null
+    if (!sel) return
+
+    if (sel.source === 'nominatim') {
+        const payload = normalizeSuggestionToPlaceData(sel)
+
+        if (!payload) {
+            return
+        }
+
+        emit('update:modelValue', sel.label || payload.address || null)
+        emit('selected', payload)
+        return
+    }
+
     if (!sel?.place_id) return
     try {
         const details = await fetchPlaceDetails(sel.place_id)
-        const payload = parsePlaceDetailsToData(details);
+        const payload = parsePlaceDetailsToData(details)
 
         // update model with the full suggestion label (user-visible address)
         emit('update:modelValue', sel.label || payload.address || null)

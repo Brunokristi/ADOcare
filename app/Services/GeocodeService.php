@@ -165,12 +165,16 @@ class GeocodeService
         $streetNumber = $this->pickComponent($components, 'street_number');
         $route = $this->pickComponent($components, 'route');
 
-        // City comes back differently depending on area
-        $locality = $this->pickComponent($components, 'locality');
-        $postalTown = $this->pickComponent($components, 'postal_town');
-        $admin2 = $this->pickComponent($components, 'administrative_area_level_2');
-
-        $city = trim($locality ?: ($postalTown ?: $admin2));
+        // City comes back differently depending on area.
+        $city = trim($this->pickFirstComponent($components, [
+            'locality',
+            'postal_town',
+            'administrative_area_level_3',
+            'administrative_area_level_2',
+            'sublocality',
+            'sublocality_level_1',
+            'neighborhood',
+        ]));
 
         $zip = $this->normalizeZip($this->pickComponent($components, 'postal_code'));
 
@@ -181,5 +185,18 @@ class GeocodeService
             'city' => $city,
             'zip' => $zip,
         ];
+    }
+
+    private function pickFirstComponent(array $components, array $types): string
+    {
+        foreach ($types as $type) {
+            $value = $this->pickComponent($components, $type);
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
     }
 }

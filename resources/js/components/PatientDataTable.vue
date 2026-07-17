@@ -403,8 +403,8 @@ const options = computed<DataTableOptions<Patient>>(() => {
                 handler: async () => {
                     await openModal(
                         markRaw(CreatePatientForm),
-                        { title: 'Pridať Pacienta' },
-                        { style: { width: '90%' } },
+                        {},
+                        { header: 'Pridať Pacienta', style: { width: '90%' } },
                     )
                 },
             },

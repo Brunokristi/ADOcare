@@ -80,12 +80,18 @@ class ProposalDocumentController extends Controller
             ->first();
 
         if (!$document) {
-            return $this->error('Návrh sa nenašiel', 404);
+            return $this->success([
+                'document_id' => null,
+                'proposal_data' => null,
+            ], 'Pacient nemá uložený návrh ošetrovateľskej starostlivosti.');
         }
 
         $payload = $this->service->getProposalPayload($document);
         if (!$payload) {
-            return $this->error('Dáta návrhu sa nenašli', 404);
+            return $this->success([
+                'document_id' => $document->id,
+                'proposal_data' => null,
+            ], 'Dáta posledného návrhu ošetrovateľskej starostlivosti sa nenašli.');
         }
 
         return $this->success(['document_id' => $document->id, 'proposal_data' => $payload]);

@@ -17,6 +17,18 @@ export type PlaceData = {
     place_id?: string
 }
 
+export type AddressAutocompleteSuggestion = {
+    label: string
+    place_id: string
+    source?: string
+    address?: string
+    street?: string
+    city?: string
+    zip?: string
+    lat?: number | null
+    lng?: number | null
+}
+
 export type PlaceDetailResponse = {
     address_components: Array<{
         long_name: string
@@ -33,6 +45,16 @@ export type PlaceDetailResponse = {
     place_id: string
 }
 
+const CITY_COMPONENT_TYPES = [
+    'locality',
+    'postal_town',
+    'administrative_area_level_3',
+    'administrative_area_level_2',
+    'sublocality',
+    'sublocality_level_1',
+    'neighborhood',
+]
+
 /**
  * Query the server for autocomplete predictions for a partial address.
  *
@@ -46,7 +68,17 @@ export async function searchAutocomplete(text: string) {
     if (!text || text.length < 3) return []
     const res = await api.get('/v1/geocode/autocomplete', { params: { text } })
     const preds = res.data.data?.predictions ?? []
-    return preds.map((p: any) => ({ label: p.description, place_id: p.place_id }))
+    return preds.map((p: any): AddressAutocompleteSuggestion => ({
+        label: p.description,
+        place_id: p.place_id,
+        source: p.source,
+        address: p.address,
+        street: p.street,
+        city: p.city,
+        zip: p.zip,
+        lat: typeof p.lat === 'number' ? p.lat : null,
+        lng: typeof p.lng === 'number' ? p.lng : null,
+    }))
 }
 
 /**
@@ -86,6 +118,18 @@ function pickComp(components: any[], type: string) {
     return (c?.long_name ?? '').trim()
 }
 
+function pickFirstComponent(components: PlaceDetailResponse['address_components'], types: string[]): string {
+    for (const type of types) {
+        const value = pickComp(components, type)
+
+        if (value) {
+            return value
+        }
+    }
+
+    return ''
+}
+
 /**
  * Parse Google address components returned by the API into a small object
  * containing { street, city, zip }.
@@ -97,14 +141,9 @@ export function parseComponents(components: PlaceDetailResponse['address_compone
     let streetNumber = pickComp(components, 'street_number')
     let route = pickComp(components, 'route')
 
-
-    const locality = pickComp(components, 'locality')
-    const postalTown = pickComp(components, 'postal_town')
-    const admin2 = pickComp(components, 'administrative_area_level_2')
-    const city = (locality || postalTown || admin2 || '').trim()
+    const city = pickFirstComponent(components, CITY_COMPONENT_TYPES).trim()
 
     const zip = (pickComp(components, 'postal_code') || '').replace(/\s+/g, '').trim()
-
 
     if (!streetNumber) {
         const premise = pickComp(components, 'premise')
@@ -114,11 +153,8 @@ export function parseComponents(components: PlaceDetailResponse['address_compone
     }
 
     if (!route && streetNumber) {
-        route = locality;
+        route = city
     }
-
-
-
     let street = [route, streetNumber].filter(Boolean).join(' ').trim()
 
     if (!street && city) {

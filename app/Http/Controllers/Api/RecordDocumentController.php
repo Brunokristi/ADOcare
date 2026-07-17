@@ -67,12 +67,18 @@ class RecordDocumentController extends Controller
             ->first();
 
         if (!$document) {
-            return $this->error('Ošetrovateľský záznam sa nenašiel', 404);
+            return $this->success([
+                'document_id' => null,
+                'record_data' => null,
+            ], 'Pacient nemá uložený ošetrovateľský záznam.');
         }
 
         $recordFile = $service->findRecordFileForDocument($document);
         if (!$recordFile) {
-            return $this->error('Dáta ošetrovateľského záznamu sa nenašli', 404);
+            return $this->success([
+                'document_id' => $document->id,
+                'record_data' => null,
+            ], 'Dáta posledného ošetrovateľského záznamu sa nenašli.');
         }
 
         return $this->success([

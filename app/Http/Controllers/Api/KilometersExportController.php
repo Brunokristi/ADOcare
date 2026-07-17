@@ -287,6 +287,7 @@ class KilometersExportController extends Controller
         $branch = $context['branch'];
         $user = $context['user'];
         $workingTime = $context['workingTime'];
+        $userId = (int) $context['userId'];
         $insuranceCode = (string) $context['insuranceCode'];
         $insuranceBranchCode = $context['insuranceBranchCode'];
         $userCar = $context['userCar'];
@@ -327,6 +328,7 @@ class KilometersExportController extends Controller
                 rowNumber: $index + 1,
                 kilometers: (float) $calculatedRow['kilometers'],
                 userCar: (string) $userCar,
+                userId: $userId,
                 insuranceCode: $insuranceCode
             );
 
@@ -345,6 +347,7 @@ class KilometersExportController extends Controller
         int $rowNumber,
         float $kilometers,
         string $userCar,
+        int $userId,
         string $insuranceCode
     ): array {
         $dayDD = Carbon::parse($row->date)->format('d');
@@ -355,6 +358,7 @@ class KilometersExportController extends Controller
         );
 
         $transportRecordCode = $this->buildTransportRecordCode(
+            userId: $userId,
             insuranceCode: $insuranceCode,
             date: $row->date,
             rowNumber: $rowNumber
@@ -388,15 +392,20 @@ class KilometersExportController extends Controller
     }
 
     private function buildTransportRecordCode(
+        int $userId,
         string $insuranceCode,
         mixed $date,
         int $rowNumber
     ): string {
-        $normalizedInsuranceCode = preg_replace('/\D/', '', trim($insuranceCode)) ?? '';
+        $formattedUserId = str_pad((string) $userId, 2, '0', STR_PAD_LEFT);
+        $insuranceDigit = substr(trim($insuranceCode), -1);
         $month = Carbon::parse($date)->format('m');
-        $formattedRowNumber = str_pad((string) $rowNumber, 4, '0', STR_PAD_LEFT);
+        $formattedRowNumber = str_pad((string) $rowNumber, 3, '0', STR_PAD_LEFT);
 
-        return $normalizedInsuranceCode . $month . $formattedRowNumber;
+        return $formattedUserId
+            . $insuranceDigit
+            . $month
+            . $formattedRowNumber;
     }
 
     private function validate793nAdosExportContext(array $context): void
@@ -554,6 +563,7 @@ class KilometersExportController extends Controller
                 from: $from,
                 to: $to,
                 userCar: (string) $userCar,
+                userId: (int) $context['userId'],
                 insuranceCode: (string) $insuranceCode
             );
         }
@@ -568,6 +578,7 @@ class KilometersExportController extends Controller
         string $from,
         string $to,
         string $userCar,
+        int $userId,
         string $insuranceCode
     ): void {
         $patientName = $this->formatPatientName($row);
@@ -851,20 +862,31 @@ class KilometersExportController extends Controller
             $this->patientErrorKey($row, 'invalid_doctor_zpr')
         );
 
-        if ($rowNumber > 9999) {
+        if ($userId < 1 || $userId > 99) {
             $this->addValidationError(
                 $errors,
-                "Poradové číslo riadku môže mať maximálne 4 číslice: {$label}.",
+                'ID používateľa pre kód záznamu musí byť v rozsahu 1 až 99.',
+                'user:invalid_transport_record_user_id'
+            );
+        }
+
+        if ($rowNumber > 999) {
+            $this->addValidationError(
+                $errors,
+                "Poradové číslo riadku môže mať maximálne 3 číslice: {$label}.",
                 $this->rowErrorKey($row, $rowNumber, 'transport_record_row_number_too_large')
             );
         }
 
         if (
             $this->isFilledValue($row->date ?? null)
-            && preg_match('/^\d{2}$/', $insuranceCode)
-            && $rowNumber <= 9999
+            && in_array((string) $insuranceCode, ['24', '25', '27'], true)
+            && $userId >= 1
+            && $userId <= 99
+            && $rowNumber <= 999
         ) {
             $transportRecordCode = $this->buildTransportRecordCode(
+                userId: $userId,
                 insuranceCode: $insuranceCode,
                 date: $row->date,
                 rowNumber: $rowNumber
@@ -884,6 +906,7 @@ class KilometersExportController extends Controller
             rowNumber: $rowNumber,
             kilometers: 0.0,
             userCar: $userCar,
+            userId: $userId,
             insuranceCode: $insuranceCode
         );
 

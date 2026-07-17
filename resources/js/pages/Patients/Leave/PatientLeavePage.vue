@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 import { useAuthStore } from '@/stores/auth'
 import DocumentAlert from '@/components/DocumentAlert.vue'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -18,6 +19,8 @@ const patientId = computed(() => patientStore.current?.id ?? 0)
 
 const errors = ref<Record<string, string>>({})
 const submitted = ref(false)
+const lastPatientPointLoading = ref(false)
+let lastPatientPointLoadSeq = 0
 
 // Document existence check
 const documentExists = ref(false)
@@ -91,15 +94,29 @@ async function checkDocumentExists() {
 }
 
 async function loadLastPatientPointDate() {
+  const seq = ++lastPatientPointLoadSeq
+
+  lastPatientPointLoading.value = true
 
   if (!patientId.value) {
+    results.value = ''
+    lastPatientPointLoading.value = false
     return
   }
 
   try {
     const { data } = await api.get('v1/patient-points', {
-      params: { patient_id: patientId.value, paginate: false, sort: '-date' }
+      params: {
+        filter: { patient_id: patientId.value },
+        per_page: 1,
+        page: 1,
+        sort: '-date',
+      }
     })
+
+    if (seq !== lastPatientPointLoadSeq) {
+      return
+    }
 
     // Extract records from various possible response structures
     let records: any[] = []
@@ -123,9 +140,19 @@ async function loadLastPatientPointDate() {
           results.value = `${formattedDate} ukončená ošetrovateľská starostlivosť`
         }
       }
+    } else {
+      results.value = ''
     }
   } catch (err) {
+    if (seq !== lastPatientPointLoadSeq) {
+      return
+    }
+
     console.error('Failed to load last patient point date', err)
+  } finally {
+    if (seq === lastPatientPointLoadSeq) {
+      lastPatientPointLoading.value = false
+    }
   }
 }
 
@@ -239,10 +266,11 @@ async function generateDocument() {
           <small v-if="submitted && errors.other_findings" class="text-danger">{{ errors.other_findings }}</small>
         </div>
 
-        <div>
+        <div class="relative min-h-32">
+          <LoadingOverlay :show="lastPatientPointLoading" text="Načítavam posledný záznam výkonov..." />
           <label class="block text-normal mb-2">Vyhodnotenie výsledkov ošetrovateľskej starostlivosti</label>
           <Textarea v-model="results" class="w-full !border-0 !shadow-none !bg-white focus:!ring-0" rows="3"
-            :invalid="submitted && !!errors.results" />
+            :invalid="submitted && !!errors.results" :disabled="lastPatientPointLoading" />
           <small v-if="submitted && errors.results" class="text-danger">{{ errors.results }}</small>
         </div>
 

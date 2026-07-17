@@ -7,6 +7,7 @@ import { usePatientStore } from '@/stores/patientStore'
 import { useAuthStore } from '@/stores/auth'
 import DocumentAlert from '@/components/DocumentAlert.vue'
 import AdonisButton from '@/components/AdonisButton.vue'
+import PresetMultiDatePicker from '@/components/Date/PresetMultiDatePicker.vue'
 
 type DekurzSnippet = {
     key: string
@@ -1009,7 +1010,7 @@ watch(
                         <div class="font-medium text-lg">Text dekurzu</div>
                     </template>
 
-                    <template #end class="">
+                    <template #end>
                         <div class="flex items-center gap-2">
                             <AdonisButton :loading="!!improvingSectionById[section.id]" :disabled="!section.text.trim()"
                                 label="Vylepšiť text" loadingLabel="Adonis vylepšuje…"
@@ -1076,11 +1077,10 @@ watch(
                 <div class="w-full">
                     <label class="block text-normal mb-2">Dátumy</label>
 
-                    <DatePicker v-model="section.dates" selectionMode="multiple" :minDate="monthStart"
+                    <PresetMultiDatePicker v-model="section.dates" :viewDate="monthStart" :minDate="monthStart"
                         :maxDate="maxSectionDate" :disabledDates="disabledDates" :showOtherMonths="false"
-                        :showButtonBar="false" :showIcon="false"
                         :key="`${lockedMonth.year}-${lockedMonth.month}-${allowedDaysInMonth.join(',')}-${section.id}`"
-                        dateFormat="dd.mm.yy" class="w-full"
+                        class="w-full"
                         inputClass="!w-full !shadow-none !bg-white focus:!ring-0 focus:!shadow-none !border-0"
                         :invalid="submitted && !!errors[`sectionDates-${section.id}`]" />
 

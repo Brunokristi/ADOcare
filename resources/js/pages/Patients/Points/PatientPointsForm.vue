@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
 import { usePatientStore } from '@/stores/patientStore'
 import api from '@/services/api'
 import { toApiDate, parseDateInput } from '@/utils/dateUtils'
-import { buildDaysForMonth } from '@/utils/dateRanges'
+import PresetMultiDatePicker from '@/components/Date/PresetMultiDatePicker.vue'
 
 type Option = { id: number; code: string; description: string }
 
@@ -17,8 +17,6 @@ const toast = useToast()
 
 const dates = ref<Date[]>([])
 const referralDate = ref<Date | null>(null)
-const panelDate = ref<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-const datesPickerRef = ref<any>(null)
 
 const diagnosis = ref<Option | null>(null)
 const filteredDiagnoses = ref<Option[]>([])
@@ -61,66 +59,6 @@ function normalizeSelectedDates(input: unknown): Date[] {
     return Array.from(map.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([, d]) => d)
-}
-
-async function setDatesAndKeepView(selected: Date[]) {
-    const { year, month } = getActivePanelYearMonth()
-    const keep = new Date(year, month, 1)
-    dates.value = normalizeSelectedDates(selected)
-    await nextTick()
-    panelDate.value = keep
-
-    // Keep DatePicker panel pinned to currently visible month after model update.
-    const picker = datesPickerRef.value
-    if (picker) {
-        picker.currentMonth = month
-        picker.currentYear = year
-    }
-}
-
-function getActivePanelYearMonth(): { year: number; month: number } {
-    const picker = datesPickerRef.value
-    const pickerYear = Number(picker?.currentYear)
-    const pickerMonth = Number(picker?.currentMonth)
-
-    if (Number.isFinite(pickerYear) && Number.isFinite(pickerMonth)) {
-        return { year: pickerYear, month: pickerMonth }
-    }
-
-    return {
-        year: panelDate.value.getFullYear(),
-        month: panelDate.value.getMonth(),
-    }
-}
-
-function buildDaysForCurrentView(mode: string): Date[] {
-    const { year: y, month: m } = getActivePanelYearMonth()
-    return buildDaysForMonth(y, m, mode)
-}
-
-function onMonthChange(event: any) {
-    const year = Number(event?.year)
-    const month = Number(event?.month)
-    if (!Number.isFinite(year) || !Number.isFinite(month)) return
-
-    // PrimeVue emits month in 1-12 for month-change/year-change.
-    const next = new Date(year, month - 1, 1)
-    panelDate.value = next
-}
-
-async function selectHolidays() { await setDatesAndKeepView(buildDaysForCurrentView('holidays')) }
-
-// We control DatePicker month via `:viewDate="panelDate"` and month/year events.
-
-async function selectWorkingDays() { await selectPreset('workdays') }
-async function selectAllDays() { await selectPreset('all') }
-async function selectMondayWednesdayFriday() { await selectPreset('mwf') }
-async function selectWeekends() { await selectPreset('weekends') }
-async function selectWorkingDaysExcludingHolidays() { await selectPreset('workdaysExcludingHolidays') }
-
-async function selectPreset(mode: string) {
-    const sel = buildDaysForCurrentView(mode)
-    await setDatesAndKeepView(sel)
 }
 
 function truncate(text: string, max = 60) { if (!text) return ''; return text.length > max ? text.slice(0, max) + '…' : text }
@@ -280,37 +218,7 @@ async function onSubmit() {
                     <div class="col-span-12 md:col-span-3">
                         <label class="block text-normal mb-1">Dátum</label>
 
-                        <DatePicker ref="datesPickerRef" v-model="dates" :viewDate="panelDate" selectionMode="multiple"
-                            @month-change="onMonthChange" @year-change="onMonthChange"
-                            dateFormat="dd.mm.yy" :showIcon="false" showButtonBar class="w-full" :manualInput="false"
-                            :maxDate="maxSelectableDate"
-                            inputClass="!w-full !border-none !shadow-none !bg-white focus:!ring-0 focus:!shadow-none">
-                            <template #buttonbar="{ clearCallback }">
-                                <div class="flex flex-wrap justify-start w-full gap-2">
-                                    <Button label="Pracovné dni"
-                                        class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                                        @mousedown.prevent @click.prevent="selectWorkingDaysExcludingHolidays" />
-                                    <Button label="So, Ne, Sviatky"
-                                        class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                                        @mousedown.prevent @click.prevent="selectWeekends" />
-                                    <Button label="Po-Ne"
-                                        class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                                        @mousedown.prevent @click.prevent="selectAllDays" />
-                                    <Button label="Po-Pia"
-                                        class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                                        @mousedown.prevent @click.prevent="selectWorkingDays" />
-                                    <Button label="Po, St, Pia"
-                                        class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                                        @mousedown.prevent @click.prevent="selectMondayWednesdayFriday" />
-                                    <Button label="Sviatky"
-                                        class="bg-darkgrey! border-transparent! text-white! text-normal! px-2! hover:!bg-accent"
-                                        @mousedown.prevent @click.prevent="selectHolidays" />
-                                    <Button label="zrušiť výber"
-                                        class="bg-danger! border-transparent! text-white! text-normal! px-2!"
-                                        @mousedown.prevent @click.prevent="clearCallback" />
-                                </div>
-                            </template>
-                        </DatePicker>
+                        <PresetMultiDatePicker v-model="dates" class="w-full" :maxDate="maxSelectableDate" />
 
                         <small v-if="submitted && (!dates || !dates.length)" class="text-danger">Dátum je
                             povinný.</small>
