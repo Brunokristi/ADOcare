@@ -176,8 +176,8 @@ const superadminRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'superadmin-subscriptions-list',
                 component: SubscriptionPackagesPage,
                 meta: {
-                    title: 'Balíky',
-                    link: 'balíky',
+                    title: 'Legacy balíky',
+                    link: 'legacy balíky',
                     sidebar: showOnSidebar,
                     navbar: true,
                 },

@@ -27,6 +27,7 @@ export interface Document {
   period: string | null
   subtype: string | null
   insurance_company_id: number | null
+  deleted_at: string | null
   // relations
   patient: Patient
   user: User
@@ -413,10 +414,15 @@ export interface Company {
   subscription_tier_id: number | null
   subscription_price_monthly: number | null
   subscription_users_limit_override: number | null
-  subscription_status: string
+  subscription_status: string | null
   subscription_started_at: string | null
   subscription_ends_at: string | null
   subscription_notes: string | null
+  studiokristian_customer_token?: string | null
+  status: string | null
+  selected_plan_price_id: number | null
+  // mutators
+  billing_provisioned: boolean
   // relations
   subscription_tier: SubscriptionTier
   branches: Branch[]
@@ -557,6 +563,7 @@ export interface Invoice {
   updated_at: string | null
   type: string
   related_invoice_id: number | null
+  deleted_at: string | null
   // relations
   user: User
   insurance_company: InsuranceCompany

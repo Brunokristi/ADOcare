@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import type { User } from '@/types/models'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import OnboardingActivationSection from '@/components/Dashboard/OnboardingActivationSection.vue'
 
 type CarService = {
   id: number
@@ -54,6 +55,8 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-10 p-4">
+    <OnboardingActivationSection />
+
     <div class="text-heading-accent">
       Dobrý deň {{ fullName }},<br />
       všetko je pre Vás pripravené.

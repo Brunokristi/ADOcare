@@ -5,8 +5,10 @@ import managerRoutes from './manager';
 import superadminRoutes from './superadmin';
 import generalRoutes from './general';
 import publicRoutes from './public';
+import onboardingRoutes from './onboarding';
 import { computed } from 'vue';
 import { isSubscriptionExpired } from '@/utils/subscription';
+import { needsCompanyOnboarding } from '@/utils/onboarding';
 
 // flag used by App.vue to show the error page without changing the URL
 import { ref } from 'vue'
@@ -18,6 +20,7 @@ const routes = [
     ...nures,
     ...managerRoutes,
     ...superadminRoutes,
+    ...onboardingRoutes,
 ];
 
 const router = createRouter({
@@ -68,6 +71,19 @@ router.beforeEach(async (to, _from, next) => {
 
     if (to.name === 'dashboard' && dashbordRouteName.value !== 'dashboard') {
         return next({ name: dashbordRouteName.value });
+    }
+
+    // Managers whose Company is still missing the basic legal/company details get routed
+    // into onboarding first. The rest of setup (branch, etc.) is resumable and non-blocking,
+    // so it does not gate normal dashboard access here.
+    const isOnboardingRoute = typeof to.name === 'string' && to.name.startsWith('onboarding');
+    if (
+        auth.isAuthenticated &&
+        auth.isManager &&
+        needsCompanyOnboarding(auth.user?.company) &&
+        !isOnboardingRoute
+    ) {
+        return next({ name: 'onboarding' });
     }
 
     if (to.meta.roles && (!auth.currentRole || !(to.meta.roles as string[]).includes(auth.currentRole))) {

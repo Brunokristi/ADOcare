@@ -28,6 +28,7 @@ class CompanyResource extends JsonResource
             'updated_at' => $this->updated_at,
             'representative_id' => $this->representative_id,
             'stamp_path' => $this->stamp_path,
+            'status' => $this->status,
             'subscription_tier_id' => $this->subscription_tier_id,
             'subscription_price_monthly' => $this->subscription_price_monthly,
             'subscription_users_limit_override' => $this->subscription_users_limit_override,

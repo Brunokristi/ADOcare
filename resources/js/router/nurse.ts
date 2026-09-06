@@ -55,6 +55,16 @@ const generalRoutes: Readonly<RouteRecordRaw[]> = [
         }
     },
     {
+        path: '/register',
+        name: 'register',
+        component: () => import('@/pages/Auth/RegisterPage.vue'),
+        meta: {
+            title: 'Registrácia',
+            requiresAuth: false,
+            sidebar: false,
+        }
+    },
+    {
         path: '/data',
         name: 'data',
         component: Data,

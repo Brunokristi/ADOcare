@@ -13,6 +13,8 @@ use App\Models\Car;
 use App\Models\CompanySubscriptionPayment;
 use App\Models\Doctor;
 use App\Models\User;
+use App\Services\CompanyDeletionService;
+use App\Services\StudioKristianBillingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +22,10 @@ use \App\Http\Controllers\Controller;
 
 class MyCompanyController extends Controller
 {
+    public function __construct(private StudioKristianBillingService $billing)
+    {
+    }
+
     /**
      * Get current user's company
      *
@@ -80,7 +86,42 @@ class MyCompanyController extends Controller
         unset($data['stamp']);
         $company->update($data);
 
+        // Best-effort - a StudioKristian outage must never block saving Company settings.
+        // Keeps the StudioKristian/Stripe billing customer identity in sync with the real
+        // Company (name/address/ICO/DIC/...) whenever it changes here, not only at onboarding.
+        $this->billing->syncBillingProfile($company);
+
         return $this->success($company, 'Updated', Response::HTTP_OK);
+    }
+
+    /**
+     * Permanently deactivate the current user's Company: soft-deletes the Company, its
+     * Users, and its Patients (recoverable by a superadmin), and removes everything else
+     * that only makes sense in the context of an active Company (branches, cars, documents,
+     * invoices, points, visits, report months, per-company procedure prices, legacy
+     * subscription records). Every affected User's API tokens are revoked, so the requesting
+     * user (and everyone else at the Company) is signed out on their very next request.
+     */
+    public function destroy(Request $request, CompanyDeletionService $deletions)
+    {
+        $user = $request->user();
+        $company = $user?->company;
+
+        if (!$company) {
+            return $this->notFound('No company associated with current user');
+        }
+
+        $request->validate([
+            'confirm_name' => ['required', 'string'],
+        ]);
+
+        if (trim((string) $request->input('confirm_name')) !== $company->name) {
+            return $this->error('Zadaný názov spoločnosti sa nezhoduje s aktuálnym názvom.', 422);
+        }
+
+        $deletions->delete($company);
+
+        return $this->success(null, 'Company deleted', Response::HTTP_OK);
     }
 
     /**

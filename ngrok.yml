@@ -1,0 +1,11 @@
+version: "2"
+
+tunnels:
+
+    adocare:
+        proto: http
+        addr: 8001
+
+    vite:
+        proto: http
+        addr: 5174

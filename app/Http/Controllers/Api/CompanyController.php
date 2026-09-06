@@ -9,10 +9,9 @@ use App\Http\Resources\UserCollection;
 use App\Http\Responses\ApiResponse;
 use App\Models\Branch;
 use App\Models\Company;
-use App\Models\CompanySubscriptionPaidMonth;
-use App\Models\CompanySubscriptionPayment;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\StudioKristianBillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +20,10 @@ use Illuminate\Http\Response;
 
 class CompanyController extends Controller
 {
+    public function __construct(private StudioKristianBillingService $billing)
+    {
+    }
+
     /**
      * List companies
      *
@@ -122,6 +125,10 @@ class CompanyController extends Controller
         unset($data['stamp']);
         $company->update($data);
 
+        // Best-effort - keeps the StudioKristian/Stripe billing customer identity in sync
+        // whenever a superadmin edits a Company's billing-relevant fields.
+        $this->billing->syncBillingProfile($company);
+
         return $this->success($company, 'Updated');
     }
 
@@ -146,78 +153,9 @@ class CompanyController extends Controller
     }
 
     /**
-     * Update subscription values for one company.
+     * Read-only historical subscription snapshot. StudioKristian is now the source of
+     * truth for paid billing state - Superadmin can no longer edit this locally.
      */
-    public function updateSubscription(Request $request, Company $company)
-    {
-        $validated = $request->validate([
-            'subscription_tier_id' => ['nullable', 'integer', 'exists:subscription_tiers,id'],
-            'subscription_price_monthly' => ['nullable', 'numeric', 'min:0'],
-            'subscription_users_limit_override' => ['nullable', 'integer', 'min:1'],
-            'subscription_status' => ['required', 'in:active,trial,paused,cancelled'],
-            'subscription_notes' => ['nullable', 'string'],
-            'paid_months_year' => ['required', 'integer', 'between:2020,2100'],
-            'paid_months' => ['array'],
-            'paid_months.*' => ['integer', 'between:1,12', 'distinct'],
-            'payments' => ['array'],
-            'payments.*.received_at' => ['required', 'date'],
-            'payments.*.amount' => ['required', 'numeric', 'min:0'],
-            'payments.*.notes' => ['nullable', 'string'],
-        ]);
-
-        DB::transaction(function () use ($validated, $company) {
-            $company->update([
-                'subscription_tier_id' => $validated['subscription_tier_id'] ?? null,
-                'subscription_price_monthly' => $validated['subscription_price_monthly'] ?? null,
-                'subscription_users_limit_override' => $validated['subscription_users_limit_override'] ?? null,
-                'subscription_status' => $validated['subscription_status'],
-                'subscription_notes' => $validated['subscription_notes'] ?? null,
-                // Legacy fields are not used anymore in UI, keep them null to avoid conflicting logic.
-                'subscription_started_at' => null,
-                'subscription_ends_at' => null,
-            ]);
-
-            $year = (int) $validated['paid_months_year'];
-            $months = collect($validated['paid_months'] ?? [])->map(fn($m) => (int) $m)->unique()->values();
-
-            CompanySubscriptionPaidMonth::query()
-                ->where('company_id', $company->id)
-                ->where('year', $year)
-                ->delete();
-
-            if ($months->isNotEmpty()) {
-                CompanySubscriptionPaidMonth::insert(
-                    $months->map(fn($month) => [
-                        'company_id' => $company->id,
-                        'year' => $year,
-                        'month' => $month,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ])->all()
-                );
-            }
-
-            CompanySubscriptionPayment::query()->where('company_id', $company->id)->delete();
-
-            $payments = collect($validated['payments'] ?? []);
-
-            if ($payments->isNotEmpty()) {
-                CompanySubscriptionPayment::insert(
-                    $payments->map(fn($payment) => [
-                        'company_id' => $company->id,
-                        'received_at' => $payment['received_at'],
-                        'amount' => $payment['amount'],
-                        'notes' => $payment['notes'] ?? null,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ])->all()
-                );
-            }
-        });
-
-        return $this->success($this->subscriptionPayload($company->fresh()), 'Subscription updated');
-    }
-
     public function subscriptionDetails(Company $company)
     {
         return $this->success($this->subscriptionPayload($company), 'Company subscription details retrieved');

@@ -1,11 +1,17 @@
 import type { Company } from '@/types/models'
 
-export function isSubscriptionExpired(company?: Pick<Company, 'subscription_status' | 'subscription_ends_at'> | null, rolePosition?: string | null): boolean {
+export function isSubscriptionExpired(company?: Pick<Company, 'subscription_status' | 'subscription_ends_at' | 'status'> | null, rolePosition?: string | null): boolean {
     if (!company) {
         return false
     }
 
     if (rolePosition === 'superadmin') {
+        return false
+    }
+
+    // A Company still going through onboarding has no billing state yet by design - it must
+    // not be treated as "expired" before it even reaches /onboarding/company.
+    if (company.status === 'onboarding') {
         return false
     }
 

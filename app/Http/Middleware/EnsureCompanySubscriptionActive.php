@@ -22,6 +22,13 @@ class EnsureCompanySubscriptionActive
 
         $company = $user->company;
 
+        // A Company still going through onboarding has not been billed yet by design -
+        // it must not be blocked by a paid-subscription check before it can even reach
+        // /onboarding/billing to provision StudioKristian and start its trial.
+        if ($company?->isOnboarding()) {
+            return $next($request);
+        }
+
         if (CompanySubscription::hasActiveSubscription($company)) {
             return $next($request);
         }

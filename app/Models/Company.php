@@ -40,6 +40,9 @@ class Company extends Model
         'subscription_started_at',
         'subscription_ends_at',
         'subscription_notes',
+        'studiokristian_customer_token',
+        'status',
+        'selected_plan_price_id',
     ];
 
     protected $casts = [
@@ -49,7 +52,37 @@ class Company extends Model
         'subscription_price_monthly' => 'float',
         'subscription_started_at' => 'date',
         'subscription_ends_at' => 'date',
+        'studiokristian_customer_token' => 'encrypted',
     ];
+
+    // Server-side only credential - must never be serialized into an API response.
+    protected $hidden = [
+        'studiokristian_customer_token',
+    ];
+
+    // Safe boolean projection of the hidden token, so UIs can show billing provider state.
+    protected $appends = [
+        'billing_provisioned',
+    ];
+
+    public function getBillingProvisionedAttribute(): bool
+    {
+        return $this->hasBillingCustomerToken();
+    }
+
+    /**
+     * A missing/null status means the Company predates the onboarding flow - treat it as
+     * already active so existing Companies never get forced back through onboarding.
+     */
+    public function getStatusAttribute(?string $value): string
+    {
+        return $value ?: 'active';
+    }
+
+    public function isOnboarding(): bool
+    {
+        return $this->status === 'onboarding';
+    }
 
     public function subscriptionTier()
     {
@@ -89,5 +122,14 @@ class Company extends Model
     public function subscriptionPaidMonths()
     {
         return $this->hasMany(CompanySubscriptionPaidMonth::class, 'company_id');
+    }
+
+    /**
+     * Whether this Company has a StudioKristian customer credential provisioned.
+     * Until onboarding provisions one, billing features degrade gracefully.
+     */
+    public function hasBillingCustomerToken(): bool
+    {
+        return filled($this->studiokristian_customer_token);
     }
 }

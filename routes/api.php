@@ -70,6 +70,9 @@ Route::get('/health', function () {
 
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
+    // Public: creates the initial Manager + Company. Distinct from the superadmin-only
+    // internal-staff `register` endpoint below.
+    Route::post('register-company', [\App\Http\Controllers\Api\RegistrationController::class, 'store']);
 
     Route::middleware(['api.auth'])->group(function () {
         Route::post('register', [AuthController::class, 'register'])->middleware('role:superadmin');
@@ -87,6 +90,23 @@ Route::get('/public/invoices/{invoice}/data', [InvoiceController::class, 'public
     ->name('invoices.public.data')
     ->middleware('signed.url')->middleware('expires');
 
+// Billing routes intentionally bypass 'subscription.active' so a company whose
+// subscription has lapsed can still view plans and start a new Checkout.
+Route::prefix('v1/billing')->middleware(['api.auth'])->group(function () {
+    Route::get('/plans', [\App\Http\Controllers\Api\BillingController::class, 'plans']);
+    Route::get('/subscription', [\App\Http\Controllers\Api\BillingController::class, 'subscription']);
+    Route::post('/checkout', [\App\Http\Controllers\Api\BillingController::class, 'checkout']);
+});
+
+// Onboarding routes intentionally bypass 'subscription.active' - a Company mid-setup
+// (or whose trial/subscription lapsed) must still be able to reach its own setup flow.
+Route::prefix('v1/onboarding')->middleware(['api.auth', 'role:manager,superadmin'])->group(function () {
+    Route::get('/status', [\App\Http\Controllers\Api\OnboardingController::class, 'status']);
+    Route::post('/company', [\App\Http\Controllers\Api\OnboardingController::class, 'saveCompany']);
+    Route::post('/billing/provision', [\App\Http\Controllers\Api\OnboardingController::class, 'provisionBilling']);
+    Route::post('/billing/start-trial', [\App\Http\Controllers\Api\OnboardingController::class, 'startTrial']);
+    Route::post('/complete', [\App\Http\Controllers\Api\OnboardingController::class, 'complete']);
+});
 
 Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(function () {
 
@@ -199,6 +219,8 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
     Route::get('/my-company', [MyCompanyController::class, 'show']);
     Route::patch('/my-company', [MyCompanyController::class, 'update'])
         ->middleware('role:manager,superadmin');
+    Route::delete('/my-company', [MyCompanyController::class, 'destroy'])
+        ->middleware('role:manager,superadmin');
     Route::get('/my-company/branches', [MyCompanyController::class, 'branches']);
     Route::get('/my-company/cars', [MyCompanyController::class, 'cars']);
     Route::get('/my-company/users', [MyCompanyController::class, 'users']);
@@ -294,10 +316,11 @@ Route::prefix('v1')->middleware(['api.auth', 'subscription.active'])->group(func
         ->middleware('role:superadmin');
     Route::get('companies/{company}/subscription-details', [CompanyController::class, 'subscriptionDetails'])
         ->middleware('role:superadmin');
-    Route::put('companies/{company}/subscription', [CompanyController::class, 'updateSubscription'])
-        ->middleware('role:superadmin');
     Route::apiResourceComplete('companies', CompanyController::class, 'role:superadmin');
-    Route::apiResourceComplete('subscription-tiers', SubscriptionTierController::class, 'role:superadmin');
+    // Subscription tiers are legacy/historical reference data now - StudioKristian owns plan management.
+    Route::apiResource('subscription-tiers', SubscriptionTierController::class)
+        ->only(['index', 'show'])
+        ->middleware('role:superadmin');
     Route::get('companies/{company}/stats', [CompanyController::class, 'stats'])
         ->middleware('role:manager,superadmin');
     Route::get('companies/{company}/users', [CompanyController::class, 'users'])

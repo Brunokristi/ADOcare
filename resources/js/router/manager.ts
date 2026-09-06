@@ -7,7 +7,6 @@ import Users from "@/pages/Settings/Users/UsersPage.vue";
 import Doctors from "@/pages/Settings/Doctors/DoctorsPage.vue";
 import SubscriptionsPage from "@/pages/Settings/Subscriptions/SubscriptionsPage.vue";
 import type { RouteRecordRaw } from "vue-router";
-import DashboardManager from "@/pages/DashboardManager.vue";
 import Procedures from "@/pages/Settings/Procedures/ProceduresPage.vue";
 import Manager from "@/pages/Manager.vue";
 import TravelDocuments from "@/pages/Manager/TravelDocuments.vue";
@@ -31,7 +30,7 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/manager',
         name: 'manager-dashboard',
-        component: DashboardManager,
+        component: () => import('@/pages/DashboardManager.vue'),
         meta: {
             title: 'Manažérsky dashboard',
             sidebar: false,
@@ -228,6 +227,12 @@ const managerRoutes: Readonly<RouteRecordRaw[]> = [
                 name: 'manager-settings-subscriptions',
                 component: SubscriptionsPage,
                 meta: { title: 'Predplatné', link: 'predplatné', sidebar: showOnSidebar, navbar: true, },
+            },
+            {
+                path: 'delete',
+                name: 'manager-settings-delete',
+                component: () => import('@/pages/Settings/Companies/DeleteCompanyPage.vue'),
+                meta: { title: 'Zmazať spoločnosť', link: 'zmazať spoločnosť', sidebar: showOnSidebar, navbar: true, },
             },
         ],
     },

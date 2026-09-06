@@ -58,6 +58,25 @@ return [
         'timeout' => env('UDZS_TIMEOUT', 10),
     ],
 
+    // StudioKristian is the central SaaS billing platform. ADOCare is only a
+    // consumer of its Billing API - never store Stripe credentials here.
+    'studiokristian_billing' => [
+        'base_url' => env('STUDIOKRISTIAN_BILLING_URL'),
+        'project_token' => env('STUDIOKRISTIAN_BILLING_PROJECT_TOKEN'),
+        'timeout' => env('STUDIOKRISTIAN_BILLING_TIMEOUT', 10),
+        // Separate, shorter timeout just for establishing the connection/DNS resolution, so an
+        // unreachable host fails fast instead of hanging for the full request timeout.
+        'connect_timeout' => env('STUDIOKRISTIAN_BILLING_CONNECT_TIMEOUT', 5),
+        'plans_cache_ttl' => env('STUDIOKRISTIAN_BILLING_PLANS_CACHE_TTL', 300),
+    ],
+
+    // StudioKristian is authoritative for trial duration/credits (POST/GET
+    // /api/v1/billing/customer/trial). This is only a fallback used to populate the local
+    // display cache if StudioKristian's response omits an end date - never a Stripe trial.
+    'adocare_trial' => [
+        'days' => env('ADOCARE_TRIAL_DAYS', 14),
+    ],
+
     'ocr' => [
         'url' => env('OCR_SERVICE_URL', 'http://127.0.0.1:8081'),
     ],

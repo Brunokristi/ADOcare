@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { markRaw, ref } from 'vue'
-import useModal from '@/composables/useModal'
+import { ref } from 'vue'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
-import ActionButtons from '@/components/table-columns/ActionButtons.vue'
-import CompanySubscriptionForm from './CompanySubscriptionForm.vue'
 import type { DataTableOptions } from '@/types/datatable'
 
 interface CompanySubscription {
@@ -15,6 +12,7 @@ interface CompanySubscription {
     subscription_status: 'active' | 'trial' | 'paused' | 'cancelled'
     subscription_price_monthly: number | null
     subscription_users_limit_override: number | null
+    billing_provisioned: boolean
     subscription_tier?: {
         id: number
         name: string
@@ -23,7 +21,6 @@ interface CompanySubscription {
     } | null
 }
 
-const { openModal } = useModal()
 const companyRemote = ref<any | null>(null)
 
 function formatMoney(value: number | null | undefined) {
@@ -46,18 +43,6 @@ function formatStatus(value: string | null | undefined) {
     }
 }
 
-async function openEditCompanySubscription(row: CompanySubscription) {
-    const res = await openModal(
-        markRaw(CompanySubscriptionForm),
-        { company: row },
-        { header: 'Správa predplatného spoločnosti', style: { width: '760px' }, closable: true }
-    )
-
-    if (res?.changed && companyRemote.value?.reload) {
-        await companyRemote.value.reload()
-    }
-}
-
 const companyOptions = ref<DataTableOptions<CompanySubscription>>({
     rowKey: 'id',
     endpointUrl: 'v1/companies/subscriptions',
@@ -72,13 +57,13 @@ const companyOptions = ref<DataTableOptions<CompanySubscription>>({
         { field: 'ico', header: 'IČO', sortable: true },
         {
             field: 'subscription_tier_id',
-            header: 'Balík',
+            header: 'Balík (legacy)',
             sortable: true,
             render: (_value, row) => row.subscription_tier?.name ?? '-',
         },
         {
             field: 'subscription_price_monthly',
-            header: 'Cena (override)',
+            header: 'Cena (legacy)',
             sortable: true,
             render: (value, row) => {
                 const effective = value ?? row.subscription_tier?.price_monthly ?? null
@@ -87,7 +72,7 @@ const companyOptions = ref<DataTableOptions<CompanySubscription>>({
         },
         {
             field: 'subscription_users_limit_override',
-            header: 'Limit (override)',
+            header: 'Limit (legacy)',
             sortable: true,
             render: (value, row) => {
                 const effective = value ?? row.subscription_tier?.users_limit ?? null
@@ -101,24 +86,16 @@ const companyOptions = ref<DataTableOptions<CompanySubscription>>({
             render: (value) => formatStatus(String(value)),
         },
         {
+            field: 'billing_provisioned',
+            header: 'Zdroj fakturácie',
+            sortable: true,
+            render: (value) => (value ? 'StudioKristian' : 'Legacy (lokálne)'),
+        },
+        {
             field: 'users_count',
             header: 'Používatelia',
             sortable: true,
             render: (value) => String(value ?? 0),
-        },
-        {
-            field: 'edit',
-            header: '',
-            width: '3rem',
-            component: markRaw(ActionButtons),
-            componentOptions: [
-                {
-                    color: 'info',
-                    icon: 'bi bi-pencil',
-                    tooltip: 'Správa predplatného',
-                    action: (row: CompanySubscription) => openEditCompanySubscription(row),
-                },
-            ],
         },
     ],
 })
@@ -126,6 +103,11 @@ const companyOptions = ref<DataTableOptions<CompanySubscription>>({
 
 <template>
     <div class="h-full flex flex-col gap-4 overflow-hidden min-h-0">
+        <div class="rounded-md bg-tag3 p-4 text-normal text-lightgrey">
+            Toto je len historický/read-only prehľad. Aktívne platené predplatné, ceny a fakturáciu
+            spravuje StudioKristian - Superadmin ich už nemôže meniť priamo v ADOCare.
+        </div>
+
         <div class="flex-1 min-h-[320px] overflow-hidden">
             <UniversalDataTable :options="companyOptions" />
         </div>

@@ -14,175 +14,256 @@
     </div>
 
     <div v-else class="space-y-5">
-      <section>
-        <div class="grid grid-cols-12 gap-4">
-          <div class="col-span-12 md:col-span-6 xl:col-span-3">
-            <div class="rounded-md bg-darkgrey p-4 h-full">
-              <div class="text-mini uppercase tracking-wide text-lightgrey mb-2">Balík</div>
-              <div class="text-heading text-white">{{ displayTierName }}</div>
+      <div v-if="billingError" class="rounded-md bg-danger p-4 text-normal text-white">
+        {{ billingError }}
+      </div>
+
+      <!-- CURRENT BILLING STATE - the paid subscription always wins over the trial. -->
+      <section class="bg-tag3 rounded-md p-5">
+        <h3 class="text-sm text-accent mb-4">Aktuálne predplatné</h3>
+
+        <div v-if="current?.type === 'subscription'" class="grid grid-cols-12 gap-4">
+          <div class="col-span-12 md:col-span-3">
+            <div class="text-mini uppercase tracking-wide text-lightgrey mb-1">Balík</div>
+            <div class="text-heading text-white">{{ current.subscription?.plan?.name ?? '—' }}</div>
+          </div>
+          <div class="col-span-12 md:col-span-3">
+            <div class="text-mini uppercase tracking-wide text-lightgrey mb-1">Stav</div>
+            <div class="text-heading text-white">{{ formatSubscriptionStatus(current.subscription?.status) }}</div>
+          </div>
+          <div class="col-span-12 md:col-span-3">
+            <div class="text-mini uppercase tracking-wide text-lightgrey mb-1">Cena</div>
+            <div class="text-heading text-white">{{ formatPrice(current.subscription?.price) }}</div>
+          </div>
+          <div v-if="current.subscription?.current_period_start || current.subscription?.current_period_end" class="col-span-12 md:col-span-3">
+            <div class="text-mini uppercase tracking-wide text-lightgrey mb-1">Aktuálne obdobie</div>
+            <div class="text-heading text-white">
+              {{ formatDate(current.subscription?.current_period_start ?? null) }} – {{ formatDate(current.subscription?.current_period_end ?? null) }}
             </div>
           </div>
-
-          <div class="col-span-12 md:col-span-6 xl:col-span-3">
-            <div class="rounded-md bg-darkgrey p-4 h-full">
-              <div class="text-mini uppercase tracking-wide text-lightgrey mb-2">Maximálny počet používateľov</div>
-              <div class="text-heading text-white">{{ effectiveUsersLimit ?? 'Neobmedzene' }}</div>
-            </div>
+          <div v-if="current.subscription?.cancel_at_period_end" class="col-span-12 text-normal text-lightgrey">
+            Predplatné bude zrušené na konci aktuálneho obdobia.
           </div>
-
-          <div class="col-span-12 md:col-span-6 xl:col-span-3">
-            <div class="rounded-md bg-darkgrey p-4 h-full">
-              <div class="text-mini uppercase tracking-wide text-lightgrey mb-2">Cena / mesiac</div>
-              <div class="text-heading text-white">{{ formatCurrency(effectiveMonthlyPrice) }}</div>
-            </div>
+          <div v-else-if="current.subscription?.canceled_at" class="col-span-12 text-normal text-lightgrey">
+            Zrušené {{ formatDate(current.subscription.canceled_at) }}.
           </div>
+        </div>
 
-          <div class="col-span-12 md:col-span-6 xl:col-span-3">
-            <div class="rounded-md bg-darkgrey p-4 h-full">
-              <div class="text-mini uppercase tracking-wide text-lightgrey mb-2">Stav</div>
-              <div class="text-heading text-white">{{ getStatusLabel(subscription?.subscription_status) }}</div>
+        <div v-else-if="current?.type === 'trial'" class="text-normal text-lightgrey">
+          Aktuálne využívate skúšobné obdobie - žiadne platené predplatné ešte nie je aktivované.
+        </div>
+
+        <div v-else-if="current?.type === 'expired_trial'" class="text-normal text-lightgrey">
+          Skúšobné obdobie skončilo. Vyberte si platený balík nižšie a pokračujte v používaní ADOcare.
+        </div>
+
+        <div v-else-if="!billingProvisioned" class="text-normal text-lightgrey">
+          Fakturačné údaje pre túto spoločnosť ešte neboli nastavené.
+        </div>
+
+        <div v-else class="text-normal text-lightgrey">
+          Momentálne nemáte žiadne aktívne platené predplatné.
+        </div>
+      </section>
+
+      <!-- Trial shown as separate historical/informational context only - never overrides the section above. -->
+      <section v-if="trial?.active || trial?.expired" class="rounded-md bg-darkgrey p-4">
+        <div class="text-mini uppercase tracking-wide text-lightgrey mb-2">Skúšobné obdobie</div>
+        <div class="text-heading text-white">
+          {{ trial.active ? 'Aktívne' : 'Skončilo' }}
+          <span v-if="current?.type === 'subscription'" class="text-normal text-lightgrey font-normal">
+            (nahradené platým predplatným)
+          </span>
+        </div>
+      </section>
+
+      <section class="bg-tag3 rounded-md p-5">
+        <h3 class="text-sm text-accent mb-4">História platieb</h3>
+
+        <div v-if="payments.length === 0" class="text-normal text-lightgrey">
+          Zatiaľ nemáte žiadne platby.
+        </div>
+
+        <table v-else class="w-full text-normal text-white">
+          <thead>
+            <tr class="text-mini uppercase tracking-wide text-lightgrey text-left">
+              <th class="pb-2">Dátum</th>
+              <th class="pb-2">Suma</th>
+              <th class="pb-2">Stav</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="payment in payments" :key="payment.id" class="border-t border-darkgrey">
+              <td class="py-2">{{ formatDate(payment.date) }}</td>
+              <td class="py-2">{{ formatCurrency(payment.amount, payment.currency) }}</td>
+              <td class="py-2">{{ formatPaymentStatus(payment.status) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="bg-tag3 rounded-md p-5">
+        <h3 class="text-sm text-accent mb-4">Faktúry</h3>
+
+        <div v-if="invoices.length === 0" class="text-normal text-lightgrey">
+          Zatiaľ nemáte žiadne faktúry.
+        </div>
+
+        <table v-else class="w-full text-normal text-white">
+          <thead>
+            <tr class="text-mini uppercase tracking-wide text-lightgrey text-left">
+              <th class="pb-2">Faktúra</th>
+              <th class="pb-2">Dátum</th>
+              <th class="pb-2">Suma</th>
+              <th class="pb-2">Stav</th>
+              <th class="pb-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="invoice in invoices" :key="invoice.id" class="border-t border-darkgrey">
+              <td class="py-2">{{ invoice.number ?? '—' }}</td>
+              <td class="py-2">{{ formatDate(invoice.date) }}</td>
+              <td class="py-2">{{ formatCurrency(invoice.amount_paid ?? invoice.amount_due, invoice.currency) }}</td>
+              <td class="py-2">{{ formatPaymentStatus(invoice.status) }}</td>
+              <td class="py-2 text-right whitespace-nowrap">
+                <a v-if="invoice.view_url" :href="invoice.view_url" target="_blank" rel="noopener" class="text-accent underline mr-3">Zobraziť</a>
+                <a v-if="invoice.pdf_url" :href="invoice.pdf_url" target="_blank" rel="noopener" class="text-accent underline">PDF</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="bg-tag3 rounded-md p-5">
+        <h3 class="text-sm text-accent mb-4">Dostupné balíky</h3>
+
+        <div v-if="plans.length === 0" class="text-normal text-lightgrey">
+          Momentálne nie sú dostupné žiadne balíky.
+        </div>
+
+        <div v-else class="grid grid-cols-12 gap-4">
+          <div
+            v-for="plan in plans"
+            :key="plan.id"
+            class="col-span-12 md:col-span-6 xl:col-span-4 rounded-md bg-darkgrey p-4 flex flex-col gap-3"
+          >
+            <div>
+              <div class="text-heading text-white">{{ plan.name }}</div>
+              <div v-if="plan.description" class="text-normal text-lightgrey mt-1">{{ plan.description }}</div>
+            </div>
+
+            <ul v-if="plan.features?.length" class="text-normal text-lightgrey list-disc pl-4">
+              <li v-for="feature in plan.features" :key="feature">{{ feature }}</li>
+            </ul>
+
+            <div class="flex flex-col gap-2 mt-auto">
+              <div
+                v-for="price in plan.prices"
+                :key="price.id"
+                class="flex items-center justify-between rounded-md bg-tag3 px-3 py-2"
+              >
+                <span class="text-normal text-white">{{ formatPrice(price) }}</span>
+                <Button
+                  label="Vybrať"
+                  :loading="checkoutLoadingPriceId === price.id"
+                  class="bg-accent! border-0!"
+                  @click="startCheckout(price.id)"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section class="bg-tag3 rounded-md p-5">
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <h3 class="text-sm text-accent">Predplatené mesiace</h3>
-
-          <div class="w-40">
-            <Select
-              v-model="selectedYear"
-              :options="yearOptions"
-              optionLabel="label"
-              optionValue="value"
-              fluid
-              class="border-0!"
-              @change="onYearChange"
-            />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-12 gap-3">
-          <div
-            v-for="month in monthOptions"
-            :key="month.value"
-            class="col-span-6 md:col-span-4 xl:col-span-2"
-          >
-            <div
-              class="w-full rounded-md p-3 text-left"
-              :class="activeMonths.includes(month.value)
-                ? 'bg-accent text-white border-accent'
-                : 'bg-white text-darkgrey border-darkgrey'"
-            >
-              <div class="text-normal">{{ month.label }}</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-        <section class="bg-tag3 rounded-md p-5">
         <div class="mb-4">
-          <h3 class="text-sm text-accent">História platieb</h3>
+          <h3 class="text-sm text-accent">História platieb (legacy)</h3>
         </div>
 
         <UniversalDataTable :options="paymentTableOptions" />
-        </section>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import Button from 'primevue/button'
 import UniversalDataTable from '@/components/UniversalDataTable.vue'
 import api from '@/services/api'
 import type { DataTableOptions } from '@/types/datatable'
 
-interface SubscriptionTier {
+interface PlanPrice {
   id: number
-  name: string
-  price_monthly: number | null
-  users_limit: number | null
+  amount: number
+  currency: string
+  interval: string
 }
 
-interface CompanySubscription {
+interface Plan {
   id: number
   name: string
-  subscription_tier_id: number | null
-  subscription_price_monthly: number | null
-  subscription_users_limit_override: number | null
-  subscription_status: 'active' | 'trial' | 'paused' | 'cancelled'
-  subscription_tier?: SubscriptionTier | null
+  description?: string | null
+  features?: string[]
+  prices: PlanPrice[]
 }
 
-interface CompanySubscriptionDetails extends CompanySubscription {
-  payments: Array<{
-    received_at: string | null
-    amount: number | null
-    notes: string | null
-  }>
-  paid_months_by_year: Array<{
-    year: number
-    months: number[]
-  }>
+interface Subscription {
+  id: number
+  status: string
+  plan?: { id: number; name: string } | null
+  price?: PlanPrice | null
+  current_period_start?: string | null
+  current_period_end?: string | null
+  canceled_at?: string | null
+  ended_at?: string | null
+  cancel_at_period_end?: boolean
+}
+
+interface Payment {
+  id: number
+  date: string | null
+  amount: number
+  currency: string
+  status: string
+  payment_method?: string | null
+  invoice_id?: number | null
+}
+
+interface Invoice {
+  id: number
+  number?: string | null
+  date: string | null
+  amount_due: number
+  amount_paid: number
+  currency: string
+  status: string
+  period_start?: string | null
+  period_end?: string | null
+  view_url?: string | null
+  pdf_url?: string | null
+}
+
+interface TrialState {
+  active: boolean
+  expired?: boolean
+}
+
+interface CurrentBillingState {
+  type: 'subscription' | 'trial' | 'expired_trial' | 'none'
+  subscription?: Subscription
+  trial?: TrialState
 }
 
 const loading = ref(false)
-const subscription = ref<CompanySubscription | null>(null)
-const selectedYear = ref<number>(new Date().getFullYear())
-const activeMonths = ref<number[]>([])
-const paidMonthsByYear = ref<Array<{ year: number; months: number[] }>>([])
-
-const monthOptions = [
-  { label: 'Január', value: 1 },
-  { label: 'Február', value: 2 },
-  { label: 'Marec', value: 3 },
-  { label: 'Apríl', value: 4 },
-  { label: 'Máj', value: 5 },
-  { label: 'Jún', value: 6 },
-  { label: 'Júl', value: 7 },
-  { label: 'August', value: 8 },
-  { label: 'September', value: 9 },
-  { label: 'Október', value: 10 },
-  { label: 'November', value: 11 },
-  { label: 'December', value: 12 },
-]
-
-const yearOptions = computed(() => {
-  const years = new Set<number>([new Date().getFullYear()])
-  paidMonthsByYear.value.forEach((item) => years.add(item.year))
-
-  return Array.from(years)
-    .sort((a, b) => b - a)
-    .map((year) => ({ label: String(year), value: year }))
-})
-
-const selectedTier = computed(() => subscription.value?.subscription_tier ?? null)
-
-const displayTierName = computed(() => {
-  if (selectedTier.value?.name) return selectedTier.value.name
-  if (subscription.value?.subscription_tier_id) return `Balik #${subscription.value.subscription_tier_id}`
-  return 'Bez balika'
-})
-
-const effectiveMonthlyPrice = computed(() => {
-  if (!subscription.value) return null
-  if (subscription.value.subscription_price_monthly !== null && subscription.value.subscription_price_monthly !== undefined) {
-    return subscription.value.subscription_price_monthly
-  }
-  return selectedTier.value?.price_monthly ?? null
-})
-
-const effectiveUsersLimit = computed(() => {
-  if (!subscription.value) return null
-  if (
-    subscription.value.subscription_users_limit_override !== null &&
-    subscription.value.subscription_users_limit_override !== undefined
-  ) {
-    return subscription.value.subscription_users_limit_override
-  }
-  return selectedTier.value?.users_limit ?? null
-})
+const billingError = ref<string | null>(null)
+const trial = ref<TrialState | null>(null)
+const current = ref<CurrentBillingState | null>(null)
+const billingProvisioned = ref(false)
+const payments = ref<Payment[]>([])
+const invoices = ref<Invoice[]>([])
+const plans = ref<Plan[]>([])
+const checkoutLoadingPriceId = ref<number | null>(null)
 
 const paymentTableOptions = computed<DataTableOptions<any>>(() => ({
   endpointUrl: 'v1/my-company/subscription-payments',
@@ -209,55 +290,82 @@ const paymentTableOptions = computed<DataTableOptions<any>>(() => ({
 }))
 
 onMounted(async () => {
-  await loadSubscriptionData()
+  await loadBillingData()
 })
 
-function onYearChange() {
-  const selected = paidMonthsByYear.value.find((x) => Number(x.year) === Number(selectedYear.value))
-  activeMonths.value = selected ? [...selected.months] : []
-}
-
-async function loadSubscriptionData() {
+async function loadBillingData() {
   loading.value = true
+  billingError.value = null
 
   try {
-    const details = await api.fetchEntity<CompanySubscriptionDetails>('v1/my-company/subscription-details')
+    const [subscriptionRes, plansRes] = await Promise.all([
+      api.get('v1/billing/subscription'),
+      api.get('v1/billing/plans'),
+    ])
 
-    subscription.value = {
-      id: details.id,
-      name: details.name,
-      subscription_tier_id: details.subscription_tier_id,
-      subscription_price_monthly: details.subscription_price_monthly,
-      subscription_users_limit_override: details.subscription_users_limit_override,
-      subscription_status: details.subscription_status,
-      subscription_tier: details.subscription_tier ?? null,
-    }
-
-    paidMonthsByYear.value = details.paid_months_by_year ?? []
-
-    if (paidMonthsByYear.value.length > 0) {
-      const latestYear = paidMonthsByYear.value
-        .map((item) => item.year)
-        .sort((a, b) => b - a)[0]
-
-      if (latestYear !== undefined) {
-        selectedYear.value = latestYear
-      }
-    }
-
-    onYearChange()
-  } catch (error) {
-    console.error('Error loading subscription data:', error)
-    subscription.value = null
-    activeMonths.value = []
+    trial.value = subscriptionRes.data?.data?.trial ?? null
+    current.value = subscriptionRes.data?.data?.current ?? null
+    billingProvisioned.value = Boolean(subscriptionRes.data?.data?.billing_provisioned)
+    payments.value = subscriptionRes.data?.data?.payments ?? []
+    invoices.value = subscriptionRes.data?.data?.invoices ?? []
+    plans.value = plansRes.data?.data ?? []
+  } catch (error: any) {
+    console.error('Error loading billing data:', error)
+    billingError.value = error?.response?.data?.message ?? 'Nepodarilo sa načítať fakturačné údaje.'
   } finally {
     loading.value = false
   }
 }
 
-function formatCurrency(value: number | null): string {
+async function startCheckout(planPriceId: number) {
+  checkoutLoadingPriceId.value = planPriceId
+  billingError.value = null
+
+  try {
+    const res = await api.post('v1/billing/checkout', {
+      plan_price_id: planPriceId,
+      success_url: `${window.location.origin}/billing/success`,
+      cancel_url: `${window.location.origin}/billing/cancel`,
+    })
+
+    const checkoutUrl: string | undefined = res.data?.data?.checkout_url
+
+    // Creating the Checkout Session is not the same as paying - this only lets us send
+    // the user to Stripe. The actual subscription only activates via StudioKristian's
+    // own webhook processing once Stripe confirms payment.
+    if (!checkoutUrl || !checkoutUrl.startsWith('https://')) {
+      billingError.value = 'Fakturačná služba nevrátila platnú platobnú URL. Skúste to prosím znova.'
+      return
+    }
+
+    window.location.href = checkoutUrl
+  } catch (error: any) {
+    console.error('Error starting checkout:', error)
+    billingError.value = error?.response?.data?.message ?? 'Nepodarilo sa spustiť platbu.'
+  } finally {
+    checkoutLoadingPriceId.value = null
+  }
+}
+
+function formatPrice(price: PlanPrice | null | undefined): string {
+  if (!price) return '—'
+  return `${formatCurrency(price.amount, price.currency)} / ${formatInterval(price.interval)}`
+}
+
+function formatInterval(interval: string): string {
+  const labels: Record<string, string> = {
+    month: 'mesiac',
+    monthly: 'mesiac',
+    year: 'rok',
+    yearly: 'rok',
+  }
+  return labels[interval] ?? interval
+}
+
+// StudioKristian/Stripe amounts are always in the smallest currency unit (cents for EUR).
+function formatCurrency(value: number | null | undefined, currency = 'EUR'): string {
   if (value === null || value === undefined) return '—'
-  return `${Number(value).toFixed(2)} €`
+  return `${(Number(value) / 100).toFixed(2)} ${currency}`
 }
 
 function formatDate(value: string | null): string {
@@ -273,14 +381,30 @@ function formatDate(value: string | null): string {
   })
 }
 
-function getStatusLabel(status: CompanySubscription['subscription_status'] | undefined): string {
+function formatSubscriptionStatus(status: string | undefined): string {
   const labels: Record<string, string> = {
     active: 'Aktívne',
-    trial: 'Trial',
-    paused: 'Pozastavené',
+    trialing: 'Trial',
+    past_due: 'Po splatnosti',
+    canceled: 'Zrušené',
     cancelled: 'Zrušené',
+    unpaid: 'Nezaplatené',
   }
 
-  return labels[status || ''] || '—'
+  return labels[(status ?? '').toLowerCase()] || (status || '—')
+}
+
+function formatPaymentStatus(status: string | undefined | null): string {
+  const labels: Record<string, string> = {
+    paid: 'Zaplatené',
+    open: 'Otvorená',
+    pending: 'Čaká sa',
+    failed: 'Zlyhala',
+    void: 'Zrušená',
+    uncollectible: 'Nevymožiteľná',
+  }
+
+  return labels[(status ?? '').toLowerCase()] || (status || '—')
 }
 </script>
+

@@ -3,6 +3,7 @@
 use App\Console\Commands\SoftDeleteInactivePatients;
 use App\Console\Commands\SendCarMaintenanceNotifications;
 use App\Console\Commands\SendSubscriptionNotifications;
+use App\Console\Commands\SendTrialNotifications;
 use App\Console\Commands\RunMonthlyVertexRetraining;
 use App\Http\Responses\ApiResponseClass;
 use Illuminate\Console\Scheduling\Schedule;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command(SoftDeleteInactivePatients::class)->monthlyOn(1, '2:00');
         $schedule->command(SendCarMaintenanceNotifications::class)->dailyAt('6:00');
         $schedule->command(SendSubscriptionNotifications::class)->dailyAt('6:15');
+        $schedule->command(SendTrialNotifications::class)->dailyAt('6:20');
 
         $schedule->command('backup:run --only-db')->dailyAt('01:00')->withoutOverlapping();
         $schedule->command('backup:clean')->dailyAt('01:30')->withoutOverlapping();

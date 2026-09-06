@@ -21,6 +21,7 @@ export function defaultNotificationSettings(): NotificationSetting[] {
     return [
         { key: 'car_maintenance', label: 'Údržba áut', enabled: false, emails: [] },
         { key: 'subscription', label: 'Predplatné', enabled: false, emails: [] },
+        { key: 'trial', label: 'Skúšobné obdobie', enabled: false, emails: [] },
     ]
 }
 
